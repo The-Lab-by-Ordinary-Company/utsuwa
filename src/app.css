@@ -1,0 +1,430 @@
+@import 'tailwindcss';
+
+/* bits-ui compatible theme */
+@theme inline {
+	--color-background: var(--color-neutral-50);
+	--color-foreground: var(--color-neutral-900);
+	--color-muted: var(--color-neutral-100);
+	--color-muted-foreground: var(--color-neutral-500);
+	--color-accent: var(--color-primary-100);
+	--color-accent-foreground: var(--color-primary-700);
+	--color-border: var(--color-neutral-200);
+	--color-input: var(--color-neutral-200);
+	--color-ring: var(--accent);
+	--color-destructive: var(--ctp-red);
+	--color-destructive-foreground: #fef2f2;
+
+	--radius-button: 0.5rem;
+	--radius-card: 0.75rem;
+	--radius-popover: 0.75rem;
+
+	--shadow-popover: 0 10px 38px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -15px rgba(0, 0, 0, 0.1);
+	--shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+:root {
+	/* Theme Accent Colors (light mode defaults) */
+	--ctp-rosewater: #dc8a78;
+	--ctp-flamingo: #dd7878;
+	--ctp-pink: #ea76cb;
+	--ctp-mauve: #8839ef;
+	--ctp-red: #d20f39;
+	--ctp-maroon: #e64553;
+	--ctp-peach: #fe640b;
+	--ctp-yellow: #df8e1d;
+	--ctp-green: #40a02b;
+	--ctp-teal: #179299;
+	--ctp-sky: #04a5e5;
+	--ctp-sapphire: #209fb5;
+	--ctp-blue: #1e66f5;
+	--ctp-lavender: #7287fd;
+
+	/* Latte Base/Surface Colors */
+	--ctp-text: #4c4f69;
+	--ctp-subtext1: #5c5f77;
+	--ctp-subtext0: #6c6f85;
+	--ctp-overlay2: #7c7f93;
+	--ctp-overlay1: #8c8fa1;
+	--ctp-overlay0: #9ca0b0;
+	--ctp-surface2: #acb0be;
+	--ctp-surface1: #bcc0cc;
+	--ctp-surface0: #ccd0da;
+	--ctp-base: #eff1f5;
+	--ctp-mantle: #e6e9ef;
+	--ctp-crust: #dce0e8;
+
+	/* Glass/Transparent backgrounds - easy to customize */
+	--glass-bg: rgba(239, 241, 245, 0.85);
+	--glass-bg-solid: rgba(239, 241, 245, 0.95);
+	--glass-bg-subtle: rgba(239, 241, 245, 0.7);
+	--glass-border: color-mix(in srgb, var(--ctp-pink) 20%, transparent);
+	--glass-border-subtle: color-mix(in srgb, var(--ctp-pink) 10%, transparent);
+
+	/* Accent color (change this to swap the main accent) */
+	--accent: var(--ctp-pink);
+	--accent-hover: color-mix(in srgb, var(--ctp-pink) 85%, black);
+	--accent-muted: color-mix(in srgb, var(--ctp-pink) 15%, transparent);
+	--accent-subtle: color-mix(in srgb, var(--ctp-pink) 8%, transparent);
+
+	/* Stat colors - theme-controlled */
+	--stat-trust: var(--ctp-green);
+	--stat-intimacy: var(--ctp-pink);
+	--stat-comfort: var(--ctp-mauve);
+	--stat-energy: var(--ctp-sky);
+	--stat-respect: var(--ctp-peach);
+	--stat-affection: var(--ctp-pink);
+
+	/* Relationship tier colors - theme-controlled */
+	--tier-stranger: var(--ctp-overlay0);
+	--tier-acquaintance: var(--ctp-blue);
+	--tier-friend: var(--ctp-green);
+	--tier-close-friend: var(--ctp-teal);
+	--tier-best-friend: var(--ctp-yellow);
+	--tier-soulmate: var(--ctp-pink);
+	--tier-eternal-bond: var(--ctp-mauve);
+
+	/* Semantic colors */
+	--color-success: var(--ctp-green);
+	--color-error: var(--ctp-red);
+	--color-warning: var(--ctp-yellow);
+	--color-info: var(--ctp-blue);
+
+	/* Scrollbar */
+	--scrollbar-thumb: rgba(0, 0, 0, 0.15);
+	--scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+
+	/* Scene colors for 3D (read by Three.js) */
+	--scene-bg: var(--ctp-base);
+	--scene-placeholder: var(--ctp-mauve);
+
+	/* Primary colors - pink accent */
+	--color-primary-50: #fef1fa;
+	--color-primary-100: #fce4f4;
+	--color-primary-200: #f9c8e9;
+	--color-primary-300: #f5a3d8;
+	--color-primary-400: #ea76cb;
+	--color-primary-500: #dc5fbe;
+	--color-primary-600: #c44da5;
+	--color-primary-700: #a43d87;
+	--color-primary-800: #87346f;
+	--color-primary-900: #712f5e;
+	--color-primary-950: #441536;
+
+	/* Neutral colors (light mode) */
+	--color-neutral-50: var(--ctp-base);
+	--color-neutral-100: var(--ctp-mantle);
+	--color-neutral-200: var(--ctp-crust);
+	--color-neutral-300: var(--ctp-surface0);
+	--color-neutral-400: var(--ctp-surface1);
+	--color-neutral-500: var(--ctp-overlay0);
+	--color-neutral-600: var(--ctp-overlay1);
+	--color-neutral-700: var(--ctp-subtext0);
+	--color-neutral-800: var(--ctp-subtext1);
+	--color-neutral-900: var(--ctp-text);
+	--color-neutral-950: var(--ctp-text);
+}
+
+.dark {
+	/* Theme Accent Colors (dark mode defaults) */
+	--ctp-rosewater: #f5e0dc;
+	--ctp-flamingo: #f2cdcd;
+	--ctp-pink: #f5c2e7;
+	--ctp-mauve: #cba6f7;
+	--ctp-red: #f38ba8;
+	--ctp-maroon: #eba0ac;
+	--ctp-peach: #fab387;
+	--ctp-yellow: #f9e2af;
+	--ctp-green: #a6e3a1;
+	--ctp-teal: #94e2d5;
+	--ctp-sky: #89dceb;
+	--ctp-sapphire: #74c7ec;
+	--ctp-blue: #89b4fa;
+	--ctp-lavender: #b4befe;
+
+	/* Mocha Base/Surface Colors */
+	--ctp-text: #cdd6f4;
+	--ctp-subtext1: #bac2de;
+	--ctp-subtext0: #a6adc8;
+	--ctp-overlay2: #9399b2;
+	--ctp-overlay1: #7f849c;
+	--ctp-overlay0: #6c7086;
+	--ctp-surface2: #585b70;
+	--ctp-surface1: #45475a;
+	--ctp-surface0: #313244;
+	--ctp-base: #1e1e2e;
+	--ctp-mantle: #181825;
+	--ctp-crust: #11111b;
+
+	/* Glass/Transparent backgrounds - dark mode */
+	--glass-bg: rgba(30, 30, 46, 0.85);
+	--glass-bg-solid: rgba(30, 30, 46, 0.95);
+	--glass-bg-subtle: rgba(30, 30, 46, 0.7);
+	--glass-border: color-mix(in srgb, var(--ctp-pink) 15%, transparent);
+	--glass-border-subtle: color-mix(in srgb, var(--ctp-pink) 8%, transparent);
+
+	/* Accent color - dark mode uses the same variable names */
+	--accent: var(--ctp-pink);
+	--accent-hover: color-mix(in srgb, var(--ctp-pink) 85%, white);
+	--accent-muted: color-mix(in srgb, var(--ctp-pink) 20%, transparent);
+	--accent-subtle: color-mix(in srgb, var(--ctp-pink) 12%, transparent);
+
+	/* Stat colors - same var names, different base colors */
+	--stat-trust: var(--ctp-green);
+	--stat-intimacy: var(--ctp-pink);
+	--stat-comfort: var(--ctp-mauve);
+	--stat-energy: var(--ctp-sky);
+	--stat-respect: var(--ctp-peach);
+	--stat-affection: var(--ctp-pink);
+
+	/* Relationship tier colors */
+	--tier-stranger: var(--ctp-overlay0);
+	--tier-acquaintance: var(--ctp-blue);
+	--tier-friend: var(--ctp-green);
+	--tier-close-friend: var(--ctp-teal);
+	--tier-best-friend: var(--ctp-yellow);
+	--tier-soulmate: var(--ctp-pink);
+	--tier-eternal-bond: var(--ctp-mauve);
+
+	/* Semantic colors */
+	--color-success: var(--ctp-green);
+	--color-error: var(--ctp-red);
+	--color-warning: var(--ctp-yellow);
+	--color-info: var(--ctp-blue);
+
+	/* Scrollbar */
+	--scrollbar-thumb: rgba(255, 255, 255, 0.2);
+	--scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+
+	/* Scene colors for 3D */
+	--scene-bg: var(--ctp-base);
+	--scene-placeholder: var(--ctp-mauve);
+
+	/* Primary colors - pink accent (Mocha) */
+	--color-primary-50: #1e1e2e;
+	--color-primary-100: #302d3d;
+	--color-primary-200: #453e55;
+	--color-primary-300: #6b5a7a;
+	--color-primary-400: #9d7faa;
+	--color-primary-500: #cba6f7;
+	--color-primary-600: #d9bff8;
+	--color-primary-700: #e5d4fa;
+	--color-primary-800: #f0e6fc;
+	--color-primary-900: #f7f1fd;
+	--color-primary-950: #fbf8fe;
+
+	/* Neutral colors (dark mode) */
+	--color-neutral-50: var(--ctp-crust);
+	--color-neutral-100: var(--ctp-mantle);
+	--color-neutral-200: var(--ctp-base);
+	--color-neutral-300: var(--ctp-surface0);
+	--color-neutral-400: var(--ctp-surface1);
+	--color-neutral-500: var(--ctp-overlay0);
+	--color-neutral-600: var(--ctp-overlay1);
+	--color-neutral-700: var(--ctp-subtext0);
+	--color-neutral-800: var(--ctp-subtext1);
+	--color-neutral-900: var(--ctp-text);
+	--color-neutral-950: var(--ctp-text);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	background-color: var(--color-background);
+	color: var(--color-foreground);
+	transition: background-color 0.2s, color 0.2s;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--scrollbar-thumb);
+	border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--scrollbar-thumb-hover);
+}
+
+/* Glass morphism effect */
+.glass {
+	background: var(--glass-bg-subtle);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+
+/* Legacy button styles (for non-bits-ui buttons) */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease-out;
+	border: 2px solid transparent;
+}
+
+.btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.btn-primary {
+	background: var(--color-muted);
+	border-color: var(--color-border);
+	color: var(--color-foreground);
+}
+
+.btn-primary:hover:not(:disabled) {
+	background: var(--color-neutral-200);
+}
+
+.dark .btn-primary {
+	color: var(--color-foreground);
+}
+
+.dark .btn-primary:hover:not(:disabled) {
+	background: var(--color-neutral-700);
+}
+
+.btn-secondary {
+	background: var(--color-muted);
+	border-color: var(--color-border);
+	color: var(--color-foreground);
+}
+
+.btn-secondary:hover:not(:disabled) {
+	background: var(--color-neutral-200);
+}
+
+.dark .btn-secondary:hover:not(:disabled) {
+	background: var(--color-neutral-700);
+}
+
+.btn-ghost {
+	background: transparent;
+	border-color: transparent;
+	color: var(--color-muted-foreground);
+}
+
+.btn-ghost:hover:not(:disabled) {
+	background: var(--color-muted);
+}
+
+/* Input styles */
+.input {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	background: var(--color-background);
+	border: 2px solid var(--color-input);
+	border-radius: var(--radius-card);
+	color: var(--color-foreground);
+	font-size: 0.875rem;
+	outline: none;
+	transition: all 0.15s ease-out;
+}
+
+.input:focus {
+	border-color: var(--color-ring);
+}
+
+/* Chat container glass effect */
+.chat-container {
+	background: var(--glass-bg);
+	border: 1px solid var(--color-border);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border-radius: 1rem;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+	transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+	opacity: 0;
+}
+
+/* Animation utilities (bits-ui compatible) */
+.animate-in {
+	animation-duration: 150ms;
+	animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+	animation-fill-mode: both;
+}
+
+.fade-in-0 {
+	animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+	animation-name: zoomIn;
+}
+
+.slide-in-from-top-2 {
+	animation-name: slideInFromTop;
+}
+
+.slide-in-from-bottom-2 {
+	animation-name: slideInFromBottom;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes zoomIn {
+	from {
+		transform: scale(0.95);
+	}
+	to {
+		transform: scale(1);
+	}
+}
+
+@keyframes slideInFromTop {
+	from {
+		transform: translateY(-0.5rem);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+@keyframes slideInFromBottom {
+	from {
+		transform: translateY(0.5rem);
+	}
+	to {
+		transform: translateY(0);
+	}
+}

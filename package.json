@@ -1,0 +1,52 @@
+{
+	"name": "utsuwa",
+	"version": "0.1.0",
+	"description": "A lightweight VRM avatar viewer with chat and text-to-speech",
+	"author": "Charles Dyas",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dyascj/utsuwa.git"
+	},
+	"bugs": {
+		"url": "https://github.com/dyascj/utsuwa/issues"
+	},
+	"homepage": "https://github.com/dyascj/utsuwa#readme",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^7.0.0",
+		"@sveltejs/kit": "^2.49.1",
+		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"@tailwindcss/vite": "^4.1.18",
+		"@types/three": "^0.182.0",
+		"svelte": "^5.45.6",
+		"svelte-check": "^4.3.4",
+		"tailwindcss": "^4.1.18",
+		"typescript": "^5.9.3",
+		"vite": "^7.2.6"
+	},
+	"dependencies": {
+		"@pixiv/three-vrm": "^3.4.5",
+		"@pixiv/three-vrm-animation": "^3.4.5",
+		"@threlte/core": "^8.3.1",
+		"@xsai/generate-text": "^0.4.2",
+		"@xsai/stream-text": "^0.4.2",
+		"bits-ui": "^2.15.4",
+		"dexie": "^4.0.11",
+		"localforage": "^1.10.0",
+		"n8ao": "^1.10.1",
+		"postprocessing": "^6.38.2",
+		"simple-icons": "^16.6.0",
+		"three": "^0.182.0",
+		"three-good-godrays": "^0.8.1",
+		"xsai": "^0.4.2"
+	}
+}

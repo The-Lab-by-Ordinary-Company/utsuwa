@@ -1,0 +1,186 @@
+import { db, type DBFact, type DBSessionSummary, type DBConversationTurn } from '$lib/db';
+import type { Fact, SessionSummary, ConversationTurn, MemorySearchOptions, NewFact } from '$lib/types/memory';
+
+// Facts
+
+export async function getFacts(options: MemorySearchOptions = {}): Promise<Fact[]> {
+	const facts = await db.facts.toArray();
+
+	let filtered = facts;
+
+	// Filter by category
+	if (options.category) {
+		filtered = filtered.filter((f) => f.category === options.category);
+	}
+
+	// Filter by minimum importance
+	if (options.minImportance !== undefined) {
+		filtered = filtered.filter((f) => f.importance >= options.minImportance!);
+	}
+
+	// Filter by keywords (case-insensitive content search)
+	if (options.keywords && options.keywords.length > 0) {
+		const lowerKeywords = options.keywords.map((k) => k.toLowerCase());
+		filtered = filtered.filter((f) =>
+			lowerKeywords.some((kw) => f.content.toLowerCase().includes(kw))
+		);
+	}
+
+	// Sort by importance (descending), then by referenceCount, then by recency
+	filtered.sort((a, b) => {
+		if (b.importance !== a.importance) return b.importance - a.importance;
+		if (b.referenceCount !== a.referenceCount) return b.referenceCount - a.referenceCount;
+		return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+	});
+
+	// Apply limit
+	if (options.limit) {
+		filtered = filtered.slice(0, options.limit);
+	}
+
+	return filtered.map(deserializeFact);
+}
+
+export async function saveFact(fact: NewFact): Promise<number> {
+	const now = new Date();
+	const dbFact: Omit<DBFact, 'id'> = {
+		content: fact.content,
+		category: fact.category,
+		importance: fact.importance ?? 50,
+		confidence: fact.confidence ?? 0.8,
+		source: fact.source,
+		referenceCount: 0,
+		createdAt: now
+	};
+
+	const id = await db.facts.add(dbFact);
+	return id as number;
+}
+
+export async function incrementFactReference(factId: number): Promise<void> {
+	const fact = await db.facts.get(factId);
+	if (fact) {
+		await db.facts.update(factId, {
+			referenceCount: fact.referenceCount + 1,
+			lastAccessed: new Date()
+		});
+	}
+}
+
+export async function deleteFact(factId: number): Promise<void> {
+	await db.facts.delete(factId);
+}
+
+export async function deleteAllFacts(): Promise<void> {
+	await db.facts.clear();
+}
+
+// Sessions
+
+export async function getSessions(limit?: number): Promise<SessionSummary[]> {
+	let sessions = await db.sessions.toArray();
+
+	// Sort by startedAt descending (most recent first)
+	sessions.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+
+	if (limit) {
+		sessions = sessions.slice(0, limit);
+	}
+
+	return sessions.map(deserializeSession);
+}
+
+export async function saveSession(session: Omit<SessionSummary, 'id'>): Promise<number> {
+	const dbSession: Omit<DBSessionSummary, 'id'> = {
+		...session,
+		startedAt: new Date(session.startedAt),
+		endedAt: session.endedAt ? new Date(session.endedAt) : undefined
+	};
+
+	const id = await db.sessions.add(dbSession);
+	return id as number;
+}
+
+export async function updateSession(
+	sessionId: number,
+	updates: Partial<SessionSummary>
+): Promise<void> {
+	const serialized: Partial<DBSessionSummary> = { ...updates };
+	if (updates.startedAt) serialized.startedAt = new Date(updates.startedAt);
+	if (updates.endedAt) serialized.endedAt = new Date(updates.endedAt);
+
+	await db.sessions.update(sessionId, serialized);
+}
+
+export async function deleteAllSessions(): Promise<void> {
+	await db.sessions.clear();
+}
+
+// Conversation Turns
+
+export async function getConversationTurns(
+	options: { sessionId?: number; limit?: number } = {}
+): Promise<ConversationTurn[]> {
+	let turns: DBConversationTurn[];
+
+	if (options.sessionId !== undefined) {
+		turns = await db.conversationTurns.where('sessionId').equals(options.sessionId).toArray();
+	} else {
+		turns = await db.conversationTurns.toArray();
+	}
+
+	// Sort by createdAt ascending (chronological order)
+	turns.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+	if (options.limit) {
+		// Take the most recent N turns
+		turns = turns.slice(-options.limit);
+	}
+
+	return turns.map(deserializeTurn);
+}
+
+export async function saveConversationTurn(
+	turn: Omit<ConversationTurn, 'id'>
+): Promise<number> {
+	const dbTurn: Omit<DBConversationTurn, 'id'> = {
+		...turn,
+		createdAt: new Date(turn.createdAt)
+	};
+
+	const id = await db.conversationTurns.add(dbTurn);
+	return id as number;
+}
+
+export async function deleteAllTurns(): Promise<void> {
+	await db.conversationTurns.clear();
+}
+
+export async function deleteTurnsForSession(sessionId: number): Promise<void> {
+	await db.conversationTurns.where('sessionId').equals(sessionId).delete();
+}
+
+// Serialization helpers
+
+function deserializeFact(fact: DBFact): Fact {
+	return {
+		...fact,
+		createdAt: new Date(fact.createdAt),
+		lastAccessed: fact.lastAccessed ? new Date(fact.lastAccessed) : undefined
+	};
+}
+
+function deserializeSession(session: DBSessionSummary): SessionSummary {
+	return {
+		...session,
+		startedAt: new Date(session.startedAt),
+		endedAt: session.endedAt ? new Date(session.endedAt) : undefined
+	};
+}
+
+function deserializeTurn(turn: DBConversationTurn): ConversationTurn {
+	return {
+		...turn,
+		createdAt: new Date(turn.createdAt)
+	};
+}

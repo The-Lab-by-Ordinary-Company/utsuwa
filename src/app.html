@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Utsuwa is an open-source alternative to Grok Companion and similar projects. The goal is to build a platform where you can have a virtual companion that learns and grows with you, becomes more useful over time, and is genuinely fun to interact with." />
+
+		<!-- Open Graph -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="Utsuwa" />
+		<meta property="og:description" content="Utsuwa is an open-source alternative to Grok Companion and similar projects. The goal is to build a platform where you can have a virtual companion that learns and grows with you, becomes more useful over time, and is genuinely fun to interact with." />
+		<meta property="og:image" content="/brand-assets/thumbnail.png" />
+
+		<!-- Twitter Card -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Utsuwa" />
+		<meta name="twitter:description" content="Utsuwa is an open-source alternative to Grok Companion and similar projects. The goal is to build a platform where you can have a virtual companion that learns and grows with you, becomes more useful over time, and is genuinely fun to interact with." />
+		<meta name="twitter:image" content="/brand-assets/thumbnail.png" />
+
+		<link rel="icon" href="/favicon-light.png" type="image/png" media="(prefers-color-scheme: light)" />
+		<link rel="icon" href="/favicon-dark.png" type="image/png" media="(prefers-color-scheme: dark)" />
+		<script>
+			(function() {
+				const colorMode = localStorage.getItem('colorMode') || 'system';
+				let shouldBeDark;
+				if (colorMode === 'system') {
+					shouldBeDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				} else {
+					shouldBeDark = colorMode === 'dark';
+				}
+				if (shouldBeDark) {
+					document.documentElement.classList.add('dark');
+				}
+			})();
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>
