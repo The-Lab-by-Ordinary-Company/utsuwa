@@ -68,9 +68,9 @@ export async function exportSave(): Promise<SaveFile> {
 	// Get the single character state (or use current store state)
 	const characterState = characterStates[0] || $state.snapshot(characterStore.state);
 
-	// Remove IndexedDB auto-increment ids from export
+	// Remove IndexedDB auto-increment ids and derived data (embeddings) from export
 	const { id: _charId, ...cleanCharacter } = characterState as CharacterState & { id?: number };
-	const cleanFacts = facts.map(({ id: _id, ...rest }) => rest) as Fact[];
+	const cleanFacts = facts.map(({ id: _id, embedding: _embedding, ...rest }) => rest) as Fact[];
 	const cleanSessions = sessions.map(({ id: _id, ...rest }) => rest) as SessionSummary[];
 	const cleanTurns = conversationTurns.map(({ id: _id, ...rest }) => rest) as ConversationTurn[];
 	const cleanEvents = completedEvents.map(

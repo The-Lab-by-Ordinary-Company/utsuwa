@@ -111,6 +111,16 @@ class UtsuwaDatabase extends Dexie {
 					} as DBCharacterState);
 				}
 			});
+
+		// Version 3: Add embedding field to facts for semantic search
+		// No migration needed - embedding field is optional and will be backfilled lazily
+		this.version(3).stores({
+			characterStates: '++id, updatedAt',
+			facts: '++id, category, importance, createdAt',
+			sessions: '++id, startedAt',
+			conversationTurns: '++id, sessionId, createdAt',
+			completedEvents: '++id, eventId, completedAt'
+		});
 	}
 }
 

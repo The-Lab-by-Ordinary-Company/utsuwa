@@ -37,6 +37,7 @@
 		"@pixiv/three-vrm": "^3.4.5",
 		"@pixiv/three-vrm-animation": "^3.4.5",
 		"@threlte/core": "^8.3.1",
+		"@xenova/transformers": "^2.17.2",
 		"@xsai/generate-text": "^0.4.2",
 		"@xsai/stream-text": "^0.4.2",
 		"bits-ui": "^2.15.4",

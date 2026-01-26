@@ -1,5 +1,6 @@
 import { db, type DBFact, type DBSessionSummary, type DBConversationTurn } from '$lib/db';
 import type { Fact, SessionSummary, ConversationTurn, MemorySearchOptions, NewFact } from '$lib/types/memory';
+import { embedText, isEmbeddingReady } from '$lib/services/embeddings';
 
 // Facts
 
@@ -43,6 +44,16 @@ export async function getFacts(options: MemorySearchOptions = {}): Promise<Fact[
 
 export async function saveFact(fact: NewFact): Promise<number> {
 	const now = new Date();
+
+	// Generate embedding if model is ready
+	let embedding: number[] | undefined;
+	if (isEmbeddingReady()) {
+		const result = await embedText(fact.content);
+		if (result) {
+			embedding = result;
+		}
+	}
+
 	const dbFact: Omit<DBFact, 'id'> = {
 		content: fact.content,
 		category: fact.category,
@@ -50,7 +61,8 @@ export async function saveFact(fact: NewFact): Promise<number> {
 		confidence: fact.confidence ?? 0.8,
 		source: fact.source,
 		referenceCount: 0,
-		createdAt: now
+		createdAt: now,
+		embedding
 	};
 
 	const id = await db.facts.add(dbFact);
@@ -73,6 +85,22 @@ export async function deleteFact(factId: number): Promise<void> {
 
 export async function deleteAllFacts(): Promise<void> {
 	await db.facts.clear();
+}
+
+export async function updateFactEmbedding(factId: number, embedding: number[]): Promise<void> {
+	await db.facts.update(factId, { embedding });
+}
+
+export async function getFactsWithoutEmbeddings(): Promise<Fact[]> {
+	const facts = await db.facts.toArray();
+	return facts
+		.filter((f) => !f.embedding || f.embedding.length === 0)
+		.map(deserializeFact);
+}
+
+export async function getAllFactsWithEmbeddings(): Promise<Fact[]> {
+	const facts = await db.facts.toArray();
+	return facts.map(deserializeFact);
 }
 
 // Sessions

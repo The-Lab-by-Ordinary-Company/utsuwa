@@ -9,6 +9,7 @@ import type {
 } from '$lib/types/memory';
 import { MAX_WORKING_MEMORY_TURNS, MAX_RELEVANT_FACTS, MAX_RECENT_SESSIONS, DEFAULT_FACT_IMPORTANCE, DEFAULT_FACT_CONFIDENCE } from '$lib/types/memory';
 import * as memoryStorage from '$lib/services/storage/memory';
+import { embedText, findSimilarFacts, isEmbeddingReady } from '$lib/services/embeddings';
 
 // Working memory store (single instance for the session)
 let workingMemory: WorkingMemory = {
@@ -159,50 +160,76 @@ export const memoryApi = {
 
 // Retrieve relevant context for prompt building
 export async function retrieveRelevantContext(userMessage: string): Promise<RelevantContext> {
-	// console.log('[Memory] Retrieving context');
-
 	// Get recent turns from working memory
 	const recentTurns = getRecentTurns(10);
-	// console.log('[Memory] Working memory has', recentTurns.length, 'recent turns');
 
 	// Search for relevant facts based on user message
 	let relevantFacts: Fact[] = [];
 	let triggeredMemories: Fact[] = [];
 
 	try {
-		// Get high-importance facts (always include these regardless of keywords)
-		const importantFacts = await memoryApi.getFacts(5);
-		// console.log('[Memory] Found', importantFacts.length, 'important facts in IndexedDB');
+		// Try semantic search first if embedding model is ready
+		if (isEmbeddingReady()) {
+			const queryEmbedding = await embedText(userMessage);
+			if (queryEmbedding) {
+				// Get all facts with embeddings for semantic search
+				const allFacts = await memoryStorage.getAllFactsWithEmbeddings();
+				const semanticResults = findSimilarFacts(queryEmbedding, allFacts, MAX_RELEVANT_FACTS, {
+					similarityWeight: 0.7,
+					importanceWeight: 0.3,
+					minSimilarity: 0.3
+				});
+				relevantFacts = semanticResults.map((r) => r.fact);
 
-		// Search by keywords in user message
-		const keywordFacts = await memoryApi.searchFacts(userMessage, {
-			limit: MAX_RELEVANT_FACTS
-		});
-		// console.log('[Memory] Found', keywordFacts.length, 'keyword-matched facts');
-
-		// Merge important facts with keyword-matched facts, dedupe by id
-		const allFacts = [...importantFacts];
-		for (const fact of keywordFacts) {
-			if (!allFacts.some((f) => f.id === fact.id)) {
-				allFacts.push(fact);
+				// For triggered memories, use higher similarity threshold
+				const triggerWords = extractTriggerWords(userMessage);
+				if (triggerWords.length > 0) {
+					const triggerQuery = triggerWords.join(' ');
+					const triggerEmbedding = await embedText(triggerQuery);
+					if (triggerEmbedding) {
+						const triggerResults = findSimilarFacts(triggerEmbedding, allFacts, 5, {
+							similarityWeight: 0.6,
+							importanceWeight: 0.4,
+							minSimilarity: 0.5
+						});
+						triggeredMemories = triggerResults
+							.map((r) => r.fact)
+							.filter((t) => !relevantFacts.some((r) => r.id === t.id));
+					}
+				}
 			}
 		}
-		relevantFacts = allFacts.slice(0, MAX_RELEVANT_FACTS);
-		// console.log('[Memory] Total relevant facts for prompt:', relevantFacts.length);
-		// if (relevantFacts.length > 0) {
-		// 	console.log('[Memory] Facts:', relevantFacts.map((f) => f.content));
-		// }
 
-		// Check for triggered memories (specific keywords)
-		const triggerWords = extractTriggerWords(userMessage);
-		if (triggerWords.length > 0) {
-			const triggered = await memoryApi.searchFacts(triggerWords.join(' '), {
-				minImportance: 70,
-				limit: 5
+		// Fall back to keyword search if semantic search didn't work or returned nothing
+		if (relevantFacts.length === 0) {
+			// Get high-importance facts (always include these regardless of keywords)
+			const importantFacts = await memoryApi.getFacts(5);
+
+			// Search by keywords in user message
+			const keywordFacts = await memoryApi.searchFacts(userMessage, {
+				limit: MAX_RELEVANT_FACTS
 			});
-			triggeredMemories = triggered.filter(
-				(t) => !relevantFacts.some((r) => r.id === t.id)
-			);
+
+			// Merge important facts with keyword-matched facts, dedupe by id
+			const allFacts = [...importantFacts];
+			for (const fact of keywordFacts) {
+				if (!allFacts.some((f) => f.id === fact.id)) {
+					allFacts.push(fact);
+				}
+			}
+			relevantFacts = allFacts.slice(0, MAX_RELEVANT_FACTS);
+
+			// Check for triggered memories (specific keywords)
+			const triggerWords = extractTriggerWords(userMessage);
+			if (triggerWords.length > 0) {
+				const triggered = await memoryApi.searchFacts(triggerWords.join(' '), {
+					minImportance: 70,
+					limit: 5
+				});
+				triggeredMemories = triggered.filter(
+					(t) => !relevantFacts.some((r) => r.id === t.id)
+				);
+			}
 		}
 	} catch (e) {
 		console.error('[Memory] Failed to fetch relevant facts:', e);
@@ -324,6 +351,55 @@ export function determinFactCategory(content: string): 'user' | 'relationship' |
 
 	// Default to relationship
 	return 'relationship';
+}
+
+// Backfill embeddings for facts that don't have them
+export async function backfillEmbeddings(
+	onProgress?: (done: number, total: number) => void
+): Promise<{ success: number; failed: number }> {
+	if (!isEmbeddingReady()) {
+		return { success: 0, failed: 0 };
+	}
+
+	const factsWithoutEmbeddings = await memoryStorage.getFactsWithoutEmbeddings();
+	let success = 0;
+	let failed = 0;
+
+	for (let i = 0; i < factsWithoutEmbeddings.length; i++) {
+		const fact = factsWithoutEmbeddings[i];
+		if (fact.id === undefined) continue;
+
+		try {
+			const embedding = await embedText(fact.content);
+			if (embedding) {
+				await memoryStorage.updateFactEmbedding(fact.id, embedding);
+				success++;
+			} else {
+				failed++;
+			}
+		} catch {
+			failed++;
+		}
+
+		onProgress?.(i + 1, factsWithoutEmbeddings.length);
+	}
+
+	return { success, failed };
+}
+
+// Check if there are facts without embeddings
+export async function getEmbeddingBackfillStatus(): Promise<{
+	total: number;
+	withEmbeddings: number;
+	withoutEmbeddings: number;
+}> {
+	const allFacts = await memoryStorage.getAllFactsWithEmbeddings();
+	const withEmbeddings = allFacts.filter((f) => f.embedding && f.embedding.length > 0).length;
+	return {
+		total: allFacts.length,
+		withEmbeddings,
+		withoutEmbeddings: allFacts.length - withEmbeddings
+	};
 }
 
 // Calculate importance score for a fact

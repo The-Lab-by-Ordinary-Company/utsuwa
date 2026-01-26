@@ -31,8 +31,11 @@
 		hydrateWorkingMemory,
 		memoryApi,
 		determinFactCategory,
-		calculateFactImportance
+		calculateFactImportance,
+		backfillEmbeddings,
+		getEmbeddingBackfillStatus
 	} from '$lib/engine/memory';
+	import { initEmbeddingModel, subscribeToEmbeddingState, type EmbeddingState } from '$lib/services/embeddings';
 	import { checkAllEvents, eventsApi } from '$lib/engine/events';
 	import { allEvents } from '$lib/data/events';
 
@@ -55,6 +58,9 @@
 	// Track memory hydration
 	let isMemoryReady = $state(false);
 
+	// Track embedding model state
+	let embeddingState = $state<EmbeddingState>({ isLoading: false, isReady: false, error: null });
+
 	// Hydrate working memory on start
 	$effect(() => {
 		isMemoryReady = false;
@@ -62,6 +68,28 @@
 			await hydrateWorkingMemory();
 			isMemoryReady = true;
 		})();
+	});
+
+	// Initialize embedding model and backfill any facts without embeddings
+	$effect(() => {
+		const unsub = subscribeToEmbeddingState((state) => {
+			embeddingState = state;
+		});
+
+		// Start loading the embedding model
+		initEmbeddingModel().then(async (ready) => {
+			if (ready) {
+				// Check if we need to backfill embeddings
+				const status = await getEmbeddingBackfillStatus();
+				if (status.withoutEmbeddings > 0) {
+					console.log(`[Embeddings] Backfilling ${status.withoutEmbeddings} facts...`);
+					const result = await backfillEmbeddings();
+					console.log(`[Embeddings] Backfill complete: ${result.success} success, ${result.failed} failed`);
+				}
+			}
+		});
+
+		return unsub;
 	});
 
 	// Check for first-run (onboarding)

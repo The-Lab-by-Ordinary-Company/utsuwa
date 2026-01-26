@@ -12,6 +12,7 @@ export interface Fact {
 	referenceCount: number;
 	createdAt: Date;
 	lastAccessed?: Date;
+	embedding?: number[]; // 384-dim vector for semantic search
 }
 
 // Topic depth for conversation analysis
