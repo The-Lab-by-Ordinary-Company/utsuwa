@@ -5,7 +5,7 @@
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 **Utsuwa is an open-source alternative to Grok Companion.** This is a platform where you can have a virtual AI waifu that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused - your data lives entirely in your browser.
@@ -97,7 +97,7 @@ If you prefer to run Utsuwa locally or host your own instance:
 
 #### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - npm or pnpm
 - A modern browser (Chrome, Firefox, Safari, Edge)
 

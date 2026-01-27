@@ -4,6 +4,9 @@
 	"description": "A lightweight VRM avatar viewer with chat and text-to-speech",
 	"author": "Charles Dyas",
 	"license": "MIT",
+	"engines": {
+		"node": ">=22.0.0"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/dyascj/utsuwa.git"
