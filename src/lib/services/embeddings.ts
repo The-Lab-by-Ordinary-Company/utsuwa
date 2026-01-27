@@ -62,28 +62,28 @@ export async function initEmbeddingModel(): Promise<boolean> {
 		pipeline = await createPipeline('feature-extraction', MODEL_NAME, {
 			progress_callback: (progress: { status: string }) => {
 				// Could emit progress events here if needed
-				console.log('[embeddings] Loading model:', progress.status);
+				// console.log('[embeddings] Loading model:', progress.status);
 			}
 		});
 
 		isReady = true;
 		isLoading = false;
 		notifyListeners();
-		console.log('[embeddings] Model loaded successfully');
+		// console.log('[embeddings] Model loaded successfully');
 		return true;
 	} catch (err) {
 		loadError = err instanceof Error ? err.message : 'Failed to load embedding model';
 		isLoading = false;
 		isReady = false;
 		notifyListeners();
-		console.error('[embeddings] Failed to load model:', err);
+		// console.error('[embeddings] Failed to load model:', err);
 		return false;
 	}
 }
 
 export async function embedText(text: string): Promise<number[] | null> {
 	if (!isReady || !pipeline) {
-		console.warn('[embeddings] Model not ready, cannot embed text');
+		// console.warn('[embeddings] Model not ready, cannot embed text');
 		return null;
 	}
 
@@ -97,22 +97,22 @@ export async function embedText(text: string): Promise<number[] | null> {
 		// Convert tensor to array
 		const embedding = Array.from(output.data as Float32Array);
 
-		if (embedding.length !== EMBEDDING_DIM) {
-			console.warn(
-				`[embeddings] Unexpected embedding dimension: ${embedding.length}, expected ${EMBEDDING_DIM}`
-			);
-		}
+		// if (embedding.length !== EMBEDDING_DIM) {
+		// 	console.warn(
+		// 		`[embeddings] Unexpected embedding dimension: ${embedding.length}, expected ${EMBEDDING_DIM}`
+		// 	);
+		// }
 
 		return embedding;
 	} catch (err) {
-		console.error('[embeddings] Failed to embed text:', err);
+		// console.error('[embeddings] Failed to embed text:', err);
 		return null;
 	}
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
 	if (a.length !== b.length) {
-		console.warn('[embeddings] Vector length mismatch in similarity calculation');
+		// console.warn('[embeddings] Vector length mismatch in similarity calculation');
 		return 0;
 	}
 
