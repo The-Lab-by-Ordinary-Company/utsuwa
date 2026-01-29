@@ -20,13 +20,17 @@ export const docsNav: DocsNavSection[] = [
 		icon: 'compass',
 		items: [
 			{ title: 'Web Guide', slug: 'guides/web-guide' },
-			{ title: 'Desktop Guide', slug: 'guides/desktop-guide' }
+			{ title: 'Desktop Guide', slug: 'guides/desktop-guide' },
+			{ title: 'Troubleshooting', slug: 'guides/troubleshooting' }
 		]
 	},
 	{
 		title: 'Technology',
 		icon: 'code',
-		items: [{ title: 'Companion System', slug: 'technology/companion-system' }]
+		items: [
+			{ title: 'Architecture Overview', slug: 'technology/architecture' },
+			{ title: 'Companion System', slug: 'technology/companion-system' }
+		]
 	},
 	{
 		title: 'Community',
