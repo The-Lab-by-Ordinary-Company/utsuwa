@@ -9,7 +9,6 @@ const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
 	anthropic: 'https://api.anthropic.com/v1/',
 	google: 'https://generativelanguage.googleapis.com/v1beta/openai/',
 	deepseek: 'https://api.deepseek.com/',
-	mistral: 'https://api.mistral.ai/v1/',
 	xai: 'https://api.x.ai/v1/',
 	// Local
 	ollama: 'http://localhost:11434/v1/',
@@ -27,7 +26,6 @@ const DEFAULT_MODELS: Partial<Record<LLMProvider, string>> = {
 	anthropic: 'claude-sonnet-4-5-20251101',
 	google: 'gemini-3-pro-preview',
 	deepseek: 'deepseek-chat',
-	mistral: 'mistral-large-latest',
 	xai: 'grok-3',
 	ollama: 'llama3.2',
 	lmstudio: 'local-model',

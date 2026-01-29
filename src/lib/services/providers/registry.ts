@@ -15,7 +15,7 @@ export interface ProviderMetadata {
 }
 
 // ============================================
-// LLM PROVIDERS (10 total)
+// LLM PROVIDERS (9 total)
 // ============================================
 
 export const LLM_PROVIDERS: ProviderMetadata[] = [
@@ -80,21 +80,6 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 			{ id: 'deepseek-chat', name: 'DeepSeek Chat' },
 			{ id: 'deepseek-coder', name: 'DeepSeek Coder' },
 			{ id: 'deepseek-reasoner', name: 'DeepSeek Reasoner' }
-		]
-	},
-	{
-		id: 'mistral',
-		name: 'Mistral AI',
-		description: 'Mistral Large, Medium, and Small',
-		category: 'llm',
-		icon: '🌀',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.mistral.ai/v1/',
-		models: [
-			{ id: 'mistral-large-latest', name: 'Mistral Large' },
-			{ id: 'mistral-medium-latest', name: 'Mistral Medium' },
-			{ id: 'mistral-small-latest', name: 'Mistral Small' },
-			{ id: 'codestral-latest', name: 'Codestral' }
 		]
 	},
 	{
