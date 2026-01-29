@@ -59,6 +59,12 @@
 		}
 	}
 
+	function handleLLMBaseUrlChange(baseUrl: string) {
+		if (llmProvider) {
+			settingsStore.setProviderConfig(llmProvider.id, { baseUrl });
+		}
+	}
+
 	function handleTTSProviderChange(providerId: string) {
 		modulesStore.setModuleSetting('speech', 'activeProvider', providerId);
 		const provider = getTTSProvider(providerId);
@@ -81,6 +87,12 @@
 			if (apiKey) {
 				settingsStore.markProviderAdded(ttsProvider.id);
 			}
+		}
+	}
+
+	function handleTTSBaseUrlChange(baseUrl: string) {
+		if (ttsProvider) {
+			settingsStore.setProviderConfig(ttsProvider.id, { baseUrl });
 		}
 	}
 
@@ -120,12 +132,22 @@
 			placeholder="Select LLM provider..."
 		/>
 
-		{#if llmSettings.activeProvider && llmModels.length > 0}
+		{#if llmSettings.activeProvider && llmModels.length > 0 && !llmProvider?.isLocal}
 			<ModelDropdown
 				models={llmModels}
 				value={llmSettings.activeModel as string}
 				onSelect={handleLLMModelChange}
 				placeholder="Select model..."
+			/>
+		{/if}
+
+		{#if llmProvider?.isLocal}
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Model name (e.g., llama3.2:latest)"
+				value={llmSettings.activeModel as string ?? ''}
+				oninput={(e) => handleLLMModelChange(e.currentTarget.value)}
 			/>
 		{/if}
 
@@ -139,7 +161,58 @@
 			/>
 		{/if}
 
+		{#if llmProvider?.id === 'azure'}
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Azure Resource Name (required)"
+				value={settingsStore.getProviderConfig(llmProvider.id).resourceName ?? ''}
+				oninput={(e) => settingsStore.setProviderConfig(llmProvider.id, { resourceName: e.currentTarget.value })}
+			/>
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Region (e.g., eastus)"
+				value={settingsStore.getProviderConfig(llmProvider.id).region ?? ''}
+				oninput={(e) => settingsStore.setProviderConfig(llmProvider.id, { region: e.currentTarget.value })}
+			/>
+		{/if}
+
+		{#if llmProvider?.id === 'cloudflare'}
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Cloudflare Account ID (required)"
+				value={settingsStore.getProviderConfig(llmProvider.id).accountId ?? ''}
+				oninput={(e) => settingsStore.setProviderConfig(llmProvider.id, { accountId: e.currentTarget.value })}
+			/>
+		{/if}
+
+		{#if llmProvider?.id === 'openai-compatible'}
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="API Base URL (required)"
+				value={settingsStore.getProviderConfig(llmProvider.id).baseUrl ?? ''}
+				oninput={(e) => handleLLMBaseUrlChange(e.currentTarget.value)}
+			/>
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Model name"
+				value={llmSettings.activeModel as string ?? ''}
+				oninput={(e) => handleLLMModelChange(e.currentTarget.value)}
+			/>
+		{/if}
+
 		{#if llmProvider?.isLocal}
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder={llmProvider.defaultBaseUrl || 'http://localhost:11434/v1/'}
+				value={settingsStore.getProviderConfig(llmProvider.id).baseUrl ?? ''}
+				oninput={(e) => handleLLMBaseUrlChange(e.currentTarget.value)}
+			/>
 			<p class="provider-note">
 				<Icon name="check-circle" size={14} />
 				Local provider - no API key needed
@@ -168,12 +241,22 @@
 				placeholder="Select TTS provider..."
 			/>
 
-			{#if ttsSettings.activeProvider && ttsModels.length > 0}
+			{#if ttsSettings.activeProvider && ttsModels.length > 0 && !ttsProvider?.isLocal}
 				<ModelDropdown
 					models={ttsModels}
 					value={ttsSettings.activeModel as string}
 					onSelect={handleTTSModelChange}
 					placeholder="Select voice..."
+				/>
+			{/if}
+
+			{#if ttsProvider?.isLocal}
+				<input
+					type="text"
+					class="api-key-input"
+					placeholder="Model/voice name"
+					value={ttsSettings.activeModel as string ?? ''}
+					oninput={(e) => handleTTSModelChange(e.currentTarget.value)}
 				/>
 			{/if}
 
@@ -184,6 +267,23 @@
 					placeholder="Custom Voice ID (optional)"
 					value={settingsStore.elevenLabsVoiceId}
 					oninput={(e) => settingsStore.setElevenLabsVoiceId(e.currentTarget.value)}
+				/>
+			{/if}
+
+			{#if ttsProvider?.id === 'openai-compatible-tts'}
+				<input
+					type="text"
+					class="api-key-input"
+					placeholder="API Base URL (required)"
+					value={settingsStore.getProviderConfig(ttsProvider.id).baseUrl ?? ''}
+					oninput={(e) => handleTTSBaseUrlChange(e.currentTarget.value)}
+				/>
+				<input
+					type="text"
+					class="api-key-input"
+					placeholder="Voice name"
+					value={ttsSettings.activeModel as string ?? ''}
+					oninput={(e) => handleTTSModelChange(e.currentTarget.value)}
 				/>
 			{/if}
 
@@ -198,6 +298,13 @@
 			{/if}
 
 			{#if ttsProvider?.isLocal}
+				<input
+					type="text"
+					class="api-key-input"
+					placeholder={ttsProvider.defaultBaseUrl || 'http://localhost:5000/'}
+					value={settingsStore.getProviderConfig(ttsProvider.id).baseUrl ?? ''}
+					oninput={(e) => handleTTSBaseUrlChange(e.currentTarget.value)}
+				/>
 				<p class="provider-note">
 					<Icon name="check-circle" size={14} />
 					Local provider - no API key needed

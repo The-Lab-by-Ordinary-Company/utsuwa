@@ -261,6 +261,8 @@
 					model: model || providerMeta?.models?.[0]?.id,
 					apiKey: apiKey || 'not-needed',
 					baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+					resourceName: providerConfig.resourceName,
+					accountId: providerConfig.accountId,
 					systemPrompt
 				})
 			});

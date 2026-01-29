@@ -23,47 +23,49 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 	{
 		id: 'openai',
 		name: 'OpenAI',
-		description: 'GPT-4o, GPT-4 Turbo, and more',
+		description: 'GPT-4.1, o3, and more',
 		category: 'llm',
 		icon: '🤖',
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.openai.com/v1/',
 		models: [
-			{ id: 'gpt-4o', name: 'GPT-4o' },
-			{ id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-			{ id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-			{ id: 'gpt-4', name: 'GPT-4' },
-			{ id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' }
+			{ id: 'gpt-4.1', name: 'GPT-4.1' },
+			{ id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini' },
+			{ id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano' },
+			{ id: 'o3', name: 'o3' },
+			{ id: 'o3-mini', name: 'o3 Mini' },
+			{ id: 'gpt-4o', name: 'GPT-4o (Legacy)' }
 		]
 	},
 	{
 		id: 'anthropic',
 		name: 'Anthropic',
-		description: 'Claude Opus, Sonnet, and Haiku',
+		description: 'Claude 4.5 Opus, Sonnet, and Haiku',
 		category: 'llm',
 		icon: '🧠',
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.anthropic.com/v1/',
 		models: [
+			{ id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5' },
+			{ id: 'claude-sonnet-4-5-20251101', name: 'Claude Sonnet 4.5' },
+			{ id: 'claude-haiku-4-5-20251101', name: 'Claude Haiku 4.5' },
 			{ id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4' },
-			{ id: 'claude-opus-4-20250514', name: 'Claude Opus 4' },
-			{ id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku' },
-			{ id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' }
+			{ id: 'claude-opus-4-20250514', name: 'Claude Opus 4' }
 		]
 	},
 	{
 		id: 'google',
 		name: 'Google Gemini',
-		description: 'Gemini Pro and Ultra models',
+		description: 'Gemini 3 Pro and 2.5 Flash',
 		category: 'llm',
 		icon: '✨',
 		iconColor: '#4285F4',
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
 		models: [
-			{ id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
-			{ id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
-			{ id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
+			{ id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview' },
+			{ id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite' },
+			{ id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Deprecated)' }
 		]
 	},
 	{
@@ -98,15 +100,16 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 	{
 		id: 'xai',
 		name: 'xAI (Grok)',
-		description: 'Grok models from xAI',
+		description: 'Grok 4, Grok 3, and more',
 		category: 'llm',
 		icon: '𝕏',
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.x.ai/v1/',
 		models: [
-			{ id: 'grok-2', name: 'Grok 2' },
-			{ id: 'grok-2-mini', name: 'Grok 2 Mini' },
-			{ id: 'grok-beta', name: 'Grok Beta' }
+			{ id: 'grok-4', name: 'Grok 4' },
+			{ id: 'grok-3', name: 'Grok 3' },
+			{ id: 'grok-3-mini', name: 'Grok 3 Mini' },
+			{ id: 'grok-2-vision-1212', name: 'Grok 2 Vision' }
 		]
 	},
 	{
@@ -118,10 +121,10 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.groq.com/openai/v1/',
 		models: [
+			{ id: 'meta-llama/llama-4-maverick-17b-128e-instruct', name: 'Llama 4 Maverick' },
+			{ id: 'meta-llama/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout' },
 			{ id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
-			{ id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant' },
-			{ id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
-			{ id: 'gemma2-9b-it', name: 'Gemma 2 9B' }
+			{ id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant' }
 		]
 	},
 	{
@@ -145,7 +148,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		category: 'llm',
 		icon: '🌙',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.moonshot.ai/v1/',
+		defaultBaseUrl: 'https://api.moonshot.cn/v1/',
 		models: [
 			{ id: 'moonshot-v1-128k', name: 'Moonshot 128K' },
 			{ id: 'moonshot-v1-32k', name: 'Moonshot 32K' },
@@ -344,11 +347,11 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 ];
 
 // ============================================
-// TTS PROVIDERS (13 total)
+// TTS PROVIDERS (6 total)
 // ============================================
 
 export const TTS_PROVIDERS: ProviderMetadata[] = [
-	// Cloud TTS (7)
+	// Cloud TTS
 	{
 		id: 'elevenlabs',
 		name: 'ElevenLabs',
@@ -402,85 +405,7 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 			{ id: 'cedar', name: 'Cedar' }
 		]
 	},
-	{
-		id: 'azure-speech',
-		name: 'Microsoft Azure Speech',
-		description: 'Azure Cognitive Services TTS',
-		category: 'tts',
-		icon: '🗣️',
-		iconColor: '#0078D4',
-		requiresApiKey: true,
-		voices: [
-			{ id: 'en-US-JennyNeural', name: 'Jenny (US)' },
-			{ id: 'en-US-GuyNeural', name: 'Guy (US)' },
-			{ id: 'en-GB-SoniaNeural', name: 'Sonia (UK)' }
-		]
-	},
-	{
-		id: 'deepgram',
-		name: 'Deepgram Aura',
-		description: 'Fast and natural TTS',
-		category: 'tts',
-		icon: '🎵',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.deepgram.com/v1/',
-		voices: [
-			{ id: 'aura-asteria-en', name: 'Asteria' },
-			{ id: 'aura-luna-en', name: 'Luna' },
-			{ id: 'aura-stella-en', name: 'Stella' },
-			{ id: 'aura-athena-en', name: 'Athena' },
-			{ id: 'aura-hera-en', name: 'Hera' },
-			{ id: 'aura-orion-en', name: 'Orion' },
-			{ id: 'aura-arcas-en', name: 'Arcas' },
-			{ id: 'aura-perseus-en', name: 'Perseus' },
-			{ id: 'aura-angus-en', name: 'Angus' },
-			{ id: 'aura-orpheus-en', name: 'Orpheus' },
-			{ id: 'aura-helios-en', name: 'Helios' },
-			{ id: 'aura-zeus-en', name: 'Zeus' }
-		]
-	},
-	{
-		id: 'alibaba-cosyvoice',
-		name: 'Alibaba CosyVoice',
-		description: 'Alibaba Cloud TTS',
-		category: 'tts',
-		icon: '☁️',
-		iconColor: '#FF6A00',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://dashscope.aliyuncs.com/api/v1/',
-		voices: [
-			{ id: 'longxiaochun', name: 'Longxiaochun' },
-			{ id: 'longxiaoxia', name: 'Longxiaoxia' },
-			{ id: 'longlaotie', name: 'Longlaotie' },
-			{ id: 'longshu', name: 'Longshu' }
-		]
-	},
-	{
-		id: 'volcengine',
-		name: 'VolcEngine',
-		description: 'Volcano Engine TTS',
-		category: 'tts',
-		icon: '🌋',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://openspeech.bytedance.com/api/v1/',
-		voices: [
-			{ id: 'zh_female_tianmeixiaoyuan', name: 'Tianmei Xiaoyuan' },
-			{ id: 'zh_male_chunhou', name: 'Chunhou' },
-			{ id: 'zh_female_shuangkuaisisi', name: 'Shuangkuai Sisi' }
-		]
-	},
-	{
-		id: 'comet-tts',
-		name: 'CometAPI TTS',
-		description: 'Comet API text-to-speech',
-		category: 'tts',
-		icon: '☄️',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.cometapi.com/v1/',
-		voices: []
-	},
-
-	// Local/Free TTS (4)
+	// Local/Free TTS
 	{
 		id: 'web-speech',
 		name: 'Web Speech API',
@@ -502,28 +427,7 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 		defaultBaseUrl: 'http://localhost:11996/tts/',
 		voices: []
 	},
-	{
-		id: 'browser-local',
-		name: 'Browser Local TTS',
-		description: 'HuggingFace Transformers in browser',
-		category: 'tts',
-		icon: '💻',
-		requiresApiKey: false,
-		isLocal: true,
-		voices: []
-	},
-	{
-		id: 'app-local',
-		name: 'App Local TTS',
-		description: 'Desktop app TTS (Tauri/Electron)',
-		category: 'tts',
-		icon: '🖥️',
-		requiresApiKey: false,
-		isLocal: true,
-		voices: []
-	},
-
-	// Generic (2)
+	// Generic
 	{
 		id: 'openai-compatible-tts',
 		name: 'OpenAI Compatible TTS',

@@ -37,15 +37,8 @@ export function getSharedAudioContext(): AudioContext {
 export const TTS_BASE_URLS: Partial<Record<TTSProvider, string>> = {
 	elevenlabs: 'https://api.elevenlabs.io/v1/',
 	'openai-tts': 'https://api.openai.com/v1/',
-	'azure-speech': undefined, // Constructed from region
-	deepgram: 'https://api.deepgram.com/v1/',
-	'alibaba-cosyvoice': undefined, // Regional
-	volcengine: undefined, // Regional
-	'comet-tts': 'https://api.cometapi.com/v1/',
 	'web-speech': undefined, // Browser native
 	'index-tts': 'http://localhost:11996/',
-	'browser-local': undefined, // Browser native
-	'app-local': undefined, // Desktop only
 	'openai-compatible-tts': undefined, // Custom
 	'player2-tts': 'http://localhost:4315/'
 };
@@ -54,17 +47,13 @@ export const TTS_BASE_URLS: Partial<Record<TTSProvider, string>> = {
 export const LOCAL_TTS_PROVIDERS: TTSProvider[] = [
 	'web-speech',
 	'index-tts',
-	'browser-local',
-	'app-local',
 	'player2-tts'
 ];
 
 // Default voices per provider
 export const DEFAULT_VOICES: Partial<Record<TTSProvider, string>> = {
 	elevenlabs: 'EXAVITQu4vr4xnSDxMaL', // Sarah
-	'openai-tts': 'alloy',
-	deepgram: 'aura-asteria-en',
-	'comet-tts': 'alloy'
+	'openai-tts': 'alloy'
 };
 
 // Import individual providers
@@ -105,7 +94,6 @@ export function getTTSProvider(options: TTSOptions): ITTSProvider {
 			break;
 
 		case 'openai-compatible-tts':
-		case 'comet-tts':
 			currentProvider = new OpenAICompatibleTTS(options);
 			break;
 

@@ -313,12 +313,30 @@
 								/>
 
 								{#if consciousnessSettings.activeProvider && llmModels.length > 0}
-									<ModelDropdown
-										models={llmModels}
-										value={consciousnessSettings.activeModel as string}
-										onSelect={handleLLMModelChange}
-										placeholder="Select model..."
-									/>
+									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
+									{#if !provider?.isLocal}
+										<ModelDropdown
+											models={llmModels}
+											value={consciousnessSettings.activeModel as string}
+											onSelect={handleLLMModelChange}
+											placeholder="Select model..."
+										/>
+									{/if}
+								{/if}
+
+								{#if consciousnessSettings.activeProvider}
+									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
+									{#if provider?.isLocal}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="Model name (e.g., llama3.2:latest)"
+												value={consciousnessSettings.activeModel as string ?? ''}
+												onchange={(e) => handleLLMModelChange(e.currentTarget.value)}
+											/>
+										</div>
+									{/if}
 								{/if}
 
 								{#if consciousnessSettings.activeProvider}
@@ -331,6 +349,68 @@
 												placeholder="API Key"
 												value={settingsStore.getProviderConfig(provider.id).apiKey ?? ''}
 												onchange={(e) => handleApiKeyChange(provider.id, e.currentTarget.value)}
+											/>
+										</div>
+									{/if}
+									{#if provider?.id === 'azure'}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="Azure Resource Name (required)"
+												value={settingsStore.getProviderConfig(provider.id).resourceName ?? ''}
+												onchange={(e) => settingsStore.setProviderConfig(provider.id, { resourceName: e.currentTarget.value })}
+											/>
+										</div>
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="Region (e.g., eastus)"
+												value={settingsStore.getProviderConfig(provider.id).region ?? ''}
+												onchange={(e) => settingsStore.setProviderConfig(provider.id, { region: e.currentTarget.value })}
+											/>
+										</div>
+									{/if}
+									{#if provider?.id === 'cloudflare'}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="Cloudflare Account ID (required)"
+												value={settingsStore.getProviderConfig(provider.id).accountId ?? ''}
+												onchange={(e) => settingsStore.setProviderConfig(provider.id, { accountId: e.currentTarget.value })}
+											/>
+										</div>
+									{/if}
+									{#if provider?.id === 'openai-compatible'}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="API Base URL (required)"
+												value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
+												onchange={(e) => settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value })}
+											/>
+										</div>
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="Model name"
+												value={consciousnessSettings.activeModel as string ?? ''}
+												onchange={(e) => handleLLMModelChange(e.currentTarget.value)}
+											/>
+										</div>
+									{/if}
+									{#if provider?.isLocal}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder={provider.defaultBaseUrl || 'http://localhost:11434/v1/'}
+												value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
+												onchange={(e) => settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value })}
 											/>
 										</div>
 									{/if}
@@ -359,12 +439,30 @@
 								/>
 
 								{#if speechSettings.activeProvider && ttsModels.length > 0}
-									<ModelDropdown
-										models={ttsModels}
-										value={speechSettings.activeModel as string}
-										onSelect={handleTTSModelChange}
-										placeholder="Select voice..."
-									/>
+									{@const provider = getTTSProvider(speechSettings.activeProvider as string)}
+									{#if !provider?.isLocal}
+										<ModelDropdown
+											models={ttsModels}
+											value={speechSettings.activeModel as string}
+											onSelect={handleTTSModelChange}
+											placeholder="Select voice..."
+										/>
+									{/if}
+								{/if}
+
+								{#if speechSettings.activeProvider}
+									{@const provider = getTTSProvider(speechSettings.activeProvider as string)}
+									{#if provider?.isLocal}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="Model/voice name"
+												value={speechSettings.activeModel as string ?? ''}
+												onchange={(e) => handleTTSModelChange(e.currentTarget.value)}
+											/>
+										</div>
+									{/if}
 								{/if}
 
 								{#if speechSettings.activeProvider === 'elevenlabs'}
@@ -379,6 +477,27 @@
 									</div>
 								{/if}
 
+								{#if speechSettings.activeProvider === 'openai-compatible-tts'}
+									<div class="api-key-row">
+										<input
+											type="text"
+											class="api-key-input"
+											placeholder="API Base URL (required)"
+											value={settingsStore.getProviderConfig('openai-compatible-tts').baseUrl ?? ''}
+											onchange={(e) => settingsStore.setProviderConfig('openai-compatible-tts', { baseUrl: e.currentTarget.value })}
+										/>
+									</div>
+									<div class="api-key-row">
+										<input
+											type="text"
+											class="api-key-input"
+											placeholder="Voice name"
+											value={speechSettings.activeModel as string ?? ''}
+											onchange={(e) => handleTTSModelChange(e.currentTarget.value)}
+										/>
+									</div>
+								{/if}
+
 								{#if speechSettings.activeProvider}
 									{@const provider = getTTSProvider(speechSettings.activeProvider as string)}
 									{#if provider?.requiresApiKey}
@@ -389,6 +508,17 @@
 												placeholder="API Key"
 												value={settingsStore.getProviderConfig(provider.id).apiKey ?? ''}
 												onchange={(e) => handleApiKeyChange(provider.id, e.currentTarget.value)}
+											/>
+										</div>
+									{/if}
+									{#if provider?.isLocal}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder={provider.defaultBaseUrl || 'http://localhost:5000/'}
+												value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
+												onchange={(e) => settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value })}
 											/>
 										</div>
 									{/if}

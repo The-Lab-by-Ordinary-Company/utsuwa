@@ -1,16 +1,22 @@
 import { getSharedAudioContext, type ITTSProvider, type TTSOptions, type TTSSpeakResult } from './index';
 
+function ensureTrailingSlash(url: string): string {
+	return url.endsWith('/') ? url : url + '/';
+}
+
 export class ElevenLabsTTS implements ITTSProvider {
 	private apiKey: string;
 	private voiceId: string;
 	private model: string;
 	private speed: number;
+	private baseUrl: string;
 
 	constructor(options: TTSOptions) {
 		this.apiKey = options.apiKey || '';
 		this.voiceId = options.voiceId || 'EXAVITQu4vr4xnSDxMaL';
 		this.model = 'eleven_turbo_v2_5';
 		this.speed = options.speed ?? 1;
+		this.baseUrl = ensureTrailingSlash(options.baseUrl || 'https://api.elevenlabs.io/v1/');
 	}
 
 	getAudioContext(): AudioContext {
@@ -19,7 +25,7 @@ export class ElevenLabsTTS implements ITTSProvider {
 
 	async speak(text: string): Promise<TTSSpeakResult> {
 		const response = await fetch(
-			`https://api.elevenlabs.io/v1/text-to-speech/${this.voiceId}/stream`,
+			`${this.baseUrl}text-to-speech/${this.voiceId}/stream`,
 			{
 				method: 'POST',
 				headers: {

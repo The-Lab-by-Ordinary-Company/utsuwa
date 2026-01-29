@@ -7,8 +7,8 @@ const PROVIDER_BASE_URLS: Record<LLMProvider, string | undefined> = {
 	// Cloud Commercial
 	openai: 'https://api.openai.com/v1/',
 	anthropic: 'https://api.anthropic.com/v1/',
-	google: 'https://generativelanguage.googleapis.com/v1beta/',
-	deepseek: 'https://api.deepseek.com/v1/',
+	google: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+	deepseek: 'https://api.deepseek.com/',
 	mistral: 'https://api.mistral.ai/v1/',
 	xai: 'https://api.x.ai/v1/',
 	groq: 'https://api.groq.com/openai/v1/',
@@ -27,7 +27,7 @@ const PROVIDER_BASE_URLS: Record<LLMProvider, string | undefined> = {
 	// Local
 	ollama: 'http://localhost:11434/v1/',
 	lmstudio: 'http://localhost:1234/v1/',
-	vllm: undefined, // Requires custom baseURL
+	vllm: 'http://localhost:8000/v1/',
 	player2: 'http://localhost:4315/v1/',
 	// Enterprise
 	azure: undefined, // Constructed from resource name
@@ -39,22 +39,22 @@ const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio', 'vllm', 'player2']
 
 // Default models per provider
 const DEFAULT_MODELS: Partial<Record<LLMProvider, string>> = {
-	openai: 'gpt-4o',
-	anthropic: 'claude-sonnet-4-20250514',
-	google: 'gemini-2.0-flash',
+	openai: 'gpt-4.1',
+	anthropic: 'claude-sonnet-4-5-20251101',
+	google: 'gemini-3-pro-preview',
 	deepseek: 'deepseek-chat',
 	mistral: 'mistral-large-latest',
-	xai: 'grok-2',
-	groq: 'llama-3.3-70b-versatile',
+	xai: 'grok-3',
+	groq: 'meta-llama/llama-4-maverick-17b-128e-instruct',
 	perplexity: 'sonar',
 	moonshot: 'moonshot-v1-32k',
 	together: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
 	cerebras: 'llama-3.3-70b',
 	fireworks: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
 	novita: 'meta-llama/llama-3.1-70b-instruct',
-	'302ai': 'gpt-4o',
-	comet: 'gpt-4o',
-	openrouter: 'anthropic/claude-sonnet-4',
+	'302ai': 'gpt-4.1',
+	comet: 'gpt-4.1',
+	openrouter: 'anthropic/claude-sonnet-4.5',
 	ollama: 'llama3.2',
 	lmstudio: 'local-model',
 	player2: 'gemma2'
