@@ -129,7 +129,7 @@
 
 <div class="search-container" bind:this={containerEl}>
 	<div class="search-input-wrapper">
-		<Icon name="magnifying-glass" size={14} />
+		<Icon name="search" size={14} />
 		<input
 			bind:this={inputEl}
 			{id}
