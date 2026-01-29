@@ -1,15 +1,18 @@
-# Contributing to Utsuwa
+---
+title: Contributing
+description: How to contribute to the Utsuwa project.
+---
 
-Thank you for your interest in contributing to Utsuwa! This document provides guidelines and information for contributors.
+# Contributing
 
-## Getting Started
+Contributions to Utsuwa are welcome. This page covers how to get set up and submit changes.
 
-### Prerequisites
+## Prerequisites
 
 - Node.js 22 or higher
 - pnpm
 
-### Development Setup
+## Development Setup
 
 1. Fork the repository
 2. Clone your fork:
@@ -27,11 +30,9 @@ Thank you for your interest in contributing to Utsuwa! This document provides gu
    ```
 5. Open [http://localhost:5173](http://localhost:5173) in your browser
 
-## How to Contribute
+## Reporting Bugs
 
-### Reporting Bugs
-
-If you find a bug, please create an issue with:
+If you find a bug, create an issue with:
 
 - A clear, descriptive title
 - Steps to reproduce the issue
@@ -39,15 +40,15 @@ If you find a bug, please create an issue with:
 - Your environment (browser, OS, Node version)
 - Screenshots if applicable
 
-### Suggesting Features
+## Suggesting Features
 
-Feature requests are welcome! Please create an issue with:
+Feature requests are welcome. Create an issue with:
 
 - A clear description of the feature
 - The problem it solves or use case it addresses
 - Any implementation ideas you have
 
-### Pull Requests
+## Pull Requests
 
 1. Create a new branch for your feature or fix:
    ```bash
@@ -94,10 +95,6 @@ src/
 │   └── docs/          # Documentation site routes
 └── app.css            # Global styles
 ```
-
-## Questions?
-
-If you have questions about contributing, feel free to open an issue for discussion.
 
 ## License
 

@@ -105,7 +105,7 @@
 					</svg>
 					<span>GitHub</span>
 				</a>
-				<a href="https://github.com/dyascj/utsuwa#readme" target="_blank" rel="noopener" class="link-btn">
+				<a href="/docs" class="link-btn">
 					<Icon name="file-text" size={18} />
 					<span>Docs</span>
 				</a>

@@ -1,0 +1,43 @@
+export interface DocsNavItem {
+	title: string;
+	slug: string;
+}
+
+export interface DocsNavSection {
+	title: string;
+	icon: string;
+	items: DocsNavItem[];
+}
+
+export const docsNav: DocsNavSection[] = [
+	{
+		title: 'Overview',
+		icon: 'book',
+		items: [{ title: 'Introduction', slug: 'overview/introduction' }]
+	},
+	{
+		title: 'Guides',
+		icon: 'compass',
+		items: [
+			{ title: 'Web Guide', slug: 'guides/web-guide' },
+			{ title: 'Desktop Guide', slug: 'guides/desktop-guide' },
+			{ title: 'Troubleshooting', slug: 'guides/troubleshooting' }
+		]
+	},
+	{
+		title: 'Technology',
+		icon: 'code',
+		items: [
+			{ title: 'Architecture Overview', slug: 'technology/architecture' },
+			{ title: 'Companion System', slug: 'technology/companion-system' }
+		]
+	},
+	{
+		title: 'Community',
+		icon: 'users',
+		items: [
+			{ title: 'Resources', slug: 'community/resources' },
+			{ title: 'Contributing', slug: 'community/contributing' }
+		]
+	}
+];

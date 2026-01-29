@@ -5,7 +5,7 @@
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 **Utsuwa is an open-source alternative to Grok Companion.** This is a platform where you can have a virtual AI waifu that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused - your data lives entirely in your browser.
@@ -49,7 +49,7 @@ Build a meaningful relationship with your AI companion through a dating sim-insp
 - **Natural Progression**: Hybrid system combining app heuristics + LLM suggestions for believable relationship growth
 - **Time-Aware**: Your companion notices when you've been away and reacts accordingly
 
-See [docs/companion-system.md](docs/companion-system.md) for full architecture details.
+See the [Companion System Architecture](https://utsuwa.ai/docs/technology/companion-system) for full details.
 
 ## Supported Providers
 
@@ -97,8 +97,8 @@ If you prefer to run Utsuwa locally or host your own instance:
 
 #### Prerequisites
 
-- Node.js 18+
-- npm or pnpm
+- Node.js 22+
+- pnpm (recommended) or npm
 - A modern browser (Chrome, Firefox, Safari, Edge)
 
 #### Installation
@@ -109,10 +109,10 @@ git clone https://github.com/dyascj/utsuwa.git
 cd utsuwa
 
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm dev
 ```
 
 The app will be available at `http://localhost:5173`
@@ -151,15 +151,23 @@ Your companion data is stored locally in your browser. To back up or transfer yo
 utsuwa/
 ├── src/
 │   ├── lib/
+│   │   ├── ai/             # LLM response parsing and prompt building
+│   │   ├── assets/         # Static assets
 │   │   ├── components/     # Svelte components
+│   │   ├── config/         # App and docs configuration
+│   │   ├── data/           # Event definitions and static data
 │   │   ├── db/             # IndexedDB database (Dexie)
+│   │   ├── engine/         # Companion engine (state, memory, events)
 │   │   ├── services/       # LLM, TTS, storage services
 │   │   ├── stores/         # Svelte 5 stores (state management)
 │   │   ├── types/          # TypeScript types
 │   │   └── utils/          # Utility functions
+│   ├── content/
+│   │   └── docs/           # Documentation site content
 │   └── routes/
-│       ├── +page.svelte    # Main app page
-│       └── settings/       # Settings pages
+│       ├── (app)/          # Main application routes
+│       ├── api/            # API routes
+│       └── docs/           # Documentation site routes
 ├── static/
 │   └── models/             # Place default VRM models here
 └── package.json
@@ -168,10 +176,10 @@ utsuwa/
 ## Scripts
 
 ```bash
-npm run dev       # Start development server
-npm run build     # Build for production
-npm run preview   # Preview production build
-npm run check     # Type-check the project
+pnpm dev       # Start development server
+pnpm build     # Build for production
+pnpm preview   # Preview production build
+pnpm lint      # Type-check and lint the project
 ```
 
 ## Roadmap
