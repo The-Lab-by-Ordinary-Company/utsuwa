@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import Icon from './Icon.svelte';
 
 	interface Props {
@@ -11,6 +12,35 @@
 
 	let { stat, delta, color, icon, onComplete }: Props = $props();
 
+	// Design language colors (matching other UI components)
+	const INDICATOR_COLORS = {
+		light: {
+			background: '#ffffff',
+			border: 'rgba(0, 0, 0, 0.08)'
+		},
+		dark: {
+			background: '#212121',
+			border: 'rgba(255, 255, 255, 0.1)'
+		}
+	};
+
+	// Detect dark mode
+	let isDark = $state(false);
+	$effect(() => {
+		if (browser) {
+			const checkDark = () => {
+				isDark = document.documentElement.classList.contains('dark');
+			};
+			checkDark();
+			const observer = new MutationObserver(checkDark);
+			observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+			return () => observer.disconnect();
+		}
+	});
+
+	const bgColor = $derived(isDark ? INDICATOR_COLORS.dark.background : INDICATOR_COLORS.light.background);
+	const borderColor = $derived(isDark ? INDICATOR_COLORS.dark.border : INDICATOR_COLORS.light.border);
+
 	// Trigger completion callback after animation
 	$effect(() => {
 		const timer = setTimeout(() => {
@@ -21,7 +51,7 @@
 	});
 </script>
 
-<div class="indicator" style="--stat-color: {color}">
+<div class="indicator" style="--stat-color: {color}; background: {bgColor}; border-color: {borderColor}">
 	<Icon name={icon} size={14} />
 	<span class="delta">{delta > 0 ? '+' : ''}{delta}</span>
 </div>
@@ -32,16 +62,15 @@
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.375rem 0.625rem;
-		background: var(--glass-bg-solid);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
 		border-radius: 1rem;
-		border: 1px solid var(--glass-border);
+		border: 1px solid;
 		color: var(--stat-color);
 		font-weight: 600;
 		font-size: 0.875rem;
 		white-space: nowrap;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+		box-shadow: var(--shadow-md);
 		animation: float-fade 2s ease-out forwards;
 	}
 
@@ -68,7 +97,4 @@
 		}
 	}
 
-	:global(.dark) .indicator {
-		box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
-	}
 </style>

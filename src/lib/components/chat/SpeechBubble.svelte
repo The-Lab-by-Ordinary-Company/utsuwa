@@ -10,16 +10,16 @@
 
 	let { message, isTyping = false, onHide }: Props = $props();
 
-	// Design language colors (matching CSS tokens)
+	// Design language colors (solid backgrounds matching other UI)
 	const BUBBLE_COLORS = {
 		light: {
-			background: 'rgba(255, 255, 255, 0.95)',
+			background: '#ffffff',
 			border: 'rgba(0, 0, 0, 0.08)',
 			text: '#1a1a1a',
 			dots: '#9ca3af'
 		},
 		dark: {
-			background: 'rgba(33, 33, 33, 0.95)',
+			background: '#212121',
 			border: 'rgba(255, 255, 255, 0.1)',
 			text: '#fafafa',
 			dots: '#6b7280'
