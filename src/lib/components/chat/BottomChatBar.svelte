@@ -17,6 +17,9 @@
 	const displayTranscript = $derived(sttStore.displayTranscript);
 	const sttError = $derived(sttStore.error);
 
+	// Track if there's content to send (for orb/send morphing)
+	const hasContent = $derived(inputValue.trim().length > 0 || displayTranscript.trim().length > 0);
+
 	function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		if (inputValue.trim() && !disabled) {
@@ -129,11 +132,15 @@
 			<button
 				type="button"
 				class="send-btn"
+				class:has-content={hasContent}
 				onclick={handleSendClick}
-				disabled={disabled || (!inputValue.trim() && !displayTranscript.trim())}
-				aria-label="Send message"
+				disabled={disabled || !hasContent}
+				aria-label={hasContent ? "Send message" : "Waiting for input"}
 			>
-				<Icon name="send" size={20} />
+				<span class="orb-gradient"></span>
+				<span class="send-icon">
+					<Icon name="send" size={20} />
+				</span>
 			</button>
 		</div>
 	</form>
@@ -317,19 +324,74 @@
 	}
 
 	.send-btn {
-		background: #01B2FF;
+		position: relative;
+		background: transparent;
 		color: white;
+		overflow: hidden;
 	}
 
-	.send-btn:hover:not(:disabled) {
+	/* Gradient orb - visible when no content */
+	.orb-gradient {
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #01B2FF, #7c3aed, #ec4899, #01B2FF);
+		background-size: 300% 300%;
+		animation: gradient-shift 4s ease infinite;
+		opacity: 1;
+		transform: scale(1);
+		transition: opacity 0.3s ease, transform 0.3s ease;
+	}
+
+	@keyframes gradient-shift {
+		0%, 100% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+	}
+
+	/* Send icon - hidden when no content */
+	.send-icon {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transform: scale(0.5) rotate(-45deg);
+		transition: opacity 0.3s ease, transform 0.3s ease;
+	}
+
+	/* When has content: morph to send button */
+	.send-btn.has-content {
+		background: #01B2FF;
+	}
+
+	.send-btn.has-content .orb-gradient {
+		opacity: 0;
+		transform: scale(0);
+	}
+
+	.send-btn.has-content .send-icon {
+		opacity: 1;
+		transform: scale(1) rotate(0deg);
+	}
+
+	.send-btn.has-content:hover:not(:disabled) {
 		background: #00a0e6;
 	}
 
-	.send-btn:active:not(:disabled) {
+	.send-btn.has-content:active:not(:disabled) {
 		transform: scale(0.95);
 	}
 
-	.send-btn:disabled {
+	.send-btn:disabled:not(.has-content) {
+		cursor: default;
+	}
+
+	.send-btn.has-content:disabled {
 		opacity: 0.4;
 		cursor: not-allowed;
 	}
