@@ -363,7 +363,7 @@
 	.orb-purple {
 		width: 18px;
 		height: 18px;
-		background: #7c3aed;
+		background: #0ea5e9;
 		top: 12px;
 		left: 14px;
 		animation-delay: -1.3s;
@@ -372,7 +372,7 @@
 	.orb-pink {
 		width: 14px;
 		height: 14px;
-		background: #ec4899;
+		background: #0284c7;
 		top: 14px;
 		left: 10px;
 		animation-delay: -2.6s;
