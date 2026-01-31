@@ -12,14 +12,14 @@
 
 	let { stat, delta, color, icon, onComplete }: Props = $props();
 
-	// Design language colors (matching other UI components)
+	// Design language colors (matching --bg-primary tokens)
 	const INDICATOR_COLORS = {
 		light: {
 			background: '#ffffff',
 			border: 'rgba(0, 0, 0, 0.08)'
 		},
 		dark: {
-			background: '#212121',
+			background: '#0a0a0a',
 			border: 'rgba(255, 255, 255, 0.1)'
 		}
 	};
