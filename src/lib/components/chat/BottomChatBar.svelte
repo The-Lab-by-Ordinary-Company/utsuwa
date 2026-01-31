@@ -336,44 +336,45 @@
 	/* Soft orb container - visible when no content */
 	.orb-container {
 		position: absolute;
-		inset: -8px;
+		inset: 0;
 		opacity: 1;
 		transition: opacity 0.3s ease, transform 0.3s ease;
 		pointer-events: none;
+		clip-path: inset(-8px -8px -8px 0);
 	}
 
 	.orb {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(10px);
-		opacity: 0.85;
+		filter: blur(8px);
+		opacity: 0.9;
 		animation: orb-float 4s ease-in-out infinite;
 	}
 
 	.orb-blue {
-		width: 28px;
-		height: 28px;
+		width: 24px;
+		height: 24px;
 		background: #01B2FF;
-		top: 12px;
-		left: 14px;
+		top: 8px;
+		left: 10px;
 		animation-delay: 0s;
 	}
 
 	.orb-purple {
-		width: 22px;
-		height: 22px;
+		width: 18px;
+		height: 18px;
 		background: #7c3aed;
-		top: 16px;
-		left: 18px;
+		top: 12px;
+		left: 14px;
 		animation-delay: -1.3s;
 	}
 
 	.orb-pink {
-		width: 18px;
-		height: 18px;
+		width: 14px;
+		height: 14px;
 		background: #ec4899;
-		top: 18px;
-		left: 14px;
+		top: 14px;
+		left: 10px;
 		animation-delay: -2.6s;
 	}
 
