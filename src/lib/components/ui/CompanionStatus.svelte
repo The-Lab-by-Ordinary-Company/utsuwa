@@ -34,7 +34,7 @@
 					<div class="stat-bar-container">
 						<div
 							class="stat-bar"
-							style="width: {charState.energy}%; background: var(--stat-energy)"
+							style="width: {charState.energy}%"
 						></div>
 					</div>
 					<span class="stat-value">{charState.energy}</span>
@@ -71,7 +71,7 @@
 						value={charState.trust}
 						iconName="shield"
 						label="Trust"
-						color="var(--stat-trust)"
+						color="#01B2FF"
 						size={56}
 						strokeWidth={5}
 					/>
@@ -79,7 +79,7 @@
 						value={charState.intimacy}
 						iconName="heart"
 						label="Intimacy"
-						color="var(--stat-intimacy)"
+						color="#01B2FF"
 						size={56}
 						strokeWidth={5}
 					/>
@@ -87,7 +87,7 @@
 						value={charState.comfort}
 						iconName="home"
 						label="Comfort"
-						color="var(--stat-comfort)"
+						color="#01B2FF"
 						size={56}
 						strokeWidth={5}
 					/>
@@ -101,7 +101,7 @@
 						<div class="stat-bar-container">
 							<div
 								class="stat-bar"
-								style="width: {charState.energy}%; background: var(--stat-energy)"
+								style="width: {charState.energy}%"
 							></div>
 						</div>
 						<span class="stat-value">{charState.energy}</span>
@@ -112,7 +112,7 @@
 						<div class="stat-bar-container">
 							<div
 								class="stat-bar"
-								style="width: {charState.respect}%; background: var(--stat-respect)"
+								style="width: {charState.respect}%"
 							></div>
 						</div>
 						<span class="stat-value">{charState.respect}</span>
@@ -324,6 +324,7 @@
 		height: 100%;
 		border-radius: 2px;
 		transition: width 0.3s ease;
+		background: #01B2FF;
 	}
 
 	.stat-value {
@@ -345,15 +346,15 @@
 		align-items: center;
 		gap: 0.25rem;
 		font-size: 0.65rem;
-		color: var(--text-tertiary);
+		color: var(--bg-primary);
 		padding: 0.25rem 0.5rem;
-		background: var(--bg-secondary);
+		background: var(--text-primary);
 		border-radius: var(--radius-xs);
 	}
 
 	.quick-stat.streak {
-		color: #01B2FF;
-		background: rgba(1, 178, 255, 0.1);
+		color: white;
+		background: #01B2FF;
 	}
 
 	/* Profile Link */

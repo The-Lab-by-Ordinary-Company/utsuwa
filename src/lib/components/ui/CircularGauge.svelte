@@ -39,7 +39,7 @@
 			cy={size / 2}
 			r={radius}
 			fill="none"
-			stroke="var(--color-neutral-200)"
+			stroke="var(--bg-tertiary)"
 			stroke-width={strokeWidth}
 		/>
 		<!-- Progress circle -->
@@ -112,12 +112,12 @@
 	.gauge-value {
 		font-size: calc(var(--size) * 0.16);
 		font-weight: 600;
-		color: var(--color-neutral-700);
+		color: var(--text-primary);
 	}
 
 	.gauge-label {
 		font-size: 0.75rem;
-		color: var(--color-neutral-500);
+		color: var(--text-secondary);
 		font-weight: 500;
 	}
 </style>
