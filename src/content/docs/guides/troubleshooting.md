@@ -100,8 +100,8 @@ If TTS isn't producing sound:
 
 1. **Check browser audio** - Make sure the tab isn't muted
 2. **Verify permissions** - Browser may need audio autoplay permission
-3. **Test the provider** - Try Web Speech API (no key required) first
-4. **Check API key** - For ElevenLabs/other providers, verify the key is valid
+3. **Check API key** - Verify your ElevenLabs or OpenAI TTS API key is valid
+4. **Check provider status** - The TTS provider may be experiencing issues
 
 ### Lip-sync not working
 
@@ -113,8 +113,8 @@ If the avatar's mouth isn't moving:
 
 ### Voice sounds wrong
 
-1. **Check voice settings** - Different providers have different voices
-2. **Custom voice ID** - If using ElevenLabs custom voice, verify the ID
+1. **Check voice settings** - ElevenLabs and OpenAI TTS have different available voices
+2. **Custom voice ID** - If using ElevenLabs custom voice, verify the voice ID is correct
 
 ## Memory & Performance
 

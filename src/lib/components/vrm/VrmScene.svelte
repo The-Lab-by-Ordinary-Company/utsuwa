@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Canvas } from '@threlte/core';
+	import { WebGLRenderer } from 'three';
 	import { onMount } from 'svelte';
 	import Scene from './Scene.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
@@ -12,6 +13,16 @@
 
 	let { centered = false, locked = false }: Props = $props();
 	let mounted = $state(false);
+
+	// Custom renderer factory for screenshot support
+	function createRenderer(canvas: HTMLCanvasElement) {
+		return new WebGLRenderer({
+			canvas,
+			antialias: true,
+			alpha: true,
+			preserveDrawingBuffer: true
+		});
+	}
 
 	onMount(() => {
 		mounted = true;
@@ -30,7 +41,7 @@
 
 <div class="vrm-scene">
 	{#if mounted}
-		<Canvas shadows rendererParameters={{ preserveDrawingBuffer: true }}>
+		<Canvas {createRenderer}>
 			<Scene {centered} {locked} />
 		</Canvas>
 	{/if}

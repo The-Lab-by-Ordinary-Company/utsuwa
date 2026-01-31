@@ -15,250 +15,58 @@ export interface ProviderMetadata {
 }
 
 // ============================================
-// LLM PROVIDERS (23 total)
+// LLM PROVIDERS (7 total)
 // ============================================
 
 export const LLM_PROVIDERS: ProviderMetadata[] = [
-	// Cloud Commercial (10)
+	// Cloud providers - models fetched dynamically from API after user enters key
 	{
 		id: 'openai',
 		name: 'OpenAI',
-		description: 'GPT-4o, GPT-4 Turbo, and more',
+		description: 'GPT-4, o1, and more',
 		category: 'llm',
 		icon: '🤖',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.openai.com/v1/',
-		models: [
-			{ id: 'gpt-4o', name: 'GPT-4o' },
-			{ id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-			{ id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-			{ id: 'gpt-4', name: 'GPT-4' },
-			{ id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' }
-		]
+		defaultBaseUrl: 'https://api.openai.com/v1/'
 	},
 	{
 		id: 'anthropic',
 		name: 'Anthropic',
-		description: 'Claude Opus, Sonnet, and Haiku',
+		description: 'Claude models',
 		category: 'llm',
 		icon: '🧠',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.anthropic.com/v1/',
-		models: [
-			{ id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4' },
-			{ id: 'claude-opus-4-20250514', name: 'Claude Opus 4' },
-			{ id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku' },
-			{ id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' }
-		]
+		defaultBaseUrl: 'https://api.anthropic.com/v1/'
 	},
 	{
 		id: 'google',
 		name: 'Google Gemini',
-		description: 'Gemini Pro and Ultra models',
+		description: 'Gemini models',
 		category: 'llm',
 		icon: '✨',
 		iconColor: '#4285F4',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-		models: [
-			{ id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
-			{ id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
-			{ id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
-		]
+		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
 	},
 	{
 		id: 'deepseek',
 		name: 'DeepSeek',
-		description: 'DeepSeek Chat and Coder models',
+		description: 'DeepSeek models',
 		category: 'llm',
 		icon: '🔍',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.deepseek.com/',
-		models: [
-			{ id: 'deepseek-chat', name: 'DeepSeek Chat' },
-			{ id: 'deepseek-coder', name: 'DeepSeek Coder' },
-			{ id: 'deepseek-reasoner', name: 'DeepSeek Reasoner' }
-		]
-	},
-	{
-		id: 'mistral',
-		name: 'Mistral AI',
-		description: 'Mistral Large, Medium, and Small',
-		category: 'llm',
-		icon: '🌀',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.mistral.ai/v1/',
-		models: [
-			{ id: 'mistral-large-latest', name: 'Mistral Large' },
-			{ id: 'mistral-medium-latest', name: 'Mistral Medium' },
-			{ id: 'mistral-small-latest', name: 'Mistral Small' },
-			{ id: 'codestral-latest', name: 'Codestral' }
-		]
+		defaultBaseUrl: 'https://api.deepseek.com/'
 	},
 	{
 		id: 'xai',
 		name: 'xAI (Grok)',
-		description: 'Grok models from xAI',
+		description: 'Grok models',
 		category: 'llm',
 		icon: '𝕏',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.x.ai/v1/',
-		models: [
-			{ id: 'grok-2', name: 'Grok 2' },
-			{ id: 'grok-2-mini', name: 'Grok 2 Mini' },
-			{ id: 'grok-beta', name: 'Grok Beta' }
-		]
+		defaultBaseUrl: 'https://api.x.ai/v1/'
 	},
-	{
-		id: 'groq',
-		name: 'Groq',
-		description: 'Ultra-fast inference with LPU',
-		category: 'llm',
-		icon: '⚡',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.groq.com/openai/v1/',
-		models: [
-			{ id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
-			{ id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant' },
-			{ id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
-			{ id: 'gemma2-9b-it', name: 'Gemma 2 9B' }
-		]
-	},
-	{
-		id: 'perplexity',
-		name: 'Perplexity AI',
-		description: 'Search-augmented AI models',
-		category: 'llm',
-		icon: '🔎',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.perplexity.ai/',
-		models: [
-			{ id: 'llama-3.1-sonar-large-128k-online', name: 'Sonar Large Online' },
-			{ id: 'llama-3.1-sonar-small-128k-online', name: 'Sonar Small Online' },
-			{ id: 'llama-3.1-sonar-large-128k-chat', name: 'Sonar Large Chat' }
-		]
-	},
-	{
-		id: 'moonshot',
-		name: 'Moonshot AI',
-		description: 'Kimi models with long context',
-		category: 'llm',
-		icon: '🌙',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.moonshot.ai/v1/',
-		models: [
-			{ id: 'moonshot-v1-128k', name: 'Moonshot 128K' },
-			{ id: 'moonshot-v1-32k', name: 'Moonshot 32K' },
-			{ id: 'moonshot-v1-8k', name: 'Moonshot 8K' }
-		]
-	},
-	{
-		id: 'together',
-		name: 'Together AI',
-		description: 'Open-source models at scale',
-		category: 'llm',
-		icon: '🤝',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.together.xyz/v1/',
-		models: [
-			{ id: 'meta-llama/Llama-3.3-70B-Instruct-Turbo', name: 'Llama 3.3 70B Turbo' },
-			{ id: 'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo', name: 'Llama 3.1 405B' },
-			{ id: 'Qwen/Qwen2.5-72B-Instruct-Turbo', name: 'Qwen 2.5 72B' },
-			{ id: 'mistralai/Mixtral-8x22B-Instruct-v0.1', name: 'Mixtral 8x22B' }
-		]
-	},
-
-	// Cloud Additional (5)
-	{
-		id: 'cerebras',
-		name: 'Cerebras AI',
-		description: 'Ultra-fast inference',
-		category: 'llm',
-		icon: '🧮',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.cerebras.ai/v1/',
-		models: [
-			{ id: 'llama3.1-70b', name: 'Llama 3.1 70B' },
-			{ id: 'llama3.1-8b', name: 'Llama 3.1 8B' }
-		]
-	},
-	{
-		id: 'fireworks',
-		name: 'Fireworks AI',
-		description: 'Fast and affordable inference',
-		category: 'llm',
-		icon: '🎆',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.fireworks.ai/inference/v1/',
-		models: [
-			{ id: 'accounts/fireworks/models/llama-v3p1-70b-instruct', name: 'Llama 3.1 70B' },
-			{ id: 'accounts/fireworks/models/mixtral-8x22b-instruct', name: 'Mixtral 8x22B' }
-		]
-	},
-	{
-		id: 'novita',
-		name: 'Novita AI',
-		description: 'AI model API platform',
-		category: 'llm',
-		icon: '🌟',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.novita.ai/v3/openai/',
-		models: [
-			{ id: 'meta-llama/llama-3.1-70b-instruct', name: 'Llama 3.1 70B' },
-			{ id: 'meta-llama/llama-3.1-8b-instruct', name: 'Llama 3.1 8B' }
-		]
-	},
-	{
-		id: '302ai',
-		name: '302.AI',
-		description: 'AI aggregation platform',
-		category: 'llm',
-		icon: '3️⃣',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.302.ai/v1/',
-		models: [
-			{ id: 'gpt-4o', name: 'GPT-4o' },
-			{ id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet' }
-		]
-	},
-	{
-		id: 'comet',
-		name: 'Comet API',
-		description: 'Multi-model API platform',
-		category: 'llm',
-		icon: '☄️',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.cometapi.com/v1/',
-		models: []
-	},
-
-	// Aggregators (2)
-	{
-		id: 'openrouter',
-		name: 'OpenRouter',
-		description: 'Access 100+ models through one API',
-		category: 'llm',
-		icon: '🔀',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://openrouter.ai/api/v1/',
-		models: [
-			{ id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
-			{ id: 'openai/gpt-4o', name: 'GPT-4o' },
-			{ id: 'google/gemini-pro-1.5', name: 'Gemini Pro 1.5' },
-			{ id: 'meta-llama/llama-3.1-405b-instruct', name: 'Llama 3.1 405B' }
-		]
-	},
-	{
-		id: 'openai-compatible',
-		name: 'OpenAI Compatible',
-		description: 'Any OpenAI-compatible API endpoint',
-		category: 'llm',
-		icon: '🔌',
-		requiresApiKey: false,
-		models: []
-	},
-
-	// Local LLM (4)
+	// Local LLM - keep example models as hints
 	{
 		id: 'ollama',
 		name: 'Ollama',
@@ -287,68 +95,14 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		defaultBaseUrl: 'http://localhost:1234/v1/',
 		models: []
 	},
-	{
-		id: 'vllm',
-		name: 'vLLM',
-		description: 'High-throughput LLM serving',
-		category: 'llm',
-		icon: '🚀',
-		requiresApiKey: false,
-		isLocal: true,
-		defaultBaseUrl: 'http://localhost:8000/v1/',
-		models: [
-			{ id: 'llama-2-7b', name: 'Llama 2 7B' },
-			{ id: 'llama-2-13b', name: 'Llama 2 13B' },
-			{ id: 'llama-2-70b', name: 'Llama 2 70B' }
-		]
-	},
-	{
-		id: 'player2',
-		name: 'Player2',
-		description: 'Game engine LLM integration',
-		category: 'llm',
-		icon: '🎮',
-		requiresApiKey: false,
-		isLocal: true,
-		defaultBaseUrl: 'http://localhost:4315/v1/',
-		models: []
-	},
-
-	// Enterprise (2)
-	{
-		id: 'azure',
-		name: 'Azure AI Foundry',
-		description: 'Microsoft Azure OpenAI Service',
-		category: 'llm',
-		icon: '☁️',
-		iconColor: '#0078D4',
-		requiresApiKey: true,
-		models: [
-			{ id: 'gpt-4o', name: 'GPT-4o' },
-			{ id: 'gpt-4', name: 'GPT-4' }
-		]
-	},
-	{
-		id: 'cloudflare',
-		name: 'Cloudflare Workers AI',
-		description: 'Run AI on Cloudflare edge',
-		category: 'llm',
-		icon: '🔶',
-		iconColor: '#F38020',
-		requiresApiKey: true,
-		models: [
-			{ id: '@cf/meta/llama-3.1-8b-instruct', name: 'Llama 3.1 8B' },
-			{ id: '@cf/mistral/mistral-7b-instruct-v0.1', name: 'Mistral 7B' }
-		]
-	}
 ];
 
 // ============================================
-// TTS PROVIDERS (13 total)
+// TTS PROVIDERS (2 total)
 // ============================================
 
 export const TTS_PROVIDERS: ProviderMetadata[] = [
-	// Cloud TTS (7)
+	// Cloud TTS - models fetched dynamically from API after user enters key
 	{
 		id: 'elevenlabs',
 		name: 'ElevenLabs',
@@ -357,13 +111,7 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 		icon: '🎙️',
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.elevenlabs.io/v1/',
-		models: [
-			{ id: 'eleven_multilingual_v2', name: 'Multilingual v2 (29 languages)' },
-			{ id: 'eleven_flash_v2_5', name: 'Flash v2.5 (Ultra-low latency)' },
-			{ id: 'eleven_turbo_v2_5', name: 'Turbo v2.5 (Low latency)' },
-			{ id: 'eleven_turbo_v2', name: 'Turbo v2 (English only)' },
-			{ id: 'eleven_flash_v2', name: 'Flash v2 (English only)' }
-		],
+		// models fetched from API
 		voices: [
 			{ id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel' },
 			{ id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella' },
@@ -402,148 +150,6 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 			{ id: 'cedar', name: 'Cedar' }
 		]
 	},
-	{
-		id: 'azure-speech',
-		name: 'Microsoft Azure Speech',
-		description: 'Azure Cognitive Services TTS',
-		category: 'tts',
-		icon: '🗣️',
-		iconColor: '#0078D4',
-		requiresApiKey: true,
-		voices: [
-			{ id: 'en-US-JennyNeural', name: 'Jenny (US)' },
-			{ id: 'en-US-GuyNeural', name: 'Guy (US)' },
-			{ id: 'en-GB-SoniaNeural', name: 'Sonia (UK)' }
-		]
-	},
-	{
-		id: 'deepgram',
-		name: 'Deepgram Aura',
-		description: 'Fast and natural TTS',
-		category: 'tts',
-		icon: '🎵',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.deepgram.com/v1/',
-		voices: [
-			{ id: 'aura-asteria-en', name: 'Asteria' },
-			{ id: 'aura-luna-en', name: 'Luna' },
-			{ id: 'aura-stella-en', name: 'Stella' },
-			{ id: 'aura-athena-en', name: 'Athena' },
-			{ id: 'aura-hera-en', name: 'Hera' },
-			{ id: 'aura-orion-en', name: 'Orion' },
-			{ id: 'aura-arcas-en', name: 'Arcas' },
-			{ id: 'aura-perseus-en', name: 'Perseus' },
-			{ id: 'aura-angus-en', name: 'Angus' },
-			{ id: 'aura-orpheus-en', name: 'Orpheus' },
-			{ id: 'aura-helios-en', name: 'Helios' },
-			{ id: 'aura-zeus-en', name: 'Zeus' }
-		]
-	},
-	{
-		id: 'alibaba-cosyvoice',
-		name: 'Alibaba CosyVoice',
-		description: 'Alibaba Cloud TTS',
-		category: 'tts',
-		icon: '☁️',
-		iconColor: '#FF6A00',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://dashscope.aliyuncs.com/api/v1/',
-		voices: [
-			{ id: 'longxiaochun', name: 'Longxiaochun' },
-			{ id: 'longxiaoxia', name: 'Longxiaoxia' },
-			{ id: 'longlaotie', name: 'Longlaotie' },
-			{ id: 'longshu', name: 'Longshu' }
-		]
-	},
-	{
-		id: 'volcengine',
-		name: 'VolcEngine',
-		description: 'Volcano Engine TTS',
-		category: 'tts',
-		icon: '🌋',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://openspeech.bytedance.com/api/v1/',
-		voices: [
-			{ id: 'zh_female_tianmeixiaoyuan', name: 'Tianmei Xiaoyuan' },
-			{ id: 'zh_male_chunhou', name: 'Chunhou' },
-			{ id: 'zh_female_shuangkuaisisi', name: 'Shuangkuai Sisi' }
-		]
-	},
-	{
-		id: 'comet-tts',
-		name: 'CometAPI TTS',
-		description: 'Comet API text-to-speech',
-		category: 'tts',
-		icon: '☄️',
-		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.cometapi.com/v1/',
-		voices: []
-	},
-
-	// Local/Free TTS (4)
-	{
-		id: 'web-speech',
-		name: 'Web Speech API',
-		description: 'Free browser-native TTS (no API key)',
-		category: 'tts',
-		icon: '🌐',
-		requiresApiKey: false,
-		isLocal: true,
-		voices: [] // Populated dynamically from browser
-	},
-	{
-		id: 'index-tts',
-		name: 'Index-TTS',
-		description: 'Local TTS by Bilibili',
-		category: 'tts',
-		icon: '📑',
-		requiresApiKey: false,
-		isLocal: true,
-		defaultBaseUrl: 'http://localhost:11996/tts/',
-		voices: []
-	},
-	{
-		id: 'browser-local',
-		name: 'Browser Local TTS',
-		description: 'HuggingFace Transformers in browser',
-		category: 'tts',
-		icon: '💻',
-		requiresApiKey: false,
-		isLocal: true,
-		voices: []
-	},
-	{
-		id: 'app-local',
-		name: 'App Local TTS',
-		description: 'Desktop app TTS (Tauri/Electron)',
-		category: 'tts',
-		icon: '🖥️',
-		requiresApiKey: false,
-		isLocal: true,
-		voices: []
-	},
-
-	// Generic (2)
-	{
-		id: 'openai-compatible-tts',
-		name: 'OpenAI Compatible TTS',
-		description: 'Any OpenAI-compatible TTS endpoint',
-		category: 'tts',
-		icon: '🔌',
-		requiresApiKey: false,
-		voices: []
-	},
-	{
-		id: 'player2-tts',
-		name: 'Player2 TTS',
-		description: 'Game engine TTS integration',
-		category: 'tts',
-		icon: '🎮',
-		requiresApiKey: false,
-		isLocal: true,
-		defaultBaseUrl: 'http://localhost:4315/v1/',
-		voices: []
-	}
 ];
 
 // Helper functions

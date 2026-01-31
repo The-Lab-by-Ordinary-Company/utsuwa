@@ -52,7 +52,7 @@ Utsuwa comes with a default avatar, but you can load your own:
 To have your companion speak responses aloud:
 
 1. Go to **Settings > TTS Providers**
-2. Select a provider (ElevenLabs, OpenAI TTS, or browser-native Web Speech API)
+2. Select a provider (ElevenLabs or OpenAI TTS)
 3. Enter your API key and configure voice settings
 
 ## Using the Chat

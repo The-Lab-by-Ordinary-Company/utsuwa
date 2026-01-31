@@ -3,66 +3,23 @@ import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
 
 // Provider base URLs
-const PROVIDER_BASE_URLS: Record<LLMProvider, string | undefined> = {
-	// Cloud Commercial
+const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
+	// Cloud
 	openai: 'https://api.openai.com/v1/',
 	anthropic: 'https://api.anthropic.com/v1/',
-	google: 'https://generativelanguage.googleapis.com/v1beta/',
-	deepseek: 'https://api.deepseek.com/v1/',
-	mistral: 'https://api.mistral.ai/v1/',
+	google: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+	deepseek: 'https://api.deepseek.com/',
 	xai: 'https://api.x.ai/v1/',
-	groq: 'https://api.groq.com/openai/v1/',
-	perplexity: 'https://api.perplexity.ai/',
-	moonshot: 'https://api.moonshot.cn/v1/',
-	together: 'https://api.together.xyz/v1/',
-	// Cloud Additional
-	cerebras: 'https://api.cerebras.ai/v1/',
-	fireworks: 'https://api.fireworks.ai/inference/v1/',
-	novita: 'https://api.novita.ai/v3/openai/',
-	'302ai': 'https://api.302.ai/v1/',
-	comet: 'https://api.cometapi.com/v1/',
-	// Aggregators
-	openrouter: 'https://openrouter.ai/api/v1/',
-	'openai-compatible': undefined, // Requires custom baseURL
 	// Local
 	ollama: 'http://localhost:11434/v1/',
 	lmstudio: 'http://localhost:1234/v1/',
-	vllm: undefined, // Requires custom baseURL
-	player2: 'http://localhost:4315/v1/',
-	// Enterprise
-	azure: undefined, // Constructed from resource name
-	cloudflare: undefined // Constructed from account ID
 };
 
 // Providers that don't require API keys
-const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio', 'vllm', 'player2'];
-
-// Default models per provider
-const DEFAULT_MODELS: Partial<Record<LLMProvider, string>> = {
-	openai: 'gpt-4o',
-	anthropic: 'claude-sonnet-4-20250514',
-	google: 'gemini-2.0-flash',
-	deepseek: 'deepseek-chat',
-	mistral: 'mistral-large-latest',
-	xai: 'grok-2',
-	groq: 'llama-3.3-70b-versatile',
-	perplexity: 'sonar',
-	moonshot: 'moonshot-v1-32k',
-	together: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
-	cerebras: 'llama-3.3-70b',
-	fireworks: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
-	novita: 'meta-llama/llama-3.1-70b-instruct',
-	'302ai': 'gpt-4o',
-	comet: 'gpt-4o',
-	openrouter: 'anthropic/claude-sonnet-4',
-	ollama: 'llama3.2',
-	lmstudio: 'local-model',
-	player2: 'gemma2'
-};
+const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
 
 export const POST: RequestHandler = async ({ request }) => {
-	const { messages, provider, model, apiKey, baseURL, resourceName, accountId, systemPrompt } =
-		await request.json();
+	const { messages, provider, model, apiKey, baseURL, systemPrompt } = await request.json();
 
 	const typedProvider = provider as LLMProvider;
 
@@ -70,6 +27,14 @@ export const POST: RequestHandler = async ({ request }) => {
 	const isLocalProvider = LOCAL_PROVIDERS.includes(typedProvider);
 	if (!apiKey && !isLocalProvider) {
 		return new Response(JSON.stringify({ error: 'API key required' }), {
+			status: 400,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
+
+	// Model is required - no more static fallbacks
+	if (!model) {
+		return new Response(JSON.stringify({ error: 'Model is required. Please select a model from the list.' }), {
 			status: 400,
 			headers: { 'Content-Type': 'application/json' }
 		});
@@ -84,20 +49,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (typedProvider === 'anthropic') {
 			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS.anthropic;
 			headers['anthropic-dangerous-direct-browser-access'] = 'true';
-		} else if (typedProvider === 'azure' && resourceName) {
-			// Azure requires special URL construction
-			providerBaseURL =
-				providerBaseURL || `https://${resourceName}.openai.azure.com/openai/deployments/`;
-			headers['api-key'] = apiKey;
-		} else if (typedProvider === 'cloudflare' && accountId) {
-			// Cloudflare Workers AI
-			providerBaseURL =
-				providerBaseURL ||
-				`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/`;
-		} else if (typedProvider === 'openrouter') {
-			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS.openrouter;
-			headers['HTTP-Referer'] = 'https://utsuwa.app';
-			headers['X-Title'] = 'Utsuwa';
 		} else {
 			// Use default base URL for provider
 			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS[typedProvider];
@@ -114,13 +65,24 @@ export const POST: RequestHandler = async ({ request }) => {
 			...messages
 		];
 
-		const { textStream } = streamText({
+		const result = streamText({
 			apiKey: apiKey || 'not-needed', // Local providers don't need API keys but xsai requires a value
 			baseURL: providerBaseURL,
-			model: model || DEFAULT_MODELS[typedProvider] || 'gpt-4o',
+			model,
 			messages: messagesWithSystem,
 			headers
 		});
+
+		// Attach error handlers to prevent unhandled promise rejections from crashing the server
+		// These catch errors from background promises that would otherwise crash Node
+		const silentCatch = (err: Error) => {
+			console.error('Provider API error:', err.message);
+		};
+		result.messages?.catch?.(silentCatch);
+		result.steps?.catch?.(silentCatch);
+		result.totalUsage?.catch?.(silentCatch);
+
+		const { textStream } = result;
 
 		// Create a readable stream for SSE
 		const encoder = new TextEncoder();

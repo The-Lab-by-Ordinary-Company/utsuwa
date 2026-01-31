@@ -1,5 +1,9 @@
 import { getSharedAudioContext, type ITTSProvider, type TTSOptions, type TTSSpeakResult } from './index';
 
+function ensureTrailingSlash(url: string): string {
+	return url.endsWith('/') ? url : url + '/';
+}
+
 export class OpenAITTS implements ITTSProvider {
 	private apiKey: string;
 	private voiceId: string;
@@ -12,7 +16,7 @@ export class OpenAITTS implements ITTSProvider {
 		this.voiceId = options.voiceId || 'alloy';
 		this.model = 'tts-1';
 		this.speed = options.speed ?? 1;
-		this.baseUrl = options.baseUrl || 'https://api.openai.com/v1/';
+		this.baseUrl = ensureTrailingSlash(options.baseUrl || 'https://api.openai.com/v1/');
 	}
 
 	getAudioContext(): AudioContext {

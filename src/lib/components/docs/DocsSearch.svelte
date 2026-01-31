@@ -97,7 +97,9 @@
 
 	function navigateTo(url: string) {
 		close();
-		goto(url);
+		// Strip .html extension - Pagefind indexes HTML files but SvelteKit uses clean URLs
+		const cleanUrl = url.replace(/\.html$/, '');
+		goto(cleanUrl);
 	}
 
 	function close() {

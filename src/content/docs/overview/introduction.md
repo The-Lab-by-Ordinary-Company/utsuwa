@@ -18,7 +18,7 @@ Most AI companions today are either text-only chat interfaces or locked behind p
 
 Utsuwa takes a different approach. It gives you a 3D avatar that speaks, remembers your conversations, and develops a relationship with you over time. No accounts, no subscriptions. Your data stays on your device.
 
-Connect any LLM provider you want — OpenAI, Anthropic, Google, or a local model through Ollama. Pair it with any of 13+ TTS providers for voice. Load any VRM model as your companion's body. Everything is modular and swappable.
+Connect any LLM provider you want — OpenAI, Anthropic, Google, DeepSeek, xAI, or a local model through Ollama or LM Studio. Add voice with ElevenLabs or OpenAI TTS. Load any VRM model as your companion's body. Everything is modular and swappable.
 
 "Utsuwa" means "vessel" in Japanese — a container for AI to inhabit visually. The app is the vessel; you choose what goes inside.
 

@@ -183,6 +183,7 @@ export async function importSave(
 					intimacy: (firstCharState?.intimacy as number) ?? 0,
 					comfort: (firstCharState?.comfort as number) ?? 0,
 					respect: (firstCharState?.respect as number) ?? 0,
+					appMode: 'dating_sim' as const,
 					relationshipStage: (firstCharState?.relationshipStage as RelationshipStage) || 'stranger',
 					personality: (firstCharState?.personality as PersonalityProfile) || {
 						openness: 0,

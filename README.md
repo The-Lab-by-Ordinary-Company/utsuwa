@@ -19,8 +19,8 @@
 - **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
 - **Chat Interface**: Bottom-centered input bar with streaming responses
 - **Voice Input**: Speech-to-text using Web Speech API with real-time audio visualization
-- **LLM Integration**: Support for 23+ LLM providers including OpenAI, Anthropic, Google, and more
-- **Text-to-Speech**: Support for 13+ TTS providers including ElevenLabs, OpenAI, and Azure
+- **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, and local options
+- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
 - **Character Customization**: Customize your companion's name, personality, and system prompt
@@ -53,26 +53,18 @@ See the [Companion System Architecture](https://utsuwa.ai/docs/technology/compan
 
 ## Supported Providers
 
-### LLM Providers (23)
+### LLM Providers (7)
 
 | Category | Providers |
 |----------|-----------|
-| **Major Cloud** | OpenAI, Anthropic, Google Gemini, DeepSeek, Mistral, xAI (Grok) |
-| **Fast Inference** | Groq, Cerebras, Fireworks, Together AI |
-| **Specialized** | Perplexity (search), Moonshot (long context) |
-| **Aggregators** | OpenRouter (100+ models), OpenAI Compatible (custom endpoints) |
-| **Local Servers** | Ollama, LM Studio, vLLM |
-| **Enterprise** | Azure AI, Cloudflare Workers AI |
-| **Additional** | Novita, 302.AI, Comet, Player2 |
+| **Cloud** | OpenAI, Anthropic, Google Gemini, DeepSeek, xAI (Grok) |
+| **Local** | Ollama, LM Studio |
 
-### TTS Providers (13)
+### TTS Providers (2)
 
 | Category | Providers |
 |----------|-----------|
-| **Premium Cloud** | ElevenLabs, OpenAI TTS, Azure Speech |
-| **Additional Cloud** | Deepgram Aura, Alibaba CosyVoice, VolcEngine, CometAPI |
-| **Local/Free** | Web Speech API (browser), Index-TTS, Browser Local, App Local |
-| **Generic** | OpenAI Compatible TTS, Player2 TTS |
+| **Cloud** | ElevenLabs, OpenAI TTS |
 
 ### STT (Speech-to-Text)
 
@@ -188,8 +180,8 @@ pnpm lint      # Type-check and lint the project
 
 - [x] VRM model loading and display with orbit controls
 - [x] 3D speech bubbles tracking model head position
-- [x] Multi-provider LLM support (23+ providers)
-- [x] Multi-provider TTS support (13+ providers)
+- [x] Multi-provider LLM support (7 providers)
+- [x] Multi-provider TTS support (2 providers)
 - [x] Audio-driven lip-sync
 - [x] VRMA-based animations (idle, talking, blinking)
 - [x] Companion system with multi-axis relationships

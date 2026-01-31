@@ -130,8 +130,8 @@ Text-to-speech converts LLM responses to audio with lip-sync.
 - Provider implementations in `src/lib/services/tts/`
 
 **Supported providers:**
-- Web Speech API (built-in, no key required)
 - ElevenLabs (high quality, requires API key)
+- OpenAI TTS (requires API key)
 
 **Flow:**
 1. LLM response text is sent to TTS provider

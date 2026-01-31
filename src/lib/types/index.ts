@@ -11,34 +11,15 @@ export interface ChatMessage {
 
 // LLM Provider IDs
 export type LLMProvider =
-	// Cloud Commercial
+	// Cloud
 	| 'openai'
 	| 'anthropic'
 	| 'google'
 	| 'deepseek'
-	| 'mistral'
 	| 'xai'
-	| 'groq'
-	| 'perplexity'
-	| 'moonshot'
-	| 'together'
-	// Cloud Additional
-	| 'cerebras'
-	| 'fireworks'
-	| 'novita'
-	| '302ai'
-	| 'comet'
-	// Aggregators
-	| 'openrouter'
-	| 'openai-compatible'
 	// Local
 	| 'ollama'
-	| 'lmstudio'
-	| 'vllm'
-	| 'player2'
-	// Enterprise
-	| 'azure'
-	| 'cloudflare';
+	| 'lmstudio';
 
 export interface LLMConfig {
 	provider: LLMProvider;
@@ -48,23 +29,7 @@ export interface LLMConfig {
 }
 
 // TTS Provider IDs
-export type TTSProvider =
-	// Cloud
-	| 'elevenlabs'
-	| 'openai-tts'
-	| 'azure-speech'
-	| 'deepgram'
-	| 'alibaba-cosyvoice'
-	| 'volcengine'
-	| 'comet-tts'
-	// Local/Free
-	| 'web-speech'
-	| 'index-tts'
-	| 'browser-local'
-	| 'app-local'
-	// Generic
-	| 'openai-compatible-tts'
-	| 'player2-tts';
+export type TTSProvider = 'elevenlabs' | 'openai-tts';
 
 export interface TTSConfig {
 	provider: TTSProvider;
@@ -83,16 +48,11 @@ export interface ProviderConfig {
 	baseUrl?: string;
 	modelId?: string;
 	voiceId?: string;
-	// Azure-specific
-	resourceName?: string;
-	apiVersion?: string;
-	region?: string;
-	// Cloudflare-specific
-	accountId?: string;
-	// Additional settings
 	speed?: number;
 	pitch?: number;
 	volume?: number;
+	cachedModels?: Array<{ id: string; name: string }>;
+	modelsFetchedAt?: number;
 }
 
 // VRM types

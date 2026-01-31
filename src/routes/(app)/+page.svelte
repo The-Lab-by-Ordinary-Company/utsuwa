@@ -17,6 +17,7 @@
 	import { debugEventsStore } from '$lib/stores/debugEvents.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import type { TTSProvider } from '$lib/types';
+	import type { StateUpdates } from '$lib/types/character';
 	import type { EventDefinition } from '$lib/types/events';
 	import { onMount } from 'svelte';
 
@@ -318,27 +319,26 @@
 	}
 
 	// Handle event completion
-	async function handleEventComplete(choiceIndex?: number, stateChanges?: Record<string, number>) {
+	function handleEventComplete(choiceIndex?: number, stateChanges?: Partial<StateUpdates>) {
 		if (!activeEvent) return;
 
 		const event = $state.snapshot(activeEvent);
 
 		if (stateChanges) {
-			characterStore.applyUpdates(stateChanges);
+			characterStore.applyUpdates(stateChanges as StateUpdates);
 		} else if (event.stateChanges) {
 			characterStore.applyUpdates(event.stateChanges);
 		}
 
-		try {
-			await eventsApi.recordCompletedEvent(
-				event,
-				choiceIndex,
-				choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
-			);
+		eventsApi.recordCompletedEvent(
+			event,
+			choiceIndex,
+			choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
+		).then(() => {
 			characterStore.markEventCompleted(event.id);
-		} catch (e) {
+		}).catch((e) => {
 			console.error('Failed to record event completion:', e);
-		}
+		});
 
 		activeEvent = null;
 	}
