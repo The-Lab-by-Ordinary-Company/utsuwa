@@ -77,7 +77,8 @@
 	.orb {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(20px);
+		filter: blur(25px);
+		opacity: 0.6;
 		animation: float 6s ease-in-out infinite;
 	}
 
