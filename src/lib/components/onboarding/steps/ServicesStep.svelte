@@ -84,7 +84,10 @@
 		);
 
 		// Provider changed during fetch - discard stale results
-		if (llmProvider?.id !== targetProvider) return;
+		if (llmProvider?.id !== targetProvider) {
+			llmIsLoading = false;
+			return;
+		}
 
 		llmIsLoading = false;
 
@@ -122,7 +125,10 @@
 		);
 
 		// Provider changed during fetch - discard stale results
-		if (ttsProvider?.id !== targetProvider) return;
+		if (ttsProvider?.id !== targetProvider) {
+			ttsIsLoading = false;
+			return;
+		}
 
 		ttsIsLoading = false;
 

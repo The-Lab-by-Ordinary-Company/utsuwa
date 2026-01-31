@@ -11,17 +11,6 @@ interface FetchModelsResponse {
 	error?: string;
 }
 
-// Provider API endpoints for fetching models
-const PROVIDER_MODELS_ENDPOINTS: Record<string, { url: string; method: string }> = {
-	openai: { url: '/models', method: 'GET' },
-	anthropic: { url: '/models', method: 'GET' },
-	ollama: { url: '/api/tags', method: 'GET' },
-	lmstudio: { url: '/models', method: 'GET' },
-	deepseek: { url: '/models', method: 'GET' },
-	xai: { url: '/models', method: 'GET' },
-	google: { url: '/models', method: 'GET' }
-};
-
 // Default base URLs per provider (LLM and TTS)
 const DEFAULT_BASE_URLS: Record<string, string> = {
 	// LLM providers
@@ -38,12 +27,13 @@ const DEFAULT_BASE_URLS: Record<string, string> = {
 };
 
 // Model filter patterns - only keep chat-compatible models
+// Note: Google IDs have 'models/' prefix stripped before filtering
 const MODEL_FILTERS: Record<string, RegExp> = {
 	openai: /^(gpt-|o1-|o3-|chatgpt-4o-)/,
 	anthropic: /^claude-/,
 	deepseek: /^deepseek-(chat|reasoner)/,
 	xai: /^grok-/,
-	google: /^models\/gemini-/
+	google: /^gemini-/
 };
 
 function filterModels(providerId: string, models: ModelInfo[]): ModelInfo[] {

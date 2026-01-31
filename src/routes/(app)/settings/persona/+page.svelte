@@ -158,7 +158,10 @@
 		);
 
 		// Provider changed during fetch - discard stale results
-		if (consciousnessSettings.activeProvider !== targetProvider) return;
+		if (consciousnessSettings.activeProvider !== targetProvider) {
+			llmIsLoading = false;
+			return;
+		}
 
 		llmIsLoading = false;
 
@@ -200,7 +203,10 @@
 		);
 
 		// Provider changed during fetch - discard stale results
-		if (speechSettings.activeProvider !== targetProvider) return;
+		if (speechSettings.activeProvider !== targetProvider) {
+			ttsIsLoading = false;
+			return;
+		}
 
 		ttsIsLoading = false;
 
