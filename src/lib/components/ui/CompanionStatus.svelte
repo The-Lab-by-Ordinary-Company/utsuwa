@@ -23,7 +23,7 @@
 			{#if isCompanionMode}
 				<!-- Companion Mode: Simplified view -->
 				<div class="companion-header">
-					<Icon name="sparkles" size={16} color="var(--accent)" />
+					<Icon name="sparkles" size={16} color="#01B2FF" />
 					<span class="companion-title">Companion</span>
 				</div>
 
@@ -165,16 +165,17 @@
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 35;
-		background: var(--glass-bg-solid);
+		background: var(--bg-primary);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid var(--glass-border);
-		border-radius: 1rem;
+		border: 1px solid var(--border-light);
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		transition: all 0.2s ease-out;
 		min-width: 280px;
 		display: flex;
 		flex-direction: column;
+		box-shadow: var(--shadow-md);
 	}
 
 	@media (min-width: 641px) {
@@ -184,7 +185,7 @@
 	}
 
 	.status-container.high-affection {
-		box-shadow: 0 0 20px var(--accent-muted);
+		box-shadow: var(--shadow-md), 0 0 20px rgba(1, 178, 255, 0.2);
 	}
 
 	/* Toggle Button */
@@ -198,12 +199,12 @@
 		border: none;
 		border-top: 1px solid transparent;
 		cursor: pointer;
-		color: var(--color-neutral-700);
+		color: var(--text-primary);
 		font-family: inherit;
 	}
 
 	.expanded .status-toggle {
-		border-top: 1px solid var(--color-border);
+		border-top: 1px solid var(--border-light);
 	}
 
 	.mood-icon {
@@ -215,7 +216,7 @@
 		flex: 1;
 		font-size: 0.8rem;
 		font-weight: 500;
-		color: var(--color-neutral-600);
+		color: var(--text-secondary);
 		text-align: left;
 	}
 
@@ -224,6 +225,7 @@
 		flex-shrink: 0;
 		transition: transform 0.2s ease-out;
 		opacity: 0.4;
+		color: var(--text-tertiary);
 	}
 
 	.chevron.rotated {
@@ -231,11 +233,7 @@
 	}
 
 	.status-toggle:hover {
-		background: rgba(0, 0, 0, 0.03);
-	}
-
-	:global(.dark) .status-toggle:hover {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--bg-secondary);
 	}
 
 	/* Expanded Content */
@@ -279,12 +277,12 @@
 
 	.tier-name {
 		font-weight: 600;
-		color: var(--color-neutral-700);
+		color: var(--text-primary);
 	}
 
 	.affection-value {
 		margin-left: auto;
-		color: var(--color-neutral-500);
+		color: var(--text-tertiary);
 		font-size: 0.7rem;
 	}
 
@@ -307,7 +305,7 @@
 		align-items: center;
 		gap: 0.375rem;
 		font-size: 0.7rem;
-		color: var(--color-neutral-600);
+		color: var(--text-secondary);
 	}
 
 	.stat-label {
@@ -317,7 +315,7 @@
 	.stat-bar-container {
 		flex: 1;
 		height: 4px;
-		background: var(--color-neutral-200);
+		background: var(--bg-tertiary);
 		border-radius: 2px;
 		overflow: hidden;
 	}
@@ -347,15 +345,15 @@
 		align-items: center;
 		gap: 0.25rem;
 		font-size: 0.65rem;
-		color: var(--color-neutral-500);
+		color: var(--text-tertiary);
 		padding: 0.25rem 0.5rem;
-		background: var(--color-neutral-100);
-		border-radius: 0.375rem;
+		background: var(--bg-secondary);
+		border-radius: var(--radius-xs);
 	}
 
 	.quick-stat.streak {
-		color: var(--ctp-peach);
-		background: color-mix(in srgb, var(--ctp-peach) 10%, transparent);
+		color: #01B2FF;
+		background: rgba(1, 178, 255, 0.1);
 	}
 
 	/* Profile Link */
@@ -366,16 +364,16 @@
 		gap: 0.375rem;
 		font-size: 0.7rem;
 		font-weight: 500;
-		color: var(--accent);
+		color: #01B2FF;
 		text-decoration: none;
 		padding: 0.5rem;
-		border-radius: 0.5rem;
-		background: var(--accent-subtle);
+		border-radius: var(--radius-sm);
+		background: rgba(1, 178, 255, 0.1);
 		transition: all 0.15s ease;
 	}
 
 	.profile-link:hover {
-		background: var(--accent-muted);
+		background: rgba(1, 178, 255, 0.15);
 		transform: translateX(2px);
 	}
 
@@ -385,13 +383,13 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding-bottom: 0.5rem;
-		border-bottom: 1px solid var(--color-neutral-200);
+		border-bottom: 1px solid var(--border-light);
 		margin-bottom: 0.25rem;
 	}
 
 	.companion-title {
 		font-size: 0.8rem;
 		font-weight: 600;
-		color: var(--accent);
+		color: #01B2FF;
 	}
 </style>

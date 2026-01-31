@@ -34,20 +34,27 @@
 		justify-content: center;
 		width: 44px;
 		height: 44px;
-		background: var(--glass-bg);
+		background: var(--bg-primary);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid var(--glass-border);
-		border-radius: 0.75rem;
-		color: var(--color-neutral-600);
+		border: 1px solid var(--border-light);
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
 		cursor: pointer;
 		transition: all 0.15s;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.icon-btn:hover {
-		background: var(--glass-bg-solid);
-		border-color: var(--color-ring);
-		color: var(--color-neutral-800);
+		background: var(--bg-secondary);
+		border-color: var(--text-tertiary);
+		color: var(--text-primary);
+	}
+
+	.icon-btn:focus {
+		outline: none;
+		border-color: #01B2FF;
+		box-shadow: 0 0 0 3px rgba(1, 178, 255, 0.15);
 	}
 
 	.icon-btn:active {

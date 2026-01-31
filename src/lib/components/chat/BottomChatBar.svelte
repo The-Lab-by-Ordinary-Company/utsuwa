@@ -162,10 +162,10 @@
 		padding: 0.75rem 1rem;
 		width: fit-content;
 		max-width: 600px;
-		background: color-mix(in srgb, var(--ctp-red, #d20f39) 90%, var(--color-neutral-900));
+		background: var(--color-error);
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
-		border-radius: 0.75rem;
+		border-radius: var(--radius-md);
 		color: white;
 		font-size: 0.875rem;
 		cursor: pointer;
@@ -228,31 +228,25 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		background: var(--glass-bg);
+		background: var(--bg-primary);
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
-		border: 1px solid var(--glass-border);
-		border-radius: 1.75rem;
+		border: 1px solid var(--border-light);
+		border-radius: var(--radius-full);
 		padding: 0.5rem;
 		min-height: 56px;
-		box-shadow:
-			0 4px 20px rgba(0, 0, 0, 0.08),
-			0 2px 8px rgba(0, 0, 0, 0.04);
+		box-shadow: var(--shadow-md);
 		transition: border-color 0.2s, box-shadow 0.2s;
 	}
 
 	.input-wrapper:focus-within {
-		border-color: var(--color-ring);
-		box-shadow:
-			0 4px 20px rgba(0, 0, 0, 0.12),
-			0 2px 8px rgba(0, 0, 0, 0.06);
+		border-color: #01B2FF;
+		box-shadow: var(--shadow-md), 0 0 0 3px rgba(1, 178, 255, 0.15);
 	}
 
 	.input-wrapper.recording {
-		border-color: var(--accent);
-		box-shadow:
-			0 4px 20px rgba(0, 0, 0, 0.12),
-			0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+		border-color: #01B2FF;
+		box-shadow: var(--shadow-md), 0 0 0 3px rgba(1, 178, 255, 0.15);
 	}
 
 	textarea {
@@ -260,7 +254,7 @@
 		padding: 0.625rem 0.5rem;
 		border: none;
 		background: transparent;
-		color: var(--color-neutral-900);
+		color: var(--text-primary);
 		font-size: 1rem;
 		resize: none;
 		outline: none;
@@ -270,7 +264,7 @@
 	}
 
 	textarea::placeholder {
-		color: var(--color-neutral-500);
+		color: var(--text-tertiary);
 	}
 
 	textarea:disabled {
@@ -294,47 +288,41 @@
 
 	.mic-btn {
 		background: transparent;
-		color: var(--color-neutral-500);
+		color: var(--text-tertiary);
 	}
 
 	.mic-btn:hover:not(:disabled) {
-		background: var(--color-neutral-200);
-		color: var(--color-neutral-700);
+		background: var(--bg-secondary);
+		color: var(--text-primary);
 	}
 
 	.mic-btn.recording {
-		background: var(--accent);
-		color: var(--accent-foreground);
+		background: #01B2FF;
+		color: white;
 		animation: pulse-recording 1.5s ease-in-out infinite;
 	}
 
 	.mic-btn.recording:hover {
-		background: var(--accent-hover);
+		background: #00a0e6;
 	}
 
-	
 	@keyframes pulse-recording {
 		0%,
 		100% {
-			box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+			box-shadow: 0 0 0 0 rgba(1, 178, 255, 0.4);
 		}
 		50% {
-			box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent);
+			box-shadow: 0 0 0 8px rgba(1, 178, 255, 0);
 		}
-	}
-
-	:global(.dark) .mic-btn:hover:not(:disabled):not(.recording) {
-		background: var(--color-neutral-300);
-		color: var(--color-neutral-700);
 	}
 
 	.send-btn {
-		background: var(--accent);
-		color: var(--accent-foreground);
+		background: #01B2FF;
+		color: white;
 	}
 
 	.send-btn:hover:not(:disabled) {
-		background: var(--accent-hover);
+		background: #00a0e6;
 	}
 
 	.send-btn:active:not(:disabled) {
