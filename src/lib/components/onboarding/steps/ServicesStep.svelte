@@ -37,7 +37,15 @@
 	let ttsEnabled = $state(false);
 	const ttsSettings = $derived(modulesStore.getModuleSettings('speech'));
 	const ttsProvider = $derived(getTTSProvider(ttsSettings.activeProvider as string));
-	const ttsModels = $derived(ttsProvider?.models ?? []);
+	const staticTTSModels = $derived(ttsProvider?.models ?? []);
+
+	// Dynamic model fetching state for TTS
+	let ttsIsLoading = $state(false);
+	let ttsFetchError = $state<string | null>(null);
+	let ttsDynamicModels = $state<ModelInfo[] | null>(null);
+
+	// Use dynamic models if available, otherwise static
+	const ttsModels = $derived(ttsDynamicModels ?? staticTTSModels);
 
 	// Check if API key is present for current TTS provider
 	const ttsHasApiKey = $derived.by(() => {
@@ -96,6 +104,44 @@
 		}
 	}
 
+	// Fetch TTS models from provider API
+	async function fetchTTSModels() {
+		const targetProvider = ttsProvider?.id;
+		if (!targetProvider || ttsProvider.isLocal) return;
+
+		const config = settingsStore.getProviderConfig(targetProvider);
+		if (!config.apiKey) return;
+
+		ttsIsLoading = true;
+		ttsFetchError = null;
+
+		const result = await fetchProviderModels(
+			targetProvider,
+			config.apiKey,
+			config.baseUrl
+		);
+
+		// Provider changed during fetch - discard stale results
+		if (ttsProvider?.id !== targetProvider) return;
+
+		ttsIsLoading = false;
+
+		if (result.error) {
+			ttsFetchError = 'Using default list';
+			ttsDynamicModels = null;
+		} else if (result.models.length > 0) {
+			ttsDynamicModels = result.models;
+			settingsStore.setCachedModels(targetProvider, result.models);
+			// Auto-select first model if none selected
+			if (!ttsSettings.activeModel && result.models.length > 0) {
+				modulesStore.setModuleSetting('speech', 'activeModel', result.models[0].id);
+			}
+		} else {
+			// Empty but not an error - silently fall back to static models
+			ttsDynamicModels = null;
+		}
+	}
+
 	// Handlers
 	function handleLLMProviderChange(providerId: string) {
 		modulesStore.setModuleSetting('consciousness', 'activeProvider', providerId);
@@ -150,6 +196,18 @@
 	function handleTTSProviderChange(providerId: string) {
 		modulesStore.setModuleSetting('speech', 'activeProvider', providerId);
 		const provider = getTTSProvider(providerId);
+
+		// Reset dynamic models when provider changes
+		ttsDynamicModels = null;
+		ttsFetchError = null;
+		ttsIsLoading = false;
+
+		// Check for cached models
+		const cached = settingsStore.getCachedModels(providerId);
+		if (cached && cached.length > 0) {
+			ttsDynamicModels = cached;
+		}
+
 		if (provider?.models?.length) {
 			modulesStore.setModuleSetting('speech', 'activeModel', provider.models[0].id);
 		}
@@ -169,6 +227,13 @@
 			if (apiKey) {
 				settingsStore.markProviderAdded(ttsProvider.id);
 			}
+		}
+	}
+
+	function handleTTSApiKeyBlur() {
+		const config = settingsStore.getProviderConfig(ttsProvider?.id ?? '');
+		if (config.apiKey && ttsProvider && !ttsProvider.isLocal) {
+			fetchTTSModels();
 		}
 	}
 
@@ -292,6 +357,7 @@
 					placeholder="Enter API Key..."
 					value={settingsStore.getProviderConfig(ttsProvider.id).apiKey ?? ''}
 					oninput={(e) => handleTTSApiKeyChange(e.currentTarget.value)}
+					onblur={handleTTSApiKeyBlur}
 				/>
 			{/if}
 
@@ -300,7 +366,10 @@
 					models={ttsModels}
 					value={ttsSettings.activeModel as string}
 					onSelect={handleTTSModelChange}
-					placeholder="Select voice..."
+					placeholder="Select model..."
+					isLoading={ttsIsLoading}
+					fetchError={ttsFetchError}
+					onRefresh={ttsHasApiKey ? fetchTTSModels : undefined}
 					disabled={!ttsHasApiKey}
 					disabledMessage="Enter API key first"
 				/>

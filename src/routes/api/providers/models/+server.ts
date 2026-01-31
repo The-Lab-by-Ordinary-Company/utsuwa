@@ -22,15 +22,19 @@ const PROVIDER_MODELS_ENDPOINTS: Record<string, { url: string; method: string }>
 	google: { url: '/models', method: 'GET' }
 };
 
-// Default base URLs per provider
-const DEFAULT_BASE_URLS: Partial<Record<LLMProvider, string>> = {
+// Default base URLs per provider (LLM and TTS)
+const DEFAULT_BASE_URLS: Record<string, string> = {
+	// LLM providers
 	openai: 'https://api.openai.com/v1',
 	anthropic: 'https://api.anthropic.com/v1',
 	ollama: 'http://localhost:11434',
 	lmstudio: 'http://localhost:1234/v1',
 	deepseek: 'https://api.deepseek.com',
 	xai: 'https://api.x.ai/v1',
-	google: 'https://generativelanguage.googleapis.com/v1beta'
+	google: 'https://generativelanguage.googleapis.com/v1beta',
+	// TTS providers
+	elevenlabs: 'https://api.elevenlabs.io/v1',
+	'openai-tts': 'https://api.openai.com/v1'
 };
 
 // Model filter patterns - only keep chat-compatible models
@@ -157,6 +161,38 @@ async function fetchGoogleModels(apiKey: string, baseUrl: string): Promise<Model
 	}));
 }
 
+// TTS Provider fetch functions
+
+async function fetchElevenLabsModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
+	const response = await fetch(`${baseUrl}/models`, {
+		headers: { 'xi-api-key': apiKey }
+	});
+	if (!response.ok) throw new Error(`Failed to fetch models: ${response.statusText}`);
+	const models = await response.json();
+	// Filter to TTS-capable models only
+	return models
+		.filter((m: { can_do_text_to_speech?: boolean }) => m.can_do_text_to_speech)
+		.map((m: { model_id: string; name: string }) => ({
+			id: m.model_id,
+			name: m.name
+		}));
+}
+
+async function fetchOpenAITTSModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
+	const response = await fetch(`${baseUrl}/models`, {
+		headers: { Authorization: `Bearer ${apiKey}` }
+	});
+	if (!response.ok) throw new Error(`Failed to fetch models: ${response.statusText}`);
+	const data = await response.json();
+	// Filter to TTS models only (contain "tts" in name)
+	return data.data
+		.filter((m: { id: string }) => m.id.includes('tts'))
+		.map((m: { id: string }) => ({
+			id: m.id,
+			name: normalizeModelName(m.id, 'openai-tts')
+		}));
+}
+
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const { providerId, apiKey, baseUrl } = await request.json();
@@ -201,6 +237,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			case 'google':
 				if (!apiKey) throw new Error('API key required for Google');
 				models = await fetchGoogleModels(apiKey, cleanBaseUrl);
+				break;
+			// TTS providers
+			case 'elevenlabs':
+				if (!apiKey) throw new Error('API key required for ElevenLabs');
+				models = await fetchElevenLabsModels(apiKey, cleanBaseUrl);
+				break;
+			case 'openai-tts':
+				if (!apiKey) throw new Error('API key required for OpenAI TTS');
+				models = await fetchOpenAITTSModels(apiKey, cleanBaseUrl);
 				break;
 			default:
 				return Response.json(

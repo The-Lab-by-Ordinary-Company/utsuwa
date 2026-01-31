@@ -112,12 +112,20 @@
 		return !!config.apiKey;
 	});
 
-	const ttsModels = $derived.by(() => {
+	const staticTTSModels = $derived.by(() => {
 		const providerId = speechSettings.activeProvider as string;
 		if (!providerId) return [];
 		const provider = getTTSProvider(providerId);
 		return provider?.models ?? [];
 	});
+
+	// Dynamic model fetching state for TTS
+	let ttsIsLoading = $state(false);
+	let ttsFetchError = $state<string | null>(null);
+	let ttsDynamicModels = $state<ModelInfo[] | null>(null);
+
+	// Use dynamic models if available, otherwise static
+	const ttsModels = $derived(ttsDynamicModels ?? staticTTSModels);
 
 	// Check if API key is present for current TTS provider
 	const ttsHasApiKey = $derived.by(() => {
@@ -172,6 +180,48 @@
 		}
 	}
 
+	// Fetch TTS models from provider API
+	async function fetchTTSModels() {
+		const targetProvider = speechSettings.activeProvider as string;
+		if (!targetProvider) return;
+		const provider = getTTSProvider(targetProvider);
+		if (!provider || provider.isLocal) return;
+
+		const config = settingsStore.getProviderConfig(provider.id);
+		if (!config.apiKey) return;
+
+		ttsIsLoading = true;
+		ttsFetchError = null;
+
+		const result = await fetchProviderModels(
+			provider.id,
+			config.apiKey,
+			config.baseUrl
+		);
+
+		// Provider changed during fetch - discard stale results
+		if (speechSettings.activeProvider !== targetProvider) return;
+
+		ttsIsLoading = false;
+
+		if (result.error) {
+			ttsFetchError = 'Using default list';
+			ttsDynamicModels = null;
+		} else if (result.models.length > 0) {
+			ttsDynamicModels = result.models;
+			settingsStore.setCachedModels(provider.id, result.models);
+			// Auto-select first model if none selected or current selection not in list
+			const currentModel = speechSettings.activeModel as string;
+			const modelExists = result.models.some(m => m.id === currentModel);
+			if (!currentModel || !modelExists) {
+				modulesStore.setModuleSetting('speech', 'activeModel', result.models[0].id);
+			}
+		} else {
+			// Empty but not an error - silently fall back to static models
+			ttsDynamicModels = null;
+		}
+	}
+
 	// Load form values from store when character is ready
 	$effect(() => {
 		if (characterStore.isReady) {
@@ -220,6 +270,18 @@
 	function handleTTSProviderChange(providerId: string) {
 		modulesStore.setModuleSetting('speech', 'activeProvider', providerId);
 		const provider = getTTSProvider(providerId);
+
+		// Reset dynamic models when provider changes
+		ttsDynamicModels = null;
+		ttsFetchError = null;
+		ttsIsLoading = false;
+
+		// Check for cached models
+		const cached = settingsStore.getCachedModels(providerId);
+		if (cached && cached.length > 0) {
+			ttsDynamicModels = cached;
+		}
+
 		if (provider?.models?.length) {
 			modulesStore.setModuleSetting('speech', 'activeModel', provider.models[0].id);
 		}
@@ -231,6 +293,16 @@
 
 	function handleTTSModelChange(modelId: string) {
 		modulesStore.setModuleSetting('speech', 'activeModel', modelId);
+	}
+
+	function handleTTSApiKeyBlur() {
+		const providerId = speechSettings.activeProvider as string;
+		if (!providerId) return;
+		const provider = getTTSProvider(providerId);
+		const config = settingsStore.getProviderConfig(providerId);
+		if (config.apiKey && provider && !provider.isLocal) {
+			fetchTTSModels();
+		}
 	}
 
 	function handleApiKeyChange(providerId: string, apiKey: string) {
@@ -496,6 +568,7 @@
 												placeholder="API Key"
 												value={settingsStore.getProviderConfig(provider.id).apiKey ?? ''}
 												onchange={(e) => handleApiKeyChange(provider.id, e.currentTarget.value)}
+												onblur={handleTTSApiKeyBlur}
 											/>
 										</div>
 									{/if}
@@ -508,7 +581,10 @@
 											models={ttsModels}
 											value={speechSettings.activeModel as string}
 											onSelect={handleTTSModelChange}
-											placeholder="Select voice..."
+											placeholder="Select model..."
+											isLoading={ttsIsLoading}
+											fetchError={ttsFetchError}
+											onRefresh={ttsHasApiKey ? fetchTTSModels : undefined}
 											disabled={!ttsHasApiKey}
 											disabledMessage="Enter API key first"
 										/>

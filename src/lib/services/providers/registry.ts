@@ -102,7 +102,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 // ============================================
 
 export const TTS_PROVIDERS: ProviderMetadata[] = [
-	// Cloud TTS
+	// Cloud TTS - models fetched dynamically from API after user enters key
 	{
 		id: 'elevenlabs',
 		name: 'ElevenLabs',
@@ -111,13 +111,7 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 		icon: '🎙️',
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.elevenlabs.io/v1/',
-		models: [
-			{ id: 'eleven_multilingual_v2', name: 'Multilingual v2 (29 languages)' },
-			{ id: 'eleven_flash_v2_5', name: 'Flash v2.5 (Ultra-low latency)' },
-			{ id: 'eleven_turbo_v2_5', name: 'Turbo v2.5 (Low latency)' },
-			{ id: 'eleven_turbo_v2', name: 'Turbo v2 (English only)' },
-			{ id: 'eleven_flash_v2', name: 'Flash v2 (English only)' }
-		],
+		// models fetched from API
 		voices: [
 			{ id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel' },
 			{ id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella' },
