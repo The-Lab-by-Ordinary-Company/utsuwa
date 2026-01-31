@@ -17,7 +17,7 @@
 			placeholder: '#9ca3af' // text-tertiary equivalent
 		},
 		dark: {
-			background: '#212121',
+			background: '#171717',
 			placeholder: '#6b7280'
 		}
 	};
