@@ -18,17 +18,6 @@ const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
 // Providers that don't require API keys
 const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
 
-// Default models per provider
-const DEFAULT_MODELS: Partial<Record<LLMProvider, string>> = {
-	openai: 'gpt-4.1',
-	anthropic: 'claude-sonnet-4-5-20251101',
-	google: 'gemini-3-pro-preview',
-	deepseek: 'deepseek-chat',
-	xai: 'grok-3',
-	ollama: 'llama3.2',
-	lmstudio: 'local-model'
-};
-
 export const POST: RequestHandler = async ({ request }) => {
 	const { messages, provider, model, apiKey, baseURL, systemPrompt } = await request.json();
 
@@ -38,6 +27,14 @@ export const POST: RequestHandler = async ({ request }) => {
 	const isLocalProvider = LOCAL_PROVIDERS.includes(typedProvider);
 	if (!apiKey && !isLocalProvider) {
 		return new Response(JSON.stringify({ error: 'API key required' }), {
+			status: 400,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
+
+	// Model is required - no more static fallbacks
+	if (!model) {
+		return new Response(JSON.stringify({ error: 'Model is required. Please select a model from the list.' }), {
 			status: 400,
 			headers: { 'Content-Type': 'application/json' }
 		});
@@ -68,13 +65,24 @@ export const POST: RequestHandler = async ({ request }) => {
 			...messages
 		];
 
-		const { textStream } = streamText({
+		const result = streamText({
 			apiKey: apiKey || 'not-needed', // Local providers don't need API keys but xsai requires a value
 			baseURL: providerBaseURL,
-			model: model || DEFAULT_MODELS[typedProvider] || 'gpt-4o',
+			model,
 			messages: messagesWithSystem,
 			headers
 		});
+
+		// Attach error handlers to prevent unhandled promise rejections from crashing the server
+		// These catch errors from background promises that would otherwise crash Node
+		const silentCatch = (err: Error) => {
+			console.error('Provider API error:', err.message);
+		};
+		result.messages?.catch?.(silentCatch);
+		result.steps?.catch?.(silentCatch);
+		result.totalUsage?.catch?.(silentCatch);
+
+		const { textStream } = result;
 
 		// Create a readable stream for SSE
 		const encoder = new TextEncoder();

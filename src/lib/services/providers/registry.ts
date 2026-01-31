@@ -19,85 +19,54 @@ export interface ProviderMetadata {
 // ============================================
 
 export const LLM_PROVIDERS: ProviderMetadata[] = [
-	// Cloud Commercial (10)
+	// Cloud providers - models fetched dynamically from API after user enters key
 	{
 		id: 'openai',
 		name: 'OpenAI',
-		description: 'GPT-4.1, o3, and more',
+		description: 'GPT-4, o1, and more',
 		category: 'llm',
 		icon: '🤖',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.openai.com/v1/',
-		models: [
-			{ id: 'gpt-4.1', name: 'GPT-4.1' },
-			{ id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini' },
-			{ id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano' },
-			{ id: 'o3', name: 'o3' },
-			{ id: 'o3-mini', name: 'o3 Mini' },
-			{ id: 'gpt-4o', name: 'GPT-4o (Legacy)' }
-		]
+		defaultBaseUrl: 'https://api.openai.com/v1/'
 	},
 	{
 		id: 'anthropic',
 		name: 'Anthropic',
-		description: 'Claude 4.5 Opus, Sonnet, and Haiku',
+		description: 'Claude models',
 		category: 'llm',
 		icon: '🧠',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.anthropic.com/v1/',
-		models: [
-			{ id: 'claude-sonnet-4-5-20251101', name: 'Claude Sonnet 4.5' },
-			{ id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5' },
-			{ id: 'claude-haiku-4-5-20251101', name: 'Claude Haiku 4.5' },
-			{ id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4' },
-			{ id: 'claude-opus-4-20250514', name: 'Claude Opus 4' }
-		]
+		defaultBaseUrl: 'https://api.anthropic.com/v1/'
 	},
 	{
 		id: 'google',
 		name: 'Google Gemini',
-		description: 'Gemini 3 Pro and 2.5 Flash',
+		description: 'Gemini models',
 		category: 'llm',
 		icon: '✨',
 		iconColor: '#4285F4',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-		models: [
-			{ id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview' },
-			{ id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite' },
-			{ id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Deprecated)' }
-		]
+		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
 	},
 	{
 		id: 'deepseek',
 		name: 'DeepSeek',
-		description: 'DeepSeek Chat and Coder models',
+		description: 'DeepSeek models',
 		category: 'llm',
 		icon: '🔍',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.deepseek.com/',
-		models: [
-			{ id: 'deepseek-chat', name: 'DeepSeek Chat' },
-			{ id: 'deepseek-coder', name: 'DeepSeek Coder' },
-			{ id: 'deepseek-reasoner', name: 'DeepSeek Reasoner' }
-		]
+		defaultBaseUrl: 'https://api.deepseek.com/'
 	},
 	{
 		id: 'xai',
 		name: 'xAI (Grok)',
-		description: 'Grok 3, Grok 4, and more',
+		description: 'Grok models',
 		category: 'llm',
 		icon: '𝕏',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.x.ai/v1/',
-		models: [
-			{ id: 'grok-3', name: 'Grok 3' },
-			{ id: 'grok-4', name: 'Grok 4' },
-			{ id: 'grok-3-mini', name: 'Grok 3 Mini' },
-			{ id: 'grok-2-vision-1212', name: 'Grok 2 Vision' }
-		]
+		defaultBaseUrl: 'https://api.x.ai/v1/'
 	},
-	// Local LLM
+	// Local LLM - keep example models as hints
 	{
 		id: 'ollama',
 		name: 'Ollama',

@@ -51,6 +51,8 @@ export interface ProviderConfig {
 	speed?: number;
 	pitch?: number;
 	volume?: number;
+	cachedModels?: Array<{ id: string; name: string }>;
+	modelsFetchedAt?: number;
 }
 
 // VRM types

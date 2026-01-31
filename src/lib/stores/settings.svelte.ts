@@ -172,6 +172,35 @@ function createSettingsStore() {
 		setProviderConfig('elevenlabs', { voiceId: id });
 	}
 
+	// Cached models management
+	const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+	function setCachedModels(providerId: string, models: Array<{ id: string; name: string }>) {
+		setProviderConfig(providerId, {
+			cachedModels: models,
+			modelsFetchedAt: Date.now()
+		});
+	}
+
+	function getCachedModels(providerId: string): Array<{ id: string; name: string }> | null {
+		const config = providerConfigs[providerId];
+		if (!config?.cachedModels) return null;
+
+		// Check if cache has expired
+		const age = Date.now() - (config.modelsFetchedAt ?? 0);
+		if (age > CACHE_TTL_MS) return null;
+
+		return config.cachedModels;
+	}
+
+	function clearCachedModels(providerId: string) {
+		if (providerConfigs[providerId]) {
+			delete providerConfigs[providerId].cachedModels;
+			delete providerConfigs[providerId].modelsFetchedAt;
+			save();
+		}
+	}
+
 	return {
 		// Provider configs
 		get providerConfigs() {
@@ -209,7 +238,12 @@ function createSettingsStore() {
 		setAnthropicApiKey,
 		setOpenaiApiKey,
 		setElevenLabsApiKey,
-		setElevenLabsVoiceId
+		setElevenLabsVoiceId,
+
+		// Cached models
+		setCachedModels,
+		getCachedModels,
+		clearCachedModels
 	};
 }
 

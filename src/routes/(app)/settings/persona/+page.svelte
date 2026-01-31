@@ -10,6 +10,7 @@
 	import { allEvents } from '$lib/data/events';
 	import { getCompletedEvents } from '$lib/services/storage/events';
 	import type { CompletedEventRecord, EventType } from '$lib/types/events';
+	import { fetchProviderModels, type ModelInfo } from '$lib/services/providers/model-fetcher';
 
 	// Character state - single companion system
 	const charState = $derived.by(() => characterStore.state);
@@ -85,11 +86,30 @@
 	const isLLMEnabled = $derived.by(() => modulesStore.isModuleEnabled('consciousness'));
 	const isTTSEnabled = $derived.by(() => modulesStore.isModuleEnabled('speech'));
 
-	const llmModels = $derived.by(() => {
+	// Dynamic model fetching state for LLM
+	let llmIsLoading = $state(false);
+	let llmFetchError = $state<string | null>(null);
+	let llmDynamicModels = $state<ModelInfo[] | null>(null);
+
+	const staticLLMModels = $derived.by(() => {
 		const providerId = consciousnessSettings.activeProvider as string;
 		if (!providerId) return [];
 		const provider = getLLMProvider(providerId);
 		return provider?.models ?? [];
+	});
+
+	// Use dynamic models if available, otherwise static
+	const llmModels = $derived(llmDynamicModels ?? staticLLMModels);
+
+	// Check if API key is present for current LLM provider
+	const llmHasApiKey = $derived.by(() => {
+		const providerId = consciousnessSettings.activeProvider as string;
+		if (!providerId) return false;
+		const provider = getLLMProvider(providerId);
+		if (!provider) return false;
+		if (provider.isLocal || !provider.requiresApiKey) return true;
+		const config = settingsStore.getProviderConfig(providerId);
+		return !!config.apiKey;
 	});
 
 	const ttsModels = $derived.by(() => {
@@ -98,6 +118,59 @@
 		const provider = getTTSProvider(providerId);
 		return provider?.models ?? [];
 	});
+
+	// Check if API key is present for current TTS provider
+	const ttsHasApiKey = $derived.by(() => {
+		const providerId = speechSettings.activeProvider as string;
+		if (!providerId) return false;
+		const provider = getTTSProvider(providerId);
+		if (!provider) return false;
+		if (provider.isLocal || !provider.requiresApiKey) return true;
+		const config = settingsStore.getProviderConfig(providerId);
+		return !!config.apiKey;
+	});
+
+	// Fetch models from provider API
+	async function fetchLLMModels() {
+		const targetProvider = consciousnessSettings.activeProvider as string;
+		if (!targetProvider) return;
+		const provider = getLLMProvider(targetProvider);
+		if (!provider || provider.isLocal) return;
+
+		const config = settingsStore.getProviderConfig(provider.id);
+		if (!config.apiKey) return;
+
+		llmIsLoading = true;
+		llmFetchError = null;
+
+		const result = await fetchProviderModels(
+			provider.id,
+			config.apiKey,
+			config.baseUrl
+		);
+
+		// Provider changed during fetch - discard stale results
+		if (consciousnessSettings.activeProvider !== targetProvider) return;
+
+		llmIsLoading = false;
+
+		if (result.error) {
+			llmFetchError = 'Using default list';
+			llmDynamicModels = null;
+		} else if (result.models.length > 0) {
+			llmDynamicModels = result.models;
+			settingsStore.setCachedModels(provider.id, result.models);
+			// Auto-select first model if none selected or current selection not in list
+			const currentModel = consciousnessSettings.activeModel as string;
+			const modelExists = result.models.some(m => m.id === currentModel);
+			if (!currentModel || !modelExists) {
+				modulesStore.setModuleSetting('consciousness', 'activeModel', result.models[0].id);
+			}
+		} else {
+			// Empty but not an error - silently fall back to static models
+			llmDynamicModels = null;
+		}
+	}
 
 	// Load form values from store when character is ready
 	$effect(() => {
@@ -119,6 +192,18 @@
 	function handleLLMProviderChange(providerId: string) {
 		modulesStore.setModuleSetting('consciousness', 'activeProvider', providerId);
 		const provider = getLLMProvider(providerId);
+
+		// Reset dynamic models when provider changes
+		llmDynamicModels = null;
+		llmFetchError = null;
+		llmIsLoading = false;
+
+		// Check for cached models
+		const cached = settingsStore.getCachedModels(providerId);
+		if (cached && cached.length > 0) {
+			llmDynamicModels = cached;
+		}
+
 		if (provider?.models?.length) {
 			modulesStore.setModuleSetting('consciousness', 'activeModel', provider.models[0].id);
 		}
@@ -152,6 +237,16 @@
 		settingsStore.setProviderConfig(providerId, { apiKey });
 		if (apiKey) {
 			settingsStore.markProviderAdded(providerId);
+		}
+	}
+
+	function handleLLMApiKeyBlur() {
+		const providerId = consciousnessSettings.activeProvider as string;
+		if (!providerId) return;
+		const provider = getLLMProvider(providerId);
+		const config = settingsStore.getProviderConfig(providerId);
+		if (config.apiKey && provider && !provider.isLocal) {
+			fetchLLMModels();
 		}
 	}
 
@@ -312,7 +407,23 @@
 									placeholder="Select LLM provider..."
 								/>
 
-								{#if consciousnessSettings.activeProvider && llmModels.length > 0}
+								{#if consciousnessSettings.activeProvider}
+									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
+									{#if provider?.requiresApiKey}
+										<div class="api-key-row">
+											<input
+												type="password"
+												class="api-key-input"
+												placeholder="API Key"
+												value={settingsStore.getProviderConfig(provider.id).apiKey ?? ''}
+												onchange={(e) => handleApiKeyChange(provider.id, e.currentTarget.value)}
+												onblur={handleLLMApiKeyBlur}
+											/>
+										</div>
+									{/if}
+								{/if}
+
+								{#if consciousnessSettings.activeProvider}
 									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
 									{#if !provider?.isLocal}
 										<ModelDropdown
@@ -320,6 +431,11 @@
 											value={consciousnessSettings.activeModel as string}
 											onSelect={handleLLMModelChange}
 											placeholder="Select model..."
+											isLoading={llmIsLoading}
+											fetchError={llmFetchError}
+											onRefresh={llmHasApiKey ? fetchLLMModels : undefined}
+											disabled={!llmHasApiKey}
+											disabledMessage="Enter API key first"
 										/>
 									{/if}
 								{/if}
@@ -336,23 +452,6 @@
 												onchange={(e) => handleLLMModelChange(e.currentTarget.value)}
 											/>
 										</div>
-									{/if}
-								{/if}
-
-								{#if consciousnessSettings.activeProvider}
-									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
-									{#if provider?.requiresApiKey}
-										<div class="api-key-row">
-											<input
-												type="password"
-												class="api-key-input"
-												placeholder="API Key"
-												value={settingsStore.getProviderConfig(provider.id).apiKey ?? ''}
-												onchange={(e) => handleApiKeyChange(provider.id, e.currentTarget.value)}
-											/>
-										</div>
-									{/if}
-									{#if provider?.isLocal}
 										<div class="api-key-row">
 											<input
 												type="text"
@@ -387,7 +486,7 @@
 									placeholder="Select TTS provider..."
 								/>
 
-								{#if speechSettings.activeProvider && ttsModels.length > 0}
+								{#if speechSettings.activeProvider}
 									{@const provider = getTTSProvider(speechSettings.activeProvider as string)}
 									{#if !provider?.isLocal}
 										<ModelDropdown
@@ -395,6 +494,8 @@
 											value={speechSettings.activeModel as string}
 											onSelect={handleTTSModelChange}
 											placeholder="Select voice..."
+											disabled={!ttsHasApiKey}
+											disabledMessage="Enter API key first"
 										/>
 									{/if}
 								{/if}

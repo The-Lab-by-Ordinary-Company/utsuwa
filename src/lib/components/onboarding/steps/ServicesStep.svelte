@@ -3,6 +3,7 @@
 	import { modulesStore } from '$lib/stores/modules.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+	import { fetchProviderModels, type ModelInfo } from '$lib/services/providers/model-fetcher';
 
 	interface Props {
 		onNext: () => void;
@@ -14,13 +15,37 @@
 	// LLM State
 	const llmSettings = $derived(modulesStore.getModuleSettings('consciousness'));
 	const llmProvider = $derived(getLLMProvider(llmSettings.activeProvider as string));
-	const llmModels = $derived(llmProvider?.models ?? []);
+	const staticLLMModels = $derived(llmProvider?.models ?? []);
+
+	// Dynamic model fetching state for LLM
+	let llmIsLoading = $state(false);
+	let llmFetchError = $state<string | null>(null);
+	let llmDynamicModels = $state<ModelInfo[] | null>(null);
+
+	// Use dynamic models if available, otherwise static
+	const llmModels = $derived(llmDynamicModels ?? staticLLMModels);
+
+	// Check if API key is present for current LLM provider
+	const llmHasApiKey = $derived.by(() => {
+		if (!llmProvider) return false;
+		if (llmProvider.isLocal || !llmProvider.requiresApiKey) return true;
+		const config = settingsStore.getProviderConfig(llmProvider.id);
+		return !!config.apiKey;
+	});
 
 	// TTS State
 	let ttsEnabled = $state(false);
 	const ttsSettings = $derived(modulesStore.getModuleSettings('speech'));
 	const ttsProvider = $derived(getTTSProvider(ttsSettings.activeProvider as string));
 	const ttsModels = $derived(ttsProvider?.models ?? []);
+
+	// Check if API key is present for current TTS provider
+	const ttsHasApiKey = $derived.by(() => {
+		if (!ttsProvider) return false;
+		if (ttsProvider.isLocal || !ttsProvider.requiresApiKey) return true;
+		const config = settingsStore.getProviderConfig(ttsProvider.id);
+		return !!config.apiKey;
+	});
 
 	// Validation
 	const isLLMConfigured = $derived.by(() => {
@@ -33,10 +58,60 @@
 		return !!config.apiKey;
 	});
 
+	// Fetch models from provider API
+	async function fetchLLMModels() {
+		const targetProvider = llmProvider?.id;
+		if (!targetProvider || llmProvider.isLocal) return;
+
+		const config = settingsStore.getProviderConfig(targetProvider);
+		if (!config.apiKey) return;
+
+		llmIsLoading = true;
+		llmFetchError = null;
+
+		const result = await fetchProviderModels(
+			targetProvider,
+			config.apiKey,
+			config.baseUrl
+		);
+
+		// Provider changed during fetch - discard stale results
+		if (llmProvider?.id !== targetProvider) return;
+
+		llmIsLoading = false;
+
+		if (result.error) {
+			llmFetchError = 'Using default list';
+			llmDynamicModels = null;
+		} else if (result.models.length > 0) {
+			llmDynamicModels = result.models;
+			settingsStore.setCachedModels(targetProvider, result.models);
+			// Auto-select first model if none selected
+			if (!llmSettings.activeModel && result.models.length > 0) {
+				modulesStore.setModuleSetting('consciousness', 'activeModel', result.models[0].id);
+			}
+		} else {
+			// Empty but not an error - silently fall back to static models
+			llmDynamicModels = null;
+		}
+	}
+
 	// Handlers
 	function handleLLMProviderChange(providerId: string) {
 		modulesStore.setModuleSetting('consciousness', 'activeProvider', providerId);
 		const provider = getLLMProvider(providerId);
+
+		// Reset dynamic models when provider changes
+		llmDynamicModels = null;
+		llmFetchError = null;
+		llmIsLoading = false;
+
+		// Check for cached models
+		const cached = settingsStore.getCachedModels(providerId);
+		if (cached && cached.length > 0) {
+			llmDynamicModels = cached;
+		}
+
 		if (provider?.models?.length) {
 			modulesStore.setModuleSetting('consciousness', 'activeModel', provider.models[0].id);
 		}
@@ -56,6 +131,13 @@
 			if (apiKey) {
 				settingsStore.markProviderAdded(llmProvider.id);
 			}
+		}
+	}
+
+	function handleLLMApiKeyBlur() {
+		const config = settingsStore.getProviderConfig(llmProvider?.id ?? '');
+		if (config.apiKey && llmProvider && !llmProvider.isLocal) {
+			fetchLLMModels();
 		}
 	}
 
@@ -132,12 +214,28 @@
 			placeholder="Select LLM provider..."
 		/>
 
-		{#if llmSettings.activeProvider && llmModels.length > 0 && !llmProvider?.isLocal}
+		{#if llmProvider?.requiresApiKey}
+			<input
+				type="password"
+				class="api-key-input"
+				placeholder="Enter API Key..."
+				value={settingsStore.getProviderConfig(llmProvider.id).apiKey ?? ''}
+				oninput={(e) => handleLLMApiKeyChange(e.currentTarget.value)}
+				onblur={handleLLMApiKeyBlur}
+			/>
+		{/if}
+
+		{#if llmSettings.activeProvider && !llmProvider?.isLocal}
 			<ModelDropdown
 				models={llmModels}
 				value={llmSettings.activeModel as string}
 				onSelect={handleLLMModelChange}
 				placeholder="Select model..."
+				isLoading={llmIsLoading}
+				fetchError={llmFetchError}
+				onRefresh={llmHasApiKey ? fetchLLMModels : undefined}
+				disabled={!llmHasApiKey}
+				disabledMessage="Enter API key first"
 			/>
 		{/if}
 
@@ -148,16 +246,6 @@
 				placeholder="Model name (e.g., llama3.2:latest)"
 				value={llmSettings.activeModel as string ?? ''}
 				oninput={(e) => handleLLMModelChange(e.currentTarget.value)}
-			/>
-		{/if}
-
-		{#if llmProvider?.requiresApiKey}
-			<input
-				type="password"
-				class="api-key-input"
-				placeholder="Enter API Key..."
-				value={settingsStore.getProviderConfig(llmProvider.id).apiKey ?? ''}
-				oninput={(e) => handleLLMApiKeyChange(e.currentTarget.value)}
 			/>
 		{/if}
 
@@ -197,12 +285,14 @@
 				placeholder="Select TTS provider..."
 			/>
 
-			{#if ttsSettings.activeProvider && ttsModels.length > 0 && !ttsProvider?.isLocal}
+			{#if ttsSettings.activeProvider && !ttsProvider?.isLocal}
 				<ModelDropdown
 					models={ttsModels}
 					value={ttsSettings.activeModel as string}
 					onSelect={handleTTSModelChange}
 					placeholder="Select voice..."
+					disabled={!ttsHasApiKey}
+					disabledMessage="Enter API key first"
 				/>
 			{/if}
 
