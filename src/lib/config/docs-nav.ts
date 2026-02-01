@@ -29,7 +29,8 @@ export const docsNav: DocsNavSection[] = [
 		icon: 'code',
 		items: [
 			{ title: 'Architecture Overview', slug: 'technology/architecture' },
-			{ title: 'Companion System', slug: 'technology/companion-system' }
+			{ title: 'Companion System', slug: 'technology/companion-system' },
+			{ title: 'Memory Graph', slug: 'technology/memory-graph' }
 		]
 	},
 	{

@@ -26,6 +26,7 @@
 - **Character Customization**: Customize your companion's name, personality, and system prompt
 - **Companion System**: Multi-axis relationship tracking with mood, events, and semantic memory
 - **Semantic Memory**: Local AI-powered memory search using Transformers.js - finds memories by meaning, not just keywords
+- **Memory Graph**: Interactive visualization showing how memories connect semantically
 - **Data Export/Import**: Download your data as a save file, restore anytime
 - **Theming**: 4 color themes (Default, Rosé Pine, Tokyo Night, Nord) with light/dark modes
 
