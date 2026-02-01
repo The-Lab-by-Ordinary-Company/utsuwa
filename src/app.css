@@ -99,6 +99,19 @@
 	--scene-bg: #f7f7f8;
 	--scene-placeholder: #8b5cf6;
 
+	/* Primary color scale (maps to accent) */
+	--color-primary-400: #f472b6;
+	--color-primary-500: var(--accent);
+	--color-primary-700: #be185d;
+
+	/* Red color scale (for destructive states) */
+	--color-red-100: #fef2f2;
+	--color-red-200: #fecaca;
+	--color-red-300: #fca5a5;
+	--color-red-700: #b91c1c;
+	--color-red-800: #991b1b;
+	--color-red-900: #7f1d1d;
+
 	/* Legacy compatibility aliases */
 	--color-neutral-50: var(--bg-primary);
 	--color-neutral-100: var(--bg-secondary);
@@ -191,6 +204,19 @@
 	/* Scene colors */
 	--scene-bg: #0a0a0a;
 	--scene-placeholder: #a78bfa;
+
+	/* Primary color scale */
+	--color-primary-400: #f9a8d4;
+	--color-primary-500: var(--accent);
+	--color-primary-700: #ec4899;
+
+	/* Red color scale (inverted for dark mode) */
+	--color-red-100: #450a0a;
+	--color-red-200: #7f1d1d;
+	--color-red-300: #991b1b;
+	--color-red-700: #fca5a5;
+	--color-red-800: #fecaca;
+	--color-red-900: #fef2f2;
 
 	/* Legacy compatibility */
 	--color-neutral-50: var(--bg-primary);
