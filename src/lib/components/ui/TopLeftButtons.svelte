@@ -2,6 +2,12 @@
 	import { Icon } from '$lib/components/ui';
 	import { screenshotStore } from '$lib/stores/screenshot.svelte';
 
+	interface Props {
+		onOpenMemoryGraph?: () => void;
+	}
+
+	let { onOpenMemoryGraph }: Props = $props();
+
 	function takeScreenshot() {
 		screenshotStore.take();
 	}
@@ -11,6 +17,11 @@
 	<button class="icon-btn" onclick={takeScreenshot} aria-label="Take screenshot">
 		<Icon name="camera" size={20} />
 	</button>
+	{#if onOpenMemoryGraph}
+		<button class="icon-btn" onclick={onOpenMemoryGraph} aria-label="Open memory graph">
+			<Icon name="brain" size={20} />
+		</button>
+	{/if}
 </div>
 
 <style>

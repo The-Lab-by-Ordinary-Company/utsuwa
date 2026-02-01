@@ -7,6 +7,7 @@
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import { EventScene } from '$lib/components/events';
 	import { OnboardingModal } from '$lib/components/onboarding';
+	import MemoryGraphModal from '$lib/components/memory/MemoryGraphModal.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
@@ -47,6 +48,9 @@
 
 	// Info modal state
 	let showInfoModal = $state(false);
+
+	// Memory graph modal state
+	let showMemoryGraph = $state(false);
 
 	// Onboarding state
 	let showOnboarding = $state(false);
@@ -349,10 +353,13 @@
 </script>
 
 <div class="app-container">
-	<TopLeftButtons />
+	<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} />
 	<TopRightButtons onInfoClick={() => showInfoModal = true} />
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />
+	{/if}
+	{#if showMemoryGraph}
+		<MemoryGraphModal onClose={() => showMemoryGraph = false} />
 	{/if}
 
 	<main class="main-content">

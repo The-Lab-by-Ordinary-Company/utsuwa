@@ -54,6 +54,7 @@
 		"@xsai/stream-text": "^0.4.2",
 		"bits-ui": "^2.15.4",
 		"dexie": "^4.0.11",
+		"force-graph": "^1.51.0",
 		"localforage": "^1.10.0",
 		"n8ao": "^1.10.1",
 		"postprocessing": "^6.38.2",

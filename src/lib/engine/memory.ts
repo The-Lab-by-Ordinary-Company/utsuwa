@@ -255,6 +255,14 @@ export async function retrieveRelevantContext(userMessage: string): Promise<Rele
 		console.error('Failed to fetch recent sessions:', e);
 	}
 
+	// Increment reference counts for retrieved facts
+	const allRetrievedFacts = [...relevantFacts, ...triggeredMemories];
+	for (const fact of allRetrievedFacts) {
+		if (fact.id !== undefined) {
+			memoryStorage.incrementFactReference(fact.id);
+		}
+	}
+
 	return {
 		recentTurns,
 		relevantFacts,
