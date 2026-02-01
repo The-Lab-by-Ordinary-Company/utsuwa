@@ -75,51 +75,98 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5rem;
+		gap: 0.75rem;
 		aspect-ratio: 1;
-		background: var(--ctp-surface0);
-		border: 2px dashed var(--ctp-overlay0);
-		border-radius: 1rem;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 248, 248, 0.6) 100%);
+		border: 2px dashed rgba(0, 0, 0, 0.15);
+		border-radius: var(--radius-lg);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition: all 0.2s;
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+	}
+
+	:global(.dark) .uploader {
+		background: linear-gradient(180deg, rgba(40, 40, 40, 0.8) 0%, rgba(30, 30, 30, 0.6) 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 	}
 
 	.uploader:hover {
-		border-color: color-mix(in srgb, var(--accent) 50%, transparent);
-		background: color-mix(in srgb, var(--accent) 5%, transparent);
+		border-color: #01B2FF;
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.12) 0%, rgba(1, 178, 255, 0.06) 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.6),
+			0 0 16px rgba(1, 178, 255, 0.15);
 	}
 
 	:global(.dark) .uploader:hover {
-		background: color-mix(in srgb, var(--accent) 10%, transparent);
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.18) 0%, rgba(1, 178, 255, 0.1) 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.1),
+			0 0 20px rgba(1, 178, 255, 0.25);
 	}
 
 	.uploader.dragging {
-		border-color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 10%, transparent);
+		border-color: #01B2FF;
+		border-style: solid;
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.2) 0%, rgba(1, 178, 255, 0.12) 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.5),
+			0 0 24px rgba(1, 178, 255, 0.3);
+		transform: scale(1.02);
 	}
 
 	:global(.dark) .uploader.dragging {
-		background: color-mix(in srgb, var(--accent) 15%, transparent);
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.25) 0%, rgba(1, 178, 255, 0.15) 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.1),
+			0 0 30px rgba(1, 178, 255, 0.4);
 	}
 
 	.icon {
-		color: var(--ctp-overlay0);
-		transition: color 0.15s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+		border-radius: 50%;
+		color: var(--text-tertiary);
+		transition: all 0.2s;
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.8);
+	}
+
+	:global(.dark) .icon {
+		background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	.uploader:hover .icon,
 	.uploader.dragging .icon {
-		color: var(--accent);
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
+		color: white;
+		box-shadow:
+			0 4px 12px rgba(1, 178, 255, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
 	}
 
 	.label {
-		font-size: 0.875rem;
+		font-size: 0.9rem;
 		font-weight: 600;
-		color: var(--ctp-text);
+		color: var(--text-primary);
 	}
 
 	.hint {
 		font-size: 0.75rem;
-		color: var(--ctp-subtext0);
+		color: var(--text-tertiary);
+	}
+
+	.uploader:hover .hint,
+	.uploader.dragging .hint {
+		color: #01B2FF;
 	}
 </style>

@@ -104,28 +104,42 @@
 
 	.input {
 		padding: 0.75rem 1rem;
-		background: var(--bg-secondary);
-		border: 1px solid var(--border-light);
+		background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%);
+		border: 1px solid rgba(0, 0, 0, 0.12);
 		border-radius: var(--radius-md);
 		font-size: 0.9rem;
 		color: var(--text-primary);
 		transition: all 0.2s;
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.06),
+			inset 0 1px 2px rgba(0, 0, 0, 0.04);
 	}
 
 	.input:focus {
 		outline: none;
 		border-color: #01B2FF;
-		box-shadow: 0 0 0 3px rgba(1, 178, 255, 0.15);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.06),
+			0 0 0 3px rgba(1, 178, 255, 0.2),
+			0 0 12px rgba(1, 178, 255, 0.15);
 	}
 
 	.input::placeholder {
 		color: var(--text-tertiary);
 	}
 
+	:global(.dark) .input {
+		background: linear-gradient(180deg, #1a1a1a 0%, #222222 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 2px rgba(0, 0, 0, 0.2);
+	}
+
 	.textarea {
 		padding: 0.75rem 1rem;
-		background: var(--bg-secondary);
-		border: 1px solid var(--border-light);
+		background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%);
+		border: 1px solid rgba(0, 0, 0, 0.12);
 		border-radius: var(--radius-md);
 		font-size: 0.875rem;
 		color: var(--text-primary);
@@ -134,16 +148,30 @@
 		min-height: 100px;
 		line-height: 1.6;
 		transition: all 0.2s;
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.06),
+			inset 0 1px 2px rgba(0, 0, 0, 0.04);
 	}
 
 	.textarea:focus {
 		outline: none;
 		border-color: #01B2FF;
-		box-shadow: 0 0 0 3px rgba(1, 178, 255, 0.15);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.06),
+			0 0 0 3px rgba(1, 178, 255, 0.2),
+			0 0 12px rgba(1, 178, 255, 0.15);
 	}
 
 	.textarea::placeholder {
 		color: var(--text-tertiary);
+	}
+
+	:global(.dark) .textarea {
+		background: linear-gradient(180deg, #1a1a1a 0%, #222222 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 2px rgba(0, 0, 0, 0.2);
 	}
 
 	.hint {
@@ -163,19 +191,45 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.75rem 1.25rem;
-		background: var(--bg-secondary);
-		border: 1px solid var(--border-light);
+		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		border-radius: var(--radius-full);
 		font-size: 0.875rem;
 		font-weight: 500;
 		color: var(--text-secondary);
 		cursor: pointer;
 		transition: all 0.2s;
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.08),
+			inset 0 1px 0 rgba(255, 255, 255, 0.8);
 	}
 
 	.back-btn:hover {
-		background: var(--bg-tertiary);
+		background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
 		color: var(--text-primary);
+		transform: translateY(-1px);
+		box-shadow:
+			0 4px 8px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	}
+
+	.back-btn:active {
+		transform: translateY(0);
+		background: linear-gradient(180deg, #e8e8e8 0%, #e0e0e0 100%);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	:global(.dark) .back-btn {
+		background: linear-gradient(180deg, #333333 0%, #262626 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+	}
+
+	:global(.dark) .back-btn:hover {
+		background: linear-gradient(180deg, #404040 0%, #333333 100%);
 	}
 
 	.next-btn {
@@ -183,21 +237,36 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.75rem 1.5rem;
-		background: #01B2FF;
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 40%, #0099dd 100%);
 		color: white;
-		border: none;
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		border-radius: var(--radius-full);
 		font-size: 0.875rem;
-		font-weight: 500;
+		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s;
-		box-shadow: var(--shadow-sm);
+		box-shadow:
+			0 4px 12px rgba(1, 178, 255, 0.35),
+			0 2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 	}
 
 	.next-btn:hover:not(:disabled) {
-		background: #00a0e6;
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
+		background: linear-gradient(180deg, #66d9ff 0%, #1ebfff 40%, #00a6e6 100%);
+		transform: translateY(-2px);
+		box-shadow:
+			0 6px 18px rgba(1, 178, 255, 0.45),
+			0 3px 6px rgba(0, 0, 0, 0.12),
+			inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	}
+
+	.next-btn:active:not(:disabled) {
+		transform: translateY(0);
+		background: linear-gradient(180deg, #0099dd 0%, #0088cc 100%);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.2),
+			0 1px 2px rgba(0, 0, 0, 0.1);
 	}
 
 	.next-btn:disabled {

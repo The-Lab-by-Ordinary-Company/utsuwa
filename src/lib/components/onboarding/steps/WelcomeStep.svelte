@@ -77,36 +77,39 @@
 	.orb {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(25px);
-		opacity: 0.6;
+		filter: blur(30px);
+		opacity: 0.7;
 		animation: float 6s ease-in-out infinite;
 	}
 
 	.orb-pink {
-		width: 120px;
-		height: 120px;
-		background: #01B2FF;
-		top: 10px;
-		left: 10px;
+		width: 130px;
+		height: 130px;
+		background: radial-gradient(circle at 30% 30%, #66d9ff 0%, #01B2FF 50%, #0088cc 100%);
+		top: 5px;
+		left: 5px;
 		animation-delay: 0s;
+		box-shadow: 0 0 60px rgba(1, 178, 255, 0.5);
 	}
 
 	.orb-blue {
 		width: 100px;
 		height: 100px;
-		background: #0ea5e9;
+		background: radial-gradient(circle at 30% 30%, #7dd3fc 0%, #0ea5e9 50%, #0369a1 100%);
 		top: 30px;
 		left: 40px;
 		animation-delay: -2s;
+		box-shadow: 0 0 40px rgba(14, 165, 233, 0.4);
 	}
 
 	.orb-purple {
 		width: 80px;
 		height: 80px;
-		background: #0284c7;
+		background: radial-gradient(circle at 30% 30%, #38bdf8 0%, #0284c7 50%, #075985 100%);
 		top: 20px;
 		left: 20px;
 		animation-delay: -4s;
+		box-shadow: 0 0 30px rgba(2, 132, 199, 0.4);
 	}
 
 	@keyframes float {
@@ -143,25 +146,36 @@
 
 	.next-btn {
 		margin-top: 1rem;
-		padding: 0.75rem 2rem;
-		background: #01B2FF;
+		padding: 0.875rem 2.5rem;
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 40%, #0099dd 100%);
 		color: white;
-		border: none;
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		border-radius: var(--radius-full);
-		font-size: 0.9rem;
-		font-weight: 500;
+		font-size: 0.95rem;
+		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow: var(--shadow-sm);
+		box-shadow:
+			0 4px 14px rgba(1, 178, 255, 0.4),
+			0 2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 	}
 
 	.next-btn:hover {
-		background: #00a0e6;
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
+		background: linear-gradient(180deg, #66d9ff 0%, #1ebfff 40%, #00a6e6 100%);
+		transform: translateY(-2px);
+		box-shadow:
+			0 6px 20px rgba(1, 178, 255, 0.5),
+			0 3px 6px rgba(0, 0, 0, 0.15),
+			inset 0 1px 0 rgba(255, 255, 255, 0.5);
 	}
 
 	.next-btn:active {
 		transform: translateY(0);
+		background: linear-gradient(180deg, #0099dd 0%, #0088cc 100%);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.2),
+			0 1px 2px rgba(0, 0, 0, 0.1);
 	}
 </style>

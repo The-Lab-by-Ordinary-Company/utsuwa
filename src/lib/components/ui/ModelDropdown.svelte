@@ -98,8 +98,8 @@
 		gap: 0.5rem;
 		flex: 1;
 		padding: 0.75rem 1rem;
-		background: var(--bg-primary);
-		border: 1px solid var(--border-light);
+		background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%);
+		border: 1px solid rgba(0, 0, 0, 0.12);
 		border-radius: var(--radius-md);
 		cursor: pointer;
 		transition: all 0.2s;
@@ -107,16 +107,41 @@
 		font-size: 0.875rem;
 		color: var(--text-primary);
 		text-align: left;
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.06),
+			inset 0 1px 2px rgba(0, 0, 0, 0.04);
+	}
+
+	:global(.dark .model-dropdown-trigger) {
+		background: linear-gradient(180deg, #1a1a1a 0%, #222222 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 2px rgba(0, 0, 0, 0.2);
 	}
 
 	:global(.model-dropdown-trigger:hover:not(:disabled)) {
-		border-color: var(--text-tertiary);
+		border-color: rgba(0, 0, 0, 0.2);
+	}
+
+	:global(.dark .model-dropdown-trigger:hover:not(:disabled)) {
+		border-color: rgba(255, 255, 255, 0.15);
 	}
 
 	:global(.model-dropdown-trigger:focus) {
 		outline: none;
 		border-color: #01B2FF;
-		box-shadow: 0 0 0 3px rgba(1, 178, 255, 0.15);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.06),
+			0 0 0 3px rgba(1, 178, 255, 0.2),
+			0 0 12px rgba(1, 178, 255, 0.15);
+	}
+
+	:global(.dark .model-dropdown-trigger:focus) {
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.3),
+			0 0 0 3px rgba(1, 178, 255, 0.25),
+			0 0 16px rgba(1, 178, 255, 0.2);
 	}
 
 	:global(.model-dropdown-trigger:disabled) {
@@ -162,29 +187,66 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0 0.75rem;
-		background: var(--bg-secondary);
-		border: 1px solid var(--border-light);
+		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		border-radius: var(--radius-md);
 		color: var(--text-secondary);
 		cursor: pointer;
 		transition: all 0.2s;
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.06),
+			inset 0 1px 0 rgba(255, 255, 255, 0.8);
+	}
+
+	:global(.dark) .refresh-btn {
+		background: linear-gradient(180deg, #333333 0%, #262626 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	.refresh-btn:hover {
-		background: var(--bg-tertiary);
+		background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
 		color: var(--text-primary);
+		transform: translateY(-1px);
+		box-shadow:
+			0 4px 8px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	}
+
+	:global(.dark) .refresh-btn:hover {
+		background: linear-gradient(180deg, #404040 0%, #333333 100%);
+	}
+
+	.refresh-btn:active {
+		transform: translateY(0);
+		background: linear-gradient(180deg, #e8e8e8 0%, #e0e0e0 100%);
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
 	:global(.model-dropdown-content) {
 		z-index: 1050;
 		min-width: 200px;
 		max-width: 300px;
-		background: var(--bg-primary);
-		border: 1px solid var(--border-light);
+		background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%);
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		border-radius: var(--radius-lg);
 		padding: 0.375rem;
-		box-shadow: var(--shadow-lg);
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.15),
+			0 4px 12px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
 		animation: modelSlideDown 0.15s ease-out;
+	}
+
+	:global(.dark .model-dropdown-content) {
+		background: linear-gradient(180deg, #252525 0%, #1a1a1a 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.5),
+			0 4px 12px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
 	@keyframes modelSlideDown {
@@ -211,17 +273,29 @@
 		padding: 0.5rem 0.625rem;
 		border-radius: var(--radius-sm);
 		cursor: pointer;
-		transition: all 0.1s;
+		transition: all 0.15s;
 		outline: none;
 	}
 
 	:global(.model-item:hover),
 	:global(.model-item[data-highlighted]) {
-		background: var(--bg-secondary);
+		background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+	}
+
+	:global(.dark .model-item:hover),
+	:global(.dark .model-item[data-highlighted]) {
+		background: linear-gradient(180deg, #333333 0%, #2a2a2a 100%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
 	:global(.model-item.selected) {
-		background: rgba(1, 178, 255, 0.1);
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.15) 0%, rgba(1, 178, 255, 0.1) 100%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	}
+
+	:global(.dark .model-item.selected) {
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.2) 0%, rgba(1, 178, 255, 0.12) 100%);
 	}
 
 	.model-name {

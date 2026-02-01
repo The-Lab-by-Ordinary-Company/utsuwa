@@ -129,15 +129,27 @@
 
 	.modal-container {
 		position: relative;
-		background: var(--bg-primary);
-		border: 1px solid var(--border-subtle);
+		background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+		border: 1px solid rgba(255, 255, 255, 0.8);
 		border-radius: var(--radius-xl);
 		max-width: 440px;
 		width: 100%;
 		max-height: 85vh;
 		overflow: hidden;
 		animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow: var(--shadow-xl);
+		box-shadow:
+			0 20px 60px rgba(0, 0, 0, 0.2),
+			0 8px 24px rgba(0, 0, 0, 0.15),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	}
+
+	:global(.dark) .modal-container {
+		background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 20px 60px rgba(0, 0, 0, 0.5),
+			0 8px 24px rgba(0, 0, 0, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	@keyframes slideUp {
@@ -160,21 +172,49 @@
 	}
 
 	.dot {
-		width: 8px;
-		height: 8px;
+		width: 10px;
+		height: 10px;
 		border-radius: var(--radius-full);
-		background: var(--bg-tertiary);
+		background: linear-gradient(180deg, #e8e8e8 0%, #c8c8c8 100%);
 		transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.7),
+			0 1px 3px rgba(0, 0, 0, 0.2);
 	}
 
 	.dot.active {
-		width: 28px;
-		background: #01B2FF;
-		box-shadow: 0 0 12px rgba(1, 178, 255, 0.4);
+		width: 32px;
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.5),
+			0 0 16px rgba(1, 178, 255, 0.5),
+			0 2px 4px rgba(0, 0, 0, 0.15);
 	}
 
 	.dot.completed {
-		background: var(--text-tertiary);
+		background: linear-gradient(180deg, #a0a0a0 0%, #808080 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.3),
+			0 1px 2px rgba(0, 0, 0, 0.15);
+	}
+
+	:global(.dark) .dot {
+		background: linear-gradient(180deg, #404040 0%, #2a2a2a 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.1),
+			0 1px 3px rgba(0, 0, 0, 0.4);
+	}
+
+	:global(.dark) .dot.active {
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.4),
+			0 0 20px rgba(1, 178, 255, 0.6),
+			0 2px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	:global(.dark) .dot.completed {
+		background: linear-gradient(180deg, #606060 0%, #404040 100%);
 	}
 
 	.step-wrapper {
