@@ -239,25 +239,54 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		background: var(--bg-primary);
+		background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%);
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
-		border: 1px solid var(--border-light);
+		border: 1px solid rgba(0, 0, 0, 0.1);
 		border-radius: var(--radius-full);
 		padding: 0.5rem;
 		min-height: 56px;
-		box-shadow: var(--shadow-md);
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.1),
+			0 2px 6px rgba(0, 0, 0, 0.06),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
 		transition: border-color 0.2s, box-shadow 0.2s;
+	}
+
+	:global(.dark) .input-wrapper {
+		background: linear-gradient(180deg, #252525 0%, #1a1a1a 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.4),
+			0 2px 6px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
 	.input-wrapper:focus-within {
 		border-color: #01B2FF;
-		box-shadow: var(--shadow-md), 0 0 0 3px rgba(1, 178, 255, 0.15);
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.1),
+			0 2px 6px rgba(0, 0, 0, 0.06),
+			0 0 0 3px rgba(1, 178, 255, 0.2),
+			0 0 20px rgba(1, 178, 255, 0.15),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	}
+
+	:global(.dark) .input-wrapper:focus-within {
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.4),
+			0 0 0 3px rgba(1, 178, 255, 0.25),
+			0 0 24px rgba(1, 178, 255, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
 	.input-wrapper.recording {
 		border-color: #01B2FF;
-		box-shadow: var(--shadow-md), 0 0 0 3px rgba(1, 178, 255, 0.15);
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.1),
+			0 0 0 3px rgba(1, 178, 255, 0.2),
+			0 0 20px rgba(1, 178, 255, 0.15),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
 	}
 
 	textarea {
@@ -298,23 +327,44 @@
 	}
 
 	.mic-btn {
-		background: transparent;
+		background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
 		color: var(--text-tertiary);
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.08),
+			inset 0 1px 0 rgba(255, 255, 255, 0.8);
+	}
+
+	:global(.dark) .mic-btn {
+		background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	.mic-btn:hover:not(:disabled) {
-		background: var(--bg-secondary);
+		background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
 		color: var(--text-primary);
+		transform: translateY(-1px);
+		box-shadow:
+			0 4px 8px rgba(0, 0, 0, 0.12),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	}
+
+	:global(.dark) .mic-btn:hover:not(:disabled) {
+		background: linear-gradient(180deg, #444444 0%, #333333 100%);
 	}
 
 	.mic-btn.recording {
-		background: #01B2FF;
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
 		color: white;
 		animation: pulse-recording 1.5s ease-in-out infinite;
+		box-shadow:
+			0 4px 12px rgba(1, 178, 255, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
 	}
 
 	.mic-btn.recording:hover {
-		background: #00a0e6;
+		background: linear-gradient(180deg, #66d9ff 0%, #1ebfff 50%, #00a6e6 100%);
 	}
 
 	@keyframes pulse-recording {
@@ -404,7 +454,11 @@
 
 	/* When has content: morph to send button */
 	.send-btn.has-content {
-		background: #01B2FF;
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 40%, #0099dd 100%);
+		box-shadow:
+			0 4px 12px rgba(1, 178, 255, 0.4),
+			0 2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
 	}
 
 	.send-btn.has-content .orb-container {
@@ -418,11 +472,20 @@
 	}
 
 	.send-btn.has-content:hover:not(:disabled) {
-		background: #00a0e6;
+		background: linear-gradient(180deg, #66d9ff 0%, #1ebfff 40%, #00a6e6 100%);
+		transform: translateY(-2px);
+		box-shadow:
+			0 6px 18px rgba(1, 178, 255, 0.5),
+			0 3px 6px rgba(0, 0, 0, 0.12),
+			inset 0 1px 0 rgba(255, 255, 255, 0.5);
 	}
 
 	.send-btn.has-content:active:not(:disabled) {
 		transform: scale(0.95);
+		background: linear-gradient(180deg, #0099dd 0%, #0088cc 100%);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.2),
+			0 1px 2px rgba(0, 0, 0, 0.1);
 	}
 
 	.send-btn:disabled:not(.has-content) {

@@ -111,14 +111,37 @@
 		gap: 0.5rem;
 		padding: 0.375rem 0.75rem 0.375rem 0.375rem;
 		border-radius: 2rem;
-		border: 2px solid var(--color-neutral-200);
-		background: var(--color-neutral-100);
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
 		cursor: pointer;
 		transition: all 0.15s ease-out;
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.08),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	}
+
+	:global(.dark) .avatar-btn {
+		background: linear-gradient(180deg, #333333 0%, #262626 100%);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	.avatar-btn:hover {
-		border-color: var(--color-primary-400);
+		border-color: #01B2FF;
+		transform: translateY(-1px);
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.12),
+			0 0 0 2px rgba(1, 178, 255, 0.15),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	}
+
+	:global(.dark) .avatar-btn:hover {
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.4),
+			0 0 0 2px rgba(1, 178, 255, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	.avatar {
@@ -128,9 +151,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--color-neutral-500);
-		background: var(--color-neutral-200);
+		color: var(--text-tertiary);
+		background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
 		overflow: hidden;
+		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	:global(.dark) .avatar {
+		background: linear-gradient(180deg, #444444 0%, #333333 100%);
+		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 	}
 
 	.avatar img {
