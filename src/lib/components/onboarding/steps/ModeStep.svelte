@@ -14,7 +14,10 @@
 
 <div class="step-content">
 	<div class="step-header">
-		<Icon name="heart" size={24} />
+		<div class="header-icon">
+			<Icon name="heart" size={24} />
+			<div class="header-icon-shine"></div>
+		</div>
 		<h2 class="title">Choose Your Mode</h2>
 		<p class="subtitle">Pick how you want to interact with your companion</p>
 	</div>
@@ -136,7 +139,35 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
-		color: var(--text-secondary);
+	}
+
+	.header-icon {
+		position: relative;
+		width: 56px;
+		height: 56px;
+		background: linear-gradient(180deg, #ff8fab 0%, #ff6b9d 40%, #e63973 100%);
+		border-radius: 1rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		box-shadow:
+			0 6px 20px rgba(255, 107, 157, 0.4),
+			0 3px 8px rgba(0, 0, 0, 0.12),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4),
+			inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+	}
+
+	.header-icon-shine {
+		position: absolute;
+		top: 3px;
+		left: 15%;
+		right: 15%;
+		height: 40%;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
+		border-radius: 0.75rem 0.75rem 50% 50%;
+		pointer-events: none;
 	}
 
 	.title {

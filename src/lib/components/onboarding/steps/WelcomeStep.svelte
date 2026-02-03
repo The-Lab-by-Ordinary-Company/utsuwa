@@ -7,11 +7,15 @@
 </script>
 
 <div class="step-content">
-	<!-- Animated gradient orb -->
-	<div class="orb-container">
-		<div class="orb orb-pink"></div>
-		<div class="orb orb-blue"></div>
-		<div class="orb orb-purple"></div>
+	<!-- Glossy icon badge -->
+	<div class="icon-badge">
+		<div class="icon-badge-inner">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+			</svg>
+		</div>
+		<div class="icon-badge-shine"></div>
+		<div class="icon-badge-glow"></div>
 	</div>
 
 	<div class="logo-container">
@@ -67,60 +71,65 @@
 		overflow: hidden;
 	}
 
-	.orb-container {
+	.icon-badge {
 		position: relative;
-		width: 140px;
-		height: 140px;
+		width: 100px;
+		height: 100px;
 		margin-bottom: 0.5rem;
 	}
 
-	.orb {
+	.icon-badge-inner {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(180deg, #66d9ff 0%, #01B2FF 40%, #0088cc 100%);
+		border-radius: 1.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		box-shadow:
+			0 8px 32px rgba(1, 178, 255, 0.5),
+			0 4px 12px rgba(0, 0, 0, 0.15),
+			inset 0 2px 0 rgba(255, 255, 255, 0.4),
+			inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+	}
+
+	.icon-badge-inner svg {
+		width: 48px;
+		height: 48px;
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+	}
+
+	.icon-badge-shine {
 		position: absolute;
-		border-radius: 50%;
-		filter: blur(30px);
-		opacity: 0.7;
-		animation: float 6s ease-in-out infinite;
+		top: 4px;
+		left: 10%;
+		right: 10%;
+		height: 40%;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
+		border-radius: 1.25rem 1.25rem 50% 50%;
+		pointer-events: none;
 	}
 
-	.orb-pink {
-		width: 130px;
-		height: 130px;
-		background: radial-gradient(circle at 30% 30%, #66d9ff 0%, #01B2FF 50%, #0088cc 100%);
-		top: 5px;
-		left: 5px;
-		animation-delay: 0s;
-		box-shadow: 0 0 60px rgba(1, 178, 255, 0.5);
+	.icon-badge-glow {
+		position: absolute;
+		inset: -8px;
+		background: radial-gradient(circle at center, rgba(1, 178, 255, 0.4) 0%, transparent 70%);
+		border-radius: 2rem;
+		z-index: -1;
+		animation: pulse-glow 3s ease-in-out infinite;
 	}
 
-	.orb-blue {
-		width: 100px;
-		height: 100px;
-		background: radial-gradient(circle at 30% 30%, #7dd3fc 0%, #0ea5e9 50%, #0369a1 100%);
-		top: 30px;
-		left: 40px;
-		animation-delay: -2s;
-		box-shadow: 0 0 40px rgba(14, 165, 233, 0.4);
-	}
-
-	.orb-purple {
-		width: 80px;
-		height: 80px;
-		background: radial-gradient(circle at 30% 30%, #38bdf8 0%, #0284c7 50%, #075985 100%);
-		top: 20px;
-		left: 20px;
-		animation-delay: -4s;
-		box-shadow: 0 0 30px rgba(2, 132, 199, 0.4);
-	}
-
-	@keyframes float {
+	@keyframes pulse-glow {
 		0%, 100% {
-			transform: translate(0, 0) scale(1);
+			opacity: 0.6;
+			transform: scale(1);
 		}
-		33% {
-			transform: translate(10px, -10px) scale(1.05);
-		}
-		66% {
-			transform: translate(-5px, 5px) scale(0.95);
+		50% {
+			opacity: 1;
+			transform: scale(1.05);
 		}
 	}
 
