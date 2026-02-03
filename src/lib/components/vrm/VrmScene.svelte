@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Canvas } from '@threlte/core';
-	import { WebGLRenderer } from 'three';
+	import { WebGLRenderer, SRGBColorSpace, ACESFilmicToneMapping } from 'three';
 	import { onMount } from 'svelte';
 	import Scene from './Scene.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
@@ -16,12 +16,19 @@
 
 	// Custom renderer factory for screenshot support
 	function createRenderer(canvas: HTMLCanvasElement) {
-		return new WebGLRenderer({
+		const renderer = new WebGLRenderer({
 			canvas,
 			antialias: true,
 			alpha: true,
 			preserveDrawingBuffer: true
 		});
+
+		// Color management for vibrant, accurate colors
+		renderer.outputColorSpace = SRGBColorSpace;
+		renderer.toneMapping = ACESFilmicToneMapping;
+		renderer.toneMappingExposure = 1.0;
+
+		return renderer;
 	}
 
 	onMount(() => {
