@@ -37,24 +37,39 @@
 		}
 	}
 
-	// Derived filters
-	let filters = $derived<GraphFilters>({
-		categories: new Set<FactCategory>(
-			[
-				showUser && 'user',
-				showRelationship && 'relationship',
-				showSharedExperience && 'shared_experience'
-			].filter(Boolean) as FactCategory[]
-		),
-		minSimilarity: similarityThreshold
-	});
+	// Build filters from current toggle states (not derived to avoid object identity issues)
+	function buildFilters(): GraphFilters {
+		return {
+			categories: new Set<FactCategory>(
+				[
+					showUser && 'user',
+					showRelationship && 'relationship',
+					showSharedExperience && 'shared_experience'
+				].filter(Boolean) as FactCategory[]
+			),
+			minSimilarity: similarityThreshold
+		};
+	}
 
-	// Update graph when filters change
+	// Update graph when filter toggles change
 	$effect(() => {
-		if (fullGraphData.nodes.length > 0) {
-			graphData = filterGraph(fullGraphData, filters);
+		// Track the individual toggle values (not a derived object)
+		const _u = showUser;
+		const _r = showRelationship;
+		const _s = showSharedExperience;
+
+		// Only run if we have data
+		if (fullGraphData.nodes.length === 0) return;
+
+		// Build filters and update graph
+		const filters = buildFilters();
+		const newGraphData = filterGraph(fullGraphData, filters);
+		graphData = newGraphData;
+
+		// Update the force-graph visualization (use queueMicrotask to avoid blocking)
+		queueMicrotask(() => {
 			updateGraphData();
-		}
+		});
 	});
 
 	// Update graph data (triggers physics recalculation)
@@ -160,7 +175,7 @@
 
 			// Build graph
 			fullGraphData = buildGraph(facts, 0); // Build with threshold 0, filter later
-			graphData = filterGraph(fullGraphData, filters);
+			graphData = filterGraph(fullGraphData, buildFilters());
 
 			// Initialize force-graph
 			const ForceGraph = (await import('force-graph')).default;
