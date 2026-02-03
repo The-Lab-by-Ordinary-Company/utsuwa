@@ -166,41 +166,10 @@
 		background: var(--docs-bg);
 		color: var(--docs-text);
 		font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		position: relative;
-	}
-
-	/* Ambient glow orbs for background depth - subtle, matches main app style */
-	.docs::before,
-	.docs::after {
-		content: '';
-		position: fixed;
-		border-radius: 50%;
-		pointer-events: none;
-		opacity: 0.25;
-		filter: blur(100px);
-		z-index: 0;
-	}
-
-	.docs::before {
-		width: 500px;
-		height: 500px;
-		background: radial-gradient(circle, var(--docs-accent) 0%, transparent 70%);
-		top: -150px;
-		right: -100px;
-	}
-
-	.docs::after {
-		width: 400px;
-		height: 400px;
-		background: radial-gradient(circle, var(--docs-accent-light) 0%, transparent 70%);
-		bottom: -100px;
-		left: -100px;
 	}
 
 	.docs-body {
 		display: flex;
-		position: relative;
-		z-index: 1;
 	}
 
 	.docs-main {
