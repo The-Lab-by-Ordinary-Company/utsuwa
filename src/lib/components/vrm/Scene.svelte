@@ -111,14 +111,16 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 		});
 	});
 
-	// Set up post-processing when camera is ready
-	$effect(() => {
-		if (!renderer || !scene || !camera.current) return;
+	// Set up post-processing - stored outside reactive system
+	function setupComposer() {
+		if (!renderer || !scene || !camera.current || composer) return;
+
+		console.log('[Bloom] Setting up composer...');
 
 		// Configure renderer for vibrant colors
 		renderer.outputColorSpace = SRGBColorSpace;
 		renderer.toneMapping = ACESFilmicToneMapping;
-		renderer.toneMappingExposure = 1.0;
+		renderer.toneMappingExposure = 0.8;
 
 		// Disable Threlte's auto-render so we can use the composer
 		autoRender.set(false);
@@ -133,8 +135,8 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 
 		// Add bloom effect - subtle glow on bright areas
 		const bloomEffect = new BloomEffect({
-			intensity: 0.5,
-			luminanceThreshold: 0.8,
+			intensity: 0.15,
+			luminanceThreshold: 0.85,
 			luminanceSmoothing: 0.3,
 			mipmapBlur: true
 		});
@@ -143,27 +145,22 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 		// Set initial size
 		composer.setSize(renderer.domElement.clientWidth, renderer.domElement.clientHeight);
 
-		return () => {
-			composer?.dispose();
-			composer = null;
-		};
-	});
+		console.log('[Bloom] Composer ready');
+	}
 
 	onMount(() => {
+		// Setup composer after a small delay to ensure camera is ready
+		const composerTimeout = setTimeout(() => {
+			setupComposer();
+		}, 100);
+
 		const checkDesktop = () => {
 			isDesktop = window.innerWidth > 768;
 		};
 		checkDesktop();
 		window.addEventListener('resize', checkDesktop);
 
-		// Handle composer resize
-		const handleResize = () => {
-			if (composer && renderer) {
-				composer.setSize(renderer.domElement.clientWidth, renderer.domElement.clientHeight);
-			}
-		};
-		window.addEventListener('resize', handleResize);
-
+	
 		// Check dark mode
 		const checkDarkMode = () => {
 			isDarkMode = document.documentElement.classList.contains('dark');
@@ -187,10 +184,11 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 		});
 
 		return () => {
+			clearTimeout(composerTimeout);
 			window.removeEventListener('resize', checkDesktop);
-			window.removeEventListener('resize', handleResize);
 			observer.disconnect();
 			screenshotStore.unregister();
+			composer?.dispose();
 		};
 	});
 
@@ -236,9 +234,28 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 	});
 
 	// Update controls and render with post-processing each frame
+	// Handle resize in render loop to prevent black flash (resize + render happen atomically)
+	let lastWidth = 0;
+	let lastHeight = 0;
 	useTask(() => {
 		controls?.update();
-		composer?.render();
+
+		// Check for resize and handle it before rendering (same frame = no flash)
+		if (composer && renderer) {
+			const width = renderer.domElement.clientWidth;
+			const height = renderer.domElement.clientHeight;
+			if (width !== lastWidth || height !== lastHeight) {
+				lastWidth = width;
+				lastHeight = height;
+				composer.setSize(width, height);
+			}
+			composer.render();
+		} else {
+			// Fallback to normal render if composer not ready
+			if (renderer && scene && camera.current) {
+				renderer.render(scene, camera.current);
+			}
+		}
 	});
 </script>
 
