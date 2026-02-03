@@ -659,18 +659,31 @@
 			{/if}
 
 			{#if isDatingSimMode}
-				<!-- Bond Progress (Dating Sim Mode only) -->
+				<!-- Bond Progress (Dating Sim Mode only) - Sims-style glossy bar -->
 				<div class="bond-section">
 					<div class="bond-progress">
-						<div class="affection-label">
+						<div class="bond-header">
 							<Tooltip content="Overall affection level. Grows through positive interactions, compliments, and time spent together." side="left">
-								<span class="heart-glow"><Icon name="heart" size={14} color="#01B2FF" /></span>
+								<div class="bond-icon">
+									<Icon name="heart" size={18} />
+								</div>
 							</Tooltip>
-							<span class="tier-name">{stageInfo.name}</span>
-							<span class="affection-value">{affectionPercent}%</span>
+							<div class="bond-info">
+								<span class="bond-tier">{stageInfo.name}</span>
+								<span class="bond-description">{stageInfo.description}</span>
+							</div>
+							<span class="bond-percent">{affectionPercent}%</span>
 						</div>
-						<Progress value={affectionPercent} variant="affection" size="md" />
-						<span class="bond-stage">{stageInfo.description}</span>
+						<div class="bond-bar-track">
+							<div class="bond-bar-fill" style="width: {affectionPercent}%">
+								<div class="bond-bar-shine"></div>
+							</div>
+							<div class="bond-bar-markers">
+								{#each [25, 50, 75] as marker}
+									<div class="bond-marker" style="left: {marker}%"></div>
+								{/each}
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -1417,58 +1430,172 @@
 		margin-bottom: 0.75rem;
 	}
 
-	/* Bond Section */
+	/* Bond Section - Sims-style glossy */
 	.bond-section {
-		padding: 1rem 1.25rem;
-		background: linear-gradient(180deg, #e8f7ff 0%, #d8f0ff 100%);
-		border-radius: 14px;
-		border: 1px solid rgba(1, 178, 255, 0.2);
+		padding: 1.25rem;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.98) 0%,
+			rgba(250, 250, 252, 0.95) 50%,
+			rgba(245, 245, 248, 0.98) 100%
+		);
+		border-radius: 16px;
+		border: 1px solid rgba(255, 107, 157, 0.2);
 		box-shadow:
-			0 3px 10px rgba(1, 178, 255, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+			0 0 0 1px rgba(0, 0, 0, 0.04),
+			0 4px 16px rgba(255, 107, 157, 0.15),
+			inset 0 1px 0 rgba(255, 255, 255, 1);
 	}
 
 	:global(.dark) .bond-section {
-		background: linear-gradient(180deg, #1a3040 0%, #152530 100%);
-		border-color: rgba(1, 178, 255, 0.25);
+		background: linear-gradient(
+			180deg,
+			rgba(45, 45, 50, 0.98) 0%,
+			rgba(38, 38, 42, 0.95) 50%,
+			rgba(32, 32, 36, 0.98) 100%
+		);
+		border-color: rgba(255, 107, 157, 0.25);
 		box-shadow:
-			0 3px 10px rgba(1, 178, 255, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+			0 0 0 1px rgba(0, 0, 0, 0.2),
+			0 4px 16px rgba(255, 107, 157, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	.bond-progress {
 		display: flex;
 		flex-direction: column;
-		gap: 0.375rem;
+		gap: 0.75rem;
 	}
 
-	.affection-label {
+	.bond-header {
 		display: flex;
 		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.75rem;
+		gap: 0.75rem;
 	}
 
-	.heart-glow {
+	.bond-icon {
 		display: flex;
-		filter: drop-shadow(0 0 4px rgba(1, 178, 255, 0.5));
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		background: linear-gradient(180deg, #ff8faf 0%, #ff6b9d 50%, #e85a8a 100%);
+		border-radius: 10px;
+		color: white;
+		box-shadow:
+			0 4px 12px rgba(255, 107, 157, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+		filter: drop-shadow(0 0 6px rgba(255, 107, 157, 0.4));
 	}
 
-	.tier-name {
-		font-weight: 600;
-		color: var(--text-secondary);
+	.bond-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
 	}
 
-	.affection-value {
-		margin-left: auto;
-		color: var(--text-tertiary);
-		font-size: 0.7rem;
+	.bond-tier {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--text-primary);
 	}
 
-	.bond-stage {
-		display: block;
+	.bond-description {
 		font-size: 0.75rem;
-		color: var(--text-secondary);
+		color: var(--text-tertiary);
+	}
+
+	.bond-percent {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: #ff6b9d;
+		text-shadow: 0 0 12px rgba(255, 107, 157, 0.3);
+	}
+
+	.bond-bar-track {
+		position: relative;
+		height: 14px;
+		background: linear-gradient(
+			180deg,
+			rgba(0, 0, 0, 0.1) 0%,
+			rgba(0, 0, 0, 0.06) 50%,
+			rgba(0, 0, 0, 0.08) 100%
+		);
+		border-radius: 7px;
+		overflow: hidden;
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.1),
+			0 1px 0 rgba(255, 255, 255, 0.5);
+	}
+
+	:global(.dark) .bond-bar-track {
+		background: linear-gradient(
+			180deg,
+			rgba(0, 0, 0, 0.35) 0%,
+			rgba(0, 0, 0, 0.25) 50%,
+			rgba(0, 0, 0, 0.3) 100%
+		);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.3),
+			0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	.bond-bar-fill {
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		background: linear-gradient(
+			180deg,
+			#ffb3c9 0%,
+			#ff8faf 25%,
+			#ff6b9d 60%,
+			#e85a8a 100%
+		);
+		border-radius: 7px;
+		transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow:
+			0 0 16px rgba(255, 107, 157, 0.5),
+			0 0 6px rgba(255, 107, 157, 0.4),
+			inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+	}
+
+	.bond-bar-shine {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 50%;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.5) 0%,
+			rgba(255, 255, 255, 0) 100%
+		);
+		border-radius: 7px 7px 0 0;
+		pointer-events: none;
+	}
+
+	.bond-bar-markers {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		pointer-events: none;
+	}
+
+	.bond-marker {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: rgba(0, 0, 0, 0.1);
+	}
+
+	:global(.dark) .bond-marker {
+		background: rgba(255, 255, 255, 0.1);
 	}
 
 	/* Stats Section */
