@@ -104,7 +104,7 @@
 <style>
 	.status-container {
 		position: fixed;
-		bottom: 5rem;
+		bottom: 6rem;
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 35;
@@ -150,7 +150,7 @@
 
 	@media (min-width: 641px) {
 		.status-container {
-			bottom: 6.5rem;
+			bottom: 7.5rem;
 		}
 	}
 
@@ -244,7 +244,7 @@
 	.stat-bars {
 		display: flex;
 		justify-content: center;
-		gap: 0.625rem;
+		gap: 1rem;
 	}
 
 	.stat-bars.companion-mode {
