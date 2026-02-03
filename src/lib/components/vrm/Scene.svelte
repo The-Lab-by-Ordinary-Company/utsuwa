@@ -3,7 +3,8 @@
 	// https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm/examples/humanoidAnimation/main.js
 	import { T, useThrelte, useTask } from '@threlte/core';
 	import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-	import { HemisphereLight, DirectionalLight, ShaderMaterial, Color, BackSide } from 'three';
+	import { HemisphereLight, DirectionalLight, ShaderMaterial, Color, BackSide, SRGBColorSpace, ACESFilmicToneMapping, HalfFloatType } from 'three';
+import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocessing';
 	import VrmModel from './VrmModel.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
@@ -80,8 +81,9 @@
 
 	const modelUrl = $derived(vrmStore.modelUrl);
 
-	const { camera, renderer, scene } = useThrelte();
+	const { camera, renderer, scene, autoRender } = useThrelte();
 	let controls: OrbitControls | null = null;
+	let composer: EffectComposer | null = null;
 
 	// Responsive: detect if desktop (chat sidebar visible on right)
 	let isDesktop = $state(false);
@@ -110,11 +112,48 @@
 	});
 
 	onMount(() => {
+		// Configure renderer for vibrant colors
+		if (renderer) {
+			renderer.outputColorSpace = SRGBColorSpace;
+			renderer.toneMapping = ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 1.0;
+		}
+
+		// Set up post-processing with bloom
+		if (renderer && scene && camera.current) {
+			// Disable Threlte's auto-render so we can use the composer
+			autoRender.set(false);
+
+			composer = new EffectComposer(renderer, {
+				frameBufferType: HalfFloatType
+			});
+
+			// Add render pass
+			composer.addPass(new RenderPass(scene, camera.current));
+
+			// Add bloom effect - subtle glow on bright areas
+			const bloomEffect = new BloomEffect({
+				intensity: 0.5,
+				luminanceThreshold: 0.8,
+				luminanceSmoothing: 0.3,
+				mipmapBlur: true
+			});
+			composer.addPass(new EffectPass(camera.current, bloomEffect));
+		}
+
 		const checkDesktop = () => {
 			isDesktop = window.innerWidth > 768;
 		};
 		checkDesktop();
 		window.addEventListener('resize', checkDesktop);
+
+		// Handle composer resize
+		const handleResize = () => {
+			if (composer && renderer) {
+				composer.setSize(renderer.domElement.clientWidth, renderer.domElement.clientHeight);
+			}
+		};
+		window.addEventListener('resize', handleResize);
 
 		// Check dark mode
 		const checkDarkMode = () => {
@@ -128,8 +167,8 @@
 
 		// Register screenshot handler
 		screenshotStore.register(() => {
-			if (renderer && camera.current && scene) {
-				renderer.render(scene, camera.current);
+			if (composer) {
+				composer.render();
 				const dataUrl = renderer.domElement.toDataURL('image/png');
 				const link = document.createElement('a');
 				link.download = `utsuwa-screenshot-${Date.now()}.png`;
@@ -140,8 +179,10 @@
 
 		return () => {
 			window.removeEventListener('resize', checkDesktop);
+			window.removeEventListener('resize', handleResize);
 			observer.disconnect();
 			screenshotStore.unregister();
+			composer?.dispose();
 		};
 	});
 
@@ -186,9 +227,10 @@
 		}
 	});
 
-	// Update controls each frame
+	// Update controls and render with post-processing each frame
 	useTask(() => {
 		controls?.update();
+		composer?.render();
 	});
 </script>
 
