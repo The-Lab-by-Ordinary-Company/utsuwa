@@ -115,8 +115,6 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 	function setupComposer() {
 		if (!renderer || !scene || !camera.current || composer) return;
 
-		console.log('[Bloom] Setting up composer...');
-
 		// Configure renderer for vibrant colors
 		renderer.outputColorSpace = SRGBColorSpace;
 		renderer.toneMapping = ACESFilmicToneMapping;
@@ -144,8 +142,6 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 
 		// Set initial size
 		composer.setSize(renderer.domElement.clientWidth, renderer.domElement.clientHeight);
-
-		console.log('[Bloom] Composer ready');
 	}
 
 	onMount(() => {

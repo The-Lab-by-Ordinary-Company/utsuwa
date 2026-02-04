@@ -1,7 +1,7 @@
 <script lang="ts">
 	import MessageList from './MessageList.svelte';
 	import ChatInput from './ChatInput.svelte';
-	import { Icon, Progress } from '$lib/components/ui';
+	import { Icon } from '$lib/components/ui';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { modulesStore } from '$lib/stores/modules.svelte';

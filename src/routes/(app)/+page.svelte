@@ -87,9 +87,7 @@
 				// Check if we need to backfill embeddings
 				const status = await getEmbeddingBackfillStatus();
 				if (status.withoutEmbeddings > 0) {
-					console.log(`[Embeddings] Backfilling ${status.withoutEmbeddings} facts...`);
 					const result = await backfillEmbeddings();
-					console.log(`[Embeddings] Backfill complete: ${result.success} success, ${result.failed} failed`);
 				}
 			}
 		});
