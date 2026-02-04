@@ -59,21 +59,21 @@ function handleMouseMove(event: MouseEvent): void {
 	const wasOverModel = isOverModel;
 	isOverModel = modelIntersects.length > 0;
 
-	// Only update Tauri cursor events if state changed
-	if (wasOverModel !== isOverModel && isTauri()) {
-		// When over model, we want to receive cursor events (ignore = false)
-		// When not over model, click through (ignore = true)
-		setIgnoreCursorEvents(!isOverModel);
-	}
+	// NOTE: Click-through disabled for now - it blocks UI elements
+	// TODO: Add proper UI element detection before re-enabling
+	// if (wasOverModel !== isOverModel && isTauri()) {
+	// 	setIgnoreCursorEvents(!isOverModel);
+	// }
 }
 
 /**
  * Handle mouse leaving window
  */
 function handleMouseLeave(): void {
-	if (isOverModel && isTauri()) {
+	if (isOverModel) {
 		isOverModel = false;
-		setIgnoreCursorEvents(true);
+		// NOTE: Click-through disabled for now
+		// if (isTauri()) setIgnoreCursorEvents(true);
 	}
 }
 

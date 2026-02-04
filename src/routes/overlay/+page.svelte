@@ -4,6 +4,7 @@
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import FloatingChatIcon from '$lib/components/overlay/FloatingChatIcon.svelte';
 	import HotkeyHandler from '$lib/components/overlay/HotkeyHandler.svelte';
+	import CompanionStatus from '$lib/components/ui/CompanionStatus.svelte';
 	import { Icon } from '$lib/components/ui';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
@@ -287,6 +288,11 @@
 		onHide={handleBubbleHide}
 	/>
 
+	<!-- Companion Status (positioned for overlay) -->
+	<div class="overlay-status">
+		<CompanionStatus />
+	</div>
+
 	<!-- Floating Chat Icon (bottom of character) -->
 	<div class="chat-controls">
 		<FloatingChatIcon />
@@ -352,6 +358,11 @@
 	.exit-btn:hover {
 		opacity: 1;
 		transform: scale(1.1);
+	}
+
+	/* Override CompanionStatus positioning for overlay mode */
+	.overlay-status :global(.status-container) {
+		bottom: 4.5rem;
 	}
 
 	.chat-controls {

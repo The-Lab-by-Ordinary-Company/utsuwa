@@ -148,9 +148,10 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 
 	onMount(() => {
 		// Setup composer after a small delay to ensure camera is ready
-		const composerTimeout = setTimeout(() => {
+		// Skip composer in overlay mode for proper transparency
+		const composerTimeout = !overlay ? setTimeout(() => {
 			setupComposer();
-		}, 100);
+		}, 100) : null;
 
 		const checkDesktop = () => {
 			isDesktop = window.innerWidth > 768;
@@ -181,8 +182,19 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 			}
 		});
 
+		// Set transparent background for overlay mode
+		if (overlay) {
+			if (scene) {
+				scene.background = null;
+			}
+			// Ensure renderer clears to transparent
+			if (renderer) {
+				renderer.setClearColor(0x000000, 0);
+			}
+		}
+
 		return () => {
-			clearTimeout(composerTimeout);
+			if (composerTimeout) clearTimeout(composerTimeout);
 			window.removeEventListener('resize', checkDesktop);
 			observer.disconnect();
 			screenshotStore.unregister();
