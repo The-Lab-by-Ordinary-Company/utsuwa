@@ -61,8 +61,5 @@
       "wix": null,
       "nsis": null
     }
-  },
-  "plugins": {
-    "global-shortcut": {}
   }
 }
