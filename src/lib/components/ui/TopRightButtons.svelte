@@ -18,7 +18,12 @@
 	async function launchOverlay() {
 		try {
 			const { invoke } = await import('@tauri-apps/api/core');
+			const { getCurrentWindow } = await import('@tauri-apps/api/window');
+
+			// Show overlay and hide main window
 			await invoke('show_overlay');
+			const mainWindow = getCurrentWindow();
+			await mainWindow.hide();
 		} catch (e) {
 			console.error('Failed to launch overlay:', e);
 		}

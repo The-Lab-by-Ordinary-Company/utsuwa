@@ -4,6 +4,7 @@
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import FloatingChatIcon from '$lib/components/overlay/FloatingChatIcon.svelte';
 	import HotkeyHandler from '$lib/components/overlay/HotkeyHandler.svelte';
+	import { Icon } from '$lib/components/ui';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
@@ -12,8 +13,7 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { overlayStore } from '$lib/stores/overlay.svelte';
-	import { isTauri } from '$lib/services/platform';
-	import { startDragging } from '$lib/services/platform';
+	import { isTauri, startDragging } from '$lib/services/platform';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import type { TTSProvider } from '$lib/types';
 	import { onMount } from 'svelte';
@@ -50,6 +50,29 @@
 	function handleDragStart(e: MouseEvent) {
 		if (isTauri()) {
 			startDragging();
+		}
+	}
+
+	// Exit overlay and return to main window
+	async function exitToMain() {
+		if (!isTauri()) return;
+		try {
+			const { invoke } = await import('@tauri-apps/api/core');
+			const { getCurrentWindow, getAllWindows } = await import('@tauri-apps/api/window');
+
+			// Find and show main window
+			const windows = await getAllWindows();
+			const mainWindow = windows.find(w => w.label === 'main');
+			if (mainWindow) {
+				await mainWindow.show();
+				await mainWindow.setFocus();
+			}
+
+			// Hide overlay
+			const overlay = getCurrentWindow();
+			await overlay.hide();
+		} catch (e) {
+			console.error('Failed to exit overlay:', e);
 		}
 	}
 
@@ -252,6 +275,11 @@
 		<VrmScene overlay={true} />
 	</div>
 
+	<!-- Exit button (return to main app) -->
+	<button class="exit-btn" onclick={exitToMain} aria-label="Exit to main app" title="Exit to main app">
+		<Icon name="x" size={16} />
+	</button>
+
 	<!-- Speech Bubble -->
 	<SpeechBubble
 		message={latestResponse}
@@ -300,6 +328,30 @@
 
 	.scene-container:active {
 		cursor: grabbing;
+	}
+
+	.exit-btn {
+		position: fixed;
+		top: 0.75rem;
+		right: 0.75rem;
+		width: 32px;
+		height: 32px;
+		border: none;
+		border-radius: 50%;
+		background: rgba(0, 0, 0, 0.5);
+		color: white;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 50;
+		opacity: 0.6;
+		transition: opacity 0.15s ease, transform 0.15s ease;
+	}
+
+	.exit-btn:hover {
+		opacity: 1;
+		transform: scale(1.1);
 	}
 
 	.chat-controls {

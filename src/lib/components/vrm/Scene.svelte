@@ -265,14 +265,16 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 	<OverlayRaycastHandler />
 {/if}
 
-<!-- Scene Background fallback -->
-<T.Color attach="background" args={[backgroundColor()]} />
+<!-- Scene Background (hidden in overlay mode for transparency) -->
+{#if !overlay}
+	<T.Color attach="background" args={[backgroundColor()]} />
 
-<!-- Dot Grid Background Sphere (skybox-style) -->
-<T.Mesh position={[0, 0, 0]}>
-	<T.SphereGeometry args={[15, 64, 32]} />
-	<T is={dotGridMaterial} />
-</T.Mesh>
+	<!-- Dot Grid Background Sphere (skybox-style) -->
+	<T.Mesh position={[0, 0, 0]}>
+		<T.SphereGeometry args={[15, 64, 32]} />
+		<T is={dotGridMaterial} />
+	</T.Mesh>
+{/if}
 
 <!-- Hemisphere lighting matching Three.js example -->
 <!-- https://threejs.org/examples/webgl_lights_hemisphere.html -->
@@ -309,8 +311,10 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 	</T.Mesh>
 {/if}
 
-<!-- Ground plane - receives shadows -->
-<T.Mesh rotation.x={-Math.PI / 2} position.y={0} receiveShadow>
-	<T.CircleGeometry args={[2, 64]} />
-	<T.ShadowMaterial opacity={0.15} />
-</T.Mesh>
+<!-- Ground plane - receives shadows (hidden in overlay mode) -->
+{#if !overlay}
+	<T.Mesh rotation.x={-Math.PI / 2} position.y={0} receiveShadow>
+		<T.CircleGeometry args={[2, 64]} />
+		<T.ShadowMaterial opacity={0.15} />
+	</T.Mesh>
+{/if}
