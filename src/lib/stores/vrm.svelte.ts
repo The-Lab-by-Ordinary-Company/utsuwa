@@ -14,9 +14,9 @@ export interface VrmModel {
 // Default models bundled with the app (first one is loaded by default)
 const DEFAULT_MODELS: VrmModel[] = [
 	{
-		id: 'default-utsuwa-chan',
-		name: 'Utsuwa-Chan',
-		url: '/models/Utsuwa-Chan.vrm',
+		id: 'default-utsuwa',
+		name: 'Utsuwa',
+		url: '/models/utsuwa.vrm',
 		previewUrl: undefined,
 		isDefault: true,
 		createdAt: 0
