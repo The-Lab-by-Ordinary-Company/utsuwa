@@ -241,6 +241,7 @@ Utsuwa is built on the shoulders of these excellent projects:
 
 - **[bits-ui](https://github.com/huntabyte/bits-ui)** - Headless UI components for Svelte
 - **[Dexie.js](https://github.com/dexie/Dexie.js)** - IndexedDB wrapper for local storage
+- **[force-graph](https://github.com/vasturiano/force-graph)** - Force-directed graph visualization for memory graph
 - **[simple-icons](https://github.com/simple-icons/simple-icons)** - SVG icons for provider logos
 
 ### 3D Effects
