@@ -1,0 +1,350 @@
+<script lang="ts">
+	import VrmScene from '$lib/components/vrm/VrmScene.svelte';
+	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
+	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
+	import FloatingChatIcon from '$lib/components/overlay/FloatingChatIcon.svelte';
+	import HotkeyHandler from '$lib/components/overlay/HotkeyHandler.svelte';
+	import { vrmStore } from '$lib/stores/vrm.svelte';
+	import { chatStore } from '$lib/stores/chat.svelte';
+	import { settingsStore } from '$lib/stores/settings.svelte';
+	import { modulesStore } from '$lib/stores/modules.svelte';
+	import { ttsStore } from '$lib/stores/tts.svelte';
+	import { characterStore } from '$lib/stores/character.svelte';
+	import { personaStore } from '$lib/stores/persona.svelte';
+	import { overlayStore } from '$lib/stores/overlay.svelte';
+	import { isTauri } from '$lib/services/platform';
+	import { startDragging } from '$lib/services/platform';
+	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+	import type { TTSProvider } from '$lib/types';
+	import { onMount } from 'svelte';
+
+	import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
+	import { parseResponse, validateStateUpdates, extractPotentialFacts } from '$lib/ai/response-parser';
+	import { calculateBaselineUpdates, analyzeMessage } from '$lib/engine/heuristics';
+	import { mergeUpdates, checkAndApplyStageTransition } from '$lib/engine/state-updates';
+	import {
+		retrieveRelevantContext,
+		addTurnToWorkingMemory,
+		hydrateWorkingMemory,
+		memoryApi,
+		determinFactCategory,
+		calculateFactImportance
+	} from '$lib/engine/memory';
+
+	let latestResponse = $state('');
+	let isTyping = $state(false);
+	let isMemoryReady = $state(false);
+
+	const chatExpanded = $derived(overlayStore.chatExpanded);
+
+	// Hydrate working memory on start
+	$effect(() => {
+		isMemoryReady = false;
+		(async () => {
+			await hydrateWorkingMemory();
+			isMemoryReady = true;
+		})();
+	});
+
+	// Handle drag for Tauri window
+	function handleDragStart(e: MouseEvent) {
+		if (isTauri()) {
+			startDragging();
+		}
+	}
+
+	// Process companion response (same as main app)
+	async function processCompanionResponse(userMessage: string, companionResponse: string): Promise<string> {
+		const state = characterStore.state;
+		const baselineUpdates = calculateBaselineUpdates(userMessage, state);
+		const parsed = parseResponse(companionResponse);
+		const dialogue = parsed.dialogue;
+		const llmUpdates = parsed.stateUpdates;
+
+		let validatedLLMUpdates = null;
+		if (llmUpdates) {
+			const validation = validateStateUpdates(llmUpdates);
+			validatedLLMUpdates = validation.sanitized;
+		}
+
+		const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {});
+		characterStore.applyUpdates(finalUpdates);
+
+		if (finalUpdates.newMemory) {
+			try {
+				await memoryApi.createFact({
+					content: finalUpdates.newMemory,
+					category: determinFactCategory(finalUpdates.newMemory),
+					importance: calculateFactImportance(finalUpdates.newMemory)
+				});
+			} catch (e) {
+				console.debug('[Memory] Failed to save LLM observation:', e);
+			}
+		}
+
+		if (characterStore.appMode === 'dating_sim') {
+			const completedEventIds = characterStore.state.completedEvents || [];
+			const transition = checkAndApplyStageTransition(characterStore.state, completedEventIds);
+			if (transition.transitioned && transition.toStage) {
+				characterStore.setRelationshipStage(transition.toStage);
+			}
+		}
+
+		addTurnToWorkingMemory({ role: 'user', content: userMessage, createdAt: new Date() });
+		addTurnToWorkingMemory({ role: 'assistant', content: dialogue, createdAt: new Date() });
+
+		const potentialFacts = extractPotentialFacts(dialogue, userMessage);
+		for (const factContent of potentialFacts.slice(0, 2)) {
+			try {
+				const userAnalysis = analyzeMessage(userMessage);
+				await memoryApi.createFact({
+					content: factContent,
+					category: determinFactCategory(factContent),
+					importance: calculateFactImportance(factContent, userAnalysis.sentiment)
+				});
+			} catch (e) {
+				console.debug('Failed to save fact:', e);
+			}
+		}
+
+		return dialogue;
+	}
+
+	async function buildCompanionSystemPrompt(userMessage: string): Promise<string> {
+		const state = characterStore.state;
+		const persona = personaStore.activeCard;
+		const memories = await retrieveRelevantContext(userMessage);
+
+		const context: PromptContext = {
+			persona,
+			state,
+			memories,
+			userMessage,
+			systemTime: new Date()
+		};
+
+		return buildSystemPrompt(context);
+	}
+
+	async function handleSend(content: string) {
+		if (!content.trim() || chatStore.isLoading) return;
+
+		if (!modulesStore.isModuleEnabled('consciousness')) {
+			chatStore.setError('Chat is disabled. Enable it in Settings > Character > AI Services.');
+			return;
+		}
+
+		chatStore.addMessage('user', content);
+		chatStore.setLoading(true);
+		chatStore.setError(null);
+		isTyping = true;
+		latestResponse = '';
+
+		// Collapse chat after sending
+		overlayStore.setChatExpanded(false);
+
+		characterStore.updateStreak();
+		characterStore.updateDaysKnown();
+
+		try {
+			const consciousnessSettings = modulesStore.getModuleSettings('consciousness');
+			const provider = consciousnessSettings.activeProvider as string;
+			const model = consciousnessSettings.activeModel as string;
+
+			if (!provider) {
+				throw new Error('Please configure a provider in Settings > Modules > Consciousness');
+			}
+
+			const systemPrompt = await buildCompanionSystemPrompt(content);
+			const providerConfig = settingsStore.getProviderConfig(provider);
+			const apiKey = providerConfig.apiKey;
+			const providerMeta = getLLMProvider(provider);
+
+			if (providerMeta?.requiresApiKey && !apiKey) {
+				throw new Error(`Please configure API key for ${providerMeta.name} in Settings > Providers`);
+			}
+
+			const response = await fetch('/api/chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					messages: chatStore.messages.map((m) => ({ role: m.role, content: m.content })),
+					provider,
+					model: model || providerMeta?.models?.[0]?.id,
+					apiKey: apiKey || 'not-needed',
+					baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+					systemPrompt
+				})
+			});
+
+			if (!response.ok) throw new Error('Failed to get response');
+
+			const reader = response.body?.getReader();
+			const decoder = new TextDecoder();
+			if (!reader) throw new Error('No response body');
+
+			chatStore.addMessage('assistant', '');
+			let fullContent = '';
+
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+
+				const chunk = decoder.decode(value, { stream: true });
+				for (const line of chunk.split('\n')) {
+					if (line.startsWith('0:')) {
+						const text = JSON.parse(line.slice(2));
+						fullContent += text;
+						chatStore.updateLastMessage(fullContent);
+					} else if (line.startsWith('e:')) {
+						const { error } = JSON.parse(line.slice(2));
+						throw new Error(error);
+					}
+				}
+			}
+
+			isTyping = false;
+			const cleanedResponse = await processCompanionResponse(content, fullContent);
+			chatStore.updateLastMessage(cleanedResponse);
+			latestResponse = cleanedResponse;
+
+			if (cleanedResponse) {
+				vrmStore.startTalking(cleanedResponse);
+			}
+
+			// TTS
+			const speechState = modulesStore.getModuleState('speech');
+			const speechSettings = modulesStore.getModuleSettings('speech');
+			if (speechState?.enabled && cleanedResponse) {
+				const ttsProvider = speechSettings.activeProvider as TTSProvider;
+				const ttsConfig = settingsStore.getProviderConfig(ttsProvider);
+				const ttsMeta = getTTSProvider(ttsProvider);
+
+				ttsStore.speak(cleanedResponse, {
+					provider: ttsProvider,
+					apiKey: ttsConfig.apiKey,
+					voiceId: speechSettings.activeVoiceId as string || ttsConfig.voiceId,
+					baseUrl: ttsConfig.baseUrl || ttsMeta?.defaultBaseUrl,
+					speed: speechSettings.speed as number ?? 1
+				});
+			}
+		} catch (err) {
+			chatStore.setError(err instanceof Error ? err.message : 'Unknown error');
+			isTyping = false;
+		} finally {
+			chatStore.setLoading(false);
+		}
+	}
+
+	function handleBubbleHide() {
+		latestResponse = '';
+	}
+
+	function handleCharacterClick() {
+		overlayStore.activate();
+	}
+</script>
+
+<div class="overlay-container">
+	<!-- VRM Scene (fills the overlay) -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="scene-container" onmousedown={handleDragStart}>
+		<VrmScene overlay={true} />
+	</div>
+
+	<!-- Speech Bubble -->
+	<SpeechBubble
+		message={latestResponse}
+		isTyping={isTyping}
+		onHide={handleBubbleHide}
+	/>
+
+	<!-- Floating Chat Icon (bottom of character) -->
+	<div class="chat-controls">
+		<FloatingChatIcon />
+	</div>
+
+	<!-- Expandable Chat Bar -->
+	{#if chatExpanded}
+		<div class="chat-bar-container">
+			<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} />
+		</div>
+	{/if}
+
+	<!-- Error toast -->
+	{#if chatStore.error}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="error-toast" onclick={() => chatStore.setError(null)}>
+			<span>{chatStore.error}</span>
+		</div>
+	{/if}
+
+	<!-- Global hotkey handler (Tauri only) -->
+	<HotkeyHandler onSendMessage={handleSend} />
+</div>
+
+<style>
+	.overlay-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		background: transparent;
+	}
+
+	.scene-container {
+		position: absolute;
+		inset: 0;
+		cursor: grab;
+	}
+
+	.scene-container:active {
+		cursor: grabbing;
+	}
+
+	.chat-controls {
+		position: fixed;
+		bottom: 1.5rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 40;
+	}
+
+	.chat-bar-container {
+		position: fixed;
+		bottom: 5rem;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 100%;
+		max-width: 400px;
+		padding: 0 1rem;
+		z-index: 35;
+		animation: slideUp 0.2s ease-out;
+	}
+
+	@keyframes slideUp {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+	}
+
+	.error-toast {
+		position: fixed;
+		top: 1rem;
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 0.75rem 1rem;
+		background: rgba(220, 38, 38, 0.9);
+		backdrop-filter: blur(8px);
+		border-radius: 0.75rem;
+		color: white;
+		font-size: 0.875rem;
+		cursor: pointer;
+		z-index: 50;
+	}
+</style>

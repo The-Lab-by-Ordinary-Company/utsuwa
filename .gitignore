@@ -25,6 +25,9 @@ vite.config.ts.timestamp-*
 # Drizzle
 /drizzle
 
+# Tauri
+/src-tauri/target/
+
 # Claude
 .claude/
 .refs

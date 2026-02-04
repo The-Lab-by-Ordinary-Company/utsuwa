@@ -9,9 +9,10 @@
 	interface Props {
 		centered?: boolean;
 		locked?: boolean;
+		overlay?: boolean;
 	}
 
-	let { centered = false, locked = false }: Props = $props();
+	let { centered = false, locked = false, overlay = false }: Props = $props();
 	let mounted = $state(false);
 
 	// Custom renderer factory for screenshot support
@@ -49,7 +50,7 @@
 <div class="vrm-scene">
 	{#if mounted}
 		<Canvas {createRenderer}>
-			<Scene {centered} {locked} />
+			<Scene {centered} {locked} {overlay} />
 		</Canvas>
 	{/if}
 </div>

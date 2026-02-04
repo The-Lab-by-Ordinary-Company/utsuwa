@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import type { ProviderConfig } from '$lib/types';
 import { LLM_PROVIDERS, TTS_PROVIDERS } from '$lib/services/providers/registry';
+import { DEFAULT_HOTKEYS, type HotkeyConfig } from '$lib/services/platform/hotkeys';
 
 export type ProviderCategory = 'llm' | 'tts' | 'stt';
 
@@ -12,6 +13,9 @@ function createSettingsStore() {
 	// Track which providers have been explicitly added by user
 	let addedProviders = $state<Record<string, boolean>>({});
 
+	// Desktop hotkey configuration
+	let hotkeys = $state<HotkeyConfig>({ ...DEFAULT_HOTKEYS });
+
 	// Load from localStorage on init
 	if (browser) {
 		const saved = localStorage.getItem('utsuwa-settings');
@@ -20,6 +24,7 @@ function createSettingsStore() {
 				const parsed = JSON.parse(saved);
 				providerConfigs = parsed.providerConfigs ?? {};
 				addedProviders = parsed.addedProviders ?? {};
+				hotkeys = { ...DEFAULT_HOTKEYS, ...parsed.hotkeys };
 
 				// Migrate old settings format if needed
 				if (parsed.anthropicApiKey && !providerConfigs.anthropic) {
@@ -57,7 +62,8 @@ function createSettingsStore() {
 				'utsuwa-settings',
 				JSON.stringify({
 					providerConfigs,
-					addedProviders
+					addedProviders,
+					hotkeys
 				})
 			);
 		}
@@ -207,6 +213,21 @@ function createSettingsStore() {
 		}
 	}
 
+	// Hotkey configuration
+	function setHotkey(action: keyof HotkeyConfig, shortcut: string) {
+		hotkeys[action] = shortcut;
+		save();
+	}
+
+	function getHotkey(action: keyof HotkeyConfig): string {
+		return hotkeys[action];
+	}
+
+	function resetHotkeys() {
+		hotkeys = { ...DEFAULT_HOTKEYS };
+		save();
+	}
+
 	return {
 		// Provider configs
 		get providerConfigs() {
@@ -249,7 +270,15 @@ function createSettingsStore() {
 		// Cached models
 		setCachedModels,
 		getCachedModels,
-		clearCachedModels
+		clearCachedModels,
+
+		// Hotkeys
+		get hotkeys() {
+			return hotkeys;
+		},
+		setHotkey,
+		getHotkey,
+		resetHotkeys
 	};
 }
 

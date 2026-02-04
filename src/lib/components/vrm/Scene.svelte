@@ -6,6 +6,7 @@
 	import { HemisphereLight, DirectionalLight, ShaderMaterial, Color, BackSide, SRGBColorSpace, ACESFilmicToneMapping, HalfFloatType } from 'three';
 import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocessing';
 	import VrmModel from './VrmModel.svelte';
+	import OverlayRaycastHandler from '$lib/components/overlay/OverlayRaycastHandler.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
 	import { screenshotStore } from '$lib/stores/screenshot.svelte';
@@ -75,9 +76,10 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 	interface Props {
 		centered?: boolean;
 		locked?: boolean;
+		overlay?: boolean;
 	}
 
-	let { centered = false, locked = false }: Props = $props();
+	let { centered = false, locked = false, overlay = false }: Props = $props();
 
 	const modelUrl = $derived(vrmStore.modelUrl);
 
@@ -257,6 +259,11 @@ import { EffectComposer, RenderPass, EffectPass, BloomEffect } from 'postprocess
 
 <!-- Camera - view with model centered, distance from display settings -->
 <T.PerspectiveCamera makeDefault position={[cameraTargetX, 1.15, cameraDistance]} fov={30} near={0.1} far={20} />
+
+<!-- Overlay mode: enable raycast for click-through detection -->
+{#if overlay}
+	<OverlayRaycastHandler />
+{/if}
 
 <!-- Scene Background fallback -->
 <T.Color attach="background" args={[backgroundColor()]} />
