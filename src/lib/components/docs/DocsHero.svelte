@@ -28,6 +28,16 @@
 		overflow: hidden;
 		border-bottom: 1px solid var(--docs-border);
 		margin-bottom: 0;
+		background: url('/blog/hero-background.png') center / cover no-repeat;
+	}
+
+	.hero::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: var(--docs-bg);
+		opacity: 0.75;
+		pointer-events: none;
 	}
 
 	.hero-content {
