@@ -21,8 +21,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-height: 80vh;
-		padding: 5rem 2rem 4rem;
+		min-height: 60vh;
+		padding: 4rem 2rem 3rem;
 		text-align: center;
 		position: relative;
 		overflow: hidden;
