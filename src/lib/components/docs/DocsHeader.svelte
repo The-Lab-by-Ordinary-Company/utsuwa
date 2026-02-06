@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import DocsSearch from './DocsSearch.svelte';
+	import { page } from '$app/state';
 	import { browser } from '$app/environment';
 
 	interface Props {
@@ -9,6 +10,8 @@
 	}
 
 	let { onToggleSidebar, sidebarOpen = false }: Props = $props();
+
+	const currentPath = $derived(page.url.pathname);
 
 	let searchComponent = $state<DocsSearch | null>(null);
 
@@ -57,6 +60,10 @@
 		<a href="/docs" class="logo desktop-logo">
 			<img src="/brand-assets/logo.svg" alt="Utsuwa" class="logo-img" />
 		</a>
+		<nav class="header-nav">
+			<a href="/docs" class="nav-link" class:active={currentPath.startsWith('/docs')}>Docs</a>
+			<a href="/blog" class="nav-link" class:active={currentPath.startsWith('/blog')}>Blog</a>
+		</nav>
 	</div>
 	<div class="header-search">
 		<DocsSearch bind:this={searchComponent} id="header-search" />
@@ -125,6 +132,32 @@
 		width: auto;
 		filter: var(--docs-logo-filter, none);
 		drop-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	.header-nav {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-left: 1rem;
+	}
+
+	.nav-link {
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--docs-text-muted);
+		text-decoration: none;
+		padding: 0.375rem 0.625rem;
+		border-radius: 0.375rem;
+		transition: all 0.15s ease;
+	}
+
+	.nav-link:hover {
+		color: var(--docs-text);
+		background: var(--docs-surface);
+	}
+
+	.nav-link.active {
+		color: var(--docs-accent);
 	}
 
 	.header-right {
@@ -228,6 +261,11 @@
 
 		.desktop-logo {
 			display: none;
+		}
+
+		.header-nav {
+			margin-left: 0.5rem;
+			gap: 0.125rem;
 		}
 
 		.header-search {
