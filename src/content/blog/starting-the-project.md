@@ -14,11 +14,31 @@ It's taken projects like this to start pushing things in a different direction. 
 
 That's the idea behind Utsuwa. The name means "vessel" in Japanese. A container for AI to inhabit visually. You bring the model, the voice, and the LLM provider. The app is just the shell. Everything runs locally, everything is yours.
 
+## The inspiration (and the problem)
+
+Two products really got me thinking about this space.
+
+![Grok's Ani companion](/blog/grok-ani.jpg)
+
+The first is **Ani**, xAI's companion for Grok. When it launched in mid-2025 it went absolutely viral. Millions of impressions in the first 48 hours. The 3D avatar, the voice, the affection system that evolves as you interact with it. It proved there's a massive appetite for this kind of experience. People genuinely want AI companions that feel alive.
+
+The catch? It's locked behind a $30/month SuperGrok subscription. Your conversations live on xAI's servers. The characters, the avatars, the personality system, all of it is proprietary. You're renting the experience. If xAI decides to change Ani's personality, remove a feature, or shut it down tomorrow, you have zero say in it. They've already had to disable features due to controversy around content moderation. When you don't own the platform, you're always at the mercy of whoever does.
+
+![Razer's Project Ava](/blog/razer-project-ava.png)
+
+The second is **Project Ava** from Razer, unveiled at CES 2026. A holographic AI companion that sits on your desk in a physical cylinder. Anime avatars, voice interaction, screen awareness. The hardware concept is genuinely cool. A 5.5" 3D hologram with dual microphones and a camera that can see your screen.
+
+But then you look at the details. It runs on Grok's engine, so you're right back in xAI's ecosystem. It's a proprietary hardware device with proprietary software. Expected to cost somewhere in Razer's premium peripheral range (we're probably talking $200+), and it hasn't even shipped yet. You're buying into a closed system where the hardware vendor and the AI provider both control your experience. If either company pivots, you're left with an expensive paperweight.
+
+Both of these products validated the idea that people want AI companions. But they also showed exactly what happens when that experience is built on closed platforms. The user is always the product, never the owner.
+
 ## What I'm building
 
 The core loop is straightforward: you load a VRM model, connect an LLM provider, optionally add TTS, and you get a companion that talks back with lip-synced audio and facial expressions.
 
 Under the hood there's more going on. A memory system that tracks conversation context, a relationship model that evolves over time, and an event engine that drives dynamic interactions. But the surface-level experience should feel simple.
+
+The difference from Ani or Project Ava is that everything here is open source and runs on your machine. You pick the avatar. You pick the AI. You own the conversation history. If you don't like something, you can change it. If the project disappeared tomorrow, you'd still have everything.
 
 ## "But you still need an API key?"
 
