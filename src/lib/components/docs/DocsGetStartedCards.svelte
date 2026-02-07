@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { GITHUB_RELEASES } from '$lib/config/site';
 </script>
 
 <div class="cards">
@@ -29,13 +30,15 @@
 		</div>
 		<h3 class="card-title">Desktop</h3>
 		<p class="card-desc">
-			Standalone app with local LLM support and more powerful features.
+			Native app with transparent overlay mode. Available for Windows, macOS, and Linux.
 		</p>
 		<div class="card-actions">
-			<span class="card-btn disabled">
-				Coming Soon
-			</span>
-			<a href="/docs/guides/desktop-guide" class="card-link">Learn more</a>
+			<a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" class="card-btn primary">
+				<span>Download</span>
+				<Icon name="download" size={14} />
+				<div class="btn-shine"></div>
+			</a>
+			<a href="/docs/guides/desktop-guide" class="card-link">Setup guide</a>
 		</div>
 	</div>
 </div>
@@ -166,16 +169,6 @@
 		box-shadow:
 			0 1px 0 rgba(255, 255, 255, 0.4) inset,
 			0 4px 12px var(--docs-glow-strong);
-	}
-
-	.card-btn.disabled {
-		background: var(--docs-surface);
-		color: var(--docs-text-muted);
-		border: 1px solid var(--docs-border);
-		cursor: default;
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 1px 2px rgba(0, 0, 0, 0.05);
 	}
 
 	.card-link {

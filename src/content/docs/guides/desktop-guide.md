@@ -1,38 +1,54 @@
 ---
 title: Desktop Guide
-description: How to use the Utsuwa desktop application with overlay mode.
+description: How to install and use the Utsuwa desktop application with overlay mode.
 ---
 
 # Desktop Guide
 
 Utsuwa Desktop is a native application that brings your AI companion to your desktop with a transparent overlay mode. Your companion can float over other applications, always visible while you work.
 
-> **Beta Notice:** The desktop app is currently on the `feature/desktop` branch and has only been tested on macOS. Windows and Linux support is planned.
+Available for **Windows**, **macOS**, and **Linux**.
 
 ## Installation
 
-### Prerequisites
+### Download
+
+Head to the [GitHub Releases](https://github.com/dyascj/utsuwa/releases) page and grab the latest version for your platform:
+
+| Platform | File |
+|----------|------|
+| Windows | `.msi` or `.exe` installer |
+| macOS | `.dmg` disk image |
+| Linux | `.AppImage` or `.deb` package |
+
+Download the file, run the installer, and you're good to go.
+
+### Building from Source
+
+If you prefer to build it yourself:
+
+#### Prerequisites
 
 - Node.js 22+
 - [Rust toolchain](https://rustup.rs/) (for Tauri)
 - pnpm
 
-### Building from Source
-
 ```bash
-# Clone and switch to desktop branch
+# Clone the repo
 git clone https://github.com/dyascj/utsuwa.git
 cd utsuwa
-git checkout feature/desktop
 
 # Install dependencies
 pnpm install
 
 # Run in development mode
 pnpm tauri dev
+
+# Or build a release binary
+pnpm tauri build
 ```
 
-The app will launch with both a development server and the native window.
+The dev command launches both a development server and the native window. The build command produces an installer for your current platform in `src-tauri/target/release/bundle/`.
 
 ## Features
 
@@ -75,15 +91,15 @@ Overlay mode detaches your companion into a transparent, always-on-top window:
 
 Both windows share the same data — your conversation, memories, and relationship state persist across modes.
 
-## Current Limitations
+## Known Limitations
 
-The desktop app is in beta. Some features are not yet implemented:
+Some features are still being worked on:
 
 | Feature | Status |
 |---------|--------|
-| macOS support | ✅ Tested |
-| Windows support | ⏳ Planned |
-| Linux support | ⏳ Planned |
+| Windows support | ✅ Available |
+| macOS support | ✅ Available |
+| Linux support | ✅ Available |
 | Click-through transparency | ❌ Disabled (blocks UI) |
 | Global hotkeys | 🔧 Infrastructure ready |
 | Position persistence | ⏳ Planned |
@@ -93,7 +109,7 @@ The desktop app is in beta. Some features are not yet implemented:
 
 ### App won't start
 
-Make sure you have Rust installed:
+If you built from source, make sure Rust is installed:
 
 ```bash
 rustc --version
@@ -105,12 +121,14 @@ If not installed, run:
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
+If you downloaded a release binary and it won't launch, try downloading it again or check the [GitHub Issues](https://github.com/dyascj/utsuwa/issues) page.
+
 ### Overlay background not transparent
 
 This can happen if the renderer isn't properly configured. Try:
 
 1. Exit and relaunch the app
-2. Make sure you're on the latest `feature/desktop` branch
+2. Make sure you're on the latest version from [Releases](https://github.com/dyascj/utsuwa/releases)
 
 ### Character facing wrong direction
 
