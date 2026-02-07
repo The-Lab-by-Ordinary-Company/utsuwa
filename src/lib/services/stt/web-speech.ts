@@ -86,31 +86,25 @@ class WebSpeechService {
 		this.recognition.maxAlternatives = 1;
 
 		this.recognition.onstart = () => {
-			// console.log('[STT] Recognition started');
 			this.isListening = true;
 		};
 
 		this.recognition.onaudiostart = () => {
-			// console.log('[STT] Audio capture started');
 		};
 
 		this.recognition.onspeechstart = () => {
-			// console.log('[STT] Speech detected');
 		};
 
 		this.recognition.onspeechend = () => {
-			// console.log('[STT] Speech ended');
 		};
 
 		this.recognition.onresult = (event: SpeechRecognitionEvent) => {
-			// console.log('[STT] Result event:', event.results.length, 'results');
 			let finalTranscript = '';
 			let interimTranscript = '';
 
 			for (let i = event.resultIndex; i < event.results.length; i++) {
 				const result = event.results[i];
 				const transcript = result[0].transcript;
-				// console.log('[STT] Result', i, ':', transcript, result.isFinal ? '(final)' : '(interim)');
 				if (result.isFinal) {
 					finalTranscript += transcript;
 				} else {
@@ -119,10 +113,8 @@ class WebSpeechService {
 			}
 
 			if (finalTranscript) {
-				// console.log('[STT] Final transcript:', finalTranscript);
 				this.callbacks?.onResult(finalTranscript, true);
 			} else if (interimTranscript) {
-				// console.log('[STT] Interim transcript:', interimTranscript);
 				this.callbacks?.onResult(interimTranscript, false);
 			}
 		};

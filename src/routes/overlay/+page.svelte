@@ -28,7 +28,7 @@
 		addTurnToWorkingMemory,
 		hydrateWorkingMemory,
 		memoryApi,
-		determinFactCategory,
+		determineFactCategory,
 		calculateFactImportance
 	} from '$lib/engine/memory';
 
@@ -42,8 +42,13 @@
 	$effect(() => {
 		isMemoryReady = false;
 		(async () => {
-			await hydrateWorkingMemory();
-			isMemoryReady = true;
+			try {
+				await hydrateWorkingMemory();
+				isMemoryReady = true;
+			} catch (e) {
+				console.error('Failed to hydrate working memory:', e);
+				isMemoryReady = true;
+			}
 		})();
 	});
 
@@ -98,7 +103,7 @@
 			try {
 				await memoryApi.createFact({
 					content: finalUpdates.newMemory,
-					category: determinFactCategory(finalUpdates.newMemory),
+					category: determineFactCategory(finalUpdates.newMemory),
 					importance: calculateFactImportance(finalUpdates.newMemory)
 				});
 			} catch (e) {
@@ -123,7 +128,7 @@
 				const userAnalysis = analyzeMessage(userMessage);
 				await memoryApi.createFact({
 					content: factContent,
-					category: determinFactCategory(factContent),
+					category: determineFactCategory(factContent),
 					importance: calculateFactImportance(factContent, userAnalysis.sentiment)
 				});
 			} catch (e) {
@@ -402,12 +407,44 @@
 		left: 50%;
 		transform: translateX(-50%);
 		padding: 0.75rem 1rem;
-		background: rgba(220, 38, 38, 0.9);
-		backdrop-filter: blur(8px);
-		border-radius: 0.75rem;
+		background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 100%);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 16px;
 		color: white;
 		font-size: 0.875rem;
 		cursor: pointer;
 		z-index: 50;
+		animation: slideDownShake 0.5s ease-out;
+		box-shadow:
+			0 4px 20px rgba(238, 90, 90, 0.4),
+			0 2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+	}
+
+	@keyframes slideDownShake {
+		0% {
+			opacity: 0;
+			transform: translateX(-50%) translateY(-8px);
+		}
+		30% {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+		45% {
+			transform: translateX(calc(-50% + 6px)) translateY(0);
+		}
+		60% {
+			transform: translateX(calc(-50% - 5px)) translateY(0);
+		}
+		75% {
+			transform: translateX(calc(-50% + 3px)) translateY(0);
+		}
+		90% {
+			transform: translateX(calc(-50% - 2px)) translateY(0);
+		}
+		100% {
+			transform: translateX(-50%) translateY(0);
+		}
 	}
 </style>

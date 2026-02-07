@@ -59,14 +59,11 @@ export const speechModule: ModuleDefinition = {
 	},
 
 	async onEnable() {
-		// console.log('[Speech] Module enabled');
 	},
 
 	async onDisable() {
-		// console.log('[Speech] Module disabled');
 	},
 
 	onSettingsChange(settings: Record<string, unknown>) {
-		// console.log('[Speech] Settings updated:', settings);
 	}
 };

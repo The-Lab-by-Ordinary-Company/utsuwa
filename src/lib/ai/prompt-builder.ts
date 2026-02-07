@@ -16,12 +16,8 @@ export interface PromptContext {
 export function buildSystemPrompt(context: PromptContext): string {
 	// Companion Mode - simplified prompt without relationship mechanics
 	if (context.state.appMode === 'companion') {
-		// console.log('[AppMode] Building COMPANION mode prompt (no relationship mechanics)');
 		return buildCompanionModePrompt(context);
 	}
-
-	// Dating Sim Mode - full prompt with relationship mechanics
-	// console.log('[AppMode] Building DATING SIM mode prompt (full relationship mechanics)');
 	const layers = [
 		buildSystemLayer(context),
 		buildCharacterLayer(context),
@@ -181,12 +177,6 @@ function buildMemoryLayer(ctx: PromptContext): string {
 	const mem = ctx.memories;
 	let sections: string[] = [];
 
-	// console.log('[Prompt] Building memory layer:', {
-	// 	recentTurns: mem.recentTurns.length,
-	// 	relevantFacts: mem.relevantFacts.length,
-	// 	triggeredMemories: mem.triggeredMemories.length
-	// });
-
 	// Recent conversation
 	if (mem.recentTurns.length > 0) {
 		const recentChat = mem.recentTurns
@@ -200,7 +190,6 @@ function buildMemoryLayer(ctx: PromptContext): string {
 	if (mem.relevantFacts.length > 0) {
 		const factsText = mem.relevantFacts.slice(0, 5).map((f) => `- ${f.content}`).join('\n');
 		sections.push(`Things you know about them:\n${factsText}`);
-		// console.log('[Prompt] Including facts in prompt:', mem.relevantFacts.map((f) => f.content));
 	}
 
 	// Triggered memories

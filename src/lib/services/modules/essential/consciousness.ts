@@ -58,14 +58,11 @@ export const consciousnessModule: ModuleDefinition = {
 	},
 
 	async onEnable() {
-		// console.log('[Consciousness] Module enabled');
 	},
 
 	async onDisable() {
-		// console.log('[Consciousness] Module disabled');
 	},
 
 	onSettingsChange(settings: Record<string, unknown>) {
-		// console.log('[Consciousness] Settings updated:', settings);
 	}
 };

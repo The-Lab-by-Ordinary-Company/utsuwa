@@ -71,25 +71,14 @@ function createCharacterStore() {
 			const loaded = await getCharacterState();
 			state = loaded;
 
-			// console.log('[Character] Loaded state:', {
-			// 	energy: state.energy,
-			// 	lastInteraction: state.lastInteraction,
-			// 	hasLastInteraction: !!state.lastInteraction
-			// });
-
 			// Apply time-based recovery/decay based on time since last interaction
 			if (state.lastInteraction) {
 				const hoursSince =
 					(Date.now() - new Date(state.lastInteraction).getTime()) / (1000 * 60 * 60);
-				// console.log('[Character] Time since last interaction:', hoursSince.toFixed(2), 'hours');
 				if (hoursSince > 0.5) {
 					// Only apply if at least 30 minutes have passed
 					const timeUpdates = applyTimeDecay(state, hoursSince);
 					if (Object.keys(timeUpdates).length > 0) {
-						// console.log(
-					// 	`[Character] Applying time decay/recovery after ${hoursSince.toFixed(1)} hours:`,
-					// 	timeUpdates
-					// );
 						// Apply updates directly without emitting visual indicators (silent recovery)
 						if (timeUpdates.energyDelta !== undefined) {
 							state = {
@@ -193,12 +182,6 @@ function createCharacterStore() {
 		const newState = { ...state };
 		const isCompanionMode = state.appMode === 'companion';
 
-		// console.log('[AppMode] Applying updates:', {
-		// 	mode: state.appMode,
-		// 	isCompanionMode,
-		// 	updates
-		// });
-
 		// Apply mood change (always applies in both modes)
 		if (updates.moodChange) {
 			newState.mood = {
@@ -242,17 +225,6 @@ function createCharacterStore() {
 				newState.respect = Math.max(0, Math.min(100, newState.respect + updates.respectDelta));
 				statChangesStore.emit('respect', updates.respectDelta);
 			}
-		} else {
-			// Log skipped relationship stats in Companion Mode
-			const skippedStats = [];
-			if (updates.affectionDelta) skippedStats.push(`affection: ${updates.affectionDelta}`);
-			if (updates.trustDelta) skippedStats.push(`trust: ${updates.trustDelta}`);
-			if (updates.intimacyDelta) skippedStats.push(`intimacy: ${updates.intimacyDelta}`);
-			if (updates.comfortDelta) skippedStats.push(`comfort: ${updates.comfortDelta}`);
-			if (updates.respectDelta) skippedStats.push(`respect: ${updates.respectDelta}`);
-			// if (skippedStats.length > 0) {
-			// 	console.log('[AppMode] Companion Mode - skipping relationship stats:', skippedStats.join(', '));
-			// }
 		}
 
 		// Update timestamp and interaction count
@@ -311,21 +283,6 @@ function createCharacterStore() {
 				updatedAt: new Date()
 			};
 		}
-
-		// console.log('[AppMode] Mode switched:', {
-		// 	from: previousMode,
-		// 	to: mode,
-		// 	previousStage,
-		// 	newStage: state.relationshipStage,
-		// 	stats: {
-		// 		affection: state.affection,
-		// 		trust: state.trust,
-		// 		intimacy: state.intimacy,
-		// 		comfort: state.comfort,
-		// 		daysKnown: state.daysKnown,
-		// 		totalInteractions: state.totalInteractions
-		// 	}
-		// });
 
 		save();
 	}
@@ -418,6 +375,17 @@ function createCharacterStore() {
 	// Initialize on browser
 	if (browser) {
 		loadState();
+
+		// Flush pending saves before the page unloads to prevent data loss.
+		// IndexedDB transactions started in beforeunload typically complete before teardown.
+		window.addEventListener('beforeunload', () => {
+			if (saveTimeout) {
+				clearTimeout(saveTimeout);
+				saveTimeout = null;
+				const plainState = $state.snapshot(state);
+				saveCharacterState({ ...plainState, updatedAt: new Date() });
+			}
+		});
 	}
 
 	return {

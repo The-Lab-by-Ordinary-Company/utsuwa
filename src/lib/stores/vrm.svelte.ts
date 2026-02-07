@@ -70,7 +70,6 @@ function createVrmStore() {
 		'/animations/idle_5.vrma'
 	];
 
-	// Emote animations (disabled for now - will be re-enabled later)
 	const availableAnimations: { id: string; name: string; url: string }[] = [];
 
 	// Guard against saveToStorage running before init completes
@@ -136,6 +135,8 @@ function createVrmStore() {
 			modelUrl = DEFAULT_MODELS[0].url;
 		}
 		storageReady = true;
+		// Flush any saves that were blocked during init
+		await saveToStorage();
 	}
 
 	async function saveToStorage() {
@@ -281,6 +282,11 @@ function createVrmStore() {
 	async function removeModel(id: string): Promise<void> {
 		const model = models.find((m) => m.id === id);
 		if (!model || model.isDefault) return;
+
+		// Revoke blob URL to free memory
+		if (model.url.startsWith('blob:')) {
+			URL.revokeObjectURL(model.url);
+		}
 
 		// Remove from storage
 		await vrmStorage?.removeItem(`model-blob-${id}`);

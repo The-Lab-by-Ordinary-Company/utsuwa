@@ -23,7 +23,7 @@
 		addTurnToWorkingMemory,
 		hydrateWorkingMemory,
 		memoryApi,
-		determinFactCategory,
+		determineFactCategory,
 		calculateFactImportance
 	} from '$lib/engine/memory';
 	import { checkAllEvents, eventsApi } from '$lib/engine/events';
@@ -74,20 +74,8 @@
 		}
 
 		// 4. Merge baseline + LLM updates (LLM takes precedence for mood)
+
 		const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {});
-
-		// Debug: log state updates
-		// console.log('=== STATE UPDATES ===');
-		// console.log('Baseline from heuristics:', baselineUpdates);
-		// console.log('Final updates applied:', finalUpdates);
-		// console.log('Before:', {
-		// 	affection: characterStore.state.affection,
-		// 	trust: characterStore.state.trust,
-		// 	intimacy: characterStore.state.intimacy,
-		// 	comfort: characterStore.state.comfort,
-		// 	energy: characterStore.state.energy
-		// });
-
 		// 5. Apply updates to character state
 		characterStore.applyUpdates(finalUpdates);
 
@@ -96,23 +84,13 @@
 			try {
 				await memoryApi.createFact({
 					content: finalUpdates.newMemory,
-					category: determinFactCategory(finalUpdates.newMemory),
+					category: determineFactCategory(finalUpdates.newMemory),
 					importance: calculateFactImportance(finalUpdates.newMemory)
 				});
-				// console.log('[Memory] Saved LLM observation:', finalUpdates.newMemory);
 			} catch (e) {
 				console.debug('[Memory] Failed to save LLM observation:', e);
 			}
 		}
-
-		// console.log('After:', {
-		// 	affection: characterStore.state.affection,
-		// 	trust: characterStore.state.trust,
-		// 	intimacy: characterStore.state.intimacy,
-		// 	comfort: characterStore.state.comfort,
-		// 	energy: characterStore.state.energy
-		// });
-		// console.log('======================');
 
 		// 6. Check for stage transitions (only in Dating Sim Mode)
 		if (characterStore.appMode === 'dating_sim') {
@@ -120,7 +98,6 @@
 			const transition = checkAndApplyStageTransition(characterStore.state, completedEventIds);
 			if (transition.transitioned && transition.toStage) {
 				characterStore.setRelationshipStage(transition.toStage);
-				// console.log(`Stage transition: ${transition.fromStage} -> ${transition.toStage}`);
 			}
 		}
 
@@ -130,13 +107,12 @@
 
 		// 8. Extract and save potential facts
 		const potentialFacts = extractPotentialFacts(dialogue, userMessage);
-		// console.log('[Memory] Extracted facts from conversation:', potentialFacts);
 		for (const factContent of potentialFacts.slice(0, 2)) {
 			try {
 				const userAnalysis = analyzeMessage(userMessage);
 				await memoryApi.createFact({
 					content: factContent,
-					category: determinFactCategory(factContent),
+					category: determineFactCategory(factContent),
 					importance: calculateFactImportance(factContent, userAnalysis.sentiment)
 				});
 			} catch (e) {
@@ -174,19 +150,6 @@
 		const state = characterStore.state;
 		const persona = personaStore.activeCard;
 
-		// Debug: log character state
-		// console.log('=== CHARACTER STATE ===');
-		// console.log({
-		// 	personaName: persona.name,
-		// 	mood: state.mood,
-		// 	energy: state.energy,
-		// 	relationshipStage: state.relationshipStage,
-		// 	affection: state.affection,
-		// 	trust: state.trust,
-		// 	intimacy: state.intimacy,
-		// 	comfort: state.comfort
-		// });
-
 		// Retrieve relevant context from memory
 		const memories = await retrieveRelevantContext(userMessage);
 
@@ -199,11 +162,6 @@
 		};
 
 		const systemPrompt = buildSystemPrompt(context);
-
-		// Debug: log the full system prompt
-		// console.log('=== SYSTEM PROMPT ===');
-		// console.log(systemPrompt);
-		// console.log('================================');
 
 		return systemPrompt;
 	}

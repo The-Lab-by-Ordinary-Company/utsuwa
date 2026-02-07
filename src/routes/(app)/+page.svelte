@@ -32,7 +32,7 @@
 		addTurnToWorkingMemory,
 		hydrateWorkingMemory,
 		memoryApi,
-		determinFactCategory,
+		determineFactCategory,
 		calculateFactImportance,
 		backfillEmbeddings,
 		getEmbeddingBackfillStatus
@@ -70,8 +70,13 @@
 	$effect(() => {
 		isMemoryReady = false;
 		(async () => {
-			await hydrateWorkingMemory();
-			isMemoryReady = true;
+			try {
+				await hydrateWorkingMemory();
+				isMemoryReady = true;
+			} catch (e) {
+				console.error('Failed to hydrate working memory:', e);
+				isMemoryReady = true; // Don't block the app
+			}
 		})();
 	});
 
@@ -81,15 +86,15 @@
 			embeddingState = state;
 		});
 
-		// Start loading the embedding model
 		initEmbeddingModel().then(async (ready) => {
 			if (ready) {
-				// Check if we need to backfill embeddings
 				const status = await getEmbeddingBackfillStatus();
 				if (status.withoutEmbeddings > 0) {
-					const result = await backfillEmbeddings();
+					await backfillEmbeddings();
 				}
 			}
+		}).catch((e) => {
+			console.error('Failed to initialize embedding model:', e);
 		});
 
 		return unsub;
@@ -135,7 +140,7 @@
 			try {
 				await memoryApi.createFact({
 					content: finalUpdates.newMemory,
-					category: determinFactCategory(finalUpdates.newMemory),
+					category: determineFactCategory(finalUpdates.newMemory),
 					importance: calculateFactImportance(finalUpdates.newMemory)
 				});
 			} catch (e) {
@@ -163,7 +168,7 @@
 				const userAnalysis = analyzeMessage(userMessage);
 				await memoryApi.createFact({
 					content: factContent,
-					category: determinFactCategory(factContent),
+					category: determineFactCategory(factContent),
 					importance: calculateFactImportance(factContent, userAnalysis.sentiment)
 				});
 			} catch (e) {
@@ -497,34 +502,46 @@
 		width: fit-content;
 		max-width: 600px;
 		padding: 0.75rem 1rem;
-		background: color-mix(in srgb, var(--ctp-red, #d20f39) 90%, var(--color-neutral-900));
-		backdrop-filter: blur(8px);
-		border-radius: 0.75rem;
+		background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 100%);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 16px;
 		color: white;
 		font-size: 0.875rem;
 		cursor: pointer;
 		z-index: 50;
 		animation: errorSlideDownShake 0.5s ease-out;
+		box-shadow:
+			0 4px 20px rgba(238, 90, 90, 0.4),
+			0 2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 	}
 
 	.error-toast span,
 	.chat-error-toast span {
 		flex: 1;
+		word-wrap: break-word;
 	}
 
 	.toast-dismiss {
-		background: none;
+		background: rgba(255, 255, 255, 0.2);
 		border: none;
-		color: white;
-		opacity: 0.8;
+		padding: 0.25rem;
+		border-radius: 6px;
 		cursor: pointer;
-		padding: 0;
-		font-size: 1rem;
+		color: white;
+		opacity: 0.9;
+		font-size: 0.875rem;
 		line-height: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s ease;
 	}
 
 	.toast-dismiss:hover {
 		opacity: 1;
+		background: rgba(255, 255, 255, 0.3);
 	}
 
 	@keyframes errorSlideDownShake {

@@ -118,7 +118,6 @@ export async function preGenerateThumbnails(
 		// Skip if already has a preview
 		if (model.previewUrl) continue;
 
-		// console.log(`Generating thumbnail for: ${model.id}`);
 		const thumbnail = await generateVrmThumbnail(model.url);
 		if (thumbnail) {
 			onThumbnailGenerated(model.id, thumbnail);

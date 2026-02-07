@@ -64,21 +64,11 @@ export function clearWorkingMemory(): void {
 
 // Hydrate working memory from IndexedDB (call on page load)
 export async function hydrateWorkingMemory(): Promise<void> {
-	// console.log('[Memory] Hydrating working memory');
+	if (workingMemory.turns.length > 0) return;
 
-	// Skip if already hydrated this session
-	if (workingMemory.turns.length > 0) {
-		// console.log('[Memory] Already hydrated with', workingMemory.turns.length, 'turns');
-		return;
-	}
-
-	// Load recent conversation turns from IndexedDB
 	const recentTurns = await memoryStorage.getConversationTurns({ limit: 20 });
-
-	// Populate working memory
 	workingMemory.turns = recentTurns;
 	workingMemory.messageCount = recentTurns.length;
-	// console.log('[Memory] Hydrated', workingMemory.turns.length, 'turns from IndexedDB');
 }
 
 // Memory API - uses IndexedDB storage directly
@@ -104,13 +94,11 @@ export const memoryApi = {
 
 	// Create a new fact
 	async createFact(fact: NewFact): Promise<Fact> {
-		// console.log('[Memory] Saving fact:', fact.content, '(importance:', fact.importance ?? DEFAULT_FACT_IMPORTANCE, ')');
 		const id = await memoryStorage.saveFact({
 			...fact,
 			importance: fact.importance ?? DEFAULT_FACT_IMPORTANCE,
 			confidence: fact.confidence ?? DEFAULT_FACT_CONFIDENCE
 		});
-		// console.log('[Memory] Fact saved with id:', id);
 		// Return the created fact
 		const facts = await memoryStorage.getFacts({ limit: 1 });
 		return facts.find((f) => f.id === id) || {
@@ -181,16 +169,6 @@ export async function retrieveRelevantContext(userMessage: string): Promise<Rele
 				});
 				relevantFacts = semanticResults.map((r) => r.fact);
 
-				// Debug logging for semantic search results (uncomment to enable)
-				// if (semanticResults.length > 0) {
-				// 	console.log('[Memory] Semantic search results:');
-				// 	semanticResults.forEach((r, i) => {
-				// 		console.log(`  ${i + 1}. [sim: ${r.similarity.toFixed(3)}, score: ${r.score.toFixed(3)}] "${r.fact.content.slice(0, 60)}..."`);
-				// 	});
-				// } else {
-				// 	console.log('[Memory] Semantic search: no matches above threshold');
-				// }
-
 				// For triggered memories, use higher similarity threshold
 				const triggerWords = extractTriggerWords(userMessage);
 				if (triggerWords.length > 0) {
@@ -212,8 +190,6 @@ export async function retrieveRelevantContext(userMessage: string): Promise<Rele
 
 		// Fall back to keyword search if semantic search didn't work or returned nothing
 		if (relevantFacts.length === 0) {
-			// console.log('[Memory] Falling back to keyword search (semantic unavailable or no matches)');
-
 			// Get high-importance facts (always include these regardless of keywords)
 			const importantFacts = await memoryApi.getFacts(5);
 
@@ -348,7 +324,7 @@ export function extractFactsFromConversation(
 }
 
 // Determine fact category
-export function determinFactCategory(content: string): 'user' | 'relationship' | 'shared_experience' {
+export function determineFactCategory(content: string): 'user' | 'relationship' | 'shared_experience' {
 	const lowerContent = content.toLowerCase();
 
 	// Check for user-related content

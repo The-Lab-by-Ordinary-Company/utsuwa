@@ -59,8 +59,9 @@ function handleMouseMove(event: MouseEvent): void {
 	const wasOverModel = isOverModel;
 	isOverModel = modelIntersects.length > 0;
 
-	// NOTE: Click-through disabled for now - it blocks UI elements
-	// TODO: Add proper UI element detection before re-enabling
+	// Click-through disabled: setIgnoreCursorEvents blocks interaction with
+	// UI overlays (chat bar, buttons) because it can't distinguish model hits
+	// from UI element hits. Needs a proper hit-test that excludes HTML UI regions.
 	// if (wasOverModel !== isOverModel && isTauri()) {
 	// 	setIgnoreCursorEvents(!isOverModel);
 	// }
@@ -72,7 +73,7 @@ function handleMouseMove(event: MouseEvent): void {
 function handleMouseLeave(): void {
 	if (isOverModel) {
 		isOverModel = false;
-		// NOTE: Click-through disabled for now
+		// Click-through disabled (see handleMouseMove comment above)
 		// if (isTauri()) setIgnoreCursorEvents(true);
 	}
 }

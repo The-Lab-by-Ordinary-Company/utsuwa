@@ -65,14 +65,12 @@ export async function initEmbeddingModel(): Promise<boolean> {
 		pipeline = await createPipeline('feature-extraction', MODEL_NAME, {
 			progress_callback: (progress: { status: string }) => {
 				// Could emit progress events here if needed
-				// console.log('[embeddings] Loading model:', progress.status);
 			}
 		});
 
 		isReady = true;
 		isLoading = false;
 		notifyListeners();
-		// console.log('[embeddings] Model loaded successfully');
 		return true;
 	} catch (err) {
 		loadError = err instanceof Error ? err.message : 'Failed to load embedding model';

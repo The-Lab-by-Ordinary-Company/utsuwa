@@ -12,7 +12,6 @@ function createSttStore() {
 	async function startListening(onComplete: (text: string) => void) {
 		if (!browser) return;
 
-		// console.log('[STT Store] Starting listening...');
 		error = null;
 		transcript = '';
 		interimTranscript = '';
@@ -21,7 +20,6 @@ function createSttStore() {
 		// Start speech recognition (it handles its own mic access)
 		const started = webSpeechService.startListening({
 			onResult: (text, isFinal) => {
-				// console.log('[STT Store] Received:', text, isFinal ? '(final)' : '(interim)');
 				if (isFinal) {
 					// Accumulate final results
 					transcript = transcript ? transcript + ' ' + text : text;
@@ -34,7 +32,6 @@ function createSttStore() {
 				}
 			},
 			onEnd: () => {
-				// console.log('[STT Store] Recognition ended, transcript:', transcript);
 				isListening = false;
 				audioLevel = 0;
 				// Auto-send if we have a transcript
@@ -54,11 +51,7 @@ function createSttStore() {
 		});
 
 		if (started) {
-			// console.log('[STT Store] Recognition started successfully');
 			isListening = true;
-			// Skip audio analyser - it can conflict with Speech API mic access
-		} else {
-			// console.log('[STT Store] Failed to start recognition');
 		}
 	}
 

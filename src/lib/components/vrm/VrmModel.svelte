@@ -110,7 +110,6 @@
 
 			const thumbnailDataUrl = thumbCanvas.toDataURL('image/png');
 			vrmStore.setModelPreview(vrmStore.activeModelId, thumbnailDataUrl);
-			// console.log('Generated thumbnail from 3D render');
 		}
 	}
 
@@ -133,8 +132,6 @@
 
 		// Ground the model (feet at y=0)
 		scene.position.y = -box.min.y;
-
-		// console.log(`Model normalized (VRM ${version === '1' ? '1.0' : '0.x'})`);
 	}
 
 	// Set a natural idle pose (arms relaxed at sides)
@@ -162,8 +159,6 @@
 		if (rightLowerArm) {
 			rightLowerArm.rotation.set(config.rightLowerArm.x, config.rightLowerArm.y, config.rightLowerArm.z);
 		}
-
-		// console.log(`Idle pose applied (VRM ${version === '1' ? '1.0' : '0.x'})`);
 	}
 
 	// Pick a random idle animation index, excluding the last played one
@@ -209,7 +204,6 @@
 				action.play();
 				idleAction = action;
 
-				// console.log(`Idle animation started: ${idleUrl} (${clip.duration.toFixed(2)}s, looping)`);
 
 				// Schedule next animation change
 				scheduleIdleCycle(targetVrm, targetMixer, clip.duration);
@@ -268,7 +262,6 @@
 				action.reset().fadeIn(1.2).play();
 				idleAction = action;
 
-				// console.log(`Idle animation switched: ${idleUrl} (${clip.duration.toFixed(2)}s, looping)`);
 
 				// Schedule next change
 				scheduleIdleCycle(targetVrm, targetMixer, clip.duration);
@@ -299,7 +292,6 @@
 
 				const clip = createVRMAnimationClip(vrmAnimations[0], targetVrm);
 				talkingClip = clip;
-				// console.log(`Talking animation loaded: ${clip.duration.toFixed(2)}s`);
 			},
 			undefined,
 			(error) => {
@@ -339,7 +331,6 @@
 			}
 			currentTalkingAction.reset().fadeIn(0.3).play();
 
-			// console.log('Switched to talking animation');
 		} else if (!speaking) {
 			// Stop talking, resume idle animation
 			const currentTalkingAction = untrack(() => talkingAction);
@@ -352,7 +343,6 @@
 				currentIdleAction.reset().fadeIn(0.3).play();
 			}
 
-			// console.log('Switched to idle animation');
 		}
 	});
 
@@ -448,7 +438,6 @@
 					};
 					capturedMixer.addEventListener('finished', onFinished);
 
-					// console.log(`Playing emote: ${animationData.name} | duration: ${clip.duration.toFixed(2)}s`);
 				});
 			},
 			undefined,
@@ -561,12 +550,8 @@
 					setTimeout(() => generateThumbnail(), 500);
 				}
 
-				// console.log('VRM loaded:', loadedVrm);
 			},
-			(progress) => {
-				// const percent = (progress.loaded / progress.total) * 100;
-				// console.log(`Loading VRM: ${percent.toFixed(1)}%`);
-			},
+			() => {},
 			(error) => {
 				console.error('Error loading VRM:', error);
 				vrmStore.setError('Failed to load VRM model');
