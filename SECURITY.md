@@ -14,20 +14,20 @@ Please include:
 
 ### API Key Storage
 
-Utsuwa stores API keys for LLM and TTS providers in your browser's localStorage. This means:
+Utsuwa stores API keys for LLM and TTS providers locally on your device. This means:
 
 - Keys are stored locally on your device only
 - Keys are not sent to any server other than the respective API providers
-- Keys persist until you clear browser data or remove them in Settings
+- Keys persist until you remove them in Settings or clear the app's data
 
 **Recommendations:**
 - Use Utsuwa on trusted devices only
 - Consider using API keys with usage limits when possible
-- Clear your browser data if using a shared computer
+- Remove API keys in Settings if using a shared device
 
 ### Client-Side Application
 
-Utsuwa is a client-side application that runs entirely in your browser. There is no backend server that processes or stores your data. All API calls are made directly from your browser to the respective service providers.
+Utsuwa runs entirely on your device — whether in a browser or the desktop app. There is no backend server that processes or stores your data. All API calls are made directly from the app to the respective service providers.
 
 ### Third-Party Services
 

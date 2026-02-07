@@ -5,13 +5,13 @@ description: High-level architecture of Utsuwa's VRM viewer, chat system, and co
 
 # Architecture Overview
 
-Utsuwa is a client-side web application that combines 3D avatar rendering, LLM chat, text-to-speech, and a relationship simulation engine. Everything runs in the browser with no backend required.
+Utsuwa is a client-side application that combines 3D avatar rendering, LLM chat, text-to-speech, and a relationship simulation engine. Everything runs locally on the user's device — in a browser or the desktop app — with no backend required.
 
 ## System Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Browser                                  │
+│                   Client (Browser or Desktop)                    │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │                      SvelteKit App                         │  │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐│  │
@@ -156,7 +156,7 @@ Three-tier memory architecture for context and recall.
 3. **Sessions** — Conversation summaries for long-term context
 
 **Semantic search:**
-Uses `@xenova/transformers` to run embedding models locally in the browser. Facts are embedded and can be retrieved by semantic similarity to the current conversation.
+Uses `@xenova/transformers` to run embedding models locally on the user's device. Facts are embedded and can be retrieved by semantic similarity to the current conversation.
 
 See [Companion System](/docs/technology/companion-system) for detailed memory documentation.
 

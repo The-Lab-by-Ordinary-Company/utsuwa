@@ -83,6 +83,9 @@ Overlay mode detaches your companion into a transparent, always-on-top window:
 | Send message | Type and press Enter |
 | Close chat | Send a message (auto-collapses) |
 | Exit overlay | Click the X button in the top-right corner |
+| Push-to-talk | `Ctrl+Shift+Space` (global hotkey) |
+| Toggle overlay | `Ctrl+Shift+U` (global hotkey) |
+| Focus chat | `Ctrl+Shift+C` (global hotkey) |
 
 ### Switching Between Modes
 
@@ -101,7 +104,7 @@ Some features are still being worked on:
 | macOS support | ✅ Available |
 | Linux support | ✅ Available |
 | Click-through transparency | ❌ Disabled (blocks UI) |
-| Global hotkeys | 🔧 Infrastructure ready |
+| Global hotkeys | ✅ Available |
 | Position persistence | ⏳ Planned |
 | System tray | ⏳ Planned |
 

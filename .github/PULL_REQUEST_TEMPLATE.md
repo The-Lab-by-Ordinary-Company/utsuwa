@@ -15,4 +15,4 @@ Fixes # (issue number)
 - [ ] I have performed a self-review of my code
 - [ ] I have tested my changes
 - [ ] My changes generate no new warnings
-- [ ] I have run `npm run check` and `npm run lint`
+- [ ] I have run `pnpm lint`

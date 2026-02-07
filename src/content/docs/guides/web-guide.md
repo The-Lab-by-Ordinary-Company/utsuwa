@@ -1,6 +1,6 @@
 ---
 title: Web Guide
-description: How to set up and use Utsuwa in your browser.
+description: How to set up and use Utsuwa on the web.
 ---
 
 # Web Guide
@@ -37,7 +37,7 @@ Your companion needs an LLM to generate responses.
 3. Select a provider and enter your API key
 4. Alternatively, use a local server like Ollama or LM Studio (no API key needed)
 
-All API keys are stored locally in your browser and never sent anywhere except the respective provider's API.
+All API keys are stored locally on your device and never sent anywhere except the respective provider's API.
 
 ### 2. Load a VRM Model
 
@@ -63,11 +63,11 @@ If TTS is enabled, the avatar will speak the response with lip-synced animation.
 
 ## Voice Input
 
-Click the microphone button in the chat bar to use speech-to-text. This uses the browser's Web Speech API — no API key required.
+Click the microphone button in the chat bar to use speech-to-text. This uses the Web Speech API — no API key required.
 
 ## Data Management
 
-All data is stored locally in your browser.
+All data is stored locally on your device.
 
 - **Export** — Go to Settings > Data > Export Save to download a JSON backup
 - **Import** — Go to Settings > Data > Import Save to restore from a backup

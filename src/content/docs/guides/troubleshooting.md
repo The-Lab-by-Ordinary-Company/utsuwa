@@ -51,11 +51,11 @@ This usually means your API key is incorrect or expired. Double-check:
 
 ### API key not being saved
 
-All API keys are stored in your browser's localStorage. If keys aren't persisting:
+All API keys are stored locally on your device. If keys aren't persisting:
 
-1. Check if you're in private/incognito mode
+1. Check if you're in private/incognito mode (web only — incognito can clear storage on close)
 2. Clear site data and re-enter the key
-3. Make sure your browser allows localStorage
+3. On the desktop app, try restarting the application
 
 ### Rate limiting
 
@@ -74,7 +74,7 @@ If your VRM model won't load:
 1. **Check file size** - Large models (>50MB) may take longer to load
 2. **Verify the format** - Ensure it's a valid `.vrm` file
 3. **Try another model** - Test with a different VRM to isolate the issue
-4. **Check the console** - Open browser DevTools (F12) and look for errors
+4. **Check the console** - Open DevTools (F12 in browser or desktop app) and look for errors
 
 ### Model displays incorrectly
 
@@ -98,8 +98,8 @@ If the idle animation or expressions aren't working:
 
 If TTS isn't producing sound:
 
-1. **Check browser audio** - Make sure the tab isn't muted
-2. **Verify permissions** - Browser may need audio autoplay permission
+1. **Check audio** - Make sure the tab isn't muted (web) or system audio is enabled (desktop)
+2. **Verify permissions** - Your browser or OS may need to grant audio autoplay permission
 3. **Check API key** - Verify your ElevenLabs or OpenAI TTS API key is valid
 4. **Check provider status** - The TTS provider may be experiencing issues
 
@@ -132,13 +132,13 @@ Solutions:
 2. Clear old sessions in Settings > Data
 3. Use simpler VRM models if performance is an issue
 
-### Browser storage errors
+### Storage errors
 
 If you see IndexedDB or storage errors:
 
-1. **Check available space** - Browser storage may be full
-2. **Clear site data** - Reset the app's storage
-3. **Disable private mode** - Some storage features don't work in incognito
+1. **Check available space** - Storage on your device may be full
+2. **Clear site data** - Reset the app's storage (web: clear site data, desktop: reinstall)
+3. **Disable private mode** - Some storage features don't work in incognito (web only)
 
 ### Memory usage is high
 
@@ -175,8 +175,8 @@ If routes work locally but not in production:
 This often means something loaded out of order:
 
 1. **Refresh the page**
-2. **Clear browser cache** - Hard refresh (Ctrl+Shift+R)
-3. **Check for updates** - Pull latest code if self-hosting
+2. **Clear cache** - Hard refresh (Ctrl+Shift+R) on web, or restart the desktop app
+3. **Check for updates** - Pull latest code if self-hosting, or restart the desktop app
 
 ## Getting More Help
 
@@ -184,7 +184,7 @@ If your issue isn't covered here:
 
 1. Check the [GitHub Issues](https://github.com/dyascj/utsuwa/issues) for similar problems
 2. Open a new issue with:
-   - Browser and version
+   - App version (web or desktop) and browser if web
    - Steps to reproduce
    - Any console errors
    - Screenshots if relevant

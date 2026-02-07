@@ -11,6 +11,7 @@ Contributions to Utsuwa are welcome. This page covers how to get set up and subm
 
 - Node.js 22 or higher
 - pnpm
+- [Rust toolchain](https://rustup.rs/) (only needed for desktop app development)
 
 ## Development Setup
 
@@ -29,6 +30,7 @@ Contributions to Utsuwa are welcome. This page covers how to get set up and subm
    pnpm dev
    ```
 5. Open [http://localhost:5173](http://localhost:5173) in your browser
+6. For desktop development, run `pnpm tauri dev` instead (requires Rust)
 
 ## Reporting Bugs
 
@@ -37,7 +39,7 @@ If you find a bug, create an issue with:
 - A clear, descriptive title
 - Steps to reproduce the issue
 - Expected vs actual behavior
-- Your environment (browser, OS, Node version)
+- Your environment (web or desktop, browser if web, OS, Node version)
 - Screenshots if applicable
 
 ## Suggesting Features
@@ -92,8 +94,10 @@ src/
 ├── routes/
 │   ├── (app)/         # Main application routes
 │   ├── api/           # API routes
-│   └── docs/          # Documentation site routes
+│   ├── docs/          # Documentation site routes
+│   └── overlay/       # Desktop overlay route
 └── app.css            # Global styles
+src-tauri/              # Tauri desktop app (Rust)
 ```
 
 ## License

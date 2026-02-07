@@ -8,7 +8,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**Utsuwa is an open-source alternative to Grok Companion.** This is a platform where you can have a virtual AI waifu that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused - your data lives entirely in your browser.
+**Utsuwa is an open-source alternative to Grok Companion.** This is a platform where you can have a virtual AI waifu that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused - your data is stored locally and never leaves your device.
 
 "Utsuwa" means "vessel" in Japanese - a container for AI to inhabit visually.
 
@@ -29,11 +29,11 @@
 - **Memory Graph**: Interactive visualization showing how memories connect semantically
 - **Data Export/Import**: Download your data as a save file, restore anytime
 - **Theming**: Light and dark mode support with system preference detection
-- **Desktop App** *(beta)*: Native macOS app with transparent overlay mode — your companion floats on your desktop
+- **Desktop App** *(beta)*: Native desktop app with transparent overlay mode — your companion floats on your desktop
 
 ### Local-First Storage
 
-All your data is stored locally in your browser using IndexedDB:
+All your data is stored locally on your device using IndexedDB:
 - No database setup required
 - Works offline after initial load
 - Export/import save files to back up or transfer your data
@@ -47,7 +47,7 @@ Build a meaningful relationship with your AI companion through a dating sim-insp
 - **8 Relationship Stages**: Progress from Stranger → Acquaintance → Friend → Close Friend → Romantic Interest → Dating → Committed → Soulmate
 - **Dynamic Mood**: Real-time emotions with causality tracking (she remembers *why* she feels a certain way)
 - **Visual Novel Events**: Milestone moments, romantic scenes, and choices that matter - with custom dialogue and branching responses
-- **Semantic Memory**: Facts are indexed with vector embeddings for meaning-based retrieval - "outdoor activities" finds memories about hiking. Runs entirely in-browser using Transformers.js, no API calls
+- **Semantic Memory**: Facts are indexed with vector embeddings for meaning-based retrieval - "outdoor activities" finds memories about hiking. Runs locally using Transformers.js, no API calls
 - **Natural Progression**: Hybrid system combining app heuristics + LLM suggestions for believable relationship growth
 - **Time-Aware**: Your companion notices when you've been away and reacts accordingly
 
@@ -55,14 +55,14 @@ See the [Companion System Architecture](https://utsuwa.ai/docs/technology/compan
 
 ### Desktop Application (Beta)
 
-> Available on the `feature/desktop` branch. Currently tested on macOS only.
-
 A native desktop app built with Tauri that includes all web features plus:
 
-- **Overlay Mode**: Your companion floats on your desktop with a transparent background, always visible over other apps
+- **Overlay Mode**: Your companion floats on your desktop with a transparent background
+- **Always-on-Top**: The overlay stays visible over all other windows
 - **Draggable Positioning**: Click and drag the character to reposition anywhere on screen
 - **Floating Chat**: Expandable chat input that appears when you click the chat icon
 - **Window Switching**: Seamlessly switch between the full app and overlay mode
+- **Global Hotkeys**: Push-to-talk, toggle overlay, and focus chat with keyboard shortcuts
 
 The desktop app uses the same codebase as the web version — your save files are compatible between both.
 
@@ -85,7 +85,7 @@ The desktop app uses the same codebase as the web version — your save files ar
 
 | Provider | Description |
 |----------|-------------|
-| **Web Speech API** | Browser-native speech recognition. No API key required. Works in Chrome, Edge, and Safari. |
+| **Web Speech API** | Native speech recognition via Web Speech API. No API key required. Works in Chrome, Edge, and Safari. |
 
 Voice input is accessed via the microphone button in the chat bar. The audio visualizer provides real-time feedback while speaking.
 
@@ -96,7 +96,7 @@ Voice input is accessed via the microphone button in the chat bar. The audio vis
 
 ### Try it Online
 
-No installation required! Use Utsuwa directly in your browser at **[utsuwa.ai](https://utsuwa.ai)**
+Use Utsuwa directly at **[utsuwa.ai](https://utsuwa.ai)** — no installation required. Or download the desktop app from [GitHub Releases](https://github.com/dyascj/utsuwa/releases).
 
 ### Self-Hosting
 
@@ -106,7 +106,7 @@ If you prefer to run Utsuwa locally or host your own instance:
 
 - Node.js 22+
 - pnpm (recommended) or npm
-- A modern browser (Chrome, Firefox, Safari, Edge)
+- A modern browser (Chrome, Firefox, Safari, Edge) — for the web version
 
 #### Installation
 
@@ -126,20 +126,15 @@ The app will be available at `http://localhost:5173`
 
 #### Running the Desktop App (Beta)
 
-The desktop app is available on the `feature/desktop` branch:
+To run the desktop app from source, you'll need the [Rust toolchain](https://rustup.rs/) in addition to the web prerequisites:
 
 ```bash
-# Switch to desktop branch
-git checkout feature/desktop
-
 # Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Run the desktop app
 pnpm tauri dev
 ```
-
-> **Note:** Currently tested on macOS only. Windows and Linux support is planned.
 
 #### Configuration
 
@@ -152,7 +147,7 @@ pnpm tauri dev
    - Enter your API key
    - Configure voice settings
 
-All API keys are stored locally in your browser and are never sent to any server except the respective API providers.
+All API keys are stored locally on your device and are never sent to any server except the respective API providers.
 
 #### Loading a VRM Model
 
@@ -162,7 +157,7 @@ All API keys are stored locally in your browser and are never sent to any server
 
 #### Data Management
 
-Your companion data is stored locally in your browser. To back up or transfer your data:
+Your companion data is stored locally on your device. To back up or transfer your data:
 
 1. Go to **Settings > Data**
 2. Click **Export Save** to download a JSON file with all your data
@@ -191,7 +186,9 @@ utsuwa/
 │   └── routes/
 │       ├── (app)/          # Main application routes
 │       ├── api/            # API routes
-│       └── docs/           # Documentation site routes
+│       ├── docs/           # Documentation site routes
+│       └── overlay/        # Desktop overlay route
+├── src-tauri/               # Tauri desktop app (Rust)
 ├── static/
 │   └── models/             # Place default VRM models here
 └── package.json
@@ -200,10 +197,12 @@ utsuwa/
 ## Scripts
 
 ```bash
-pnpm dev       # Start development server
-pnpm build     # Build for production
-pnpm preview   # Preview production build
-pnpm lint      # Type-check and lint the project
+pnpm dev          # Start web development server
+pnpm build        # Build web app for production
+pnpm preview      # Preview production build
+pnpm lint         # Type-check and lint the project
+pnpm tauri dev    # Run the desktop app in development mode
+pnpm tauri build  # Build desktop app installer
 ```
 
 ## Roadmap
@@ -224,10 +223,10 @@ pnpm lint      # Type-check and lint the project
 - [x] Local-first IndexedDB storage with export/import
 - [x] Theme system with light/dark modes
 - [x] Voice input via Web Speech API
+- [x] Desktop application with transparent overlay mode (Windows, macOS, Linux)
 
 ### In Progress / Planned
 
-- [x] **Desktop Application** - Native macOS app with transparent overlay mode (`feature/desktop` branch)
 - [ ] **Companion Gender System** - Gender selection with male/female specific animations and behaviors
 - [ ] **Multi-provider STT** - Support for additional speech-to-text providers beyond Web Speech API
 - [ ] **Enhanced User Controls** - More granular control over companion behavior and responses
@@ -236,10 +235,6 @@ pnpm lint      # Type-check and lint the project
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
 - [ ] **Expanded Default Avatars** - More built-in 3D avatar options to choose from
 - [ ] **Photo Mode** - Full-featured photo mode with character posing, lighting adjustments, and high-quality saves
-
-### Future
-
-- [ ] **Windows/Linux Desktop** - Desktop app support for Windows and Linux (currently macOS only)
 
 ## Contributing
 

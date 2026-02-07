@@ -137,7 +137,7 @@ type RelationshipStage =
 Facts are indexed using vector embeddings for semantic similarity search. Instead of keyword matching, the system finds facts by meaning — "outdoor activities" can retrieve memories about hiking even without shared words.
 
 **How it works:**
-- Uses Transformers.js with the `all-MiniLM-L6-v2` model (~23MB, runs in-browser)
+- Uses Transformers.js with the `all-MiniLM-L6-v2` model (~23MB, runs locally)
 - Embeddings are 384-dimensional vectors stored alongside facts in IndexedDB
 - On query, the user message is embedded and compared using cosine similarity
 - Results ranked by blending semantic similarity (70%) with importance score (30%), minimum similarity 0.3
@@ -382,7 +382,7 @@ User sends message
 
 ## Storage
 
-All data is stored client-side in the browser using IndexedDB via Dexie.js.
+All data is stored client-side on the user's device using IndexedDB via Dexie.js.
 
 ### Database Schema
 
