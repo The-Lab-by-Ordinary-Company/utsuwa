@@ -5,21 +5,6 @@
 
 	let { children } = $props();
 	let blogEl = $state<HTMLDivElement | null>(null);
-	let headerComponent = $state<DocsHeader | null>(null);
-
-	$effect(() => {
-		if (!browser) return;
-
-		function handleKeydown(e: KeyboardEvent) {
-			if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-				e.preventDefault();
-				headerComponent?.focusSearch();
-			}
-		}
-
-		document.addEventListener('keydown', handleKeydown);
-		return () => document.removeEventListener('keydown', handleKeydown);
-	});
 
 	function updateTheme() {
 		if (!blogEl) return;
@@ -52,7 +37,7 @@
 </script>
 
 <div class="docs" bind:this={blogEl}>
-	<DocsHeader bind:this={headerComponent} />
+	<DocsHeader hideSearch />
 	<main class="blog-main" data-pagefind-body>
 		{@render children()}
 	</main>

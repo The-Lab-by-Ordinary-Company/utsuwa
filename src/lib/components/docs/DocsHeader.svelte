@@ -264,8 +264,15 @@
 	}
 
 	@media (max-width: 768px) {
+		.docs-header {
+			position: relative;
+			padding: 0 0.75rem;
+		}
+
 		.hamburger {
 			display: flex;
+			min-width: 2.5rem;
+			min-height: 2.5rem;
 		}
 
 		.desktop-logo {
@@ -273,27 +280,33 @@
 		}
 
 		.header-nav {
-			gap: 0.125rem;
+			gap: 0;
+		}
+
+		.nav-link {
+			padding: 0.5rem 0.5rem;
+			font-size: 0.75rem;
+			min-height: 2.5rem;
+			display: inline-flex;
+			align-items: center;
 		}
 
 		.try-live-btn {
-			padding: 0.3rem 0.625rem;
-			font-size: 0.75rem;
+			padding: 0.4rem 0.75rem;
+			font-size: 0.6875rem;
+			min-height: 2.25rem;
 		}
 
 		.header-search {
 			display: none;
 		}
 
-		.mobile-logo {
-			display: flex;
-			position: absolute;
-			left: 50%;
-			transform: translateX(-50%);
+		.header-right {
+			gap: 0.25rem;
 		}
 
-		.docs-header {
-			position: relative;
+		.mobile-logo {
+			display: none;
 		}
 	}
 </style>
