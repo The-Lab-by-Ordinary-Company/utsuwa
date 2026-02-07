@@ -266,7 +266,14 @@
 			});
 
 			if (!response.ok) {
-				throw new Error('Failed to get response');
+				let errorMsg = 'Failed to get response';
+				try {
+					const body = await response.json();
+					if (body.error) errorMsg = body.error;
+				} catch {
+					// response wasn't JSON, use default
+				}
+				throw new Error(errorMsg);
 			}
 
 			// Handle streaming response

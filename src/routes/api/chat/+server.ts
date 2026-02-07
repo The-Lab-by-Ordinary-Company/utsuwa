@@ -65,19 +65,25 @@ export const POST: RequestHandler = async ({ request }) => {
 			...messages
 		];
 
-		const result = streamText({
-			apiKey: apiKey || 'not-needed', // Local providers don't need API keys but xsai requires a value
-			baseURL: providerBaseURL,
-			model,
-			messages: messagesWithSystem,
-			headers
-		});
+		let result;
+		try {
+			result = streamText({
+				apiKey: apiKey || 'not-needed',
+				baseURL: providerBaseURL,
+				model,
+				messages: messagesWithSystem,
+				headers
+			});
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Failed to connect to provider';
+			return new Response(JSON.stringify({ error: msg }), {
+				status: 502,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
 
-		// Attach error handlers to prevent unhandled promise rejections from crashing the server
-		// These catch errors from background promises that would otherwise crash Node
-		const silentCatch = (err: Error) => {
-			console.error('Provider API error:', err.message);
-		};
+		// Suppress background promise rejections so they don't crash Node
+		const silentCatch = () => {};
 		result.messages?.catch?.(silentCatch);
 		result.steps?.catch?.(silentCatch);
 		result.totalUsage?.catch?.(silentCatch);
@@ -88,22 +94,28 @@ export const POST: RequestHandler = async ({ request }) => {
 		const encoder = new TextEncoder();
 		const stream = new ReadableStream({
 			async start(controller) {
-				const reader = textStream.getReader();
+				let reader;
+				try {
+					reader = textStream.getReader();
+				} catch (err) {
+					const msg = err instanceof Error ? err.message : 'Failed to start stream';
+					controller.enqueue(encoder.encode(`e:${JSON.stringify({ error: msg })}\n`));
+					controller.close();
+					return;
+				}
+
 				try {
 					while (true) {
 						const { done, value } = await reader.read();
 						if (done) break;
-						// Format as SSE with our custom format
 						const data = `0:${JSON.stringify(value)}\n`;
 						controller.enqueue(encoder.encode(data));
 					}
 					controller.close();
 				} catch (error) {
-					// Send error as SSE event instead of crashing
 					console.error('Stream error:', error);
 					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-					const errorData = `e:${JSON.stringify({ error: errorMessage })}\n`;
-					controller.enqueue(encoder.encode(errorData));
+					controller.enqueue(encoder.encode(`e:${JSON.stringify({ error: errorMessage })}\n`));
 					controller.close();
 				} finally {
 					reader.releaseLock();
