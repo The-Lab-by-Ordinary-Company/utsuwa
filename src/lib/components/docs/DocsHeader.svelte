@@ -3,6 +3,7 @@
 	import DocsSearch from './DocsSearch.svelte';
 	import { page } from '$app/state';
 	import { cycleTheme, getIconName, getLabel } from '$lib/config/docs-theme-toggle.svelte';
+	import { GITHUB_RELEASES } from '$lib/config/site';
 
 	interface Props {
 		onToggleSidebar?: () => void;
@@ -54,6 +55,10 @@
 				<Icon name={iconName} size={18} />
 			</button>
 		{/if}
+		<a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" class="download-btn">
+			<Icon name="download" size={14} />
+			Download
+		</a>
 		<a href="/" class="try-live-btn">Try Live</a>
 	</div>
 </header>
@@ -170,6 +175,44 @@
 			0 0 8px var(--docs-glow);
 	}
 
+	.download-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.875rem;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--docs-text);
+		background: var(--docs-glass-bg);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid var(--docs-border);
+		border-radius: 0.5rem;
+		text-decoration: none;
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 2px 4px rgba(0, 0, 0, 0.05);
+	}
+
+	.download-btn:hover {
+		color: var(--docs-accent);
+		border-color: var(--docs-accent);
+		background: var(--docs-surface-solid);
+		transform: translateY(-1px);
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 0 12px var(--docs-glow),
+			0 2px 8px rgba(0, 0, 0, 0.08);
+	}
+
+	.download-btn:active {
+		transform: translateY(0);
+		box-shadow:
+			0 1px 2px var(--docs-inner-shadow) inset,
+			0 0 8px var(--docs-glow);
+	}
+
 	.try-live-btn {
 		display: inline-flex;
 		align-items: center;
@@ -261,6 +304,7 @@
 			align-items: center;
 		}
 
+		.download-btn,
 		.try-live-btn {
 			padding: 0.4rem 0.75rem;
 			font-size: 0.6875rem;

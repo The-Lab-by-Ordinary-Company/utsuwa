@@ -248,7 +248,7 @@ When relationship thresholds are crossed:
 
 ## Desktop Application (Tauri)
 
-The desktop app wraps the same SvelteKit application in a native shell using Tauri v2.
+The desktop app wraps the same SvelteKit application using Tauri v2.
 
 ### Platform Layer
 

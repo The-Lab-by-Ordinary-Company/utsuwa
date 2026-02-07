@@ -5,7 +5,7 @@ description: How to install and use the Utsuwa desktop application with overlay 
 
 # Desktop Guide
 
-Utsuwa Desktop is a native application that brings your AI companion to your desktop with a transparent overlay mode. Your companion can float over other applications, always visible while you work.
+Utsuwa Desktop is an application that brings your AI companion to your desktop with a transparent overlay mode. Your companion can float over other applications, always visible while you work.
 
 Available for **Windows**, **macOS**, and **Linux**.
 
@@ -48,7 +48,7 @@ pnpm tauri dev
 pnpm tauri build
 ```
 
-The dev command launches both a development server and the native window. The build command produces an installer for your current platform in `src-tauri/target/release/bundle/`.
+The dev command launches both a development server and the desktop window. The build command produces an installer for your current platform in `src-tauri/target/release/bundle/`.
 
 ## Features
 
@@ -142,7 +142,7 @@ The X button and chat icon should always be clickable. If they're not responding
 
 The desktop app uses:
 
-- **Tauri v2** — Rust-based framework for native apps
+- **Tauri v2** — Rust-based framework for desktop apps
 - **Same SvelteKit codebase** — No fork, shared components
 - **Platform detection** — `isTauri()` checks for Tauri environment
 - **Multi-window** — Main window + overlay window managed separately
