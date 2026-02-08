@@ -9,11 +9,12 @@
 		eventName?: string;
 		eventType?: EventType;
 		companionName?: string;
+		overlay?: boolean;
 		onComplete: (choiceIndex?: number, stateChanges?: Partial<StateUpdates>) => void;
 		onClose: () => void;
 	}
 
-	let { scene, eventName, eventType, companionName = 'Companion', onComplete, onClose }: Props = $props();
+	let { scene, eventName, eventType, companionName = 'Companion', overlay = false, onComplete, onClose }: Props = $props();
 
 	// Get icon based on event type
 	const eventIcon = $derived.by(() => {
@@ -82,7 +83,7 @@
 	}
 </script>
 
-<div class="scene-overlay" onclick={advance} role="button" tabindex="0" onkeypress={(e) => e.key === 'Enter' && advance()}>
+<div class="scene-overlay" class:overlay onclick={advance} role="button" tabindex="0" onkeypress={(e) => e.key === 'Enter' && advance()}>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div class="scene-container" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && onClose()} role="dialog" aria-modal="true" tabindex="-1">
 		<!-- Header with event title -->
@@ -174,6 +175,12 @@
 		animation: fadeIn 0.3s ease-out;
 	}
 
+	.scene-overlay.overlay {
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+
 	@keyframes fadeIn {
 		from { opacity: 0; }
 		to { opacity: 1; }
@@ -181,8 +188,8 @@
 
 	.scene-container {
 		position: relative;
-		background: var(--glass-bg-solid);
-		border: 1px solid var(--glass-border);
+		background: linear-gradient(180deg, #3a3a3e 0%, #2c2c30 50%, #222224 100%);
+		border: 1px solid rgba(255, 255, 255, 0.08);
 		border-radius: 1.25rem;
 		max-width: 500px;
 		width: 90%;
@@ -190,14 +197,10 @@
 		overflow: hidden;
 		animation: slideUp 0.3s ease-out;
 		box-shadow:
-			0 4px 24px color-mix(in srgb, var(--accent) 15%, transparent),
-			0 0 0 1px color-mix(in srgb, var(--ctp-base) 50%, transparent) inset;
-	}
-
-	:global(.dark) .scene-container {
-		box-shadow:
-			0 4px 24px rgba(0, 0, 0, 0.5),
-			0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent) inset;
+			0 8px 32px rgba(0, 0, 0, 0.5),
+			0 2px 8px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.3);
 	}
 
 	@keyframes slideUp {
@@ -217,13 +220,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.875rem 1rem;
-		border-bottom: 1px solid color-mix(in srgb, var(--ctp-pink) 15%, transparent);
-		background: color-mix(in srgb, var(--ctp-pink) 5%, transparent);
-	}
-
-	:global(.dark) .scene-header {
-		background: color-mix(in srgb, var(--ctp-pink) 12%, transparent);
-		border-color: color-mix(in srgb, var(--ctp-pink) 20%, transparent);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+		background: linear-gradient(180deg, #3e3e42 0%, #333336 100%);
 	}
 
 	.event-title {
@@ -232,7 +230,7 @@
 		gap: 0.5rem;
 		font-weight: 600;
 		font-size: 0.9rem;
-		color: var(--ctp-pink);
+		color: #01B2FF;
 	}
 
 	.close-btn {
@@ -241,17 +239,17 @@
 		justify-content: center;
 		width: 1.75rem;
 		height: 1.75rem;
-		background: var(--color-neutral-200);
+		background: rgba(255, 255, 255, 0.1);
 		border: none;
 		border-radius: 0.5rem;
-		color: var(--ctp-overlay1);
+		color: rgba(255, 255, 255, 0.7);
 		cursor: pointer;
 		transition: all 0.15s;
 	}
 
 	.close-btn:hover {
-		background: var(--color-neutral-300);
-		color: var(--ctp-text);
+		background: rgba(255, 255, 255, 0.15);
+		color: white;
 	}
 
 	.close-btn.floating {
@@ -270,7 +268,7 @@
 	.intro-text,
 	.outro-text {
 		font-style: italic;
-		color: var(--ctp-overlay1);
+		color: rgba(255, 255, 255, 0.6);
 		text-align: center;
 		line-height: 1.7;
 		margin-bottom: 1.25rem;
@@ -280,47 +278,43 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
-		color: var(--ctp-pink);
+		color: #01B2FF;
 		font-weight: 600;
 		font-size: 0.8rem;
 		margin-bottom: 0.5rem;
 		padding: 0.25rem 0.625rem;
-		background: color-mix(in srgb, var(--ctp-pink) 10%, transparent);
+		background: linear-gradient(180deg, #3a3a3e 0%, #2a2a2e 100%);
 		border-radius: 1rem;
-	}
-
-	:global(.dark) .speaker-name {
-		background: color-mix(in srgb, var(--ctp-pink) 20%, transparent);
+		border: 1px solid rgba(255, 255, 255, 0.06);
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	.dialogue-text {
-		color: var(--ctp-text);
+		color: rgba(255, 255, 255, 0.9);
 		font-size: 1rem;
 		line-height: 1.7;
 		margin-bottom: 1.25rem;
 	}
 
 	.your-choice {
-		background: color-mix(in srgb, var(--ctp-mauve) 8%, transparent);
-		border-left: 3px solid var(--ctp-mauve);
+		background: rgba(0, 0, 0, 0.2);
+		border-left: 3px solid #01B2FF;
 		padding: 0.75rem 1rem;
 		margin-bottom: 1.25rem;
 		border-radius: 0 0.5rem 0.5rem 0;
 	}
 
-	:global(.dark) .your-choice {
-		background: color-mix(in srgb, var(--ctp-mauve) 12%, transparent);
-	}
-
 	.choice-label {
 		font-size: 0.7rem;
-		color: var(--ctp-overlay1);
+		color: rgba(255, 255, 255, 0.5);
 		text-transform: uppercase;
 		letter-spacing: 0.025em;
 	}
 
 	.choice-text {
-		color: var(--ctp-text);
+		color: rgba(255, 255, 255, 0.9);
 		margin: 0.25rem 0 0;
 	}
 
@@ -328,21 +322,27 @@
 		display: block;
 		width: 100%;
 		padding: 0.75rem;
-		background: var(--accent);
+		background: linear-gradient(180deg, #66d9ff 0%, #4dd0ff 25%, #01B2FF 60%, #0099dd 100%);
 		border: none;
 		border-radius: 0.625rem;
-		color: var(--accent-foreground);
+		color: white;
 		font-weight: 500;
 		font-size: 0.875rem;
 		cursor: pointer;
 		transition: all 0.2s;
-		box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent);
+		box-shadow:
+			0 4px 16px rgba(1, 178, 255, 0.4),
+			0 2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
 	}
 
 	.continue-btn:hover {
-		background: var(--accent-hover);
+		background: linear-gradient(180deg, #80e0ff 0%, #66d9ff 25%, #1ebfff 60%, #00a6e6 100%);
 		transform: translateY(-1px);
-		box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 40%, transparent);
+		box-shadow:
+			0 6px 24px rgba(1, 178, 255, 0.55),
+			0 3px 6px rgba(0, 0, 0, 0.12),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
 	}
 
 	.continue-btn:active {
@@ -351,7 +351,7 @@
 
 	.hint {
 		text-align: center;
-		color: var(--ctp-overlay0);
+		color: rgba(255, 255, 255, 0.35);
 		font-size: 0.7rem;
 		margin-top: 1rem;
 	}

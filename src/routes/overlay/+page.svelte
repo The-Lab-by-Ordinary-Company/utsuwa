@@ -6,6 +6,8 @@
 	import FloatingMicButton from '$lib/components/overlay/FloatingMicButton.svelte';
 	import HotkeyHandler from '$lib/components/overlay/HotkeyHandler.svelte';
 	import CompanionStatus from '$lib/components/ui/CompanionStatus.svelte';
+	import FloatingStatIndicators from '$lib/components/ui/FloatingStatIndicators.svelte';
+	import { EventScene } from '$lib/components/events';
 	import { Icon } from '$lib/components/ui';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
@@ -18,8 +20,11 @@
 	import { overlayStore } from '$lib/stores/overlay.svelte';
 	import { isTauri, startDragging } from '$lib/services/platform';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+	import { allEvents } from '$lib/data/events';
+	import { checkAllEvents, eventsApi } from '$lib/engine/events';
 	import type { TTSProvider } from '$lib/types';
-
+	import type { EventDefinition } from '$lib/types/events';
+	import type { StateUpdates } from '$lib/types/character';
 
 	import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
 	import { parseResponse, validateStateUpdates, extractPotentialFacts } from '$lib/ai/response-parser';
@@ -37,6 +42,7 @@
 	let latestResponse = $state('');
 	let isTyping = $state(false);
 	let isMemoryReady = $state(false);
+	let activeEvent = $state<EventDefinition | null>(null);
 
 	const chatExpanded = $derived(overlayStore.chatExpanded);
 
@@ -135,6 +141,19 @@
 				});
 			} catch (e) {
 				console.debug('Failed to save fact:', e);
+			}
+		}
+
+		// Check for events (dating sim mode only)
+		if (characterStore.appMode === 'dating_sim') {
+			try {
+				const completedEvents = await eventsApi.getCompletedEvents();
+				const triggeredEvents = checkAllEvents(allEvents, characterStore.state, completedEvents, userMessage);
+				if (triggeredEvents.length > 0) {
+					activeEvent = triggeredEvents[0];
+				}
+			} catch (e) {
+				console.debug('Event check failed:', e);
 			}
 		}
 
@@ -274,6 +293,26 @@
 	function handleCharacterClick() {
 		overlayStore.activate();
 	}
+
+	function handleEventComplete(choiceIndex?: number, stateChanges?: Partial<StateUpdates>) {
+		if (!activeEvent) return;
+		const event = $state.snapshot(activeEvent);
+		if (stateChanges) {
+			characterStore.applyUpdates(stateChanges as StateUpdates);
+		} else if (event.stateChanges) {
+			characterStore.applyUpdates(event.stateChanges);
+		}
+		eventsApi.recordCompletedEvent(
+			event, choiceIndex,
+			choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
+		).then(() => characterStore.markEventCompleted(event.id))
+		.catch((e) => console.error('Failed to record event:', e));
+		activeEvent = null;
+	}
+
+	function handleEventClose() {
+		activeEvent = null;
+	}
 </script>
 
 <div class="overlay-container">
@@ -294,6 +333,9 @@
 		isTyping={isTyping}
 		onHide={handleBubbleHide}
 	/>
+
+	<!-- Floating stat change indicators -->
+	<FloatingStatIndicators />
 
 	<!-- Bottom controls (status + mic + chat icon) -->
 	<div class="chat-controls">
@@ -325,6 +367,19 @@
 		<div class="error-toast" onclick={() => sttStore.clearError()}>
 			<span>{sttStore.error}</span>
 		</div>
+	{/if}
+
+	<!-- Event Scene Overlay -->
+	{#if activeEvent?.scene}
+		<EventScene
+			scene={activeEvent.scene}
+			eventName={activeEvent.name}
+			eventType={activeEvent.type}
+			companionName={personaStore.activeCard.name}
+			overlay={true}
+			onComplete={handleEventComplete}
+			onClose={handleEventClose}
+		/>
 	{/if}
 
 	<!-- Global hotkey handler (Tauri only) -->

@@ -34,19 +34,17 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.875rem 1rem;
-		background: color-mix(in srgb, var(--ctp-pink) 6%, transparent);
-		border: 1px solid color-mix(in srgb, var(--ctp-pink) 15%, transparent);
+		background: linear-gradient(180deg, #3a3a3e 0%, #2e2e32 100%);
+		border: 1px solid rgba(255, 255, 255, 0.08);
 		border-radius: 0.75rem;
 		text-align: left;
-		color: var(--ctp-text);
+		color: rgba(255, 255, 255, 0.9);
 		cursor: pointer;
 		transition: all 0.2s;
 		animation: slideIn 0.3s ease-out backwards;
-	}
-
-	:global(.dark) .choice-btn {
-		background: color-mix(in srgb, var(--ctp-pink) 15%, transparent);
-		border-color: color-mix(in srgb, var(--ctp-pink) 30%, transparent);
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	@keyframes slideIn {
@@ -61,17 +59,14 @@
 	}
 
 	.choice-btn:hover {
-		background: color-mix(in srgb, var(--ctp-pink) 12%, transparent);
-		border-color: var(--ctp-pink);
+		background: linear-gradient(180deg, #444448 0%, #383838 100%);
+		border-color: rgba(255, 255, 255, 0.15);
 		transform: translateX(3px);
-	}
-
-	:global(.dark) .choice-btn:hover {
-		background: color-mix(in srgb, var(--ctp-pink) 25%, transparent);
 	}
 
 	.choice-btn:active {
 		transform: translateX(3px) scale(0.98);
+		background: linear-gradient(180deg, #3a3a3e 0%, #2e2e32 100%);
 	}
 
 	.choice-number {
@@ -80,12 +75,13 @@
 		justify-content: center;
 		width: 1.5rem;
 		height: 1.5rem;
-		background: var(--ctp-pink);
+		background: linear-gradient(180deg, #4dd0ff, #01B2FF);
 		border-radius: 50%;
 		font-size: 0.75rem;
 		font-weight: 600;
 		flex-shrink: 0;
 		color: white;
+		box-shadow: 0 2px 6px rgba(1, 178, 255, 0.4);
 	}
 
 	.choice-text {
