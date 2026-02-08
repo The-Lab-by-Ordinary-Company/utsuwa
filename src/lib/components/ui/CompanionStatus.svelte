@@ -2,6 +2,11 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { Icon } from '$lib/components/ui';
 
+	interface Props {
+		overlay?: boolean;
+	}
+
+	let { overlay = false }: Props = $props();
 	let isExpanded = $state(false);
 
 	const charState = $derived(characterStore.state);
@@ -26,80 +31,155 @@
 	]);
 </script>
 
-<div
-	class="status-container"
-	class:expanded={isExpanded}
-	class:high-affection={!isCompanionMode && charState.affection > 500}
->
-	<!-- Expanded content (appears above trigger) -->
-	{#if isExpanded}
-		<div class="status-details">
-			<!-- Sims-style vertical stat bars -->
-			<div class="stat-bars" class:companion-mode={isCompanionMode}>
-				{#each isCompanionMode ? companionStats : datingStats as stat, i}
-					<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}; --bar-glow: {stat.glowColor}">
-						<div class="stat-bar-track">
-							<div class="stat-bar-fill" style="height: {stat.value}%">
-								<div class="stat-bar-shine"></div>
+{#if overlay}
+	<!-- Overlay mode: compact circular button -->
+	<div class="overlay-status-wrapper">
+		{#if isExpanded}
+			<div
+				class="overlay-expanded-panel"
+				class:high-affection={!isCompanionMode && charState.affection > 500}
+			>
+				<div class="status-details">
+					<div class="stat-bars" class:companion-mode={isCompanionMode}>
+						{#each isCompanionMode ? companionStats : datingStats as stat, i}
+							<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}; --bar-glow: {stat.glowColor}">
+								<div class="stat-bar-track">
+									<div class="stat-bar-fill" style="height: {stat.value}%">
+										<div class="stat-bar-shine"></div>
+									</div>
+									<div class="stat-bar-bubbles">
+										{#each Array(3) as _, j}
+											<div class="bubble" style="--bubble-delay: {j * 0.3}s"></div>
+										{/each}
+									</div>
+								</div>
+								<div class="stat-icon">
+									<Icon name={stat.icon} size={14} />
+								</div>
+								<span class="stat-label">{stat.label}</span>
 							</div>
-							<div class="stat-bar-bubbles">
-								{#each Array(3) as _, j}
-									<div class="bubble" style="--bubble-delay: {j * 0.3}s"></div>
-								{/each}
-							</div>
-						</div>
-						<div class="stat-icon">
-							<Icon name={stat.icon} size={14} />
-						</div>
-						<span class="stat-label">{stat.label}</span>
+						{/each}
 					</div>
-				{/each}
-			</div>
 
-			{#if !isCompanionMode}
-				<!-- Quick Stats Row -->
-				<div class="quick-stats">
-					<div class="quick-stat">
-						<Icon name="calendar" size={11} />
-						<span>{charState.daysKnown}d</span>
-					</div>
-					<div class="quick-stat">
-						<Icon name="message-circle" size={11} />
-						<span>{charState.totalInteractions}</span>
-					</div>
-					{#if charState.currentStreak > 1}
-						<div class="quick-stat streak">
-							<Icon name="flame" size={11} />
-							<span>{charState.currentStreak}</span>
+					{#if !isCompanionMode}
+						<div class="quick-stats">
+							<div class="quick-stat">
+								<Icon name="calendar" size={11} />
+								<span>{charState.daysKnown}d</span>
+							</div>
+							<div class="quick-stat">
+								<Icon name="message-circle" size={11} />
+								<span>{charState.totalInteractions}</span>
+							</div>
+							{#if charState.currentStreak > 1}
+								<div class="quick-stat streak">
+									<Icon name="flame" size={11} />
+									<span>{charState.currentStreak}</span>
+								</div>
+							{/if}
+						</div>
+					{:else if charState.currentStreak > 1}
+						<div class="quick-stats">
+							<div class="quick-stat streak">
+								<Icon name="flame" size={11} />
+								<span>{charState.currentStreak} day streak</span>
+							</div>
 						</div>
 					{/if}
-					<a href="/settings/persona" class="quick-stat profile-link">
-						<span>Profile</span>
-						<Icon name="arrow-right" size={11} />
-					</a>
 				</div>
-			{:else if charState.currentStreak > 1}
-				<div class="quick-stats">
-					<div class="quick-stat streak">
-						<Icon name="flame" size={11} />
-						<span>{charState.currentStreak} day streak</span>
-					</div>
-				</div>
-			{/if}
-		</div>
-	{/if}
+			</div>
+		{/if}
 
-	<!-- Toggle bar (always visible at bottom) -->
-	<button class="status-toggle" onclick={() => isExpanded = !isExpanded}>
-		<span class="mood-icon" style="color: {moodInfo.color}">
-			<Icon name={moodInfo.icon} size={18} />
-		</span>
-		<span class="mood-label">{moodInfo.description}</span>
-		<span class="chevron" class:rotated={isExpanded}>
-			<Icon name="chevron-up" size={14} />
-		</span>
-	</button>
-</div>
+		<button
+			class="overlay-status-btn"
+			onclick={() => isExpanded = !isExpanded}
+			aria-label={isExpanded ? 'Collapse status' : 'Show status'}
+			title={isExpanded ? 'Collapse status' : 'Show status'}
+			style="--mood-color: {moodInfo.color}"
+		>
+			<span class="icon-inner">
+				{#if isExpanded}
+					<Icon name="x" size={20} />
+				{:else}
+					<Icon name={moodInfo.icon} size={20} />
+				{/if}
+			</span>
+			<span class="btn-shine"></span>
+		</button>
+	</div>
+{:else}
+	<!-- Standard mode: full status panel -->
+	<div
+		class="status-container"
+		class:expanded={isExpanded}
+		class:high-affection={!isCompanionMode && charState.affection > 500}
+	>
+		{#if isExpanded}
+			<div class="status-details">
+				<div class="stat-bars" class:companion-mode={isCompanionMode}>
+					{#each isCompanionMode ? companionStats : datingStats as stat, i}
+						<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}; --bar-glow: {stat.glowColor}">
+							<div class="stat-bar-track">
+								<div class="stat-bar-fill" style="height: {stat.value}%">
+									<div class="stat-bar-shine"></div>
+								</div>
+								<div class="stat-bar-bubbles">
+									{#each Array(3) as _, j}
+										<div class="bubble" style="--bubble-delay: {j * 0.3}s"></div>
+									{/each}
+								</div>
+							</div>
+							<div class="stat-icon">
+								<Icon name={stat.icon} size={14} />
+							</div>
+							<span class="stat-label">{stat.label}</span>
+						</div>
+					{/each}
+				</div>
+
+				{#if !isCompanionMode}
+					<div class="quick-stats">
+						<div class="quick-stat">
+							<Icon name="calendar" size={11} />
+							<span>{charState.daysKnown}d</span>
+						</div>
+						<div class="quick-stat">
+							<Icon name="message-circle" size={11} />
+							<span>{charState.totalInteractions}</span>
+						</div>
+						{#if charState.currentStreak > 1}
+							<div class="quick-stat streak">
+								<Icon name="flame" size={11} />
+								<span>{charState.currentStreak}</span>
+							</div>
+						{/if}
+						<a href="/settings/persona" class="quick-stat profile-link">
+							<span>Profile</span>
+							<Icon name="arrow-right" size={11} />
+						</a>
+					</div>
+				{:else if charState.currentStreak > 1}
+					<div class="quick-stats">
+						<div class="quick-stat streak">
+							<Icon name="flame" size={11} />
+							<span>{charState.currentStreak} day streak</span>
+						</div>
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		<button class="status-toggle" onclick={() => isExpanded = !isExpanded}>
+			<span class="mood-icon" style="color: {moodInfo.color}">
+				<Icon name={moodInfo.icon} size={18} />
+			</span>
+			<span class="mood-label">{moodInfo.description}</span>
+			<span class="chevron" class:rotated={isExpanded}>
+				<Icon name="chevron-up" size={14} />
+			</span>
+		</button>
+	</div>
+{/if}
 
 <style>
 	.status-container {
@@ -476,5 +556,133 @@
 		box-shadow:
 			0 4px 12px rgba(1, 178, 255, 0.4),
 			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+	}
+
+	/* Overlay mode: compact circular button */
+	.overlay-status-wrapper {
+		position: relative;
+	}
+
+	.overlay-status-btn {
+		width: 48px;
+		height: 48px;
+		border: none;
+		border-radius: 50%;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		position: relative;
+		overflow: hidden;
+		background: linear-gradient(
+			180deg,
+			#3a3a3a 0%,
+			#1a1a1a 60%,
+			#0a0a0a 100%
+		);
+		color: white;
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.35),
+			0 2px 4px rgba(0, 0, 0, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 0.15),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+	}
+
+	.overlay-status-btn:hover {
+		transform: translateY(-2px);
+		box-shadow:
+			0 6px 24px rgba(0, 0, 0, 0.45),
+			0 3px 6px rgba(0, 0, 0, 0.25),
+			inset 0 1px 0 rgba(255, 255, 255, 0.2),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+	}
+
+	.overlay-status-btn:active {
+		transform: translateY(0) scale(0.96);
+	}
+
+	.overlay-status-btn .icon-inner {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.overlay-status-btn .btn-shine {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 50%;
+		height: 50%;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.4) 0%,
+			rgba(255, 255, 255, 0) 100%
+		);
+		border-radius: 50% 50% 0 0;
+		pointer-events: none;
+	}
+
+	/* Expanded panel floating above the button */
+	.overlay-expanded-panel {
+		position: absolute;
+		bottom: calc(100% + 0.75rem);
+		left: 50%;
+		transform: translateX(-50%);
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.95) 0%,
+			rgba(245, 245, 250, 0.9) 50%,
+			rgba(235, 235, 240, 0.95) 100%
+		);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border: 1px solid rgba(255, 255, 255, 0.6);
+		border-radius: 20px;
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.05),
+			0 4px 20px rgba(0, 0, 0, 0.1),
+			0 8px 32px rgba(0, 0, 0, 0.08),
+			inset 0 1px 0 rgba(255, 255, 255, 1),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+		animation: panelSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+		white-space: nowrap;
+	}
+
+	:global(.dark) .overlay-expanded-panel {
+		background: linear-gradient(
+			180deg,
+			rgba(45, 45, 50, 0.95) 0%,
+			rgba(35, 35, 40, 0.95) 50%,
+			rgba(28, 28, 32, 0.98) 100%
+		);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.3),
+			0 4px 20px rgba(0, 0, 0, 0.4),
+			0 8px 32px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+	}
+
+	.overlay-expanded-panel.high-affection {
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.05),
+			0 4px 20px rgba(0, 0, 0, 0.1),
+			0 0 40px rgba(255, 107, 157, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 1);
+	}
+
+	@keyframes panelSlideUp {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
 	}
 </style>

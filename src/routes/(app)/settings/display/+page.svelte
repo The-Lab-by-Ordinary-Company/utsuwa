@@ -45,20 +45,7 @@
 		}
 	}
 
-	// Listen for system theme changes when in system mode
-	$effect(() => {
-		if (!browser) return;
-
-		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-		const handler = () => {
-			if (colorMode === 'system') {
-				applyColorMode('system');
-			}
-		};
-
-		mediaQuery.addEventListener('change', handler);
-		return () => mediaQuery.removeEventListener('change', handler);
-	});
+	// System theme change listener lives in +layout.svelte (always mounted)
 </script>
 
 <div class="page">

@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import type { VRM } from '@pixiv/three-vrm';
 import localforage from 'localforage';
+import { isTauri } from '$lib/services/platform/platform';
 
 export interface VrmModel {
 	id: string;
@@ -74,10 +75,23 @@ function createVrmStore() {
 
 	// Guard against saveToStorage running before init completes
 	let storageReady = false;
+	// Prevents re-emitting sync events when handling incoming ones
+	let isSyncing = false;
 
 	// Initialize from storage (may override defaults with saved values)
 	if (browser) {
 		initFromStorage();
+
+		// Sync model changes from other Tauri windows
+		if (isTauri()) {
+			import('@tauri-apps/api/event').then(({ listen }) => {
+				listen('vrm:model-changed', async () => {
+					isSyncing = true;
+					await syncActiveModel();
+					isSyncing = false;
+				});
+			});
+		}
 	}
 
 	async function initFromStorage() {
@@ -187,12 +201,35 @@ function createVrmStore() {
 		}
 	}
 
-	function setActiveModel(id: string) {
+	async function setActiveModel(id: string) {
 		const model = models.find((m) => m.id === id);
 		if (model) {
 			activeModelId = id;
 			modelUrl = model.url;
-			saveToStorage();
+			await saveToStorage();
+			broadcastModelChange();
+		}
+	}
+
+	async function broadcastModelChange() {
+		if (!isTauri() || isSyncing) return;
+		const { emit } = await import('@tauri-apps/api/event');
+		emit('vrm:model-changed');
+	}
+
+	async function syncActiveModel() {
+		if (!storageReady) return;
+		const savedActiveId = await vrmStorage?.getItem<string>('active-model-id');
+		if (!savedActiveId || savedActiveId === activeModelId) return;
+
+		// Check if model exists in our list already
+		const model = models.find((m) => m.id === savedActiveId);
+		if (model) {
+			activeModelId = savedActiveId;
+			modelUrl = model.url;
+		} else {
+			// New custom model added in another window — full re-init
+			await initFromStorage();
 		}
 	}
 

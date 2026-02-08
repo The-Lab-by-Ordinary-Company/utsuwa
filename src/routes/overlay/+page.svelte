@@ -293,13 +293,9 @@
 		onHide={handleBubbleHide}
 	/>
 
-	<!-- Companion Status (positioned for overlay) -->
-	<div class="overlay-status">
-		<CompanionStatus />
-	</div>
-
-	<!-- Floating Chat Icon (bottom of character) -->
+	<!-- Bottom controls (status + chat icon) -->
 	<div class="chat-controls">
+		<CompanionStatus overlay={true} />
 		<FloatingChatIcon />
 	</div>
 
@@ -356,18 +352,19 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 50;
-		opacity: 0.6;
+		opacity: 0;
+		pointer-events: none;
 		transition: opacity 0.15s ease, transform 0.15s ease;
+	}
+
+	.overlay-container:hover .exit-btn {
+		opacity: 0.6;
+		pointer-events: auto;
 	}
 
 	.exit-btn:hover {
 		opacity: 1;
 		transform: scale(1.1);
-	}
-
-	/* Override CompanionStatus positioning for overlay mode */
-	.overlay-status :global(.status-container) {
-		bottom: 4.5rem;
 	}
 
 	.chat-controls {
@@ -376,6 +373,9 @@
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 40;
+		display: flex;
+		gap: 0.75rem;
+		align-items: flex-end;
 	}
 
 	.chat-bar-container {

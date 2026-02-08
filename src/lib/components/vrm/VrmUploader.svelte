@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
+	import { isTauri } from '$lib/services/platform/platform';
 
 	interface Props {
 		onUpload: (file: File) => void;
@@ -8,6 +9,43 @@
 	let { onUpload }: Props = $props();
 	let isDragging = $state(false);
 	let fileInput: HTMLInputElement;
+
+	// Tauri's webview intercepts native drag-and-drop, so dataTransfer.files
+	// is empty. Use Tauri's own drag-drop event + fs plugin to read the file.
+	$effect(() => {
+		if (!isTauri()) return;
+
+		let cancelled = false;
+		let unlisten: (() => void) | undefined;
+
+		(async () => {
+			const { getCurrentWindow } = await import('@tauri-apps/api/window');
+			if (cancelled) return;
+
+			unlisten = await getCurrentWindow().onDragDropEvent(async (event) => {
+				if (event.payload.type === 'over') {
+					isDragging = true;
+				} else if (event.payload.type === 'leave') {
+					isDragging = false;
+				} else if (event.payload.type === 'drop') {
+					isDragging = false;
+					const vrmPath = event.payload.paths.find((p) => p.endsWith('.vrm'));
+					if (!vrmPath) return;
+
+					const { readFile } = await import('@tauri-apps/plugin-fs');
+					const contents = await readFile(vrmPath);
+					const fileName = vrmPath.split(/[/\\]/).pop() || 'model.vrm';
+					const file = new File([contents], fileName, { type: 'application/octet-stream' });
+					onUpload(file);
+				}
+			});
+		})();
+
+		return () => {
+			cancelled = true;
+			unlisten?.();
+		};
+	});
 
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
