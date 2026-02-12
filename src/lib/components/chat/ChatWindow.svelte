@@ -10,6 +10,8 @@
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+	import { streamChatDirect } from '$lib/services/chat/client-chat';
+	import { isTauri } from '$lib/services/platform';
 	import type { TTSProvider } from '$lib/types';
 	import type { EventDefinition } from '$lib/types/events';
 
@@ -207,64 +209,71 @@
 				throw new Error(`Please configure API key for ${providerMeta.name} in Settings > Providers`);
 			}
 
-			const response = await fetch('/api/chat', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					messages: chatStore.messages
-						.filter((m) => m.content)
-						.map((m) => ({
-							role: m.role,
-							content: m.content
-						})),
-					provider,
-					model: model || providerMeta?.models?.[0]?.id,
-					apiKey: apiKey || 'not-needed',
-					baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
-					systemPrompt
-				})
-			});
-
-			if (!response.ok) {
-				let errorMsg = 'Failed to get response';
-				try {
-					const body = await response.json();
-					if (body.error) errorMsg = body.error;
-				} catch {
-					// response wasn't JSON, use default
-				}
-				throw new Error(errorMsg);
-			}
-
-			// Handle streaming response
-			const reader = response.body?.getReader();
-			const decoder = new TextDecoder();
-
-			if (!reader) {
-				throw new Error('No response body');
-			}
-
-			// Add placeholder for assistant message
 			chatStore.addMessage('assistant', '');
 			let fullContent = '';
+			const selectedModel = model || providerMeta?.models?.[0]?.id || '';
 
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
+			if (isTauri()) {
+				await new Promise<void>((resolve, reject) => {
+					streamChatDirect(
+						{
+							messages: chatStore.messages.slice(0, -1).filter((m) => m.content).map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+							provider: provider as import('$lib/types').LLMProvider,
+							model: selectedModel,
+							apiKey: apiKey || undefined,
+							baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+							systemPrompt
+						},
+						(text) => { fullContent += text; chatStore.updateLastMessage(fullContent); },
+						(error) => reject(new Error(error)),
+						() => resolve()
+					);
+				});
+			} else {
+				const response = await fetch('/api/chat', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						messages: chatStore.messages
+							.filter((m) => m.content)
+							.map((m) => ({ role: m.role, content: m.content })),
+						provider,
+						model: selectedModel,
+						apiKey: apiKey || 'not-needed',
+						baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+						systemPrompt
+					})
+				});
 
-				const chunk = decoder.decode(value, { stream: true });
-				const lines = chunk.split('\n');
+				if (!response.ok) {
+					let errorMsg = 'Failed to get response';
+					try {
+						const body = await response.json();
+						if (body.error) errorMsg = body.error;
+					} catch {
+						// response wasn't JSON
+					}
+					throw new Error(errorMsg);
+				}
 
-				for (const line of lines) {
-					if (line.startsWith('0:')) {
-						// xsai format: text delta
-						const text = JSON.parse(line.slice(2));
-						fullContent += text;
-						chatStore.updateLastMessage(fullContent);
-					} else if (line.startsWith('e:')) {
-						// Error event from server
-						const { error } = JSON.parse(line.slice(2));
-						throw new Error(error);
+				const reader = response.body?.getReader();
+				const decoder = new TextDecoder();
+				if (!reader) throw new Error('No response body');
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					const chunk = decoder.decode(value, { stream: true });
+					for (const line of chunk.split('\n')) {
+						if (line.startsWith('0:')) {
+							const text = JSON.parse(line.slice(2));
+							fullContent += text;
+							chatStore.updateLastMessage(fullContent);
+						} else if (line.startsWith('e:')) {
+							const { error } = JSON.parse(line.slice(2));
+							throw new Error(error);
+						}
 					}
 				}
 			}

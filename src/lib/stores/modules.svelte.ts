@@ -4,11 +4,25 @@ import type { ModuleDefinition, ModuleState, ModuleMetadata, ModuleWithState } f
 const STORAGE_PREFIX = 'utsuwa-module-';
 
 function createModulesStore() {
-	// Registry of all available modules
 	let registry = $state<Map<string, ModuleDefinition>>(new Map());
 
-	// State of each module (enabled, configured, settings)
 	let moduleStates = $state<Map<string, ModuleState>>(new Map());
+
+	// Sync module state across windows (main ↔ overlay)
+	if (browser) {
+		window.addEventListener('storage', (e) => {
+			if (e.key?.startsWith(STORAGE_PREFIX) && e.newValue) {
+				const moduleId = e.key.slice(STORAGE_PREFIX.length);
+				try {
+					const state = JSON.parse(e.newValue);
+					moduleStates.set(moduleId, state);
+					moduleStates = new Map(moduleStates);
+				} catch {
+					// Ignore malformed data
+				}
+			}
+		});
+	}
 
 	// Derived: list of all modules with their current state
 	const modulesList = $derived.by(() => {

@@ -1,0 +1,162 @@
+import type { LLMProvider } from '$lib/types';
+
+interface ModelInfo {
+	id: string;
+	name: string;
+}
+
+const DEFAULT_BASE_URLS: Record<string, string> = {
+	openai: 'https://api.openai.com/v1',
+	anthropic: 'https://api.anthropic.com/v1',
+	ollama: 'http://localhost:11434',
+	lmstudio: 'http://localhost:1234/v1',
+	deepseek: 'https://api.deepseek.com',
+	xai: 'https://api.x.ai/v1',
+	google: 'https://generativelanguage.googleapis.com/v1beta',
+	elevenlabs: 'https://api.elevenlabs.io/v1',
+	'openai-tts': 'https://api.openai.com/v1'
+};
+
+const MODEL_FILTERS: Record<string, RegExp> = {
+	openai: /^(gpt-|o1-|o3-|chatgpt-4o-)/,
+	anthropic: /^claude-/,
+	deepseek: /^deepseek-(chat|reasoner)/,
+	xai: /^grok-/,
+	google: /^gemini-/
+};
+
+function normalizeModelName(id: string, providerId: string): string {
+	let name = id;
+	if (providerId === 'google' && name.startsWith('models/')) {
+		name = name.replace('models/', '');
+	}
+	if (providerId === 'anthropic') {
+		name = name.replace(/-\d{8}$/, '');
+		name = name.replace(/(opus|sonnet|haiku)-(\d+)-(\d+)$/, '$1-$2.$3');
+	}
+	name = name
+		.replace(/-/g, ' ')
+		.replace(/\b\w/g, (c) => c.toUpperCase())
+		.replace(/Gpt/g, 'GPT')
+		.replace(/O1/g, 'o1')
+		.replace(/O3/g, 'o3');
+	return name;
+}
+
+/**
+ * Fetch models directly from provider APIs.
+ * Used in Tauri builds where SvelteKit server routes aren't available.
+ */
+export async function fetchModelsDirect(
+	providerId: string,
+	apiKey?: string,
+	baseUrl?: string
+): Promise<{ models: ModelInfo[]; error?: string }> {
+	const cleanBaseUrl = (baseUrl || DEFAULT_BASE_URLS[providerId] || '').replace(/\/+$/, '');
+
+	try {
+		let models: ModelInfo[] = [];
+
+		switch (providerId) {
+			case 'openai':
+			case 'deepseek':
+			case 'xai': {
+				if (!apiKey) throw new Error('API key required');
+				const res = await fetch(`${cleanBaseUrl}/models`, {
+					headers: { Authorization: `Bearer ${apiKey}` }
+				});
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = data.data.map((m: { id: string }) => ({
+					id: m.id,
+					name: normalizeModelName(m.id, providerId)
+				}));
+				break;
+			}
+			case 'anthropic': {
+				if (!apiKey) throw new Error('API key required');
+				const res = await fetch(`${cleanBaseUrl}/models`, {
+					headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }
+				});
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = data.data.map((m: { id: string }) => ({
+					id: m.id,
+					name: normalizeModelName(m.id, 'anthropic')
+				}));
+				break;
+			}
+			case 'ollama': {
+				const res = await fetch(`${cleanBaseUrl}/api/tags`);
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = (data.models || []).map((m: { name: string }) => ({
+					id: m.name,
+					name: m.name
+				}));
+				break;
+			}
+			case 'lmstudio': {
+				const res = await fetch(`${cleanBaseUrl}/models`);
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = data.data.map((m: { id: string }) => ({ id: m.id, name: m.id }));
+				break;
+			}
+			case 'google': {
+				if (!apiKey) throw new Error('API key required');
+				const res = await fetch(`${cleanBaseUrl}/models`, {
+					headers: { 'x-goog-api-key': apiKey }
+				});
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = (data.models || []).map(
+					(m: { name: string; displayName?: string }) => ({
+						id: m.name.replace('models/', ''),
+						name: m.displayName || normalizeModelName(m.name, 'google')
+					})
+				);
+				break;
+			}
+			case 'elevenlabs': {
+				if (!apiKey) throw new Error('API key required');
+				const res = await fetch(`${cleanBaseUrl}/models`, {
+					headers: { 'xi-api-key': apiKey }
+				});
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = data
+					.filter((m: { can_do_text_to_speech?: boolean }) => m.can_do_text_to_speech)
+					.map((m: { model_id: string; name: string }) => ({
+						id: m.model_id,
+						name: m.name
+					}));
+				break;
+			}
+			case 'openai-tts': {
+				if (!apiKey) throw new Error('API key required');
+				const res = await fetch(`${cleanBaseUrl}/models`, {
+					headers: { Authorization: `Bearer ${apiKey}` }
+				});
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = data.data
+					.filter((m: { id: string }) => m.id.includes('tts'))
+					.map((m: { id: string }) => ({
+						id: m.id,
+						name: normalizeModelName(m.id, 'openai-tts')
+					}));
+				break;
+			}
+			default:
+				return { models: [], error: `Unknown provider: ${providerId}` };
+		}
+
+		const filter = MODEL_FILTERS[providerId];
+		const filtered = filter ? models.filter((m) => filter.test(m.id)) : models;
+		return { models: filtered };
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Unknown error';
+		return { models: [], error: message };
+	}
+}

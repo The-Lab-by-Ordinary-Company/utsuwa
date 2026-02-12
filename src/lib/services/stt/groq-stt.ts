@@ -46,10 +46,31 @@ class GroqSttService {
 		try {
 			this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : 'Microphone access denied';
-			callbacks.onError(msg.includes('NotAllowed') ? 'Microphone access denied' : msg);
+			if (err instanceof DOMException) {
+				const messages: Record<string, string> = {
+					NotAllowedError: 'Microphone access denied. Check system permissions.',
+					NotFoundError: 'No microphone found. Please connect a microphone.',
+					NotReadableError: 'Microphone is busy or in use by another app.',
+					OverconstrainedError: 'Microphone does not meet requirements.'
+				};
+				callbacks.onError(messages[err.name] || `Microphone error: ${err.message}`);
+			} else {
+				callbacks.onError('Failed to access microphone');
+			}
 			return false;
 		}
+
+		// Watch for mic disconnection
+		this.stream.getTracks().forEach((track) => {
+			track.onended = () => {
+				if (this.listening) {
+					this.callbacks?.onError('Microphone disconnected');
+					this.cleanup();
+					this.listening = false;
+					this.callbacks?.onEnd();
+				}
+			};
+		});
 
 		// Set up audio analysis for real levels
 		this.audioContext = new AudioContext();
@@ -61,9 +82,15 @@ class GroqSttService {
 
 		// Record audio — mimeType may be undefined to let browser pick default
 		const mimeType = this.getSupportedMimeType();
-		this.mediaRecorder = mimeType
-			? new MediaRecorder(this.stream, { mimeType })
-			: new MediaRecorder(this.stream);
+		try {
+			this.mediaRecorder = mimeType
+				? new MediaRecorder(this.stream, { mimeType })
+				: new MediaRecorder(this.stream);
+		} catch (err) {
+			callbacks.onError('Audio recording not supported on this platform');
+			this.releaseStream();
+			return false;
+		}
 
 		this.mediaRecorder.ondataavailable = (e) => {
 			if (e.data.size > 0) this.audioChunks.push(e.data);
@@ -71,7 +98,7 @@ class GroqSttService {
 
 		this.mediaRecorder.onstop = () => this.handleRecordingStop();
 
-		this.mediaRecorder.start(250); // collect chunks every 250ms
+		this.mediaRecorder.start(250);
 		this.listening = true;
 		return true;
 	}

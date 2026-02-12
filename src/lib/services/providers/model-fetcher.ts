@@ -1,3 +1,6 @@
+import { isTauri } from '$lib/services/platform';
+import { fetchModelsDirect } from './client-models';
+
 export interface ModelInfo {
 	id: string;
 	name: string;
@@ -16,6 +19,11 @@ export async function fetchProviderModels(
 	apiKey: string,
 	baseUrl?: string
 ): Promise<FetchModelsResult> {
+	// Tauri production builds don't have server routes — fetch directly
+	if (isTauri()) {
+		return fetchModelsDirect(providerId, apiKey, baseUrl);
+	}
+
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 

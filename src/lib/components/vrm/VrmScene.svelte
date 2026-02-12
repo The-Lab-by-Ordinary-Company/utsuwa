@@ -17,6 +17,15 @@
 
 	// Custom renderer factory for screenshot support
 	function createRenderer(canvas: HTMLCanvasElement) {
+		// Handle GPU context loss (driver crash, sleep, etc.)
+		canvas.addEventListener('webglcontextlost', (e) => {
+			e.preventDefault();
+			console.warn('WebGL context lost — will restore automatically');
+		});
+		canvas.addEventListener('webglcontextrestored', () => {
+			console.warn('WebGL context restored');
+		});
+
 		const renderer = new WebGLRenderer({
 			canvas,
 			antialias: true,
@@ -24,7 +33,6 @@
 			preserveDrawingBuffer: true
 		});
 
-		// Color management for vibrant, accurate colors
 		renderer.outputColorSpace = SRGBColorSpace;
 		renderer.toneMapping = ACESFilmicToneMapping;
 		renderer.toneMappingExposure = 1.0;

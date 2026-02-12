@@ -69,6 +69,22 @@ function createSettingsStore() {
 		}
 	}
 
+	// Sync settings across windows (main ↔ overlay)
+	if (browser) {
+		window.addEventListener('storage', (e) => {
+			if (e.key === 'utsuwa-settings' && e.newValue) {
+				try {
+					const parsed = JSON.parse(e.newValue);
+					providerConfigs = parsed.providerConfigs ?? {};
+					addedProviders = parsed.addedProviders ?? {};
+					hotkeys = { ...DEFAULT_HOTKEYS, ...parsed.hotkeys };
+				} catch {
+					// Ignore malformed data from other window
+				}
+			}
+		});
+	}
+
 	// Provider configuration
 	function setProviderConfig(providerId: string, config: Partial<ProviderConfig>) {
 		const oldApiKey = providerConfigs[providerId]?.apiKey;

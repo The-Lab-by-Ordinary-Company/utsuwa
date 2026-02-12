@@ -20,6 +20,7 @@
 	import { overlayStore } from '$lib/stores/overlay.svelte';
 	import { isTauri, startDragging } from '$lib/services/platform';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+	import { streamChatDirect } from '$lib/services/chat/client-chat';
 	import { allEvents } from '$lib/data/events';
 	import { checkAllEvents, eventsApi } from '$lib/engine/events';
 	import type { TTSProvider } from '$lib/types';
@@ -101,18 +102,20 @@
 	async function exitToMain() {
 		if (!isTauri()) return;
 		try {
-			const { invoke } = await import('@tauri-apps/api/core');
 			const { getCurrentWindow, getAllWindows } = await import('@tauri-apps/api/window');
 
-			// Find and show main window
 			const windows = await getAllWindows();
 			const mainWindow = windows.find(w => w.label === 'main');
-			if (mainWindow) {
-				await mainWindow.show();
-				await mainWindow.setFocus();
+
+			if (!mainWindow) {
+				// Main window was closed — don't hide overlay or user loses the app
+				console.error('Main window not found, cannot exit overlay');
+				return;
 			}
 
-			// Hide overlay
+			await mainWindow.show();
+			await mainWindow.setFocus();
+
 			const overlay = getCurrentWindow();
 			await overlay.hide();
 		} catch (e) {
@@ -120,7 +123,6 @@
 		}
 	}
 
-	// Process companion response (same as main app)
 	async function processCompanionResponse(userMessage: string, companionResponse: string): Promise<string> {
 		const state = characterStore.state;
 		const baselineUpdates = calculateBaselineUpdates(userMessage, state);
@@ -244,41 +246,62 @@
 				throw new Error(`Please configure API key for ${providerMeta.name} in Settings > Providers`);
 			}
 
-			const response = await fetch('/api/chat', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					messages: chatStore.messages.map((m) => ({ role: m.role, content: m.content })),
-					provider,
-					model: model || providerMeta?.models?.[0]?.id,
-					apiKey: apiKey || 'not-needed',
-					baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
-					systemPrompt
-				})
-			});
-
-			if (!response.ok) throw new Error('Failed to get response');
-
-			const reader = response.body?.getReader();
-			const decoder = new TextDecoder();
-			if (!reader) throw new Error('No response body');
-
 			chatStore.addMessage('assistant', '');
 			let fullContent = '';
+			const selectedModel = model || providerMeta?.models?.[0]?.id || '';
 
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
+			if (isTauri()) {
+				// Tauri: call provider APIs directly (no server routes in static builds)
+				await new Promise<void>((resolve, reject) => {
+					streamChatDirect(
+						{
+							messages: chatStore.messages.slice(0, -1).map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+							provider: provider as import('$lib/types').LLMProvider,
+							model: selectedModel,
+							apiKey: apiKey || undefined,
+							baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+							systemPrompt
+						},
+						(text) => { fullContent += text; chatStore.updateLastMessage(fullContent); },
+						(error) => reject(new Error(error)),
+						() => resolve()
+					);
+				});
+			} else {
+				// Web: use SvelteKit server route
+				const response = await fetch('/api/chat', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						messages: chatStore.messages.map((m) => ({ role: m.role, content: m.content })),
+						provider,
+						model: selectedModel,
+						apiKey: apiKey || 'not-needed',
+						baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+						systemPrompt
+					})
+				});
 
-				const chunk = decoder.decode(value, { stream: true });
-				for (const line of chunk.split('\n')) {
-					if (line.startsWith('0:')) {
-						const text = JSON.parse(line.slice(2));
-						fullContent += text;
-						chatStore.updateLastMessage(fullContent);
-					} else if (line.startsWith('e:')) {
-						const { error } = JSON.parse(line.slice(2));
-						throw new Error(error);
+				if (!response.ok) throw new Error('Failed to get response');
+
+				const reader = response.body?.getReader();
+				const decoder = new TextDecoder();
+				if (!reader) throw new Error('No response body');
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					const chunk = decoder.decode(value, { stream: true });
+					for (const line of chunk.split('\n')) {
+						if (line.startsWith('0:')) {
+							const text = JSON.parse(line.slice(2));
+							fullContent += text;
+							chatStore.updateLastMessage(fullContent);
+						} else if (line.startsWith('e:')) {
+							const { error } = JSON.parse(line.slice(2));
+							throw new Error(error);
+						}
 					}
 				}
 			}
