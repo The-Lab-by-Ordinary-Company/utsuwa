@@ -66,20 +66,20 @@
 
 			<!-- CTA buttons -->
 			<div class="flex flex-wrap items-center justify-center gap-3 mb-12">
-				<a href="/app" class="skeu-btn text-sm font-bold px-6 py-3 rounded-full transition-all">
+				<a href="/app" class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all">
 					Try Live
 				</a>
 				<a
 					href="https://github.com/dyascj/utsuwa/releases"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="skeu-btn text-sm font-bold px-6 py-3 rounded-full transition-all"
+					class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all"
 				>
 					Download
 				</a>
 				<a
 					href="/docs"
-					class="border border-white/30 text-white hover:bg-white/10 text-sm font-medium px-6 py-3 rounded-full transition-all"
+					class="skeu-btn-glass-outline text-sm font-medium px-6 py-3 rounded-full transition-all"
 				>
 					Docs
 				</a>
