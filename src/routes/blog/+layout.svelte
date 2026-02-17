@@ -21,7 +21,9 @@
 <div class="docs blog-site" bind:this={blogEl}>
 	<!-- Nav (matches landing page) -->
 	<nav class="blog-nav">
-		<a href="/" class="nav-wordmark">Utsuwa</a>
+		<a href="/" class="nav-logo-link">
+			<img src="/brand-assets/logo.svg" alt="Utsuwa" class="nav-logo" />
+		</a>
 
 		<div class="nav-links">
 			<a href="/docs" class="nav-link" class:active={currentPath.startsWith('/docs')}>Docs</a>
@@ -85,12 +87,16 @@
 		padding: 1.25rem 1.5rem;
 	}
 
-	.nav-wordmark {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: white;
+	.nav-logo-link {
+		display: flex;
+		align-items: center;
 		text-decoration: none;
-		letter-spacing: -0.02em;
+	}
+
+	.nav-logo {
+		height: 1.125rem;
+		width: auto;
+		filter: brightness(0) invert(1);
 	}
 
 	.nav-links {

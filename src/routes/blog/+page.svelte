@@ -22,7 +22,10 @@
 
 	{#if featuredPost}
 		<a href="/blog/{featuredPost.slug}" class="featured-card">
-			<img src={featuredPost.image} alt="" class="featured-image" />
+			<div class="featured-image-wrap">
+				<img src={featuredPost.image} alt="" class="featured-image" />
+			</div>
+			<div class="featured-shine"></div>
 			<div class="featured-overlay"></div>
 			<div class="featured-content">
 				<time datetime={featuredPost.date}>{formatDate(featuredPost.date)}</time>
@@ -71,49 +74,83 @@
 		margin: 0 0 2.5rem 0;
 	}
 
-	/* Featured hero card */
+	/* Featured hero card — glossy Frutiger Aero panel */
 	.featured-card {
 		position: relative;
 		display: block;
 		height: 480px;
-		border-radius: 1.25rem;
+		border-radius: 1.5rem;
 		overflow: hidden;
 		text-decoration: none;
 		margin-bottom: 2rem;
-		background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		background: linear-gradient(
+			165deg,
+			rgba(1, 178, 255, 0.14) 0%,
+			rgba(1, 178, 255, 0.05) 40%,
+			rgba(255, 255, 255, 0.03) 100%
+		);
+		border: 1px solid rgba(1, 178, 255, 0.2);
+		transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.04),
-			0 4px 24px rgba(0, 0, 0, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 0.12),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+			0 8px 32px rgba(0, 0, 0, 0.3),
+			0 0 0 1px rgba(0, 0, 0, 0.3);
+	}
+
+	/* Glossy top shine */
+	.featured-shine {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 45%;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.1) 0%,
+			rgba(255, 255, 255, 0.02) 60%,
+			transparent 100%
+		);
+		pointer-events: none;
+		z-index: 2;
 	}
 
 	.featured-card:hover {
-		border-color: rgba(1, 178, 255, 0.3);
-		transform: translateY(-4px);
+		border-color: rgba(1, 178, 255, 0.45);
+		transform: translateY(-6px) scale(1.01);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.06),
-			0 0 24px rgba(1, 178, 255, 0.15),
-			0 16px 48px rgba(0, 0, 0, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 0.18),
+			0 0 40px rgba(1, 178, 255, 0.2),
+			0 12px 48px rgba(1, 178, 255, 0.1),
+			0 24px 64px rgba(0, 0, 0, 0.3);
+	}
+
+	.featured-image-wrap {
+		position: absolute;
+		inset: 0;
 	}
 
 	.featured-image {
-		position: absolute;
-		inset: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+		transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.featured-card:hover .featured-image {
-		transform: scale(1.03);
+		transform: scale(1.04);
 	}
 
 	.featured-overlay {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.3) 50%, transparent 100%);
+		background: linear-gradient(
+			to top,
+			rgba(0, 0, 0, 0.88) 0%,
+			rgba(0, 10, 20, 0.4) 45%,
+			rgba(1, 178, 255, 0.05) 100%
+		);
+		z-index: 1;
 	}
 
 	.featured-content {
@@ -125,12 +162,14 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		z-index: 3;
 	}
 
 	.featured-content time {
 		font-size: 0.8125rem;
-		font-weight: 500;
-		color: rgba(255, 255, 255, 0.6);
+		font-weight: 600;
+		color: #4dd0ff;
+		text-shadow: 0 0 12px rgba(1, 178, 255, 0.4);
 	}
 
 	.featured-content h2 {
@@ -160,59 +199,95 @@
 		gap: 1.5rem;
 	}
 
+	/* Grid cards — Sims 2000s / Frutiger Aero */
 	.blog-card {
 		display: flex;
 		flex-direction: column;
 		text-decoration: none;
-		border-radius: 1rem;
+		border-radius: 1.25rem;
 		overflow: hidden;
-		background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		background: linear-gradient(
+			165deg,
+			rgba(1, 178, 255, 0.12) 0%,
+			rgba(1, 178, 255, 0.04) 40%,
+			rgba(255, 255, 255, 0.03) 100%
+		);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid rgba(1, 178, 255, 0.18);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.04),
-			0 4px 16px rgba(0, 0, 0, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 0.12),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+			0 4px 20px rgba(0, 0, 0, 0.25),
+			0 0 0 1px rgba(0, 0, 0, 0.3);
+		transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+		position: relative;
+	}
+
+	/* Glossy top shine */
+	.blog-card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 50%;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.08) 0%,
+			transparent 100%
+		);
+		border-radius: 1.25rem 1.25rem 0 0;
+		pointer-events: none;
+		z-index: 1;
 	}
 
 	.blog-card:hover {
-		border-color: rgba(1, 178, 255, 0.3);
-		transform: translateY(-4px);
+		border-color: rgba(1, 178, 255, 0.4);
+		transform: translateY(-6px) scale(1.02);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.06),
-			0 0 20px rgba(1, 178, 255, 0.15),
-			0 12px 40px rgba(0, 0, 0, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 0.18),
+			0 0 30px rgba(1, 178, 255, 0.2),
+			0 8px 32px rgba(1, 178, 255, 0.12),
+			0 20px 48px rgba(0, 0, 0, 0.3);
 	}
 
 	.card-image {
 		position: relative;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
-		background: #111;
+		background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+		margin: 0.5rem 0.5rem 0;
+		border-radius: 0.875rem;
 	}
 
 	.card-image img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		border-radius: 0.875rem;
+		transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.blog-card:hover .card-image img {
-		transform: scale(1.03);
+		transform: scale(1.05);
 	}
 
 	.card-body {
-		padding: 1.25rem 1.5rem 1.5rem;
+		padding: 1rem 1.25rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.375rem;
 		flex: 1;
+		position: relative;
+		z-index: 2;
 	}
 
 	.card-body time {
 		font-size: 0.75rem;
-		font-weight: 500;
-		color: rgba(255, 255, 255, 0.4);
+		font-weight: 600;
+		color: #4dd0ff;
+		text-shadow: 0 0 8px rgba(1, 178, 255, 0.3);
 	}
 
 	.card-body h2 {
@@ -225,7 +300,8 @@
 	}
 
 	.blog-card:hover .card-body h2 {
-		color: #01B2FF;
+		color: #4dd0ff;
+		text-shadow: 0 0 12px rgba(1, 178, 255, 0.2);
 	}
 
 	.card-body p {

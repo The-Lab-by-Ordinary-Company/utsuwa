@@ -18,7 +18,9 @@
 	<section class="relative min-h-screen bg-gradient-to-b from-[#4dd0ff] via-[#01B2FF] to-[#0a0a0a]">
 		<!-- Nav -->
 		<nav class="relative z-10 max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
-			<a href="/" class="text-lg font-semibold tracking-tight text-white">Utsuwa</a>
+			<a href="/" class="flex items-center">
+				<img src="/brand-assets/logo.svg" alt="Utsuwa" class="nav-logo" />
+			</a>
 
 			<div class="hidden md:flex items-center gap-6 text-sm text-white/80">
 				<a href="#features" class="hover:text-white transition-colors">Features</a>
@@ -636,6 +638,12 @@
 </div>
 
 <style>
+	.nav-logo {
+		height: 1.125rem;
+		width: auto;
+		filter: brightness(0) invert(1);
+	}
+
 	.hero-logo {
 		width: min(80vw, 500px);
 		height: auto;
@@ -813,53 +821,87 @@
 		filter: brightness(0) invert(1);
 	}
 
-	/* Blog cards */
+	/* Blog cards — Sims 2000s / Frutiger Aero */
 	.blog-card {
 		display: flex;
 		flex-direction: column;
 		text-decoration: none;
-		border-radius: 1rem;
+		border-radius: 1.25rem;
 		overflow: hidden;
-		background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%);
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: linear-gradient(
+			165deg,
+			rgba(1, 178, 255, 0.12) 0%,
+			rgba(1, 178, 255, 0.04) 40%,
+			rgba(255, 255, 255, 0.03) 100%
+		);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid rgba(1, 178, 255, 0.18);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.04),
-			0 4px 16px rgba(0, 0, 0, 0.3);
-		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+			inset 0 1px 0 rgba(255, 255, 255, 0.12),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+			0 4px 20px rgba(0, 0, 0, 0.25),
+			0 0 0 1px rgba(0, 0, 0, 0.3);
+		transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+		position: relative;
+	}
+
+	/* Glossy top shine */
+	.blog-card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 50%;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.08) 0%,
+			transparent 100%
+		);
+		border-radius: 1.25rem 1.25rem 0 0;
+		pointer-events: none;
+		z-index: 1;
 	}
 
 	.blog-card:hover {
-		border-color: rgba(1, 178, 255, 0.3);
-		transform: translateY(-4px);
+		border-color: rgba(1, 178, 255, 0.4);
+		transform: translateY(-6px) scale(1.02);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.06),
-			0 0 20px rgba(1, 178, 255, 0.15),
-			0 12px 40px rgba(0, 0, 0, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 0.18),
+			0 0 30px rgba(1, 178, 255, 0.2),
+			0 8px 32px rgba(1, 178, 255, 0.12),
+			0 20px 48px rgba(0, 0, 0, 0.3);
 	}
 
 	.blog-card-image {
 		position: relative;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
-		background: #111;
+		background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+		margin: 0.5rem 0.5rem 0;
+		border-radius: 0.875rem;
 	}
 
 	.blog-card-image img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		border-radius: 0.875rem;
+		transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.blog-card:hover .blog-card-image img {
-		transform: scale(1.03);
+		transform: scale(1.05);
 	}
 
 	.blog-card-body {
-		padding: 1.25rem 1.5rem 1.5rem;
+		padding: 1rem 1.25rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.375rem;
 		flex: 1;
+		position: relative;
+		z-index: 2;
 	}
 </style>
