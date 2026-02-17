@@ -451,9 +451,13 @@
 								<img src={post.image} alt="" loading="lazy" />
 							</div>
 							<div class="blog-card-body">
-								<time datetime={post.date} class="text-xs font-medium text-[#01B2FF]">
-									{formatDate(post.date)}
-								</time>
+								<div class="flex items-center gap-1.5 text-xs font-medium">
+									<time datetime={post.date} class="text-[#01B2FF]">
+										{formatDate(post.date)}
+									</time>
+									<span class="text-black/25">&middot;</span>
+									<span class="text-black/40">CJ Dyas</span>
+								</div>
 								<h3
 									class="text-base font-semibold text-[#1a1a1a] group-hover:text-[#01B2FF] transition-colors tracking-tight"
 								>

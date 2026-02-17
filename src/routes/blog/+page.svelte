@@ -28,7 +28,10 @@
 			<div class="featured-shine"></div>
 			<div class="featured-overlay"></div>
 			<div class="featured-content">
-				<time datetime={featuredPost.date}>{formatDate(featuredPost.date)}</time>
+				<div class="card-meta">
+					<time datetime={featuredPost.date}>{formatDate(featuredPost.date)}</time>
+					<span class="card-author">Charles J. (CJ) Dyas</span>
+				</div>
 				<h2>{featuredPost.title}</h2>
 				<p>{featuredPost.description}</p>
 			</div>
@@ -43,7 +46,10 @@
 						<img src={post.image} alt="" loading="lazy" />
 					</div>
 					<div class="card-body">
-						<time datetime={post.date}>{formatDate(post.date)}</time>
+						<div class="card-meta">
+							<time datetime={post.date}>{formatDate(post.date)}</time>
+							<span class="card-author">CJ Dyas</span>
+						</div>
 						<h2>{post.title}</h2>
 						<p>{post.description}</p>
 					</div>
@@ -163,6 +169,24 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		z-index: 3;
+	}
+
+	.card-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.card-meta time::after {
+		content: '\00b7';
+		margin-left: 0.5rem;
+		opacity: 0.4;
+	}
+
+	.card-author {
+		font-size: inherit;
+		font-weight: inherit;
+		opacity: 0.6;
 	}
 
 	.featured-content time {
