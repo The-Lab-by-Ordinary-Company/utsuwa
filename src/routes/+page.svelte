@@ -132,6 +132,166 @@
 			class="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent pointer-events-none"
 		></div>
 	</section>
+
+	<!-- Feature A: Meet your AI companion -->
+	<section id="features" class="bg-[#0a0a0a] border-t border-white/5">
+		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
+			<div class="text-center mb-16 md:mb-24">
+				<h2
+					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight"
+					style="font-family: 'Exo 2', sans-serif;"
+				>
+					Meet your AI companion
+				</h2>
+			</div>
+
+			<div class="grid lg:grid-cols-2 gap-12 items-center">
+				<div
+					class="rounded-xl bg-[#111] border border-white/10 aspect-video flex items-center justify-center overflow-hidden shadow-2xl"
+				>
+					<div class="text-white/20 text-sm">App screenshot</div>
+				</div>
+
+				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
+					<div
+						class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1f2937] border border-white/10 text-white/80 text-xs font-medium mb-6"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+							/>
+						</svg>
+						3D Avatar
+					</div>
+					<h3 class="text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight">
+						Full 3D, right in your browser.
+					</h3>
+					<p class="text-lg text-white/50 leading-relaxed">
+						Load any VRM avatar model and watch it come to life with idle animations, automatic
+						blinking, and speech-driven lip-sync. Chat responses appear as 3D speech bubbles that
+						track your companion's head position.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Feature B: She remembers -->
+	<section class="bg-[#0a0a0a] border-t border-white/5">
+		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
+			<div class="text-center mb-16 md:mb-24">
+				<h2
+					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight"
+					style="font-family: 'Exo 2', sans-serif;"
+				>
+					She remembers
+				</h2>
+			</div>
+
+			<div class="grid lg:grid-cols-2 gap-12 items-center">
+				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0 order-2 lg:order-1">
+					<div
+						class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1f2937] border border-white/10 text-white/80 text-xs font-medium mb-6"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"
+							/>
+							<circle cx="12" cy="12" r="10" />
+						</svg>
+						Semantic Memory
+					</div>
+					<h3 class="text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight">
+						Memories that mean something.
+					</h3>
+					<p class="text-lg text-white/50 leading-relaxed">
+						Your companion builds a web of memories using local AI embeddings. She finds past
+						conversations by meaning, not keywords. Track affection, trust, and mood across 8
+						relationship stages — from Stranger to Soulmate.
+					</p>
+				</div>
+
+				<div
+					class="rounded-xl bg-[#111] border border-white/10 aspect-video flex items-center justify-center overflow-hidden shadow-2xl order-1 lg:order-2"
+				>
+					<div class="text-white/20 text-sm">Memory graph</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Feature C: Your voice, her ears -->
+	<section class="bg-[#0a0a0a] border-t border-white/5">
+		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
+			<div class="text-center mb-16 md:mb-24">
+				<h2
+					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight"
+					style="font-family: 'Exo 2', sans-serif;"
+				>
+					Your voice, her ears
+				</h2>
+			</div>
+
+			<div class="grid lg:grid-cols-2 gap-12 items-center">
+				<div
+					class="rounded-xl bg-[#111] border border-white/10 aspect-video flex items-center justify-center overflow-hidden shadow-2xl"
+				>
+					<div class="text-white/20 text-sm">Chat interface</div>
+				</div>
+
+				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
+					<div
+						class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1f2937] border border-white/10 text-white/80 text-xs font-medium mb-6"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M12 19v3" />
+							<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+							<rect x="9" y="2" width="6" height="13" rx="3" />
+						</svg>
+						Multi-Provider
+					</div>
+					<h3 class="text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight">
+						7 LLM providers. Your voice. Her words.
+					</h3>
+					<p class="text-lg text-white/50 leading-relaxed">
+						Connect OpenAI, Anthropic, Google, DeepSeek, xAI, or run locally with Ollama and LM
+						Studio. Add voice input via Groq Whisper or Web Speech API, and hear her respond with
+						ElevenLabs or OpenAI TTS — complete with lip-sync.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
 </div>
 
 <style>
