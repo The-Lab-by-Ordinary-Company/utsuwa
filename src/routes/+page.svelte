@@ -1,3 +1,10 @@
+<script lang="ts">
+	import type { PageData } from './$types';
+	import { formatDate } from '$lib/utils/format-date';
+
+	let { data }: { data: PageData } = $props();
+</script>
+
 <svelte:head>
 	<title>Utsuwa — Your AI Companion</title>
 	<meta
@@ -144,7 +151,7 @@
 
 			<div class="grid lg:grid-cols-2 gap-12 items-center">
 				<div
-					class="rounded-xl bg-[#111] border border-white/10 aspect-video flex items-center justify-center overflow-hidden shadow-2xl"
+					class="skeu-card rounded-xl aspect-video flex items-center justify-center overflow-hidden"
 				>
 					<div class="text-white/20 text-sm">App screenshot</div>
 				</div>
@@ -251,7 +258,7 @@
 
 			<div class="grid lg:grid-cols-2 gap-12 items-center">
 				<div
-					class="rounded-xl bg-[#111] border border-white/10 aspect-video flex items-center justify-center overflow-hidden shadow-2xl"
+					class="skeu-card rounded-xl aspect-video flex items-center justify-center overflow-hidden"
 				>
 					<div class="text-white/20 text-sm">Chat interface</div>
 				</div>
@@ -304,7 +311,7 @@
 				<!-- Card 1: Desktop Overlay -->
 				<div class="flex flex-col group cursor-default">
 					<div
-						class="bg-black border border-white/10 rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden shadow-2xl group-hover:border-[#01B2FF]/30 transition-colors duration-500"
+						class="skeu-card rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
 						<!-- Monitor icon -->
 						<svg
@@ -340,7 +347,7 @@
 				<!-- Card 2: Local-First -->
 				<div class="flex flex-col group cursor-default">
 					<div
-						class="bg-black border border-white/10 rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden shadow-2xl group-hover:border-[#01B2FF]/30 transition-colors duration-500"
+						class="skeu-card rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
 						<!-- Database icon -->
 						<svg
@@ -376,7 +383,7 @@
 				<!-- Card 3: Open Source -->
 				<div class="flex flex-col group cursor-default">
 					<div
-						class="bg-black border border-white/10 rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden shadow-2xl group-hover:border-[#01B2FF]/30 transition-colors duration-500"
+						class="skeu-card rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
 						<!-- Code icon -->
 						<svg
@@ -411,6 +418,86 @@
 		</div>
 	</section>
 
+	<!-- Latest Updates (Blog) -->
+	{#if data.posts.length > 0}
+		<section class="bg-[#0a0a0a] border-t border-white/5 py-24 md:py-32">
+			<div class="max-w-7xl mx-auto px-6">
+				<div class="flex items-end justify-between mb-12 md:mb-16">
+					<h2
+						class="text-3xl md:text-4xl font-semibold text-white tracking-tight"
+						style="font-family: 'Exo 2', sans-serif;"
+					>
+						Latest updates
+					</h2>
+					<a
+						href="/blog"
+						class="text-sm font-medium text-[#01B2FF] hover:text-[#4dd0ff] transition-colors hidden sm:inline-flex items-center gap-1"
+					>
+						View all
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="m9 18 6-6-6-6" />
+						</svg>
+					</a>
+				</div>
+
+				<div class="grid md:grid-cols-3 gap-6 lg:gap-8">
+					{#each data.posts as post}
+						<a href="/blog/{post.slug}" class="blog-card group">
+							<div class="blog-card-image">
+								<img src={post.image} alt="" loading="lazy" />
+							</div>
+							<div class="blog-card-body">
+								<time datetime={post.date} class="text-xs font-medium text-white/40">
+									{formatDate(post.date)}
+								</time>
+								<h3
+									class="text-base font-semibold text-white group-hover:text-[#01B2FF] transition-colors tracking-tight"
+								>
+									{post.title}
+								</h3>
+								<p class="text-sm text-white/50 leading-relaxed line-clamp-2">
+									{post.description}
+								</p>
+							</div>
+						</a>
+					{/each}
+				</div>
+
+				<div class="mt-8 text-center sm:hidden">
+					<a
+						href="/blog"
+						class="text-sm font-medium text-[#01B2FF] hover:text-[#4dd0ff] transition-colors inline-flex items-center gap-1"
+					>
+						View all posts
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="m9 18 6-6-6-6" />
+						</svg>
+					</a>
+				</div>
+			</div>
+		</section>
+	{/if}
+
 	<!-- Final CTA -->
 	<section class="relative overflow-hidden">
 		<div
@@ -440,7 +527,7 @@
 			<div class="flex flex-wrap items-center justify-center gap-3 mb-6">
 				<a
 					href="/app"
-					class="skeu-btn text-sm font-bold px-6 py-3 rounded-full transition-all"
+					class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all"
 				>
 					Try Live
 				</a>
@@ -448,13 +535,13 @@
 					href="https://github.com/dyascj/utsuwa/releases"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="skeu-btn text-sm font-bold px-6 py-3 rounded-full transition-all"
+					class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all"
 				>
 					Download
 				</a>
 				<a
 					href="/docs"
-					class="border border-white/30 text-white hover:bg-white/10 text-sm font-medium px-6 py-3 rounded-full transition-all"
+					class="skeu-btn-glass-outline text-sm font-medium px-6 py-3 rounded-full transition-all"
 				>
 					Docs
 				</a>
@@ -636,5 +723,126 @@
 		box-shadow:
 			inset 0 2px 3px rgba(0, 0, 0, 0.2),
 			0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Glass buttons for blue backgrounds */
+	.skeu-btn-glass {
+		color: #0a0a0a;
+		font-weight: 700;
+		background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 100%);
+		border: 1px solid rgba(255, 255, 255, 0.6);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.8),
+			inset 0 -1px 2px rgba(0, 0, 0, 0.06),
+			0 2px 8px rgba(0, 0, 0, 0.15),
+			0 4px 16px rgba(0, 0, 0, 0.1);
+		text-shadow: none;
+	}
+
+	.skeu-btn-glass:hover {
+		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+		transform: translateY(-1px);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.9),
+			0 0 16px rgba(255, 255, 255, 0.2),
+			0 4px 20px rgba(0, 0, 0, 0.15);
+	}
+
+	.skeu-btn-glass:active {
+		transform: translateY(0);
+		background: linear-gradient(180deg, #e8e8e8 0%, #ddd 100%);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.1),
+			0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	.skeu-btn-glass-outline {
+		color: white;
+		background: rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.15),
+			0 2px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	.skeu-btn-glass-outline:hover {
+		background: rgba(255, 255, 255, 0.18);
+		border-color: rgba(255, 255, 255, 0.4);
+		transform: translateY(-1px);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.2),
+			0 0 12px rgba(255, 255, 255, 0.1),
+			0 4px 16px rgba(0, 0, 0, 0.12);
+	}
+
+	.skeu-btn-glass-outline:active {
+		transform: translateY(0);
+		background: rgba(255, 255, 255, 0.08);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.15),
+			0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Skeuomorphic card */
+	.skeu-card {
+		background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.04),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+			0 4px 16px rgba(0, 0, 0, 0.3),
+			0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	/* Blog cards */
+	.blog-card {
+		display: flex;
+		flex-direction: column;
+		text-decoration: none;
+		border-radius: 1rem;
+		overflow: hidden;
+		background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.04),
+			0 4px 16px rgba(0, 0, 0, 0.3);
+		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.blog-card:hover {
+		border-color: rgba(1, 178, 255, 0.3);
+		transform: translateY(-4px);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.06),
+			0 0 20px rgba(1, 178, 255, 0.15),
+			0 12px 40px rgba(0, 0, 0, 0.3);
+	}
+
+	.blog-card-image {
+		position: relative;
+		aspect-ratio: 16 / 9;
+		overflow: hidden;
+		background: #111;
+	}
+
+	.blog-card-image img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.blog-card:hover .blog-card-image img {
+		transform: scale(1.03);
+	}
+
+	.blog-card-body {
+		padding: 1.25rem 1.5rem 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		flex: 1;
 	}
 </style>
