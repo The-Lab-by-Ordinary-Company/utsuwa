@@ -292,6 +292,278 @@
 			</div>
 		</div>
 	</section>
+
+	<!-- More features grid -->
+	<section class="bg-[#0a0a0a] border-t border-white/5 py-24 md:py-32">
+		<div class="max-w-7xl mx-auto px-6">
+			<h2
+				class="text-3xl md:text-4xl font-semibold text-white text-center mb-16 tracking-tight"
+				style="font-family: 'Exo 2', sans-serif;"
+			>
+				More features
+			</h2>
+
+			<div class="grid md:grid-cols-3 gap-6 lg:gap-8">
+				<!-- Card 1: Desktop Overlay -->
+				<div class="flex flex-col group cursor-default">
+					<div
+						class="bg-black border border-white/10 rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden shadow-2xl group-hover:border-white/20 transition-colors duration-500"
+					>
+						<!-- Monitor icon -->
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="48"
+							height="48"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="text-white/20 group-hover:text-white/30 transition-colors duration-500"
+						>
+							<rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+							<path d="M8 21h8" />
+							<path d="M12 17v4" />
+						</svg>
+					</div>
+					<div class="px-2">
+						<h3
+							class="text-base font-semibold text-white mb-2 text-center md:text-left tracking-tight"
+						>
+							Desktop overlay
+						</h3>
+						<p class="text-sm text-white/50 text-center md:text-left leading-relaxed">
+							Your companion floats on your desktop with a transparent background. Always-on-top,
+							draggable, with global hotkeys.
+						</p>
+					</div>
+				</div>
+
+				<!-- Card 2: Local-First -->
+				<div class="flex flex-col group cursor-default">
+					<div
+						class="bg-black border border-white/10 rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden shadow-2xl group-hover:border-white/20 transition-colors duration-500"
+					>
+						<!-- Database icon -->
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="48"
+							height="48"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="text-white/20 group-hover:text-white/30 transition-colors duration-500"
+						>
+							<ellipse cx="12" cy="5" rx="9" ry="3" />
+							<path d="M3 5V19A9 3 0 0 0 21 19V5" />
+							<path d="M3 12A9 3 0 0 0 21 12" />
+						</svg>
+					</div>
+					<div class="px-2">
+						<h3
+							class="text-base font-semibold text-white mb-2 text-center md:text-left tracking-tight"
+						>
+							Local-first storage
+						</h3>
+						<p class="text-sm text-white/50 text-center md:text-left leading-relaxed">
+							All data stays on your device in IndexedDB. No account required. Export and import
+							save files anytime.
+						</p>
+					</div>
+				</div>
+
+				<!-- Card 3: Open Source -->
+				<div class="flex flex-col group cursor-default">
+					<div
+						class="bg-black border border-white/10 rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden shadow-2xl group-hover:border-white/20 transition-colors duration-500"
+					>
+						<!-- Code icon -->
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="48"
+							height="48"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="text-white/20 group-hover:text-white/30 transition-colors duration-500"
+						>
+							<polyline points="16 18 22 12 16 6" />
+							<polyline points="8 6 2 12 8 18" />
+						</svg>
+					</div>
+					<div class="px-2">
+						<h3
+							class="text-base font-semibold text-white mb-2 text-center md:text-left tracking-tight"
+						>
+							Open source
+						</h3>
+						<p class="text-sm text-white/50 text-center md:text-left leading-relaxed">
+							MIT licensed. Self-host, modify, contribute. Built with SvelteKit, Three.js, and
+							Tauri.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Final CTA -->
+	<section class="relative overflow-hidden">
+		<div
+			class="absolute inset-0 bg-gradient-to-b from-[#f472b6] via-[#ec4899] to-[#db2777]"
+		></div>
+		<div
+			class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent opacity-50"
+		></div>
+
+		<div
+			class="relative z-10 flex flex-col items-center justify-center text-center max-w-7xl mx-auto px-6 py-32 md:py-48"
+		>
+			<!-- App icon -->
+			<div
+				class="w-20 h-20 rounded-2xl bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] shadow-2xl mb-8 flex items-center justify-center ring-1 ring-white/10"
+			>
+				<span class="text-3xl font-bold text-white">器</span>
+			</div>
+
+			<h2
+				class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-8"
+				style="font-family: 'Exo 2', sans-serif;"
+			>
+				Download Utsuwa
+			</h2>
+
+			<div class="flex flex-wrap items-center justify-center gap-3 mb-6">
+				<a
+					href="/app"
+					class="bg-white text-[#0a0a0a] hover:bg-white/90 text-sm font-bold px-6 py-3 rounded-full shadow-xl transition-all hover:scale-[1.02]"
+				>
+					Try Live
+				</a>
+				<a
+					href="https://github.com/dyascj/utsuwa/releases"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="bg-white text-[#0a0a0a] hover:bg-white/90 text-sm font-bold px-6 py-3 rounded-full shadow-xl transition-all hover:scale-[1.02]"
+				>
+					Download
+				</a>
+				<a
+					href="/docs"
+					class="border border-white/30 text-white hover:bg-white/10 text-sm font-medium px-6 py-3 rounded-full transition-all"
+				>
+					Docs
+				</a>
+			</div>
+
+			<p class="text-sm text-white/60 max-w-sm">
+				Desktop app available for macOS 14+ with Apple Silicon. Web app works in any modern
+				browser.
+			</p>
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<footer class="bg-[#171717] border-t border-white/5 pt-20 md:pt-24 overflow-hidden">
+		<div class="max-w-7xl mx-auto px-6 mb-24 md:mb-32">
+			<div
+				class="flex flex-col md:flex-row justify-between items-start gap-16 md:gap-12"
+			>
+				<!-- Logo -->
+				<div class="shrink-0">
+					<span class="text-xl font-semibold text-white tracking-tight">Utsuwa</span>
+				</div>
+
+				<!-- Link columns -->
+				<div class="flex flex-wrap gap-12 sm:gap-24 lg:gap-32">
+					<div class="flex flex-col gap-4 min-w-[120px]">
+						<h3 class="text-xs font-semibold text-white/40 mb-1">Project</h3>
+						<a
+							href="https://github.com/dyascj/utsuwa"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-xs font-medium text-white/80 hover:text-white transition-colors"
+							>GitHub</a
+						>
+						<a
+							href="https://github.com/dyascj/utsuwa/releases"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-xs font-medium text-white/80 hover:text-white transition-colors"
+							>Releases</a
+						>
+						<a
+							href="/docs"
+							class="text-xs font-medium text-white/80 hover:text-white transition-colors"
+							>Docs</a
+						>
+						<a
+							href="/blog"
+							class="text-xs font-medium text-white/80 hover:text-white transition-colors"
+							>Blog</a
+						>
+					</div>
+
+					<div class="flex flex-col gap-4 min-w-[120px]">
+						<h3 class="text-xs font-semibold text-white/40 mb-1">Legal</h3>
+						<a
+							href="https://github.com/dyascj/utsuwa/blob/main/LICENSE"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-xs font-medium text-white/80 hover:text-white transition-colors"
+							>MIT License</a
+						>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Giant typography -->
+		<div
+			class="w-full flex justify-center items-end leading-none select-none pointer-events-none overflow-hidden pb-0"
+		>
+			<h1
+				class="text-[17vw] font-medium tracking-tighter text-white whitespace-nowrap opacity-100 translate-y-[12%]"
+				style="font-family: 'Exo 2', sans-serif;"
+			>
+				Utsuwa
+			</h1>
+		</div>
+
+		<!-- Bottom bar -->
+		<div class="w-full border-t border-white/10 bg-[#171717] relative z-10">
+			<div
+				class="max-w-7xl mx-auto px-6 py-8 md:py-10 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-0"
+			>
+				<div
+					class="text-[11px] text-white/40 font-medium tracking-tight order-2 md:order-1"
+				>
+					&copy; 2025 Utsuwa. Open source under MIT.
+				</div>
+				<div class="flex items-center gap-5 order-1 md:order-2">
+					<a
+						href="https://github.com/dyascj/utsuwa"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-white/60 hover:text-white transition-opacity"
+					>
+						<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"
+							><path
+								d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+							/></svg
+						>
+					</a>
+				</div>
+			</div>
+		</div>
+	</footer>
 </div>
 
 <style>
