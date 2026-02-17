@@ -147,7 +147,7 @@
 				<div
 					class="skeu-card-light rounded-xl aspect-video flex items-center justify-center overflow-hidden"
 				>
-					<div class="text-black/20 text-sm">App screenshot</div>
+					<img src="/landing-page/speaking-shot-1.png" alt="3D avatar speaking in browser" class="w-full h-full object-cover" />
 				</div>
 
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
