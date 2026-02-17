@@ -13,9 +13,9 @@
 	/>
 </svelte:head>
 
-<div class="dark bg-[#0a0a0a] text-white overflow-x-hidden">
+<div class="bg-white text-[#0a0a0a] overflow-x-hidden">
 	<!-- Hero -->
-	<section class="relative min-h-screen bg-gradient-to-b from-[#4dd0ff] via-[#01B2FF] to-[#0a0a0a]">
+	<section class="relative min-h-screen bg-gradient-to-b from-[#4dd0ff] via-[#01B2FF] to-white">
 		<!-- Nav -->
 		<nav class="relative z-10 max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
 			<a href="/" class="flex items-center">
@@ -92,7 +92,7 @@
 
 			<!-- Tagline below screenshot -->
 			<p
-				class="max-w-2xl mt-16 md:mt-24 text-xl md:text-2xl font-semibold text-white tracking-tight text-center"
+				class="max-w-2xl mt-16 md:mt-24 text-xl md:text-2xl font-semibold text-[#1a1a1a] tracking-tight text-center"
 			>
 				A vessel for AI to inhabit. Chat, listen, remember — your companion, your way.
 			</p>
@@ -127,16 +127,16 @@
 
 		<!-- Bottom gradient fade -->
 		<div
-			class="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent pointer-events-none"
+			class="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none"
 		></div>
 	</section>
 
 	<!-- Feature A: Meet your AI companion -->
-	<section id="features" class="bg-[#0a0a0a] border-t border-white/5">
+	<section id="features" class="bg-white border-t border-black/5">
 		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
 			<div class="text-center mb-16 md:mb-24">
 				<h2
-					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight"
+					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-[#1a1a1a] tracking-tight"
 					style="font-family: 'Exo 2', sans-serif;"
 				>
 					Meet your AI companion
@@ -145,9 +145,9 @@
 
 			<div class="grid lg:grid-cols-2 gap-12 items-center">
 				<div
-					class="skeu-card rounded-xl aspect-video flex items-center justify-center overflow-hidden"
+					class="skeu-card-light rounded-xl aspect-video flex items-center justify-center overflow-hidden"
 				>
-					<div class="text-white/20 text-sm">App screenshot</div>
+					<div class="text-black/20 text-sm">App screenshot</div>
 				</div>
 
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
@@ -171,10 +171,10 @@
 						</svg>
 						3D Avatar
 					</div>
-					<h3 class="text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight">
+					<h3 class="text-2xl md:text-3xl font-medium text-[#1a1a1a] mb-4 tracking-tight">
 						Full 3D, right in your browser.
 					</h3>
-					<p class="text-lg text-white/50 leading-relaxed">
+					<p class="text-lg text-black/50 leading-relaxed">
 						Load any VRM avatar model and watch it come to life with idle animations, automatic
 						blinking, and speech-driven lip-sync. Chat responses appear as 3D speech bubbles that
 						track your companion's head position.
@@ -185,11 +185,11 @@
 	</section>
 
 	<!-- Feature B: She remembers -->
-	<section class="bg-[#0a0a0a] border-t border-white/5">
+	<section class="bg-[#f5f7fa] border-t border-black/5">
 		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
 			<div class="text-center mb-16 md:mb-24">
 				<h2
-					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight"
+					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-[#1a1a1a] tracking-tight"
 					style="font-family: 'Exo 2', sans-serif;"
 				>
 					She remembers
@@ -219,10 +219,10 @@
 						</svg>
 						Semantic Memory
 					</div>
-					<h3 class="text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight">
+					<h3 class="text-2xl md:text-3xl font-medium text-[#1a1a1a] mb-4 tracking-tight">
 						Memories that mean something.
 					</h3>
-					<p class="text-lg text-white/50 leading-relaxed">
+					<p class="text-lg text-black/50 leading-relaxed">
 						Your companion builds a web of memories using local AI embeddings. She finds past
 						conversations by meaning, not keywords. Track affection, trust, and mood across 8
 						relationship stages — from Stranger to Soulmate.
@@ -230,20 +230,20 @@
 				</div>
 
 				<div
-					class="rounded-xl bg-[#111] border border-white/10 aspect-video flex items-center justify-center overflow-hidden shadow-2xl order-1 lg:order-2"
+					class="skeu-card-light rounded-xl aspect-video flex items-center justify-center overflow-hidden order-1 lg:order-2"
 				>
-					<div class="text-white/20 text-sm">Memory graph</div>
+					<div class="text-black/20 text-sm">Memory graph</div>
 				</div>
 			</div>
 		</div>
 	</section>
 
 	<!-- Feature C: Your voice, her ears -->
-	<section class="bg-[#0a0a0a] border-t border-white/5">
+	<section class="bg-white border-t border-black/5">
 		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
 			<div class="text-center mb-16 md:mb-24">
 				<h2
-					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight"
+					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-[#1a1a1a] tracking-tight"
 					style="font-family: 'Exo 2', sans-serif;"
 				>
 					Your voice, her ears
@@ -252,9 +252,9 @@
 
 			<div class="grid lg:grid-cols-2 gap-12 items-center">
 				<div
-					class="skeu-card rounded-xl aspect-video flex items-center justify-center overflow-hidden"
+					class="skeu-card-light rounded-xl aspect-video flex items-center justify-center overflow-hidden"
 				>
-					<div class="text-white/20 text-sm">Chat interface</div>
+					<div class="text-black/20 text-sm">Chat interface</div>
 				</div>
 
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
@@ -278,10 +278,10 @@
 						</svg>
 						Multi-Provider
 					</div>
-					<h3 class="text-2xl md:text-3xl font-medium text-white mb-4 tracking-tight">
+					<h3 class="text-2xl md:text-3xl font-medium text-[#1a1a1a] mb-4 tracking-tight">
 						7 LLM providers. Your voice. Her words.
 					</h3>
-					<p class="text-lg text-white/50 leading-relaxed">
+					<p class="text-lg text-black/50 leading-relaxed">
 						Connect OpenAI, Anthropic, Google, DeepSeek, xAI, or run locally with Ollama and LM
 						Studio. Add voice input via Groq Whisper or Web Speech API, and hear her respond with
 						ElevenLabs or OpenAI TTS — complete with lip-sync.
@@ -292,10 +292,10 @@
 	</section>
 
 	<!-- More features grid -->
-	<section class="bg-[#0a0a0a] border-t border-white/5 py-24 md:py-32">
+	<section class="bg-[#f5f7fa] border-t border-black/5 py-24 md:py-32">
 		<div class="max-w-7xl mx-auto px-6">
 			<h2
-				class="text-3xl md:text-4xl font-semibold text-white text-center mb-16 tracking-tight"
+				class="text-3xl md:text-4xl font-semibold text-[#1a1a1a] text-center mb-16 tracking-tight"
 				style="font-family: 'Exo 2', sans-serif;"
 			>
 				More features
@@ -305,7 +305,7 @@
 				<!-- Card 1: Desktop Overlay -->
 				<div class="flex flex-col group cursor-default">
 					<div
-						class="skeu-card rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
+						class="skeu-card-light rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
 						<!-- Monitor icon -->
 						<svg
@@ -318,7 +318,7 @@
 							stroke-width="1"
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							class="text-white/20 group-hover:text-[#01B2FF]/40 transition-colors duration-500"
+							class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500"
 						>
 							<rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
 							<path d="M8 21h8" />
@@ -327,11 +327,11 @@
 					</div>
 					<div class="px-2">
 						<h3
-							class="text-base font-semibold text-white mb-2 text-center md:text-left tracking-tight"
+							class="text-base font-semibold text-[#1a1a1a] mb-2 text-center md:text-left tracking-tight"
 						>
 							Desktop overlay
 						</h3>
-						<p class="text-sm text-white/50 text-center md:text-left leading-relaxed">
+						<p class="text-sm text-black/50 text-center md:text-left leading-relaxed">
 							Your companion floats on your desktop with a transparent background. Always-on-top,
 							draggable, with global hotkeys.
 						</p>
@@ -341,7 +341,7 @@
 				<!-- Card 2: Local-First -->
 				<div class="flex flex-col group cursor-default">
 					<div
-						class="skeu-card rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
+						class="skeu-card-light rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
 						<!-- Database icon -->
 						<svg
@@ -354,7 +354,7 @@
 							stroke-width="1"
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							class="text-white/20 group-hover:text-[#01B2FF]/40 transition-colors duration-500"
+							class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500"
 						>
 							<ellipse cx="12" cy="5" rx="9" ry="3" />
 							<path d="M3 5V19A9 3 0 0 0 21 19V5" />
@@ -363,11 +363,11 @@
 					</div>
 					<div class="px-2">
 						<h3
-							class="text-base font-semibold text-white mb-2 text-center md:text-left tracking-tight"
+							class="text-base font-semibold text-[#1a1a1a] mb-2 text-center md:text-left tracking-tight"
 						>
 							Local-first storage
 						</h3>
-						<p class="text-sm text-white/50 text-center md:text-left leading-relaxed">
+						<p class="text-sm text-black/50 text-center md:text-left leading-relaxed">
 							All data stays on your device in IndexedDB. No account required. Export and import
 							save files anytime.
 						</p>
@@ -377,7 +377,7 @@
 				<!-- Card 3: Open Source -->
 				<div class="flex flex-col group cursor-default">
 					<div
-						class="skeu-card rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
+						class="skeu-card-light rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
 						<!-- Code icon -->
 						<svg
@@ -390,7 +390,7 @@
 							stroke-width="1"
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							class="text-white/20 group-hover:text-[#01B2FF]/40 transition-colors duration-500"
+							class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500"
 						>
 							<polyline points="16 18 22 12 16 6" />
 							<polyline points="8 6 2 12 8 18" />
@@ -398,11 +398,11 @@
 					</div>
 					<div class="px-2">
 						<h3
-							class="text-base font-semibold text-white mb-2 text-center md:text-left tracking-tight"
+							class="text-base font-semibold text-[#1a1a1a] mb-2 text-center md:text-left tracking-tight"
 						>
 							Open source
 						</h3>
-						<p class="text-sm text-white/50 text-center md:text-left leading-relaxed">
+						<p class="text-sm text-black/50 text-center md:text-left leading-relaxed">
 							MIT licensed. Self-host, modify, contribute. Built with SvelteKit, Three.js, and
 							Tauri.
 						</p>
@@ -414,11 +414,11 @@
 
 	<!-- Latest Updates (Blog) -->
 	{#if data.posts.length > 0}
-		<section class="bg-[#0a0a0a] border-t border-white/5 py-24 md:py-32">
+		<section class="bg-white border-t border-black/5 py-24 md:py-32">
 			<div class="max-w-7xl mx-auto px-6">
 				<div class="flex items-end justify-between mb-12 md:mb-16">
 					<h2
-						class="text-3xl md:text-4xl font-semibold text-white tracking-tight"
+						class="text-3xl md:text-4xl font-semibold text-[#1a1a1a] tracking-tight"
 						style="font-family: 'Exo 2', sans-serif;"
 					>
 						Latest updates
@@ -451,15 +451,15 @@
 								<img src={post.image} alt="" loading="lazy" />
 							</div>
 							<div class="blog-card-body">
-								<time datetime={post.date} class="text-xs font-medium text-white/40">
+								<time datetime={post.date} class="text-xs font-medium text-[#01B2FF]">
 									{formatDate(post.date)}
 								</time>
 								<h3
-									class="text-base font-semibold text-white group-hover:text-[#01B2FF] transition-colors tracking-tight"
+									class="text-base font-semibold text-[#1a1a1a] group-hover:text-[#01B2FF] transition-colors tracking-tight"
 								>
 									{post.title}
 								</h3>
-								<p class="text-sm text-white/50 leading-relaxed line-clamp-2">
+								<p class="text-sm text-black/50 leading-relaxed line-clamp-2">
 									{post.description}
 								</p>
 							</div>
@@ -726,15 +726,14 @@
 
 	/* Skeuomorphic badge */
 	.skeu-badge {
-		color: #4dd0ff;
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.15) 0%, rgba(1, 178, 255, 0.08) 100%);
+		color: #0088cc;
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.12) 0%, rgba(1, 178, 255, 0.06) 100%);
 		border: 1px solid rgba(1, 178, 255, 0.25);
 		box-shadow:
-			inset 0 1px 0 rgba(77, 208, 255, 0.2),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-			0 2px 6px rgba(1, 178, 255, 0.12),
-			0 0 10px rgba(1, 178, 255, 0.06);
-		text-shadow: 0 0 8px rgba(1, 178, 255, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 0.6),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+			0 2px 6px rgba(1, 178, 255, 0.1),
+			0 0 10px rgba(1, 178, 255, 0.05);
 	}
 
 	/* Glass buttons for blue backgrounds */
@@ -797,7 +796,7 @@
 			0 1px 2px rgba(0, 0, 0, 0.1);
 	}
 
-	/* Skeuomorphic card */
+	/* Skeuomorphic card (dark) */
 	.skeu-card {
 		background: linear-gradient(180deg, #141414 0%, #0d0d0d 100%);
 		border: 1px solid rgba(255, 255, 255, 0.08);
@@ -806,6 +805,24 @@
 			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
 			0 4px 16px rgba(0, 0, 0, 0.3),
 			0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	/* Skeuomorphic card (light) — Frutiger Aero glass */
+	.skeu-card-light {
+		background: linear-gradient(
+			165deg,
+			rgba(255, 255, 255, 0.9) 0%,
+			rgba(240, 248, 255, 0.7) 50%,
+			rgba(1, 178, 255, 0.06) 100%
+		);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid rgba(1, 178, 255, 0.15);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.8),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+			0 4px 20px rgba(0, 0, 0, 0.08),
+			0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
 	.footer-brand-logo {
@@ -821,7 +838,7 @@
 		filter: brightness(0) invert(1);
 	}
 
-	/* Blog cards — Sims 2000s / Frutiger Aero */
+	/* Blog cards — Sims 2000s / Frutiger Aero (light) */
 	.blog-card {
 		display: flex;
 		flex-direction: column;
@@ -830,18 +847,18 @@
 		overflow: hidden;
 		background: linear-gradient(
 			165deg,
-			rgba(1, 178, 255, 0.12) 0%,
-			rgba(1, 178, 255, 0.04) 40%,
-			rgba(255, 255, 255, 0.03) 100%
+			rgba(255, 255, 255, 0.95) 0%,
+			rgba(240, 248, 255, 0.8) 50%,
+			rgba(1, 178, 255, 0.08) 100%
 		);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
 		border: 1px solid rgba(1, 178, 255, 0.18);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.12),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-			0 4px 20px rgba(0, 0, 0, 0.25),
-			0 0 0 1px rgba(0, 0, 0, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 0.9),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+			0 4px 20px rgba(0, 0, 0, 0.08),
+			0 1px 4px rgba(0, 0, 0, 0.05);
 		transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 		position: relative;
 	}
@@ -856,7 +873,7 @@
 		height: 50%;
 		background: linear-gradient(
 			180deg,
-			rgba(255, 255, 255, 0.08) 0%,
+			rgba(255, 255, 255, 0.6) 0%,
 			transparent 100%
 		);
 		border-radius: 1.25rem 1.25rem 0 0;
@@ -868,17 +885,17 @@
 		border-color: rgba(1, 178, 255, 0.4);
 		transform: translateY(-6px) scale(1.02);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.18),
-			0 0 30px rgba(1, 178, 255, 0.2),
-			0 8px 32px rgba(1, 178, 255, 0.12),
-			0 20px 48px rgba(0, 0, 0, 0.3);
+			inset 0 1px 0 rgba(255, 255, 255, 1),
+			0 0 30px rgba(1, 178, 255, 0.15),
+			0 8px 32px rgba(1, 178, 255, 0.1),
+			0 20px 48px rgba(0, 0, 0, 0.1);
 	}
 
 	.blog-card-image {
 		position: relative;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
-		background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+		background: linear-gradient(135deg, #e8f0f8 0%, #dde8f2 100%);
 		margin: 0.5rem 0.5rem 0;
 		border-radius: 0.875rem;
 	}
