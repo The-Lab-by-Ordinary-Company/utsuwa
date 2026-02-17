@@ -183,10 +183,16 @@
 		opacity: 0.4;
 	}
 
-	.card-author {
-		font-size: inherit;
-		font-weight: inherit;
-		opacity: 0.6;
+	.featured-content .card-author {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	.card-body .card-author {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: rgba(0, 0, 0, 0.4);
 	}
 
 	.featured-content time {
