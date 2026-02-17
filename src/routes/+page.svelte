@@ -547,7 +547,7 @@
 			>
 				<!-- Logo -->
 				<div class="shrink-0">
-					<span class="text-xl font-semibold text-white tracking-tight">Utsuwa</span>
+					<img src="/brand-assets/logo.svg" alt="Utsuwa" class="footer-brand-logo" />
 				</div>
 
 				<!-- Link columns -->
@@ -594,16 +594,15 @@
 			</div>
 		</div>
 
-		<!-- Giant typography -->
+		<!-- Giant logo -->
 		<div
-			class="w-full flex justify-center items-end leading-none select-none pointer-events-none overflow-hidden pb-0"
+			class="w-full flex justify-center items-end select-none pointer-events-none overflow-hidden pb-0"
 		>
-			<h1
-				class="text-[17vw] font-medium tracking-tighter text-white whitespace-nowrap opacity-100 translate-y-[12%]"
-				style="font-family: 'Exo 2', sans-serif;"
-			>
-				Utsuwa
-			</h1>
+			<img
+				src="/brand-assets/logo.svg"
+				alt=""
+				class="footer-giant-logo translate-y-[12%]"
+			/>
 		</div>
 
 		<!-- Bottom bar -->
@@ -614,7 +613,7 @@
 				<div
 					class="text-[11px] text-white/40 font-medium tracking-tight order-2 md:order-1"
 				>
-					&copy; 2025 Utsuwa. Open source under MIT.
+					&copy; 2026 Ordinary Company Group LLC. Open source under MIT.
 				</div>
 				<div class="flex items-center gap-5 order-1 md:order-2">
 					<a
@@ -786,6 +785,19 @@
 			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
 			0 4px 16px rgba(0, 0, 0, 0.3),
 			0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	.footer-brand-logo {
+		height: 1.25rem;
+		width: auto;
+		filter: brightness(0) invert(1);
+	}
+
+	.footer-giant-logo {
+		width: 80vw;
+		max-width: 1200px;
+		height: auto;
+		filter: brightness(0) invert(1);
 	}
 
 	/* Blog cards */
