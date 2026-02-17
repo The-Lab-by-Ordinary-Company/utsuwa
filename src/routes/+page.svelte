@@ -150,7 +150,7 @@
 
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
 					<div
-						class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#01B2FF]/10 border border-[#01B2FF]/20 text-[#4dd0ff] text-xs font-medium mb-6"
+						class="skeu-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -197,7 +197,7 @@
 			<div class="grid lg:grid-cols-2 gap-12 items-center">
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0 order-2 lg:order-1">
 					<div
-						class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#01B2FF]/10 border border-[#01B2FF]/20 text-[#4dd0ff] text-xs font-medium mb-6"
+						class="skeu-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -257,7 +257,7 @@
 
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
 					<div
-						class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#01B2FF]/10 border border-[#01B2FF]/20 text-[#4dd0ff] text-xs font-medium mb-6"
+						class="skeu-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -714,6 +714,19 @@
 		box-shadow:
 			inset 0 2px 3px rgba(0, 0, 0, 0.2),
 			0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Skeuomorphic badge */
+	.skeu-badge {
+		color: #4dd0ff;
+		background: linear-gradient(180deg, rgba(1, 178, 255, 0.15) 0%, rgba(1, 178, 255, 0.08) 100%);
+		border: 1px solid rgba(1, 178, 255, 0.25);
+		box-shadow:
+			inset 0 1px 0 rgba(77, 208, 255, 0.2),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+			0 2px 6px rgba(1, 178, 255, 0.12),
+			0 0 10px rgba(1, 178, 255, 0.06);
+		text-shadow: 0 0 8px rgba(1, 178, 255, 0.3);
 	}
 
 	/* Glass buttons for blue backgrounds */
