@@ -93,7 +93,7 @@ src/
 │   ├── blog/          # Blog post markdown content
 │   └── docs/          # Documentation site markdown content
 ├── routes/
-│   ├── (app)/         # Main application routes
+│   ├── app/           # Main application routes
 │   ├── api/           # API routes
 │   ├── blog/          # Blog routes
 │   ├── docs/          # Documentation site routes

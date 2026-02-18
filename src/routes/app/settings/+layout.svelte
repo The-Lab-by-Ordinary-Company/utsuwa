@@ -5,10 +5,10 @@
 	let { children } = $props();
 
 	const navItems = [
-		{ href: '/settings/persona', label: 'Character', icon: 'persona' },
-		{ href: '/settings/display', label: 'Display', icon: 'monitor' },
-		{ href: '/settings/data', label: 'Data', icon: 'database' },
-		{ href: '/settings/developer', label: 'Developer', icon: 'code' }
+		{ href: '/app/settings/persona', label: 'Character', icon: 'persona' },
+		{ href: '/app/settings/display', label: 'Display', icon: 'monitor' },
+		{ href: '/app/settings/data', label: 'Data', icon: 'database' },
+		{ href: '/app/settings/developer', label: 'Developer', icon: 'code' }
 	];
 
 	const currentIcon = $derived(
@@ -20,7 +20,7 @@
 	<!-- Sidebar -->
 	<aside class="sidebar">
 		<div class="sidebar-header">
-			<a href="/" class="back-button">
+			<a href="/app" class="back-button">
 				<Icon name="chevron-left" size={20} />
 				<span>Back</span>
 			</a>

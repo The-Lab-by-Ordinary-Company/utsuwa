@@ -233,7 +233,7 @@
 	async function triggerEvent(event: typeof testEvents[0]) {
 		debugEventsStore.trigger(event);
 		// Navigate to home to show the event
-		await goto('/');
+		await goto('/app');
 	}
 
 	// Clear all character data

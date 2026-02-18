@@ -8,7 +8,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**Utsuwa is an open-source alternative to Grok Companion.** This is a platform where you can have a virtual AI waifu that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused - your data is stored locally and never leaves your device.
+**Utsuwa is an open-source AI companion with 3D VRM avatars.** A platform where you can have a virtual companion that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused — your data is stored locally and never leaves your device.
 
 "Utsuwa" means "vessel" in Japanese - a container for AI to inhabit visually.
 
@@ -97,7 +97,7 @@ Voice input is accessed via the microphone button in the chat bar. Groq STT uses
 
 ### Try it Online
 
-Use Utsuwa directly at **[utsuwa.ai](https://utsuwa.ai)** — no installation required. Or download the macOS desktop app from [GitHub Releases](https://github.com/dyascj/utsuwa/releases).
+Use Utsuwa directly at **[utsuwa.ai](https://utsuwa.ai)** — no installation required. Or download the macOS desktop app from [GitHub Releases](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases).
 
 ### Self-Hosting
 
@@ -113,7 +113,7 @@ If you prefer to run Utsuwa locally or host your own instance:
 
 ```bash
 # Clone the repository
-git clone https://github.com/dyascj/utsuwa.git
+git clone https://github.com/The-Lab-by-Ordinary-Company/utsuwa.git
 cd utsuwa
 
 # Install dependencies
@@ -187,7 +187,7 @@ utsuwa/
 │   │   ├── blog/           # Blog post markdown content
 │   │   └── docs/           # Documentation site markdown content
 │   └── routes/
-│       ├── (app)/          # Main application routes
+│       ├── app/            # Main application routes
 │       ├── api/            # API routes
 │       ├── blog/           # Blog routes
 │       ├── docs/           # Documentation site routes

@@ -67,7 +67,7 @@
 
 		<!-- Links -->
 		<div class="link-tiles">
-			<a href="https://github.com/dyascj/utsuwa" target="_blank" rel="noopener" class="link-tile" style="--delay: 0; --tile-color: #333; --tile-glow: rgba(0, 0, 0, 0.2)">
+			<a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa" target="_blank" rel="noopener" class="link-tile" style="--delay: 0; --tile-color: #333; --tile-glow: rgba(0, 0, 0, 0.2)">
 				<div class="tile-icon-wrapper">
 					<span class="tile-icon">
 						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

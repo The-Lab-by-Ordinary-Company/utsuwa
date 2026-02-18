@@ -153,7 +153,7 @@
 								<span>{charState.currentStreak}</span>
 							</div>
 						{/if}
-						<a href="/settings/persona" class="quick-stat profile-link">
+						<a href="/app/settings/persona" class="quick-stat profile-link">
 							<span>Profile</span>
 							<Icon name="arrow-right" size={11} />
 						</a>

@@ -246,12 +246,13 @@ src/
 │   ├── types/             # TypeScript types
 │   └── utils/             # Utility functions
 ├── routes/
-│   ├── (app)/             # Main app and settings routes
+│   ├── app/               # Main app and settings routes
 │   ├── blog/              # Blog pages
 │   ├── docs/              # Documentation site
 │   └── overlay/           # Desktop overlay route
 └── content/
-    └── docs/              # Markdown documentation
+    ├── blog/              # Blog post markdown content
+    └── docs/              # Documentation site markdown
 ```
 
 ## Key Interactions

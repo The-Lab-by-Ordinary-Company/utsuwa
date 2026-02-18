@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Utsuwa",
-  "version": "0.2.4",
+  "version": "0.2.3",
   "identifier": "com.utsuwa.app",
   "build": {
     "beforeBuildCommand": "npm run build",
@@ -55,7 +55,7 @@
     "macOS": {
       "minimumSystemVersion": "10.15",
       "entitlements": null,
-      "signingIdentity": "-"
+      "signingIdentity": null
     },
     "windows": {
       "wix": null,

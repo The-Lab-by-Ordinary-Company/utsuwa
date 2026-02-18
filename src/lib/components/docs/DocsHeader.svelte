@@ -59,7 +59,7 @@
 			<Icon name="download" size={14} />
 			Download
 		</a>
-		<a href="/" class="try-live-btn">Try Live</a>
+		<a href="/app" class="try-live-btn">Try Live</a>
 	</div>
 </header>
 

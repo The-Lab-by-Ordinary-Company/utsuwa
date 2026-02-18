@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Icon from '$lib/components/ui/Icon.svelte';
 	import '$lib/styles/prose.css';
 	import { formatDate } from '$lib/utils/format-date';
 	import { SITE_URL } from '$lib/config/site';
@@ -24,36 +23,33 @@
 	{#if data.metadata?.description}
 		<meta property="og:description" content={data.metadata.description} />
 	{/if}
-	{#if data.metadata?.image}
-		<meta property="og:image" content={data.metadata.image} />
-	{/if}
+	<meta property="og:image" content={data.metadata?.image ? `${SITE_URL}${data.metadata.image}` : `${SITE_URL}/brand-assets/thumbnail.png`} />
 	<meta property="og:url" content={`${SITE_URL}/blog/${data.slug}`} />
+	<meta property="og:site_name" content="Utsuwa" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content={data.metadata?.title || 'Blog'} />
 	{#if data.metadata?.description}
 		<meta name="twitter:description" content={data.metadata.description} />
 	{/if}
-	{#if data.metadata?.image}
-		<meta name="twitter:image" content={data.metadata.image} />
-	{/if}
+	<meta name="twitter:image" content={data.metadata?.image ? `${SITE_URL}${data.metadata.image}` : `${SITE_URL}/brand-assets/thumbnail.png`} />
 	<link rel="canonical" href={`${SITE_URL}/blog/${data.slug}`} />
 	{@html `<script type="application/ld+json">${JSON.stringify({
 		'@context': 'https://schema.org',
 		'@type': 'BlogPosting',
 		headline: data.metadata?.title,
 		description: data.metadata?.description,
-		image: data.metadata?.image ? `${SITE_URL}${data.metadata.image}` : undefined,
+		image: data.metadata?.image ? `${SITE_URL}${data.metadata.image}` : `${SITE_URL}/brand-assets/thumbnail.png`,
 		datePublished: data.metadata?.date,
 		url: `${SITE_URL}/blog/${data.slug}`,
 		author: {
 			'@type': 'Organization',
 			name: 'Utsuwa',
-			url: '${SITE_URL}'
+			url: SITE_URL
 		},
 		publisher: {
 			'@type': 'Organization',
 			name: 'Utsuwa',
-			url: '${SITE_URL}'
+			url: SITE_URL
 		}
 	})}</script>`}
 	{@html '<style>html { scroll-padding-top: 6rem; }</style>'}
@@ -61,7 +57,7 @@
 
 <div class="blog-post-wrapper">
 	<a href="/blog" class="back-link">
-		<Icon name="chevron-left" size={14} />
+		<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
 		<span>Back to Blog</span>
 	</a>
 
@@ -72,11 +68,14 @@
 	{/if}
 
 	<article class="blog-post prose">
-		{#if data.metadata?.date}
-			<time class="blog-post-date" datetime={String(data.metadata.date)}
-				>{formatDate(data.metadata.date)}</time
-			>
-		{/if}
+		<div class="blog-post-meta">
+			{#if data.metadata?.date}
+				<time class="blog-post-date" datetime={String(data.metadata.date)}
+					>{formatDate(data.metadata.date)}</time
+				>
+			{/if}
+			<span class="blog-post-author">Charles J. (CJ) Dyas</span>
+		</div>
 		<data.content />
 	</article>
 </div>
@@ -93,28 +92,25 @@
 		gap: 0.375rem;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--docs-text-muted);
+		color: rgba(0, 0, 0, 0.5);
 		text-decoration: none;
 		padding: 0.5rem 1rem;
 		border-radius: 0.625rem;
 		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 		margin-bottom: 1.25rem;
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
+		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+		border: 1px solid rgba(0, 0, 0, 0.08);
 		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 -1px 1px var(--docs-inner-shadow) inset,
+			inset 0 1px 0 rgba(255, 255, 255, 0.8),
 			0 2px 4px rgba(0, 0, 0, 0.06);
 	}
 
 	.back-link:hover {
-		color: var(--docs-accent);
-		background: var(--docs-surface-solid);
-		border-color: var(--docs-accent);
+		color: #01B2FF;
+		border-color: rgba(1, 178, 255, 0.3);
 		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 -1px 1px var(--docs-inner-shadow) inset,
-			0 0 12px var(--docs-glow),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9),
+			0 0 12px rgba(1, 178, 255, 0.12),
 			0 2px 8px rgba(0, 0, 0, 0.08);
 		transform: translateY(-1px);
 	}
@@ -122,17 +118,17 @@
 	.back-link:active {
 		transform: translateY(0);
 		box-shadow:
-			0 1px 3px var(--docs-inner-shadow) inset,
-			0 0 8px var(--docs-glow);
+			inset 0 2px 4px rgba(0, 0, 0, 0.06),
+			0 0 8px rgba(1, 178, 255, 0.08);
 	}
 
 	.blog-banner {
 		border-radius: 1rem;
 		overflow: hidden;
 		margin-bottom: 2rem;
-		border: 1px solid var(--docs-glass-border);
+		border: 1px solid rgba(0, 0, 0, 0.08);
 		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
+			inset 0 1px 0 rgba(255, 255, 255, 0.8),
 			0 4px 16px rgba(0, 0, 0, 0.08);
 	}
 
@@ -143,11 +139,28 @@
 		object-fit: cover;
 	}
 
+	.blog-post-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+	}
+
 	.blog-post-date {
-		display: block;
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: var(--docs-accent);
-		margin-bottom: 0.5rem;
+		color: #01B2FF;
+	}
+
+	.blog-post-meta .blog-post-date::after {
+		content: '\00b7';
+		margin-left: 0.5rem;
+		color: rgba(0, 0, 0, 0.25);
+	}
+
+	.blog-post-author {
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: rgba(0, 0, 0, 0.5);
 	}
 </style>

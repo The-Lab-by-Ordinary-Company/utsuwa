@@ -7,7 +7,7 @@ description: What is Utsuwa and how to get started.
 
 ## TL;DR
 
-- An open-source VRM avatar companion app — an alternative to Grok Companion
+- An open-source VRM avatar companion app
 - Load a VRM model, connect any LLM provider, and bring your AI companion to life
 - Voice, memory, and a relationship system built in
 - Local-first — your data stays on your device

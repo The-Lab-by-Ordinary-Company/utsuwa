@@ -206,7 +206,7 @@ This often means something loaded out of order:
 
 If your issue isn't covered here:
 
-1. Check the [GitHub Issues](https://github.com/dyascj/utsuwa/issues) for similar problems
+1. Check the [GitHub Issues](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/issues) for similar problems
 2. Open a new issue with:
    - App version (web or desktop) and browser if web
    - Steps to reproduce
