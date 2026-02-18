@@ -2,7 +2,7 @@
 title: Starting the Project
 description: Why I started building Utsuwa, an open-source VRM avatar companion as an alternative to closed platforms.
 date: '2026-01-24'
-image: /blog/blog-thumbnail.png
+image: /blog/project-start-gif.gif
 tag: DevLog
 ---
 
