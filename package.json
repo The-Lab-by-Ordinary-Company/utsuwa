@@ -3,19 +3,19 @@
 	"version": "0.2.4",
 	"packageManager": "pnpm@10.28.2",
 	"description": "An open-source VRM avatar companion app with AI chat, voice, memory, and relationship mechanics",
-	"author": "Charles Dyas",
+	"author": "Ordinary Company Group LLC",
 	"license": "MIT",
 	"engines": {
 		"node": ">=22.0.0"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/dyascj/utsuwa.git"
+		"url": "git+https://github.com/The-Lab-by-Ordinary-Company/utsuwa.git"
 	},
 	"bugs": {
-		"url": "https://github.com/dyascj/utsuwa/issues"
+		"url": "https://github.com/The-Lab-by-Ordinary-Company/utsuwa/issues"
 	},
-	"homepage": "https://github.com/dyascj/utsuwa#readme",
+	"homepage": "https://github.com/The-Lab-by-Ordinary-Company/utsuwa#readme",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
