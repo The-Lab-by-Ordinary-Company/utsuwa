@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { formatDate } from '$lib/utils/format-date';
+	import { SITE_URL } from '$lib/config/site';
 
 	let { data }: { data: PageData } = $props();
 
@@ -9,11 +10,17 @@
 </script>
 
 <svelte:head>
-	<title>Blog - Utsuwa</title>
+	<title>Blog — Utsuwa | Development Updates & AI Companion News</title>
 	<meta
 		name="description"
-		content="Development updates and behind-the-scenes notes from building Utsuwa."
+		content="Development updates, release notes, and behind-the-scenes notes from building Utsuwa — the open-source AI companion with 3D VRM avatars."
 	/>
+	<link rel="canonical" href={`${SITE_URL}/blog`} />
+	<meta property="og:type" content="website" />
+	<meta property="og:title" content="Blog — Utsuwa" />
+	<meta property="og:description" content="Development updates, release notes, and behind-the-scenes notes from building Utsuwa." />
+	<meta property="og:url" content={`${SITE_URL}/blog`} />
+	<meta property="og:site_name" content="Utsuwa" />
 </svelte:head>
 
 <div class="blog-index">
@@ -23,7 +30,7 @@
 	{#if featuredPost}
 		<a href="/blog/{featuredPost.slug}" class="featured-card">
 			<div class="featured-image-wrap">
-				<img src={featuredPost.image} alt="" class="featured-image" />
+				<img src={featuredPost.image} alt={featuredPost.title} class="featured-image" />
 			</div>
 			<div class="featured-shine"></div>
 			<div class="featured-overlay"></div>
@@ -43,7 +50,7 @@
 			{#each restPosts as post}
 				<a href="/blog/{post.slug}" class="blog-card">
 					<div class="card-image">
-						<img src={post.image} alt="" loading="lazy" />
+						<img src={post.image} alt={post.title} loading="lazy" />
 					</div>
 					<div class="card-body">
 						<div class="card-meta">

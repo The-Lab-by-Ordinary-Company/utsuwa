@@ -1,19 +1,59 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { formatDate } from '$lib/utils/format-date';
+	import { SITE_URL } from '$lib/config/site';
+	import Icon from '$lib/components/ui/Icon.svelte';
 
 	let { data }: { data: PageData } = $props();
 </script>
 
 <svelte:head>
-	<title>Utsuwa — Your AI Companion</title>
+	<title>Utsuwa — Open-Source AI Companion with 3D VRM Avatars</title>
 	<meta
 		name="description"
-		content="Open-source VRM avatar viewer with AI chat, voice, and semantic memory. Self-hosted, privacy-first."
+		content="Open-source AI companion with 3D VRM avatars, voice chat, semantic memory, and support for OpenAI, Anthropic, Google, and local LLMs. Desktop app and web. Self-hosted, privacy-first."
 	/>
+	<link rel="canonical" href={SITE_URL} />
+
+	<!-- Open Graph -->
+	<meta property="og:type" content="website" />
+	<meta property="og:title" content="Utsuwa — Open-Source AI Companion with 3D VRM Avatars" />
+	<meta property="og:description" content="Open-source AI companion with 3D VRM avatars, voice chat, semantic memory, and support for OpenAI, Anthropic, Google, and local LLMs. Desktop app and web. Self-hosted, privacy-first." />
+	<meta property="og:image" content={`${SITE_URL}/brand-assets/thumbnail.png`} />
+	<meta property="og:url" content={SITE_URL} />
+	<meta property="og:site_name" content="Utsuwa" />
+
+	<!-- Twitter Card -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="Utsuwa — Open-Source AI Companion with 3D VRM Avatars" />
+	<meta name="twitter:description" content="Open-source AI companion with 3D VRM avatars, voice chat, semantic memory, and support for OpenAI, Anthropic, Google, and local LLMs." />
+	<meta name="twitter:image" content={`${SITE_URL}/brand-assets/thumbnail.png`} />
+
+	<!-- Structured Data -->
+	{@html `<script type="application/ld+json">${JSON.stringify({
+		'@context': 'https://schema.org',
+		'@type': 'SoftwareApplication',
+		name: 'Utsuwa',
+		description: 'Open-source AI companion with 3D VRM avatars, voice chat, semantic memory, and multi-provider LLM support.',
+		url: SITE_URL,
+		applicationCategory: 'DesktopApplication',
+		operatingSystem: 'macOS, Web',
+		offers: {
+			'@type': 'Offer',
+			price: '0',
+			priceCurrency: 'USD'
+		},
+		license: 'https://opensource.org/licenses/MIT',
+		author: {
+			'@type': 'Organization',
+			name: 'Ordinary Company Group LLC',
+			url: SITE_URL
+		}
+	})}</script>`}
 </svelte:head>
 
 <div class="bg-white text-[#0a0a0a] overflow-x-hidden">
+<main>
 	<!-- Hero -->
 	<section class="relative min-h-screen bg-gradient-to-b from-[#4dd0ff] via-[#01B2FF] to-white">
 		<!-- Nav -->
@@ -46,10 +86,11 @@
 
 		<!-- Hero content -->
 		<div class="relative z-10 flex flex-col items-center justify-center mt-16 px-6">
+			<h1 class="sr-only">Utsuwa — Open-Source AI Companion with 3D VRM Avatars</h1>
 			<!-- Logo -->
 			<img
 				src="/brand-assets/logo.svg"
-				alt="Utsuwa"
+				alt="Utsuwa — AI companion app"
 				class="hero-logo mb-6"
 			/>
 
@@ -84,7 +125,7 @@
 				<div class="rounded-xl overflow-hidden shadow-2xl border border-white/10">
 					<img
 						src="/landing-page/utsuwa-thumbnail.png"
-						alt="Utsuwa app screenshot"
+						alt="Utsuwa desktop app showing a 3D VRM avatar companion with chat interface"
 						class="w-full h-auto"
 					/>
 				</div>
@@ -147,7 +188,7 @@
 				<div
 					class="skeu-card-light rounded-xl aspect-[4/3] flex items-center justify-center overflow-hidden p-4"
 				>
-					<img src="/landing-page/speaking-shot-1.png" alt="3D avatar speaking in browser" class="w-full h-full object-contain rounded-lg" />
+					<img src="/landing-page/speaking-shot-1.png" alt="3D VRM avatar with speech bubble and lip-sync animation" class="w-full h-full object-contain rounded-lg" />
 				</div>
 
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
@@ -172,7 +213,7 @@
 						3D Avatar
 					</div>
 					<h3 class="text-2xl md:text-3xl font-medium text-[#1a1a1a] mb-4 tracking-tight">
-						Full 3D, right in your browser.
+						Full 3D avatars, anywhere.
 					</h3>
 					<p class="text-lg text-black/50 leading-relaxed">
 						Load any VRM avatar model and watch it come to life with idle animations, automatic
@@ -232,13 +273,13 @@
 				<div
 					class="skeu-card-light rounded-xl aspect-[4/3] flex items-center justify-center overflow-hidden p-4 order-1 lg:order-2"
 				>
-					<img src="/landing-page/memory-graph.png" alt="Semantic memory graph visualization" class="w-full h-full object-contain rounded-lg" />
+					<img src="/landing-page/memory-graph.png" alt="Semantic memory graph showing AI companion relationship and conversation history" class="w-full h-full object-contain rounded-lg" />
 				</div>
 			</div>
 		</div>
 	</section>
 
-	<!-- Feature C: Your voice, her ears -->
+	<!-- Feature C: You're in control -->
 	<section class="bg-white border-t border-black/5">
 		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
 			<div class="text-center mb-16 md:mb-24">
@@ -246,7 +287,7 @@
 					class="text-4xl md:text-5xl lg:text-6xl font-semibold text-[#1a1a1a] tracking-tight"
 					style="font-family: 'Exo 2', sans-serif;"
 				>
-					Your voice, her ears
+					You're in control
 				</h2>
 			</div>
 
@@ -254,37 +295,23 @@
 				<div
 					class="skeu-card-light rounded-xl aspect-[4/3] flex items-center justify-center overflow-hidden p-4"
 				>
-					<img src="/landing-page/ai-services.png" alt="AI service provider settings" class="w-full h-full object-contain rounded-lg" />
+					<img src="/landing-page/ai-services.png" alt="Settings panel showing LLM provider options including OpenAI, Anthropic, and Ollama" class="w-full h-full object-contain rounded-lg" />
 				</div>
 
 				<div class="flex flex-col items-start max-w-lg mx-auto lg:mx-0">
 					<div
 						class="skeu-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="12"
-							height="12"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M12 19v3" />
-							<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-							<rect x="9" y="2" width="6" height="13" rx="3" />
-						</svg>
-						Multi-Provider
+						<Icon name="settings" size={12} />
+						Bring Your Own Keys
 					</div>
 					<h3 class="text-2xl md:text-3xl font-medium text-[#1a1a1a] mb-4 tracking-tight">
-						7 LLM providers. Your voice. Her words.
+						Pick your providers. Use your keys.
 					</h3>
 					<p class="text-lg text-black/50 leading-relaxed">
-						Connect OpenAI, Anthropic, Google, DeepSeek, xAI, or run locally with Ollama and LM
-						Studio. Add voice input via Groq Whisper or Web Speech API, and hear her respond with
-						ElevenLabs or OpenAI TTS — complete with lip-sync.
+						Choose from OpenAI, Anthropic, Google, DeepSeek, xAI, or run locally with Ollama and LM
+						Studio. Add voice input via Groq Whisper or Web Speech API, and pick your TTS with
+						ElevenLabs or OpenAI — all with your own API keys.
 					</p>
 				</div>
 			</div>
@@ -307,23 +334,7 @@
 					<div
 						class="skeu-card-light rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
-						<!-- Monitor icon -->
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="48"
-							height="48"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500"
-						>
-							<rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-							<path d="M8 21h8" />
-							<path d="M12 17v4" />
-						</svg>
+						<Icon name="monitor" size={48} class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500" />
 					</div>
 					<div class="px-2">
 						<h3
@@ -343,23 +354,7 @@
 					<div
 						class="skeu-card-light rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
-						<!-- Database icon -->
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="48"
-							height="48"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500"
-						>
-							<ellipse cx="12" cy="5" rx="9" ry="3" />
-							<path d="M3 5V19A9 3 0 0 0 21 19V5" />
-							<path d="M3 12A9 3 0 0 0 21 12" />
-						</svg>
+						<Icon name="database" size={48} class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500" />
 					</div>
 					<div class="px-2">
 						<h3
@@ -379,22 +374,7 @@
 					<div
 						class="skeu-card-light rounded-2xl aspect-[16/10] mb-6 flex items-center justify-center relative overflow-hidden group-hover:border-[#01B2FF]/30 transition-all duration-500"
 					>
-						<!-- Code icon -->
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="48"
-							height="48"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500"
-						>
-							<polyline points="16 18 22 12 16 6" />
-							<polyline points="8 6 2 12 8 18" />
-						</svg>
+						<Icon name="code" size={48} class="text-black/15 group-hover:text-[#01B2FF]/50 transition-colors duration-500" />
 					</div>
 					<div class="px-2">
 						<h3
@@ -448,7 +428,7 @@
 					{#each data.posts as post}
 						<a href="/blog/{post.slug}" class="blog-card group">
 							<div class="blog-card-image">
-								<img src={post.image} alt="" loading="lazy" />
+								<img src={post.image} alt={post.title} loading="lazy" />
 							</div>
 							<div class="blog-card-body">
 								<div class="flex items-center gap-1.5 text-xs font-medium">
@@ -544,6 +524,8 @@
 			</p>
 		</div>
 	</section>
+
+	</main>
 
 	<!-- Footer -->
 	<footer class="bg-[#f5f7fa] border-t border-black/5 pt-20 md:pt-24 overflow-hidden">
