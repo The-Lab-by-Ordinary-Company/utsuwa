@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-05-29
+
+### Fixed
+- Fixed browser-based Ollama and LM Studio local model discovery by fetching installed local models from the user's device instead of relying on typed/default model names.
+- Fixed Ollama `model not found` confusion by requiring users to select an installed model from the discovered model dropdown.
+- Improved Ollama hosted-site CORS troubleshooting with origin-specific `OLLAMA_ORIGINS` guidance and a link to Ollama's official web origins FAQ.
+- Fixed local development route rendering hangs caused by the Shiki highlighter bundle used in SvelteKit routes.
+
+### Changed
+- Updated local LLM onboarding and settings to use discovered local models for Ollama and LM Studio.
+- Updated local LLM setup and troubleshooting documentation.
+- Removed the stale local LLM blog article.
+
 ## [Unreleased] - Desktop App
 
 ### Added
