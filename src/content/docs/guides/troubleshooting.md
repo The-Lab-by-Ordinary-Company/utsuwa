@@ -203,7 +203,7 @@ For local LLMs, the browser connects directly to your local server:
 1. **Ollama running** - Start it with `ollama serve`
 2. **LM Studio running** - Load a model and click Start Server
 3. **Correct base URL** - Use `http://localhost:11434` for Ollama or `http://localhost:1234/v1` for LM Studio
-4. **Hosted website CORS** - For Ollama on `https://utsuwa.ai`, start Ollama with `OLLAMA_ORIGINS=https://utsuwa.ai ollama serve`
+4. **Hosted website CORS** - For Ollama on `https://www.utsuwa.ai`, start Ollama with `OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve`. For Vercel previews, use the exact preview origin from the address bar, such as `OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve`.
 5. **Installed model** - If you see `model not found`, run `ollama list`, pull or load a model, refresh the dropdown, and select an installed model
 
 ### "Page not found" after deployment

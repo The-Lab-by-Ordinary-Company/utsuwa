@@ -30,6 +30,10 @@ const MODEL_FILTERS: Record<string, RegExp> = {
 	google: /^gemini-/
 };
 
+function getCurrentSiteOrigin(): string | undefined {
+	return typeof window !== 'undefined' ? window.location.origin : undefined;
+}
+
 function normalizeModelName(id: string, providerId: string): string {
 	let name = id;
 	if (providerId === 'google' && name.startsWith('models/')) {
@@ -166,7 +170,7 @@ export async function fetchModelsDirect(
 	} catch (error) {
 		const message =
 			isLocalLLMProvider(providerId)
-				? getLocalProviderConnectionHint(providerId, cleanBaseUrl)
+				? getLocalProviderConnectionHint(providerId, cleanBaseUrl, getCurrentSiteOrigin())
 				: error instanceof Error ? error.message : 'Unknown error';
 		return { models: [], error: message };
 	}

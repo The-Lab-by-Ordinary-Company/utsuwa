@@ -33,5 +33,13 @@ test('normalizes LM Studio root URL to OpenAI-compatible v1 URL', () => {
 
 test('provides local provider troubleshooting hints', () => {
 	assert.match(getLocalProviderConnectionHint('ollama', 'http://localhost:11434'), /ollama serve/);
+	assert.match(
+		getLocalProviderConnectionHint(
+			'ollama',
+			'http://localhost:11434',
+			'https://utsuwa-git-fix-ollama-local-provider.vercel.app'
+		),
+		/OLLAMA_ORIGINS="https:\/\/utsuwa-git-fix-ollama-local-provider\.vercel\.app"/
+	);
 	assert.match(getLocalProviderConnectionHint('lmstudio', 'http://localhost:1234/v1'), /Start Server/);
 });

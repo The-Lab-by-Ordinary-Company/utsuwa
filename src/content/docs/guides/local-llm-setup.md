@@ -63,10 +63,16 @@ If the dropdown is empty, check your installed Ollama models with:
 ollama list
 ```
 
-If you are using the hosted website at `https://utsuwa.ai`, your browser connects directly to Ollama on your machine. Start Ollama with an allowed origin:
+If you are using the hosted website at `https://www.utsuwa.ai`, your browser connects directly to Ollama on your machine. Start Ollama with the Utsuwa origin allowed:
 
 ```bash
-OLLAMA_ORIGINS=https://utsuwa.ai ollama serve
+OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve
+```
+
+If you are testing a Vercel preview, use the exact preview origin shown in the browser address bar, without the trailing slash:
+
+```bash
+OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve
 ```
 
 For local development, use:
@@ -136,7 +142,13 @@ The LLM server may not be running or your browser may not be allowed to access i
 If you are using the hosted website with Ollama, restart Ollama with:
 
 ```bash
-OLLAMA_ORIGINS=https://utsuwa.ai ollama serve
+OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve
+```
+
+For a Vercel preview, use the exact preview origin:
+
+```bash
+OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve
 ```
 
 Then click the refresh icon in Utsuwa's model dropdown.
@@ -176,9 +188,15 @@ Make sure the URL in Utsuwa matches the port your server is using.
 If you're running Utsuwa in a browser and getting CORS errors with Ollama, set the origins environment variable before starting the server:
 
 ```bash
-OLLAMA_ORIGINS=https://utsuwa.ai ollama serve
+OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve
 ```
 
-Use `OLLAMA_ORIGINS=http://localhost:5173` for local development, or `OLLAMA_ORIGINS=*` only if you intentionally want to allow any browser origin on your machine.
+For Vercel previews, replace the value with the exact preview origin from the browser address bar:
+
+```bash
+OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve
+```
+
+If you use multiple Utsuwa origins, comma-separate them. Use `OLLAMA_ORIGINS=http://localhost:5173` for local development, or `OLLAMA_ORIGINS=*` only if you intentionally want to allow any browser origin on your machine.
 
 This isn't needed when using the desktop app.

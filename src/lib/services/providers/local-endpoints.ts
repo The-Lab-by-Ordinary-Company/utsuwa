@@ -46,11 +46,18 @@ export function getChatBaseUrl(providerId: string, baseUrl?: string): string {
 	return cleanUrl;
 }
 
-export function getLocalProviderConnectionHint(providerId: string, baseUrl?: string): string {
+export function getLocalProviderConnectionHint(
+	providerId: string,
+	baseUrl?: string,
+	siteOrigin?: string
+): string {
 	const chatBaseUrl = getChatBaseUrl(providerId, baseUrl);
 
 	if (providerId === 'ollama') {
-		return `Could not reach Ollama at ${chatBaseUrl}. Make sure Ollama is running with "ollama serve", the model is pulled with "ollama pull <model>", and browser users allow this site's origin with OLLAMA_ORIGINS.`;
+		const originHint = siteOrigin
+			? ` For this site, restart Ollama with OLLAMA_ORIGINS="${siteOrigin}" ollama serve.`
+			: ` Set OLLAMA_ORIGINS to this site's origin before starting Ollama.`;
+		return `Could not reach Ollama at ${chatBaseUrl}. Make sure Ollama is running with "ollama serve", the model is pulled with "ollama pull <model>", and browser users allow this site's origin with OLLAMA_ORIGINS.${originHint}`;
 	}
 
 	if (providerId === 'lmstudio') {

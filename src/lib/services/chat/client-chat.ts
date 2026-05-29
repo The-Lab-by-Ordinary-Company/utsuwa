@@ -30,6 +30,10 @@ const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
 	lmstudio: 'http://localhost:1234/v1/'
 };
 
+function getCurrentSiteOrigin(): string | undefined {
+	return typeof window !== 'undefined' ? window.location.origin : undefined;
+}
+
 /**
  * Stream chat completions directly from provider APIs.
  * Used for local providers and Tauri builds where SvelteKit server routes aren't available.
@@ -147,7 +151,9 @@ export async function streamChatDirect(
 		onDone();
 	} catch (err) {
 		const rawMessage = err instanceof Error ? err.message : 'Failed to connect to provider';
-		const msg = isLocal ? getLocalProviderConnectionHint(provider, providerBaseURL) : rawMessage;
+		const msg = isLocal
+			? getLocalProviderConnectionHint(provider, providerBaseURL, getCurrentSiteOrigin())
+			: rawMessage;
 		onError(msg);
 	}
 }
