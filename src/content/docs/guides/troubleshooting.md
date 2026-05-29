@@ -92,6 +92,18 @@ If the idle animation or expressions aren't working:
 2. **Check VRMA support** - Ensure your model supports VRM animations
 3. **Refresh the page** - Sometimes a reload fixes animation issues
 
+### Local dev page loads but the scene or controls are stuck
+
+If you are developing locally and the `/app` page renders but the model never appears, controls do not respond, or the console shows `Outdated Optimize Dep` or failed dynamic imports, clear Vite's local caches and restart the dev server:
+
+```bash
+rm -rf node_modules/.vite .svelte-kit
+pnpm exec svelte-kit sync
+pnpm exec vite dev --force --host localhost --port 5173
+```
+
+After the page reloads, complete or dismiss the first-run onboarding modal before testing the Settings, Info, or stats controls. The onboarding modal intentionally sits above the scene until setup is finished.
+
 ## Text-to-Speech Issues
 
 ### No audio output
@@ -185,6 +197,14 @@ These usually indicate network problems:
 2. **Verify API endpoint** - Some providers may be down
 3. **CORS issues** - If self-hosting, check CORS configuration
 4. **Firewall/proxy** - Corporate networks may block API calls
+
+For local LLMs, the browser connects directly to your local server:
+
+1. **Ollama running** - Start it with `ollama serve`
+2. **LM Studio running** - Load a model and click Start Server
+3. **Correct base URL** - Use `http://localhost:11434` for Ollama or `http://localhost:1234/v1` for LM Studio
+4. **Hosted website CORS** - For Ollama on `https://utsuwa.ai`, start Ollama with `OLLAMA_ORIGINS=https://utsuwa.ai ollama serve`
+5. **Installed model** - If you see `model not found`, run `ollama list`, pull or load a model, refresh the dropdown, and select an installed model
 
 ### "Page not found" after deployment
 

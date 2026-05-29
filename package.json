@@ -26,7 +26,7 @@
 		"lint": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"test": "echo \"No tests configured\" && exit 0"
+		"test": "node --test --experimental-strip-types \"src/**/*.test.ts\""
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.0",

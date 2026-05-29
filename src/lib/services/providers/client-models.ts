@@ -1,4 +1,9 @@
 import type { LLMProvider } from '$lib/types';
+import {
+	getLocalProviderConnectionHint,
+	getModelsBaseUrl,
+	isLocalLLMProvider
+} from './local-endpoints';
 
 interface ModelInfo {
 	id: string;
@@ -52,7 +57,10 @@ export async function fetchModelsDirect(
 	apiKey?: string,
 	baseUrl?: string
 ): Promise<{ models: ModelInfo[]; error?: string }> {
-	const cleanBaseUrl = (baseUrl || DEFAULT_BASE_URLS[providerId] || '').replace(/\/+$/, '');
+	const cleanBaseUrl =
+		providerId === 'ollama' || providerId === 'lmstudio'
+			? getModelsBaseUrl(providerId, baseUrl)
+			: (baseUrl || DEFAULT_BASE_URLS[providerId] || '').replace(/\/+$/, '');
 
 	try {
 		let models: ModelInfo[] = [];
@@ -156,7 +164,10 @@ export async function fetchModelsDirect(
 		const filtered = filter ? models.filter((m) => filter.test(m.id)) : models;
 		return { models: filtered };
 	} catch (error) {
-		const message = error instanceof Error ? error.message : 'Unknown error';
+		const message =
+			isLocalLLMProvider(providerId)
+				? getLocalProviderConnectionHint(providerId, cleanBaseUrl)
+				: error instanceof Error ? error.message : 'Unknown error';
 		return { models: [], error: message };
 	}
 }

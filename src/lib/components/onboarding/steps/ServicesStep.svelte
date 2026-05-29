@@ -26,6 +26,7 @@
 	let llmIsLoading = $state(false);
 	let llmFetchError = $state<string | null>(null);
 	let llmDynamicModels = $state<ModelInfo[] | null>(null);
+	let lastLocalLLMFetchKey = $state('');
 
 	// Use dynamic models if available, otherwise static
 	const llmModels = $derived(llmDynamicModels ?? staticLLMModels);
@@ -65,7 +66,10 @@
 		if (!llmSettings.activeProvider) return false;
 		const provider = getLLMProvider(llmSettings.activeProvider as string);
 		if (!provider) return false;
-		if (provider.isLocal) return true;
+		if (provider.isLocal) {
+			const activeModel = llmSettings.activeModel as string;
+			return !!activeModel && llmModels.some((model) => model.id === activeModel);
+		}
 		if (!provider.requiresApiKey) return true;
 		const config = settingsStore.getProviderConfig(provider.id);
 		return !!config.apiKey;
@@ -91,19 +95,23 @@
 			onSuccess: (models) => {
 				llmIsLoading = false;
 				llmDynamicModels = models;
-				// Auto-select first model if none selected
-				if (!llmSettings.activeModel && models.length > 0) {
+				const currentModel = llmSettings.activeModel as string;
+				const modelExists = models.some((m) => m.id === currentModel);
+				if (!currentModel || !modelExists) {
 					modulesStore.setModuleSetting('consciousness', 'activeModel', models[0].id);
 				}
 			},
-			onError: () => {
+			onError: (error) => {
 				llmIsLoading = false;
-				llmFetchError = 'Using default list';
-				llmDynamicModels = null;
+				llmFetchError = error ?? 'Could not fetch installed models';
+				llmDynamicModels = llmProvider?.isLocal ? [] : null;
 			},
 			onEmpty: () => {
 				llmIsLoading = false;
-				llmDynamicModels = null;
+				llmFetchError = llmProvider?.isLocal
+					? 'No installed models found. Pull a model, then refresh.'
+					: null;
+				llmDynamicModels = llmProvider?.isLocal ? [] : null;
 			},
 			onStale: () => {
 				llmIsLoading = false;
@@ -155,6 +163,21 @@
 	const debouncedFetchLLMModels = debounce(fetchLLMModels, 300);
 	const debouncedFetchTTSModels = debounce(fetchTTSModels, 300);
 
+	$effect(() => {
+		if (!llmProvider?.isLocal) {
+			lastLocalLLMFetchKey = '';
+			return;
+		}
+
+		const baseUrl = settingsStore.getProviderConfig(llmProvider.id).baseUrl ?? llmProvider.defaultBaseUrl ?? '';
+		const fetchKey = `${llmProvider.id}:${baseUrl}`;
+
+		if (fetchKey !== lastLocalLLMFetchKey) {
+			lastLocalLLMFetchKey = fetchKey;
+			debouncedFetchLLMModels();
+		}
+	});
+
 	// Handlers
 	function handleLLMProviderChange(providerId: string) {
 		modulesStore.setModuleSetting('consciousness', 'activeProvider', providerId);
@@ -171,7 +194,7 @@
 			llmDynamicModels = cached;
 		}
 
-		if (provider?.models?.length) {
+		if (provider && !provider.isLocal && provider.models?.length) {
 			modulesStore.setModuleSetting('consciousness', 'activeModel', provider.models[0].id);
 		}
 		// Mark local providers as added immediately (they don't need API keys)
@@ -204,6 +227,7 @@
 	function handleLLMBaseUrlChange(baseUrl: string) {
 		if (llmProvider) {
 			settingsStore.setProviderConfig(llmProvider.id, { baseUrl });
+			llmFetchError = null;
 		}
 	}
 
@@ -306,7 +330,7 @@
 			/>
 		{/if}
 
-		{#if llmSettings.activeProvider && !llmProvider?.isLocal}
+		{#if llmSettings.activeProvider}
 			<ModelDropdown
 				models={llmModels}
 				value={llmSettings.activeModel as string}
@@ -319,14 +343,11 @@
 			/>
 		{/if}
 
-		{#if llmProvider?.isLocal}
-			<input
-				type="text"
-				class="api-key-input"
-				placeholder="Model name (e.g., llama3.2:latest)"
-				value={llmSettings.activeModel as string ?? ''}
-				oninput={(e) => handleLLMModelChange(e.currentTarget.value)}
-			/>
+		{#if llmProvider?.isLocal && llmFetchError}
+			<p class="provider-note error">
+				<Icon name="alert-circle" size={14} />
+				{llmFetchError}
+			</p>
 		{/if}
 
 		{#if llmProvider?.isLocal}
@@ -336,6 +357,7 @@
 				placeholder={llmProvider.defaultBaseUrl || 'http://localhost:11434/v1/'}
 				value={settingsStore.getProviderConfig(llmProvider.id).baseUrl ?? ''}
 				oninput={(e) => handleLLMBaseUrlChange(e.currentTarget.value)}
+				onblur={fetchLLMModels}
 			/>
 			<p class="provider-note">
 				<Icon name="check-circle" size={14} />
@@ -679,6 +701,10 @@
 		margin: 0;
 		font-size: 0.75rem;
 		color: var(--color-success);
+	}
+
+	.provider-note.error {
+		color: var(--color-error);
 	}
 
 	.skip-note {

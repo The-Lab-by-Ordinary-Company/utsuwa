@@ -36,7 +36,7 @@ export interface FetchModelsOptions {
 	getCurrentProviderId: () => string | undefined;
 	onStart: () => void;
 	onSuccess: (models: ModelInfo[]) => void;
-	onError: () => void;
+	onError: (error?: string) => void;
 	onEmpty: () => void;
 	onStale: () => void;
 }
@@ -58,7 +58,7 @@ export async function fetchModels(options: FetchModelsOptions): Promise<void> {
 		onStale
 	} = options;
 
-	if (!providerId || isLocal || !apiKey) return;
+	if (!providerId || (!isLocal && !apiKey)) return;
 
 	onStart();
 
@@ -71,7 +71,7 @@ export async function fetchModels(options: FetchModelsOptions): Promise<void> {
 	}
 
 	if (result.error) {
-		onError();
+		onError(result.error);
 	} else if (result.models.length > 0) {
 		settingsStore.setCachedModels(providerId, result.models);
 		onSuccess(result.models);

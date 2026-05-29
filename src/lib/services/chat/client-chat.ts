@@ -1,4 +1,9 @@
 import type { LLMProvider } from '$lib/types';
+import {
+	getChatBaseUrl,
+	getLocalProviderConnectionHint,
+	isLocalLLMProvider
+} from '$lib/services/providers/local-endpoints';
 
 interface ChatMessage {
 	role: 'system' | 'user' | 'assistant';
@@ -25,11 +30,9 @@ const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
 	lmstudio: 'http://localhost:1234/v1/'
 };
 
-const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
-
 /**
  * Stream chat completions directly from provider APIs.
- * Used in Tauri builds where SvelteKit server routes aren't available.
+ * Used for local providers and Tauri builds where SvelteKit server routes aren't available.
  */
 export async function streamChatDirect(
 	options: ChatOptions,
@@ -39,13 +42,15 @@ export async function streamChatDirect(
 ): Promise<void> {
 	const { messages, provider, model, apiKey, baseURL, systemPrompt } = options;
 
-	const isLocal = LOCAL_PROVIDERS.includes(provider);
+	const isLocal = isLocalLLMProvider(provider);
 	if (!apiKey && !isLocal) {
 		onError('API key required');
 		return;
 	}
 
-	const providerBaseURL = baseURL || PROVIDER_BASE_URLS[provider];
+	const providerBaseURL = isLocal
+		? getChatBaseUrl(provider, baseURL)
+		: baseURL || PROVIDER_BASE_URLS[provider];
 	if (!providerBaseURL) {
 		onError(`Unknown provider: ${provider}`);
 		return;
@@ -96,7 +101,7 @@ export async function streamChatDirect(
 			const msg =
 				(errorData as { error?: { message?: string } })?.error?.message ||
 				`Provider error (${response.status})`;
-			onError(msg);
+			onError(isLocal && response.status === 404 ? `${msg}. Pull or select an installed model.` : msg);
 			return;
 		}
 
@@ -141,7 +146,8 @@ export async function streamChatDirect(
 
 		onDone();
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : 'Failed to connect to provider';
+		const rawMessage = err instanceof Error ? err.message : 'Failed to connect to provider';
+		const msg = isLocal ? getLocalProviderConnectionHint(provider, providerBaseURL) : rawMessage;
 		onError(msg);
 	}
 }

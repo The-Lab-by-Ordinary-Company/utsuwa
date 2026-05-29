@@ -66,7 +66,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.x.ai/v1/'
 	},
-	// Local LLM - keep example models as hints
+	// Local LLMs discover installed models from the user's running local server.
 	{
 		id: 'ollama',
 		name: 'Ollama',
@@ -75,14 +75,8 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '🦙',
 		requiresApiKey: false,
 		isLocal: true,
-		defaultBaseUrl: 'http://localhost:11434/v1/',
-		models: [
-			{ id: 'llama3.2', name: 'Llama 3.2' },
-			{ id: 'llama3.1', name: 'Llama 3.1' },
-			{ id: 'mistral', name: 'Mistral' },
-			{ id: 'codellama', name: 'Code Llama' },
-			{ id: 'phi3', name: 'Phi-3' }
-		]
+		defaultBaseUrl: 'http://localhost:11434',
+		models: []
 	},
 	{
 		id: 'lmstudio',
@@ -176,4 +170,3 @@ export function getLLMProvider(id: string): ProviderMetadata | undefined {
 export function getTTSProvider(id: string): ProviderMetadata | undefined {
 	return TTS_PROVIDERS.find((p) => p.id === id);
 }
-

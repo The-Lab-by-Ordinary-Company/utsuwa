@@ -96,6 +96,7 @@
 	let llmIsLoading = $state(false);
 	let llmFetchError = $state<string | null>(null);
 	let llmDynamicModels = $state<ModelInfo[] | null>(null);
+	let lastLocalLLMFetchKey = $state('');
 
 	const staticLLMModels = $derived.by(() => {
 		const providerId = consciousnessSettings.activeProvider as string;
@@ -173,14 +174,17 @@
 					modulesStore.setModuleSetting('consciousness', 'activeModel', models[0].id);
 				}
 			},
-			onError: () => {
+			onError: (error) => {
 				llmIsLoading = false;
-				llmFetchError = 'Using default list';
-				llmDynamicModels = null;
+				llmFetchError = error ?? 'Could not fetch installed models';
+				llmDynamicModels = provider.isLocal ? [] : null;
 			},
 			onEmpty: () => {
 				llmIsLoading = false;
-				llmDynamicModels = null;
+				llmFetchError = provider.isLocal
+					? 'No installed models found. Pull a model, then refresh.'
+					: null;
+				llmDynamicModels = provider.isLocal ? [] : null;
 			},
 			onStale: () => {
 				llmIsLoading = false;
@@ -236,6 +240,23 @@
 	const debouncedFetchLLMModels = debounce(fetchLLMModels, 300);
 	const debouncedFetchTTSModels = debounce(fetchTTSModels, 300);
 
+	$effect(() => {
+		const providerId = consciousnessSettings.activeProvider as string;
+		const provider = providerId ? getLLMProvider(providerId) : null;
+		if (!provider?.isLocal) {
+			lastLocalLLMFetchKey = '';
+			return;
+		}
+
+		const baseUrl = settingsStore.getProviderConfig(provider.id).baseUrl ?? provider.defaultBaseUrl ?? '';
+		const fetchKey = `${provider.id}:${baseUrl}`;
+
+		if (fetchKey !== lastLocalLLMFetchKey) {
+			lastLocalLLMFetchKey = fetchKey;
+			debouncedFetchLLMModels();
+		}
+	});
+
 	// Load form values from store when character is ready
 	$effect(() => {
 		if (characterStore.isReady) {
@@ -268,7 +289,7 @@
 			llmDynamicModels = cached;
 		}
 
-		if (provider?.models?.length) {
+		if (provider && !provider.isLocal && provider.models?.length) {
 			modulesStore.setModuleSetting('consciousness', 'activeModel', provider.models[0].id);
 		}
 		// Mark local providers as added immediately (they don't need API keys)
@@ -279,6 +300,11 @@
 
 	function handleLLMModelChange(modelId: string) {
 		modulesStore.setModuleSetting('consciousness', 'activeModel', modelId);
+	}
+
+	function handleLLMBaseUrlChange(providerId: string, baseUrl: string) {
+		settingsStore.setProviderConfig(providerId, { baseUrl });
+		llmFetchError = null;
 	}
 
 	function handleTTSProviderChange(providerId: string) {
@@ -516,39 +542,35 @@
 
 								{#if consciousnessSettings.activeProvider}
 									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
-									{#if !provider?.isLocal}
-										<ModelDropdown
-											models={llmModels}
-											value={consciousnessSettings.activeModel as string}
-											onSelect={handleLLMModelChange}
-											placeholder="Select model..."
-											isLoading={llmIsLoading}
-											onRefresh={llmHasApiKey ? fetchLLMModels : undefined}
-											disabled={!llmHasApiKey}
-											disabledMessage="Enter API key first"
-										/>
-									{/if}
+									<ModelDropdown
+										models={llmModels}
+										value={consciousnessSettings.activeModel as string}
+										onSelect={handleLLMModelChange}
+										placeholder="Select model..."
+										isLoading={llmIsLoading}
+										onRefresh={llmHasApiKey ? fetchLLMModels : undefined}
+										disabled={!llmHasApiKey}
+										disabledMessage="Enter API key first"
+									/>
 								{/if}
 
 								{#if consciousnessSettings.activeProvider}
 									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
 									{#if provider?.isLocal}
-										<div class="api-key-row">
-											<input
-												type="text"
-												class="api-key-input"
-												placeholder="Model name (e.g., llama3.2:latest)"
-												value={consciousnessSettings.activeModel as string ?? ''}
-												onchange={(e) => handleLLMModelChange(e.currentTarget.value)}
-											/>
-										</div>
+										{#if llmFetchError}
+											<p class="provider-note error">
+												<Icon name="alert-circle" size={14} />
+												{llmFetchError}
+											</p>
+										{/if}
 										<div class="api-key-row">
 											<input
 												type="text"
 												class="api-key-input"
 												placeholder={provider.defaultBaseUrl || 'http://localhost:11434/v1/'}
 												value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
-												onchange={(e) => settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value })}
+												oninput={(e) => handleLLMBaseUrlChange(provider.id, e.currentTarget.value)}
+												onblur={fetchLLMModels}
 											/>
 										</div>
 									{/if}
@@ -2522,6 +2544,19 @@
 	.api-key-row {
 		display: flex;
 		gap: 0.5rem;
+	}
+
+	.provider-note {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		margin: 0;
+		font-size: 0.75rem;
+		color: var(--text-tertiary);
+	}
+
+	.provider-note.error {
+		color: var(--color-error);
 	}
 
 	.api-key-input {

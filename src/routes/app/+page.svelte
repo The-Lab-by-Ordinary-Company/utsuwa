@@ -253,7 +253,9 @@
 			let fullContent = '';
 			const selectedModel = model || providerMeta?.models?.[0]?.id || '';
 
-			if (isTauri()) {
+			const shouldUseDirectChat = isTauri() || !!providerMeta?.isLocal;
+
+			if (shouldUseDirectChat) {
 				await new Promise<void>((resolve, reject) => {
 					streamChatDirect(
 						{

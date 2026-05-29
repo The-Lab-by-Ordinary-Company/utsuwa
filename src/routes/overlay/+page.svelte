@@ -250,8 +250,10 @@
 			let fullContent = '';
 			const selectedModel = model || providerMeta?.models?.[0]?.id || '';
 
-			if (isTauri()) {
-				// Tauri: call provider APIs directly (no server routes in static builds)
+			const shouldUseDirectChat = isTauri() || !!providerMeta?.isLocal;
+
+			if (shouldUseDirectChat) {
+				// Tauri and local providers call provider APIs directly.
 				await new Promise<void>((resolve, reject) => {
 					streamChatDirect(
 						{
@@ -268,7 +270,7 @@
 					);
 				});
 			} else {
-				// Web: use SvelteKit server route
+				// Cloud providers in web builds use the SvelteKit server route.
 				const response = await fetch('/api/chat', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },

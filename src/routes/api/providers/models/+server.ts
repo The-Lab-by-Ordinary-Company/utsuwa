@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
+import { getModelsBaseUrl } from '$lib/services/providers/local-endpoints';
 
 interface ModelInfo {
 	id: string;
@@ -197,7 +198,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			baseUrl || DEFAULT_BASE_URLS[providerId as LLMProvider] || '';
 
 		// Remove trailing slash for consistency
-		const cleanBaseUrl = effectiveBaseUrl.replace(/\/+$/, '');
+		const cleanBaseUrl =
+			providerId === 'ollama' || providerId === 'lmstudio'
+				? getModelsBaseUrl(providerId, effectiveBaseUrl)
+				: effectiveBaseUrl.replace(/\/+$/, '');
 
 		let models: ModelInfo[] = [];
 

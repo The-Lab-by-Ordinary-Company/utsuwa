@@ -88,12 +88,13 @@ function createSettingsStore() {
 	// Provider configuration
 	function setProviderConfig(providerId: string, config: Partial<ProviderConfig>) {
 		const oldApiKey = providerConfigs[providerId]?.apiKey;
+		const oldBaseUrl = providerConfigs[providerId]?.baseUrl;
 		providerConfigs[providerId] = {
 			...providerConfigs[providerId],
 			...config
 		};
-		// Invalidate model cache if API key changed (user may have switched accounts)
-		if (config.apiKey && config.apiKey !== oldApiKey) {
+		// Invalidate model cache if credentials or endpoint changed.
+		if ((config.apiKey && config.apiKey !== oldApiKey) || (config.baseUrl !== undefined && config.baseUrl !== oldBaseUrl)) {
 			delete providerConfigs[providerId].cachedModels;
 			delete providerConfigs[providerId].modelsFetchedAt;
 		}

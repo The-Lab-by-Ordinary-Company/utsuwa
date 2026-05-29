@@ -1,6 +1,7 @@
 import { streamText } from '@xsai/stream-text';
 import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
+import { getChatBaseUrl } from '$lib/services/providers/local-endpoints';
 
 // Provider base URLs
 const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
@@ -49,6 +50,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (typedProvider === 'anthropic') {
 			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS.anthropic;
 			headers['anthropic-dangerous-direct-browser-access'] = 'true';
+		} else if (isLocalProvider) {
+			providerBaseURL = getChatBaseUrl(typedProvider, providerBaseURL);
 		} else {
 			// Use default base URL for provider
 			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS[typedProvider];

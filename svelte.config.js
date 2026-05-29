@@ -3,13 +3,13 @@ import adapterStatic from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { mdsvex } from 'mdsvex';
 import rehypeSlug from 'rehype-slug';
-import { createHighlighter } from 'shiki';
+import { createHighlighter } from 'shiki/bundle/web';
 
 const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 
 const highlighter = await createHighlighter({
 	themes: ['github-light', 'github-dark'],
-	langs: ['javascript', 'typescript', 'bash', 'json', 'svelte', 'html', 'css', 'markdown']
+	langs: ['js', 'ts', 'bash', 'json', 'svelte', 'html', 'css', 'md']
 });
 
 /** @type {import('@sveltejs/kit').Config} */
