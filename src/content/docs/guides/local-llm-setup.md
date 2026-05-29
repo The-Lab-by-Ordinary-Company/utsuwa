@@ -191,6 +191,8 @@ If you're running Utsuwa in a browser and getting CORS errors with Ollama, set t
 OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve
 ```
 
+Ollama documents this under [allowing additional web origins](https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama).
+
 For Vercel previews, replace the value with the exact preview origin from the browser address bar:
 
 ```bash

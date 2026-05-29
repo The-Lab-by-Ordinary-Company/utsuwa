@@ -5,6 +5,9 @@ const DEFAULT_BASE_URLS: Record<string, string> = {
 	lmstudio: 'http://localhost:1234/v1'
 };
 
+const OLLAMA_ORIGINS_DOC_URL =
+	'https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama';
+
 function trimTrailingSlashes(url: string): string {
 	return url.replace(/\/+$/, '');
 }
@@ -57,7 +60,7 @@ export function getLocalProviderConnectionHint(
 		const originHint = siteOrigin
 			? ` For this site, restart Ollama with OLLAMA_ORIGINS="${siteOrigin}" ollama serve.`
 			: ` Set OLLAMA_ORIGINS to this site's origin before starting Ollama.`;
-		return `Could not reach Ollama at ${chatBaseUrl}. Make sure Ollama is running with "ollama serve", the model is pulled with "ollama pull <model>", and browser users allow this site's origin with OLLAMA_ORIGINS.${originHint}`;
+		return `Could not reach Ollama at ${chatBaseUrl}. Make sure Ollama is running with "ollama serve", the model is pulled with "ollama pull <model>", and browser users allow this site's origin with OLLAMA_ORIGINS.${originHint} More help: ${OLLAMA_ORIGINS_DOC_URL}`;
 	}
 
 	if (providerId === 'lmstudio') {
