@@ -19,7 +19,8 @@
 - **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
 - **Chat Interface**: Bottom-centered input bar with streaming responses
 - **Voice Input**: Speech-to-text via Groq (Whisper) or Web Speech API with real-time audio visualization
-- **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, and local options
+- **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, and LM Studio
+- **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
 - **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
@@ -140,10 +141,11 @@ pnpm tauri dev
 #### Configuration
 
 1. Click the **Settings** (gear icon) in the sidebar
-2. Navigate to **LLM Providers** to configure your chat provider:
-   - Select a provider and enter your API key
-   - Or use a local server like Ollama or LM Studio
-3. Navigate to **TTS Providers** to configure text-to-speech (optional):
+2. Navigate to **Settings > Character** to configure your chat provider:
+   - Enable Chat (LLM)
+   - Select a cloud provider and enter your API key
+   - Or select a local server like Ollama or LM Studio and choose an installed model from the discovered model dropdown
+3. Configure text-to-speech in the same settings area (optional):
    - Select a TTS provider
    - Enter your API key
    - Configure voice settings
@@ -233,14 +235,11 @@ pnpm tauri build  # Build desktop app installer
 
 ### In Progress / Planned
 
-- [ ] **Companion Gender System** - Gender selection with male/female specific animations and behaviors
+- [ ] **File, Image, and Video Uploads** - Add support for attaching files, images, and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools
+- [ ] **OpenAI-Compatible Models** - Add a configurable option for OpenAI-compatible model endpoints beyond the currently listed providers
 - [ ] **Multi-provider STT** - Support for additional speech-to-text providers beyond Groq and Web Speech API
-- [ ] **Enhanced User Controls** - More granular control over companion behavior and responses
-- [ ] **Custom Lighting Controls** - Adjust 3D scene lighting, environment, and atmosphere
-- [ ] **LLM-Controlled Expressions** - Dynamic facial animations and emotions driven by LLM responses
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
-- [ ] **Expanded Default Avatars** - More built-in 3D avatar options to choose from
-- [ ] **Photo Mode** - Full-featured photo mode with character posing, lighting adjustments, and high-quality saves
+- [ ] **Windows and Linux Desktop Apps** - Expand desktop builds beyond the current macOS beta
 
 ## Contributing
 
