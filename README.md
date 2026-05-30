@@ -1,5 +1,8 @@
 # Utsuwa (器)
 
+> [!WARNING]
+> Utsuwa and The Lab by Ordinary Company have not minted, launched, endorsed, or authorized any cryptocurrency, token, coin, NFT, or blockchain project. We never will. If you see crypto associated with Utsuwa or The Lab, it is a scam. This repository is the only authentic Utsuwa project repository.
+
 <p align="center">
   <img src="static/brand-assets/read-me-banner.png" alt="Utsuwa Banner" />
 </p>
