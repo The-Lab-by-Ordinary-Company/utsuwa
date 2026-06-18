@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* Drive Tailwind's dark: variant from the .dark class the app toggles,
+   not the OS media query (the theme toggle sets .dark on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* bits-ui compatible theme */
 @theme inline {
 	--color-background: var(--bg-primary);
