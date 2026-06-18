@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { cycleTheme, getIconName, getLabel } from '$lib/config/docs-theme-toggle.svelte';
 	import { GITHUB_RELEASES } from '$lib/config/site';
+	import { localPath, sectionUrl, mainUrl, isSection } from '$lib/config/links';
 
 	interface Props {
 		onToggleSidebar?: () => void;
@@ -33,7 +34,7 @@
 				<Icon name={sidebarOpen ? 'xmark' : 'bars'} size={18} />
 			</button>
 		{/if}
-		<a href="/docs" class="logo desktop-logo">
+		<a href={localPath('docs')} class="logo desktop-logo">
 			<img src="/brand-assets/logo.svg" alt="Utsuwa" class="logo-img" />
 		</a>
 	</div>
@@ -42,13 +43,13 @@
 			<DocsSearch bind:this={searchComponent} id="header-search" />
 		</div>
 	{/if}
-	<a href="/docs" class="logo mobile-logo">
+	<a href={localPath('docs')} class="logo mobile-logo">
 		<img src="/brand-assets/logo.svg" alt="Utsuwa" class="logo-img" />
 	</a>
 	<div class="header-right">
 		<nav class="header-nav">
-			<a href="/docs" class="nav-link" class:active={currentPath.startsWith('/docs')}>Docs</a>
-			<a href="/blog" class="nav-link" class:active={currentPath.startsWith('/blog')}>Blog</a>
+			<a href={localPath('docs')} class="nav-link" class:active={isSection('docs')}>Docs</a>
+			<a href={mainUrl('/blog')} class="nav-link" class:active={currentPath.startsWith('/blog')}>Blog</a>
 		</nav>
 		{#if !hideThemeToggle}
 			<button type="button" class="header-btn" onclick={cycleTheme} aria-label={label} title={label}>
@@ -59,7 +60,7 @@
 			<Icon name="download" size={14} />
 			Download
 		</a>
-		<a href="/app" class="try-live-btn">Try Live</a>
+		<a href={sectionUrl('app')} class="try-live-btn">Try Live</a>
 	</div>
 </header>
 
@@ -106,8 +107,7 @@
 	.logo-img {
 		height: 1.5rem;
 		width: auto;
-		filter: var(--docs-logo-filter, none);
-		drop-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+		filter: var(--docs-logo-filter, none) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 	}
 
 	.header-nav {

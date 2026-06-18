@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { page } from '$app/state';
+	import { localPath } from '$lib/config/links';
 	import type { DocsNavSection } from '$lib/config/docs-nav';
 
 	interface Props {
@@ -17,7 +18,7 @@
 	</div>
 	<ul class="section-items">
 		{#each section.items as item}
-			{@const href = `/docs/${item.slug}`}
+			{@const href = localPath('docs', `/${item.slug}`)}
 			{@const isActive = page.url.pathname === href}
 			<li>
 				<a {href} class="section-link" class:active={isActive} aria-current={isActive ? 'page' : undefined}>

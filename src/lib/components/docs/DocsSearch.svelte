@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { localPath } from '$lib/config/links';
 
 	interface Props {
 		id?: string;
@@ -99,7 +100,10 @@
 		close();
 		// Strip .html extension - Pagefind indexes HTML files but SvelteKit uses clean URLs
 		const cleanUrl = url.replace(/\.html$/, '');
-		goto(cleanUrl);
+		// Pagefind indexes the built /docs/... paths; map them to the host-aware
+		// path so search results land on clean subdomain URLs.
+		const docsPath = cleanUrl.replace(/^\/docs(?=\/|$)/, '');
+		goto(localPath('docs', docsPath));
 	}
 
 	function close() {

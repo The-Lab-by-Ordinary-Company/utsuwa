@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getPrevNext } from '$lib/utils/docs-nav';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { localPath } from '$lib/config/links';
 
 	interface Props {
 		slug: string;
@@ -13,7 +14,7 @@
 
 <nav class="prev-next" aria-label="Page navigation">
 	{#if prev}
-		<a href="/docs/{prev.slug}" class="nav-link prev">
+		<a href={localPath('docs', `/${prev.slug}`)} class="nav-link prev">
 			<Icon name="chevron-left" size={16} />
 			<div class="nav-text">
 				<span class="label">Previous</span>
@@ -25,7 +26,7 @@
 	{/if}
 
 	{#if next}
-		<a href="/docs/{next.slug}" class="nav-link next">
+		<a href={localPath('docs', `/${next.slug}`)} class="nav-link next">
 			<div class="nav-text">
 				<span class="label">Next</span>
 				<span class="title">{next.title}</span>

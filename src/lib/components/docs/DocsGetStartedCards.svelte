@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import { GITHUB_RELEASES } from '$lib/config/site';
+	import { localPath, sectionUrl } from '$lib/config/links';
 </script>
 
 <div class="cards">
@@ -14,12 +15,12 @@
 			No installation required. Runs entirely in your browser — works on desktop and mobile.
 		</p>
 		<div class="card-actions">
-			<a href="https://utsuwa.ai" target="_blank" rel="noopener noreferrer" class="card-btn primary">
+			<a href={sectionUrl('app')} class="card-btn primary">
 				<span>Open App</span>
 				<Icon name="arrow-right" size={14} />
 				<div class="btn-shine"></div>
 			</a>
-			<a href="/docs/guides/web-guide" class="card-link">How to use?</a>
+			<a href={localPath('docs', '/guides/web-guide')} class="card-link">How to use?</a>
 		</div>
 	</div>
 
@@ -38,7 +39,7 @@
 				<Icon name="download" size={14} />
 				<div class="btn-shine"></div>
 			</a>
-			<a href="/docs/guides/desktop-guide" class="card-link">Setup guide</a>
+			<a href={localPath('docs', '/guides/desktop-guide')} class="card-link">Setup guide</a>
 		</div>
 	</div>
 </div>
