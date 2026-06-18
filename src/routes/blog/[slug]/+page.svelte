@@ -92,25 +92,26 @@
 		gap: 0.375rem;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: rgba(0, 0, 0, 0.5);
+		color: var(--docs-text-muted);
 		text-decoration: none;
 		padding: 0.5rem 1rem;
 		border-radius: 0.625rem;
 		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 		margin-bottom: 1.25rem;
-		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
-		border: 1px solid rgba(0, 0, 0, 0.08);
+		background: var(--docs-surface);
+		border: 1px solid var(--docs-border);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.8),
+			inset 0 1px 0 var(--docs-inner-highlight),
 			0 2px 4px rgba(0, 0, 0, 0.06);
 	}
 
 	.back-link:hover {
-		color: #01B2FF;
-		border-color: rgba(1, 178, 255, 0.3);
+		color: var(--docs-accent);
+		border-color: var(--docs-accent);
+		background: var(--docs-surface-solid);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			0 0 12px rgba(1, 178, 255, 0.12),
+			inset 0 1px 0 var(--docs-inner-highlight),
+			0 0 12px var(--docs-glow),
 			0 2px 8px rgba(0, 0, 0, 0.08);
 		transform: translateY(-1px);
 	}
@@ -118,18 +119,18 @@
 	.back-link:active {
 		transform: translateY(0);
 		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.06),
-			0 0 8px rgba(1, 178, 255, 0.08);
+			inset 0 2px 4px var(--docs-inner-shadow),
+			0 0 8px var(--docs-glow);
 	}
 
 	.blog-banner {
 		border-radius: 1rem;
 		overflow: hidden;
 		margin-bottom: 2rem;
-		border: 1px solid rgba(0, 0, 0, 0.08);
+		border: 1px solid var(--docs-glass-border);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.8),
-			0 4px 16px rgba(0, 0, 0, 0.08);
+			inset 0 1px 0 var(--docs-inner-highlight),
+			0 4px 16px rgba(0, 0, 0, 0.12);
 	}
 
 	.blog-banner img {
@@ -149,18 +150,19 @@
 	.blog-post-date {
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: #01B2FF;
+		color: var(--docs-accent);
 	}
 
 	.blog-post-meta .blog-post-date::after {
 		content: '\00b7';
 		margin-left: 0.5rem;
-		color: rgba(0, 0, 0, 0.25);
+		color: var(--docs-text-muted);
+		opacity: 0.6;
 	}
 
 	.blog-post-author {
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: rgba(0, 0, 0, 0.5);
+		color: var(--docs-text-muted);
 	}
 </style>

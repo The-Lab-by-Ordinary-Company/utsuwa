@@ -75,15 +75,19 @@
 	.blog-title {
 		font-size: 2.5rem;
 		font-weight: 700;
-		color: #1a1a1a;
 		margin: 0 0 0.5rem 0;
 		letter-spacing: -0.03em;
 		font-family: 'Exo 2', sans-serif;
+		background: linear-gradient(118deg, var(--docs-text) 45%, var(--docs-accent) 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+		color: var(--docs-text);
 	}
 
 	.blog-subtitle {
 		font-size: 1rem;
-		color: rgba(0, 0, 0, 0.5);
+		color: var(--docs-text-muted);
 		margin: 0 0 2.5rem 0;
 	}
 
@@ -199,7 +203,7 @@
 	.card-body .card-author {
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: rgba(0, 0, 0, 0.4);
+		color: var(--docs-text-muted);
 	}
 
 	.featured-content time {
@@ -225,6 +229,7 @@
 		max-width: 640px;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
@@ -323,31 +328,76 @@
 	.card-body time {
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: #01B2FF;
+		color: var(--docs-accent);
 	}
 
 	.card-body h2 {
 		font-size: 1.125rem;
 		font-weight: 600;
-		color: #1a1a1a;
+		color: var(--docs-text);
 		margin: 0;
 		transition: color 0.15s ease;
 		line-height: 1.4;
 	}
 
 	.blog-card:hover .card-body h2 {
-		color: #01B2FF;
+		color: var(--docs-accent);
 	}
 
 	.card-body p {
 		font-size: 0.8125rem;
-		color: rgba(0, 0, 0, 0.5);
+		color: var(--docs-text-muted);
 		line-height: 1.6;
 		margin: 0;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+
+	/* ===== Dark mode glass ===== */
+	:global(.dark) .featured-card,
+	:global(.dark) .blog-card {
+		background: linear-gradient(
+			165deg,
+			rgba(40, 44, 52, 0.8) 0%,
+			rgba(20, 24, 32, 0.65) 50%,
+			rgba(1, 178, 255, 0.08) 100%
+		);
+		border-color: rgba(1, 178, 255, 0.2);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.08),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+			0 6px 26px rgba(0, 0, 0, 0.4),
+			0 1px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	:global(.dark) .featured-shine,
+	:global(.dark) .blog-card::before {
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+	}
+
+	:global(.dark) .featured-card:hover {
+		border-color: rgba(1, 178, 255, 0.45);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.14),
+			0 0 40px rgba(1, 178, 255, 0.18),
+			0 12px 48px rgba(1, 178, 255, 0.1),
+			0 24px 64px rgba(0, 0, 0, 0.5);
+	}
+
+	:global(.dark) .blog-card:hover {
+		border-color: rgba(1, 178, 255, 0.45);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.14),
+			0 0 30px rgba(1, 178, 255, 0.18),
+			0 8px 32px rgba(1, 178, 255, 0.12),
+			0 20px 48px rgba(0, 0, 0, 0.5);
+	}
+
+	:global(.dark) .card-image {
+		background: linear-gradient(135deg, #1a1f28 0%, #12161d 100%);
 	}
 
 	@media (max-width: 640px) {

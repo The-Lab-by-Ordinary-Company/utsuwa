@@ -1,24 +1,21 @@
 <script lang="ts">
-	import { lightVars, applyVars } from '$lib/config/docs-theme';
+	import { setupThemeWatcher } from '$lib/config/docs-theme';
+	import { cycleTheme, getIconName, getLabel } from '$lib/config/docs-theme-toggle.svelte';
+	import Icon from '$lib/components/ui/Icon.svelte';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { GITHUB_REPO } from '$lib/config/site';
+	import { sectionUrl, isSection } from '$lib/config/links';
 
 	let { children } = $props();
 	let blogEl = $state<HTMLDivElement | null>(null);
 
 	const currentPath = $derived(page.url.pathname);
+	const themeIcon = $derived(getIconName());
+	const themeLabel = $derived(getLabel());
 
-	$effect(() => {
-		const el = blogEl;
-		if (!el || !browser) return;
-		applyVars(el, lightVars);
-		document.documentElement.setAttribute('data-docs-theme', 'light');
-
-		return () => {
-			document.documentElement.removeAttribute('data-docs-theme');
-		};
-	});
+	// Sync with the shared colorMode/.dark toggle (same as the docs).
+	$effect(() => setupThemeWatcher(() => blogEl, browser));
 </script>
 
 <div class="docs blog-site" bind:this={blogEl}>
@@ -29,12 +26,23 @@
 		</a>
 
 		<div class="nav-links">
-			<a href="/docs" class="nav-link" class:active={currentPath.startsWith('/docs')}>Docs</a>
+			<a href={sectionUrl('docs')} class="nav-link" class:active={isSection('docs')}>Docs</a>
 			<a href="/blog" class="nav-link" class:active={currentPath.startsWith('/blog')}>Blog</a>
 			<a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" class="nav-link">GitHub</a>
 		</div>
 
-		<a href="/app" class="nav-cta">Try Live</a>
+		<div class="nav-right">
+			<button
+				type="button"
+				class="nav-theme-btn"
+				onclick={cycleTheme}
+				aria-label={`Theme: ${themeLabel}`}
+				title={themeLabel}
+			>
+				<Icon name={themeIcon} size={16} />
+			</button>
+			<a href={sectionUrl('app')} class="nav-cta">Try Live</a>
+		</div>
 	</nav>
 
 	<main class="blog-main" data-pagefind-body>
@@ -53,7 +61,7 @@
 						<h3>Project</h3>
 						<a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer">GitHub</a>
 						<a href={`${GITHUB_REPO}/releases`} target="_blank" rel="noopener noreferrer">Releases</a>
-						<a href="/docs">Docs</a>
+						<a href={sectionUrl('docs')}>Docs</a>
 						<a href="/blog">Blog</a>
 					</div>
 					<div class="footer-col">
@@ -75,8 +83,11 @@
 <style>
 	.blog-site {
 		min-height: 100vh;
-		background: white;
-		color: #1a1a1a;
+		/* Ambient Frutiger Aero blue glow at the top, over the themed background */
+		background:
+			radial-gradient(62% 32% at 50% 0%, var(--docs-glow) 0%, transparent 70%),
+			var(--docs-bg);
+		color: var(--docs-text);
 		font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	}
 
@@ -99,8 +110,8 @@
 	.nav-logo {
 		height: 1.125rem;
 		width: auto;
-		filter: brightness(0);
-		opacity: 0.8;
+		filter: var(--docs-logo-filter, none);
+		opacity: 0.85;
 	}
 
 	.nav-links {
@@ -111,17 +122,54 @@
 
 	.nav-link {
 		font-size: 0.875rem;
-		color: rgba(0, 0, 0, 0.5);
+		color: var(--docs-text-muted);
 		text-decoration: none;
 		transition: color 0.15s ease;
 	}
 
 	.nav-link:hover {
-		color: #1a1a1a;
+		color: var(--docs-text);
 	}
 
 	.nav-link.active {
-		color: #01B2FF;
+		color: var(--docs-accent);
+	}
+
+	.nav-right {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+	}
+
+	.nav-theme-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 9999px;
+		color: var(--docs-text-muted);
+		background: var(--docs-surface);
+		border: 1px solid var(--docs-border);
+		cursor: pointer;
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 2px 4px rgba(0, 0, 0, 0.05);
+	}
+
+	.nav-theme-btn:hover {
+		color: var(--docs-accent);
+		background: var(--docs-surface-solid);
+		border-color: var(--docs-accent);
+		transform: translateY(-1px);
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 0 12px var(--docs-glow);
+	}
+
+	.nav-theme-btn:active {
+		transform: translateY(0) scale(0.96);
 	}
 
 	.nav-cta {
@@ -131,7 +179,7 @@
 		text-decoration: none;
 		padding: 0.5rem 1rem;
 		border-radius: 9999px;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01b2ff 40%, #0099dd 100%);
+		background: var(--docs-btn-gradient);
 		border: 1px solid rgba(0, 0, 0, 0.1);
 		box-shadow:
 			inset 0 1px 0 rgba(255, 255, 255, 0.3),
@@ -141,7 +189,7 @@
 	}
 
 	.nav-cta:hover {
-		background: linear-gradient(180deg, #5dd8ff 0%, #1abcff 40%, #01a8ee 100%);
+		background: var(--docs-btn-gradient-hover);
 		transform: translateY(-1px);
 		box-shadow:
 			inset 0 1px 0 rgba(255, 255, 255, 0.4),
@@ -158,8 +206,8 @@
 
 	/* Footer */
 	.blog-footer {
-		border-top: 1px solid rgba(0, 0, 0, 0.05);
-		background: #f5f7fa;
+		border-top: 1px solid var(--docs-border);
+		background: var(--docs-bg-solid);
 	}
 
 	.footer-inner {
@@ -178,7 +226,7 @@
 	.footer-brand-logo {
 		height: 1.25rem;
 		width: auto;
-		filter: brightness(0);
+		filter: var(--docs-logo-filter, none);
 		opacity: 0.7;
 	}
 
@@ -197,22 +245,23 @@
 	.footer-col h3 {
 		font-size: 0.6875rem;
 		font-weight: 600;
-		color: rgba(0, 0, 0, 0.35);
+		color: var(--docs-text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		margin: 0 0 0.25rem 0;
+		opacity: 0.7;
 	}
 
 	.footer-col a {
 		font-size: 0.75rem;
 		font-weight: 500;
-		color: rgba(0, 0, 0, 0.6);
+		color: var(--docs-text-muted);
 		text-decoration: none;
 		transition: color 0.15s ease;
 	}
 
 	.footer-col a:hover {
-		color: #01B2FF;
+		color: var(--docs-accent);
 	}
 
 	.footer-bottom {
@@ -222,22 +271,23 @@
 		max-width: 80rem;
 		margin: 0 auto;
 		padding: 1.5rem;
-		border-top: 1px solid rgba(0, 0, 0, 0.06);
+		border-top: 1px solid var(--docs-border);
 	}
 
 	.footer-bottom span {
 		font-size: 0.6875rem;
-		color: rgba(0, 0, 0, 0.35);
+		color: var(--docs-text-muted);
 		font-weight: 500;
+		opacity: 0.8;
 	}
 
 	.footer-bottom a {
-		color: rgba(0, 0, 0, 0.4);
+		color: var(--docs-text-muted);
 		transition: color 0.15s ease;
 	}
 
 	.footer-bottom a:hover {
-		color: #01B2FF;
+		color: var(--docs-accent);
 	}
 
 	@media (max-width: 768px) {
