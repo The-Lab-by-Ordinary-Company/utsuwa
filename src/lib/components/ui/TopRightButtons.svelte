@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Icon } from '$lib/components/ui';
+	import { localPath } from '$lib/config/links';
 	import { isTauri } from '$lib/services/platform';
 	import { onMount } from 'svelte';
 
@@ -39,7 +40,7 @@
 	<button class="icon-btn" onclick={onInfoClick} aria-label="App info">
 		<Icon name="info" size={20} />
 	</button>
-	<button class="icon-btn" onclick={() => goto('/app/settings')} aria-label="Settings">
+	<button class="icon-btn" onclick={() => goto(localPath('app', '/settings'))} aria-label="Settings">
 		<Icon name="settings" size={20} />
 	</button>
 </div>

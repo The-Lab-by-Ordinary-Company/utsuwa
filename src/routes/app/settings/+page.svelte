@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { localPath } from '$lib/config/links';
 
 	onMount(() => {
-		goto('/app/settings/persona', { replaceState: true });
+		goto(localPath('app', '/settings/persona'), { replaceState: true });
 	});
 </script>
 

@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { Icon } from '$lib/components/ui';
+	import { localPath } from '$lib/config/links';
 
 	let { children } = $props();
 
-	const navItems = [
-		{ href: '/app/settings/persona', label: 'Character', icon: 'persona' },
-		{ href: '/app/settings/display', label: 'Display', icon: 'monitor' },
-		{ href: '/app/settings/data', label: 'Data', icon: 'database' },
-		{ href: '/app/settings/developer', label: 'Developer', icon: 'code' }
-	];
+	const navItems = $derived([
+		{ href: localPath('app', '/settings/persona'), label: 'Character', icon: 'persona' },
+		{ href: localPath('app', '/settings/display'), label: 'Display', icon: 'monitor' },
+		{ href: localPath('app', '/settings/data'), label: 'Data', icon: 'database' },
+		{ href: localPath('app', '/settings/developer'), label: 'Developer', icon: 'code' }
+	]);
 
 	const currentIcon = $derived(
 		navItems.find((item) => $page.url.pathname === item.href)?.icon || 'settings'
@@ -20,7 +21,7 @@
 	<!-- Sidebar -->
 	<aside class="sidebar">
 		<div class="sidebar-header">
-			<a href="/app" class="back-button">
+			<a href={localPath('app')} class="back-button">
 				<Icon name="chevron-left" size={20} />
 				<span>Back</span>
 			</a>

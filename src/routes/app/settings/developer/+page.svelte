@@ -6,6 +6,7 @@
 	import localforage from 'localforage';
 	import { debugEventsStore, testEvents } from '$lib/stores/debugEvents.svelte';
 	import { goto } from '$app/navigation';
+	import { localPath } from '$lib/config/links';
 
 	// Material debug modes from @pixiv/three-vrm-materials-mtoon
 	const materialDebugModes = [
@@ -233,7 +234,7 @@
 	async function triggerEvent(event: typeof testEvents[0]) {
 		debugEventsStore.trigger(event);
 		// Navigate to home to show the event
-		await goto('/app');
+		await goto(localPath('app'));
 	}
 
 	// Clear all character data

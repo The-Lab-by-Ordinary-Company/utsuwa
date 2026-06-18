@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { Icon } from '$lib/components/ui';
+	import { localPath } from '$lib/config/links';
 
 	interface Props {
 		overlay?: boolean;
@@ -153,7 +154,7 @@
 								<span>{charState.currentStreak}</span>
 							</div>
 						{/if}
-						<a href="/app/settings/persona" class="quick-stat profile-link">
+						<a href={localPath('app', '/settings/persona')} class="quick-stat profile-link">
 							<span>Profile</span>
 							<Icon name="arrow-right" size={11} />
 						</a>

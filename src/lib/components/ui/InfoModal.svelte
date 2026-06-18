@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
 	import { onMount } from 'svelte';
+	import { sectionUrl } from '$lib/config/links';
 
 	interface Props {
 		onClose: () => void;
@@ -79,7 +80,7 @@
 				<span class="tile-label">GitHub</span>
 				<span class="tile-shine"></span>
 			</a>
-			<a href="/docs" class="link-tile" style="--delay: 1; --tile-color: #01B2FF; --tile-glow: rgba(1, 178, 255, 0.3)">
+			<a href={sectionUrl('docs')} class="link-tile" style="--delay: 1; --tile-color: #01B2FF; --tile-glow: rgba(1, 178, 255, 0.3)">
 				<div class="tile-icon-wrapper">
 					<span class="tile-icon">
 						<Icon name="file-text" size={20} />

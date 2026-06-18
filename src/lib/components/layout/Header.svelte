@@ -2,13 +2,14 @@
 	import { goto } from '$app/navigation';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { Dropdown, DropdownItem, DropdownSeparator, Icon } from '$lib/components/ui';
+	import { localPath } from '$lib/config/links';
 
 	const activeModel = $derived(vrmStore.getActiveModel());
 </script>
 
 <header class="header">
 	<div class="header-left">
-		<a href="/app" class="logo-link">
+		<a href={localPath('app')} class="logo-link">
 			<div class="logo">
 				<svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="6" fill="none" opacity="0.3"/>
@@ -47,15 +48,15 @@
 				<DropdownSeparator />
 
 				<!-- Menu Items -->
-				<DropdownItem onclick={() => goto('/app/settings/vrm')}>
+				<DropdownItem onclick={() => goto(localPath('app', '/settings/vrm'))}>
 					<Icon name="user" size={16} />
 					Change Avatar
 				</DropdownItem>
-				<DropdownItem onclick={() => goto('/app/settings/relationship')}>
+				<DropdownItem onclick={() => goto(localPath('app', '/settings/relationship'))}>
 					<Icon name="heart" size={16} />
 					Relationship
 				</DropdownItem>
-				<DropdownItem onclick={() => goto('/app/settings')}>
+				<DropdownItem onclick={() => goto(localPath('app', '/settings'))}>
 					<Icon name="settings" size={16} />
 					Settings
 				</DropdownItem>
