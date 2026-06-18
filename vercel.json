@@ -1,27 +1,39 @@
 {
+	"rewrites": [
+		{
+			"source": "/:path*",
+			"has": [{ "type": "host", "value": "docs.utsuwa.ai" }],
+			"destination": "/docs/:path*"
+		},
+		{
+			"source": "/:path*",
+			"has": [{ "type": "host", "value": "app.utsuwa.ai" }],
+			"destination": "/app/:path*"
+		}
+	],
 	"redirects": [
 		{
-			"source": "/",
-			"has": [{ "type": "host", "value": "app.utsuwa.ai" }],
-			"destination": "https://utsuwa.ai/app",
+			"source": "/docs",
+			"has": [{ "type": "host", "value": "utsuwa.ai" }],
+			"destination": "https://docs.utsuwa.ai",
 			"permanent": true
 		},
 		{
-			"source": "/:path+",
-			"has": [{ "type": "host", "value": "app.utsuwa.ai" }],
-			"destination": "https://utsuwa.ai/app/:path+",
+			"source": "/docs/:path*",
+			"has": [{ "type": "host", "value": "utsuwa.ai" }],
+			"destination": "https://docs.utsuwa.ai/:path*",
 			"permanent": true
 		},
 		{
-			"source": "/",
-			"has": [{ "type": "host", "value": "docs.utsuwa.ai" }],
-			"destination": "https://utsuwa.ai/docs/overview/introduction",
+			"source": "/app",
+			"has": [{ "type": "host", "value": "utsuwa.ai" }],
+			"destination": "https://app.utsuwa.ai",
 			"permanent": true
 		},
 		{
-			"source": "/:path+",
-			"has": [{ "type": "host", "value": "docs.utsuwa.ai" }],
-			"destination": "https://utsuwa.ai/docs/:path+",
+			"source": "/app/:path*",
+			"has": [{ "type": "host", "value": "utsuwa.ai" }],
+			"destination": "https://app.utsuwa.ai/:path*",
 			"permanent": true
 		}
 	]
