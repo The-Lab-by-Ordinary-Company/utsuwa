@@ -1,14 +1,24 @@
 {
 	"rewrites": [
 		{
-			"source": "/:path*",
+			"source": "/",
 			"has": [{ "type": "host", "value": "docs.utsuwa.ai" }],
-			"destination": "/docs/:path*"
+			"destination": "/docs"
 		},
 		{
-			"source": "/:path*",
+			"source": "/:path+",
+			"has": [{ "type": "host", "value": "docs.utsuwa.ai" }],
+			"destination": "/docs/:path+"
+		},
+		{
+			"source": "/",
 			"has": [{ "type": "host", "value": "app.utsuwa.ai" }],
-			"destination": "/app/:path*"
+			"destination": "/app"
+		},
+		{
+			"source": "/:path+",
+			"has": [{ "type": "host", "value": "app.utsuwa.ai" }],
+			"destination": "/app/:path+"
 		}
 	],
 	"redirects": [

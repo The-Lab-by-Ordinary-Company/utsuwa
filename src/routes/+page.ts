@@ -1,6 +1,9 @@
 import type { PageLoad } from './$types';
 
-export const prerender = true;
+// Not prerendered: the subdomains (docs/app) rewrite their root to /docs and
+// /app, and a static "/" would otherwise win on every host and show the
+// landing page there. SSR keeps "/" host-aware via the reroute hook.
+export const prerender = false;
 
 const modules = import.meta.glob('/src/content/blog/*.md', { eager: true });
 
