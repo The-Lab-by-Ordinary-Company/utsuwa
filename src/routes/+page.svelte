@@ -13,6 +13,20 @@
 	const themeIcon = $derived(getIconName());
 	const themeLabel = $derived(getLabel());
 
+	// Hero video. Starts off so SSR/first paint shows the lightweight poster
+	// (keeps LCP fast), then swaps to the looping clip on the client once we
+	// know motion is allowed. Reduced-motion users keep the still poster.
+	let allowVideo = $state(false);
+	let videoReady = $state(false);
+
+	$effect(() => {
+		const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+		allowVideo = !mq.matches;
+		const sync = () => (allowVideo = !mq.matches);
+		mq.addEventListener('change', sync);
+		return () => mq.removeEventListener('change', sync);
+	});
+
 	// Scroll-reveal action. Fires once when an element enters the viewport,
 	// staggered by an optional delay. Bails out to "always visible" when the
 	// user prefers reduced motion or IntersectionObserver isn't around.
@@ -41,25 +55,85 @@
 		return { destroy: () => obs.disconnect() };
 	}
 
-	// Every provider we actually support today — keep this honest.
-	// `icon` maps to the keys in ProviderIcons' PROVIDER_ICONS map.
-	const providers = [
-		{ name: 'OpenAI', icon: 'openai' },
-		{ name: 'Anthropic', icon: 'anthropic' },
-		{ name: 'Google', icon: 'google' },
-		{ name: 'DeepSeek', icon: 'deepseek' },
-		{ name: 'xAI', icon: 'xai' },
-		{ name: 'Ollama', icon: 'ollama' },
-		{ name: 'LM Studio', icon: 'lmstudio' },
-		{ name: 'Groq Whisper', icon: 'groq' },
-		{ name: 'ElevenLabs', icon: 'elevenlabs' }
+	// Pinned feature showcase: the visual column stays put while the copy
+	// scrolls; each step flips the active screenshot as it crosses the middle
+	// of the viewport.
+	let activeFeature = $state(0);
+
+	function trackStep(node: HTMLElement, index: number) {
+		if (typeof IntersectionObserver === 'undefined') return;
+		const obs = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) activeFeature = index;
+				}
+			},
+			// Collapse the observer root to a line through the viewport's middle.
+			{ rootMargin: '-50% 0px -50% 0px', threshold: 0 }
+		);
+		obs.observe(node);
+		return { destroy: () => obs.disconnect() };
+	}
+
+	const features = [
+		{
+			num: '01',
+			eyebrow: 'Presence',
+			title: 'A real 3D body, not a chat box.',
+			body: "Drop in any VRM model and watch it come to life. Replies appear as 3D speech bubbles that follow your companion's head as it moves, breathes, and looks around.",
+			chips: ['Idle animation', 'Auto-blink', 'Speech lip-sync', 'Head-tracked bubbles'],
+			img: '/landing-page/utsuwa-thumbnail.png',
+			alt: 'Utsuwa desktop app with a 3D VRM avatar companion and chat interface'
+		},
+		{
+			num: '02',
+			eyebrow: 'Memory',
+			title: 'She actually remembers.',
+			body: 'Local AI embeddings weave your conversations into a web of memories she can recall by meaning, not keywords. Affection, trust, and mood shift over time across eight relationship stages — from Stranger to Soulmate.',
+			chips: ['Semantic recall', 'On-device embeddings', '8 relationship stages', 'Mood & trust'],
+			img: '/landing-page/memory-graph.png',
+			alt: 'Semantic memory graph showing AI companion relationship and conversation history'
+		},
+		{
+			num: '03',
+			eyebrow: 'Control',
+			title: 'You own every part of it.',
+			body: 'Run a frontier model or keep it fully offline with Ollama and LM Studio. Mix and match your chat, voice input, and text-to-speech providers — all on your own API keys, with nothing routed through us.',
+			chips: ['Frontier or local', 'Your API keys', 'Swap voices', 'No middleman'],
+			img: '/landing-page/ai-services.png',
+			alt: 'Settings panel showing LLM provider options including OpenAI, Anthropic, and Ollama'
+		}
 	];
 
-	const stats = [
-		{ value: '100%', label: 'Local & private' },
-		{ value: '0', label: 'Accounts required' },
-		{ value: '9+', label: 'AI providers' },
-		{ value: 'MIT', label: 'Open source' }
+	// Bento layout: a flagship hero tile, a few wide tiles, and small tiles for
+	// rhythm. Index-aligned with `bento` below.
+	const bentoLayout = ['hero', 'wide', '', '', 'wide', 'wide'];
+	function bentoGridClass(i: number) {
+		const size = bentoLayout[i];
+		if (size === 'hero') return 'md:col-span-2 lg:col-span-2 lg:row-span-2';
+		if (size === 'wide') return 'md:col-span-2 lg:col-span-2';
+		return '';
+	}
+
+	// Every provider we actually support today — keep this honest.
+	// `icon` maps to the keys in ProviderIcons' PROVIDER_ICONS map; `wm` is a
+	// wide wordmark (light = for light mode, dark = for dark mode). Providers
+	// without a wordmark fall back to the monochrome glyph mark.
+	const WM = '/brand-assets/providers';
+	const providers: {
+		name: string;
+		icon: string;
+		wm: { light: string; dark: string } | null;
+	}[] = [
+		{ name: 'OpenAI', icon: 'openai', wm: { light: `${WM}/openai-wordmark-light.svg`, dark: `${WM}/openai-wordmark-dark.svg` } },
+		{ name: 'Anthropic', icon: 'anthropic', wm: { light: `${WM}/anthropic-wordmark-light.svg`, dark: `${WM}/anthropic-wordmark-dark.svg` } },
+		{ name: 'Google Gemini', icon: 'google', wm: { light: `${WM}/gemini-wordmark-light.svg`, dark: `${WM}/gemini-wordmark-dark.svg` } },
+		{ name: 'DeepSeek', icon: 'deepseek', wm: { light: `${WM}/deepseek-wordmark-light.svg`, dark: `${WM}/deepseek-wordmark-dark.svg` } },
+		{ name: 'xAI', icon: 'xai', wm: { light: `${WM}/grok-wordmark-light.svg`, dark: `${WM}/grok-wordmark-dark.svg` } },
+		{ name: 'Ollama', icon: 'ollama', wm: null },
+		{ name: 'LM Studio', icon: 'lmstudio', wm: null },
+		{ name: 'Groq Whisper', icon: 'groq', wm: { light: `${WM}/groq-wordmark-light.svg`, dark: `${WM}/groq-wordmark-dark.svg` } },
+		{ name: 'ElevenLabs', icon: 'elevenlabs', wm: null }
 	];
 
 	const bento = [
@@ -104,6 +178,9 @@
 	/>
 	<link rel="canonical" href={SITE_URL} />
 
+	<!-- Hero poster doubles as the LCP element; fetch it ahead of the video -->
+	<link rel="preload" as="image" href="/landing-page/hero-poster.jpg" />
+
 	<!-- Open Graph -->
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="Utsuwa — Open-Source AI Companion with 3D VRM Avatars" />
@@ -141,25 +218,41 @@
 	})}</script>`}
 </svelte:head>
 
-<div class="bg-white dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-[#fafafa] overflow-x-hidden">
+<div class="bg-white dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-[#fafafa] overflow-x-clip">
 <main>
 	<!-- Hero -->
-	<section class="hero relative min-h-screen bg-gradient-to-b from-[#4dd0ff] via-[#01B2FF] to-white">
-		<!-- Animated aurora wash -->
-		<div class="hero-aurora pointer-events-none absolute inset-0"></div>
-
-		<!-- Frutiger Aero glass bubbles -->
-		<div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-			<span class="aero-bubble" style="--size:120px; --x:8%;  --y:62%; --dur:13s; --delay:-2s;"></span>
-			<span class="aero-bubble" style="--size:64px;  --x:18%; --y:30%; --dur:17s; --delay:-6s;"></span>
-			<span class="aero-bubble" style="--size:200px; --x:78%; --y:24%; --dur:21s; --delay:-1s;"></span>
-			<span class="aero-bubble" style="--size:90px;  --x:88%; --y:60%; --dur:15s; --delay:-9s;"></span>
-			<span class="aero-bubble" style="--size:44px;  --x:62%; --y:14%; --dur:11s; --delay:-4s;"></span>
-			<span class="aero-bubble" style="--size:150px; --x:40%; --y:78%; --dur:23s; --delay:-12s;"></span>
+	<section class="hero relative min-h-screen flex flex-col bg-white dark:bg-[#0a0a0a]">
+		<!-- Hybrid hero video: full-bleed up top, masked so it dissolves into the gradient below -->
+		<div class="hero-video-wrap pointer-events-none" aria-hidden="true">
+			{#if allowVideo}
+				<video
+					class="hero-video"
+					class:is-ready={videoReady}
+					poster="/landing-page/hero-poster.jpg"
+					autoplay
+					muted
+					loop
+					playsinline
+					preload="auto"
+					onplaying={() => (videoReady = true)}
+				>
+					<source src="/landing-page/hero-loop.webm" type="video/webm" />
+					<source src="/landing-page/hero-loop.mp4" type="video/mp4" />
+				</video>
+			{:else}
+				<img
+					class="hero-video is-ready"
+					src="/landing-page/hero-poster.jpg"
+					alt=""
+					width="1920"
+					height="996"
+				/>
+			{/if}
+			<div class="hero-video-scrim"></div>
 		</div>
 
 		<!-- Nav -->
-		<nav class="relative z-10 max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
+		<nav class="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
 			<a href="/" class="flex items-center">
 				<img src="/brand-assets/logo.svg" alt="Utsuwa" class="nav-logo" />
 			</a>
@@ -198,7 +291,7 @@
 		</nav>
 
 		<!-- Hero content -->
-		<div class="relative z-10 flex flex-col items-center justify-center mt-12 md:mt-16 px-6">
+		<div class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16">
 			<h1 class="sr-only">Utsuwa — Open-Source AI Companion with 3D VRM Avatars</h1>
 
 			<!-- Eyebrow pill -->
@@ -242,146 +335,115 @@
 				</a>
 			</div>
 
-			<!-- Screenshot card -->
-			<div use:reveal={320} class="reveal screenshot-stage max-w-[1067px] w-full mx-auto px-4">
-				<div class="screenshot-frame rounded-xl overflow-hidden">
-					<img
-						src="/landing-page/utsuwa-thumbnail.png"
-						alt="Utsuwa desktop app showing a 3D VRM avatar companion with chat interface"
-						class="w-full h-auto"
-					/>
-				</div>
-			</div>
-
-			<!-- Stat row -->
-			<div use:reveal={120} class="reveal grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-12 mb-12 md:mb-16 w-full max-w-3xl">
-				{#each stats as stat}
-					<div class="stat-tile">
-						<div class="stat-value">{stat.value}</div>
-						<div class="stat-label">{stat.label}</div>
-					</div>
-				{/each}
-			</div>
 		</div>
 
-		<!-- Bottom gradient fade -->
-		<div
-			class="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-[#0a0a0a] dark:via-[#0a0a0a]/80 pointer-events-none"
-		></div>
+		<!-- Bottom fade: video melts through the brand blue into the page background (light + dark) -->
+		<div class="hero-fade" aria-hidden="true"></div>
 	</section>
 
 	<!-- Provider strip -->
-	<section class="bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5">
-		<div class="max-w-5xl mx-auto px-6 py-20 md:py-28 text-center">
+	<section
+		class="bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 py-20 md:py-28 overflow-hidden"
+	>
+		<div class="max-w-5xl mx-auto px-6 text-center mb-12 md:mb-14">
 			<p use:reveal class="reveal eyebrow justify-center mb-5">Bring your own brain</p>
 			<h2
 				use:reveal={60}
-				class="reveal text-2xl md:text-3xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] tracking-tight text-balance mb-10"
+				class="reveal text-2xl md:text-3xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] tracking-tight text-balance"
 				style="font-family: 'Exo 2', sans-serif;"
 			>
 				Plug in any model. Use your own keys.
 			</h2>
-			<div use:reveal={120} class="reveal flex flex-wrap items-center justify-center gap-2.5 md:gap-3">
-				{#each providers as provider}
-					<span class="provider-chip">
-						<ProviderIcons provider={provider.icon} size={18} />
-						{provider.name}
-					</span>
-				{/each}
+		</div>
+
+		<!-- Logo marquee: two identical groups; the duplicate is hidden from AT so
+		     the track loops seamlessly without reading providers twice. -->
+		<div use:reveal={120} class="reveal provider-marquee">
+			<div class="provider-marquee-track">
+				<div class="provider-marquee-group">
+					{#each providers as provider}
+						<span class="provider-logo" role="img" aria-label={provider.name} title={provider.name}>
+							{#if provider.wm}
+								<img class="provider-wordmark wm-light" src={provider.wm.light} alt="" loading="lazy" />
+								<img class="provider-wordmark wm-dark" src={provider.wm.dark} alt="" loading="lazy" />
+							{:else}
+								<ProviderIcons provider={provider.icon} size={30} themed />
+							{/if}
+						</span>
+					{/each}
+				</div>
+				<div class="provider-marquee-group" aria-hidden="true">
+					{#each providers as provider}
+						<span class="provider-logo">
+							{#if provider.wm}
+								<img class="provider-wordmark wm-light" src={provider.wm.light} alt="" loading="lazy" />
+								<img class="provider-wordmark wm-dark" src={provider.wm.dark} alt="" loading="lazy" />
+							{:else}
+								<ProviderIcons provider={provider.icon} size={30} themed />
+							{/if}
+						</span>
+					{/each}
+				</div>
 			</div>
 		</div>
 	</section>
 
-	<!-- Feature A: Presence -->
+	<!-- Features: pinned visual, scrolling copy -->
 	<section id="features" class="bg-[#f5f7fa] dark:bg-[#101013] border-t border-black/5 dark:border-white/5">
 		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
-			<div class="grid lg:grid-cols-2 gap-12 items-center">
-				<div
-					use:reveal
-					class="reveal skeu-card-light rounded-xl aspect-[4/3] flex items-center justify-center overflow-hidden p-4"
-				>
-					<img src="/landing-page/speaking-shot-1.png" alt="3D VRM avatar with speech bubble and lip-sync animation" class="img-outline w-full h-full object-contain rounded-lg" />
-				</div>
-
-				<div use:reveal={120} class="reveal flex flex-col items-start max-w-lg mx-auto lg:mx-0">
-					<p class="eyebrow mb-5"><span class="eyebrow-num">01</span> Presence</p>
-					<h2 class="text-3xl md:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] mb-4 tracking-tight text-balance" style="font-family: 'Exo 2', sans-serif;">
-						A real 3D body, not a chat box.
-					</h2>
-					<p class="text-lg text-black/55 dark:text-white/55 leading-relaxed text-pretty mb-6">
-						Drop in any VRM model and watch it come to life. Replies appear as 3D speech bubbles
-						that follow your companion's head as it moves, breathes, and looks around.
-					</p>
-					<div class="flex flex-wrap gap-2">
-						<span class="feature-chip">Idle animation</span>
-						<span class="feature-chip">Auto-blink</span>
-						<span class="feature-chip">Speech lip-sync</span>
-						<span class="feature-chip">Head-tracked bubbles</span>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<!-- Feature B: Memory -->
-	<section class="bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5">
-		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
-			<div class="grid lg:grid-cols-2 gap-12 items-center">
-				<div use:reveal class="reveal flex flex-col items-start max-w-lg mx-auto lg:mx-0 order-2 lg:order-1">
-					<p class="eyebrow mb-5"><span class="eyebrow-num">02</span> Memory</p>
-					<h2 class="text-3xl md:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] mb-4 tracking-tight text-balance" style="font-family: 'Exo 2', sans-serif;">
-						She actually remembers.
-					</h2>
-					<p class="text-lg text-black/55 dark:text-white/55 leading-relaxed text-pretty mb-6">
-						Local AI embeddings weave your conversations into a web of memories she can recall by
-						meaning, not keywords. Affection, trust, and mood shift over time across eight
-						relationship stages — from Stranger to Soulmate.
-					</p>
-					<div class="flex flex-wrap gap-2">
-						<span class="feature-chip">Semantic recall</span>
-						<span class="feature-chip">On-device embeddings</span>
-						<span class="feature-chip">8 relationship stages</span>
-						<span class="feature-chip">Mood &amp; trust</span>
+			<div class="grid lg:grid-cols-2 gap-12 lg:gap-20">
+				<!-- Pinned visual (lg+): screenshots cross-fade as you scroll the copy -->
+				<div class="hidden lg:block">
+					<div class="feature-sticky">
+						<div class="skeu-card-light rounded-2xl p-4 overflow-hidden">
+							<div class="feature-visual">
+								{#each features as f, i}
+									<img
+										src={f.img}
+										alt={f.alt}
+										loading="lazy"
+										class="img-outline rounded-lg"
+										class:is-active={activeFeature === i}
+									/>
+								{/each}
+							</div>
+						</div>
 					</div>
 				</div>
 
-				<div
-					use:reveal={120}
-					class="reveal skeu-card-light rounded-xl aspect-[4/3] flex items-center justify-center overflow-hidden p-4 order-1 lg:order-2"
-				>
-					<img src="/landing-page/memory-graph.png" alt="Semantic memory graph showing AI companion relationship and conversation history" class="img-outline w-full h-full object-contain rounded-lg" />
-				</div>
-			</div>
-		</div>
-	</section>
+				<!-- Scrolling steps -->
+				<div>
+					{#each features as f, i}
+						<div class="feature-step" class:is-active={activeFeature === i} use:trackStep={i}>
+							<!-- Inline visual on small screens (no sticky) -->
+							<div
+								class="lg:hidden w-full skeu-card-light rounded-2xl p-4 mb-7 aspect-[16/10] flex items-center justify-center overflow-hidden"
+							>
+								<img
+									src={f.img}
+									alt={f.alt}
+									loading="lazy"
+									class="img-outline w-full h-full object-contain rounded-lg"
+								/>
+							</div>
 
-	<!-- Feature C: Control -->
-	<section class="bg-[#f5f7fa] dark:bg-[#101013] border-t border-black/5 dark:border-white/5">
-		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
-			<div class="grid lg:grid-cols-2 gap-12 items-center">
-				<div
-					use:reveal
-					class="reveal skeu-card-light rounded-xl aspect-[4/3] flex items-center justify-center overflow-hidden p-4"
-				>
-					<img src="/landing-page/ai-services.png" alt="Settings panel showing LLM provider options including OpenAI, Anthropic, and Ollama" class="img-outline w-full h-full object-contain rounded-lg" />
-				</div>
-
-				<div use:reveal={120} class="reveal flex flex-col items-start max-w-lg mx-auto lg:mx-0">
-					<p class="eyebrow mb-5"><span class="eyebrow-num">03</span> Control</p>
-					<h2 class="text-3xl md:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] mb-4 tracking-tight text-balance" style="font-family: 'Exo 2', sans-serif;">
-						You own every part of it.
-					</h2>
-					<p class="text-lg text-black/55 dark:text-white/55 leading-relaxed text-pretty mb-6">
-						Run a frontier model or keep it fully offline with Ollama and LM Studio. Mix and match
-						your chat, voice input, and text-to-speech providers — all on your own API keys, with
-						nothing routed through us.
-					</p>
-					<div class="flex flex-wrap gap-2">
-						<span class="feature-chip">Frontier or local</span>
-						<span class="feature-chip">Your API keys</span>
-						<span class="feature-chip">Swap voices</span>
-						<span class="feature-chip">No middleman</span>
-					</div>
+							<p class="eyebrow mb-5"><span class="eyebrow-num">{f.num}</span> {f.eyebrow}</p>
+							<h2
+								class="text-3xl md:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] mb-4 tracking-tight text-balance"
+								style="font-family: 'Exo 2', sans-serif;"
+							>
+								{f.title}
+							</h2>
+							<p class="text-lg text-black/55 dark:text-white/55 leading-relaxed text-pretty mb-6 max-w-lg">
+								{f.body}
+							</p>
+							<div class="flex flex-wrap gap-2">
+								{#each f.chips as chip}
+									<span class="feature-chip">{chip}</span>
+								{/each}
+							</div>
+						</div>
+					{/each}
 				</div>
 			</div>
 		</div>
@@ -401,18 +463,23 @@
 				</h2>
 			</div>
 
-			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+			<div
+				class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 lg:auto-rows-[minmax(190px,1fr)]"
+			>
 				{#each bento as item, i}
-					<div use:reveal={(i % 3) * 90} class="reveal bento-tile">
+					<div
+						use:reveal={(i % 3) * 90}
+						class="reveal bento-tile {bentoGridClass(i)}"
+						class:bento-tile--hero={bentoLayout[i] === 'hero'}
+						class:bento-tile--wide={bentoLayout[i] === 'wide'}
+					>
 						<div class="bento-icon">
-							<Icon name={item.icon} size={22} class="text-white" />
+							<Icon name={item.icon} size={bentoLayout[i] === 'hero' ? 26 : 22} class="text-white" />
 						</div>
-						<h3 class="text-lg font-semibold text-[#1a1a1a] dark:text-[#fafafa] mt-5 mb-2 tracking-tight">
-							{item.title}
-						</h3>
-						<p class="text-sm text-black/55 dark:text-white/55 leading-relaxed text-pretty">
-							{item.body}
-						</p>
+						<div class="bento-text">
+							<h3 class="bento-title">{item.title}</h3>
+							<p class="bento-body">{item.body}</p>
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -503,62 +570,6 @@
 		</section>
 	{/if}
 
-	<!-- Final CTA -->
-	<section class="relative overflow-hidden">
-		<div
-			class="absolute inset-0 bg-gradient-to-b from-[#4dd0ff] via-[#01B2FF] to-[#0077cc]"
-		></div>
-		<div
-			class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent opacity-50"
-		></div>
-		<div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-			<span class="aero-bubble" style="--size:160px; --x:12%; --y:55%; --dur:19s; --delay:-3s;"></span>
-			<span class="aero-bubble" style="--size:80px;  --x:82%; --y:30%; --dur:14s; --delay:-7s;"></span>
-			<span class="aero-bubble" style="--size:50px;  --x:68%; --y:70%; --dur:12s; --delay:-1s;"></span>
-		</div>
-
-		<div
-			class="relative z-10 flex flex-col items-center justify-center text-center max-w-7xl mx-auto px-6 py-32 md:py-48"
-		>
-			<img
-				use:reveal
-				src="/brand-assets/logo.svg"
-				alt="Utsuwa"
-				class="reveal hero-logo mb-5"
-			/>
-			<p use:reveal={80} class="reveal text-lg md:text-xl text-white/85 text-balance max-w-xl mb-8">
-				Open it once and it's yours. No sign-up, no catch.
-			</p>
-			<div use:reveal={160} class="reveal flex flex-wrap items-center justify-center gap-3 mb-6">
-				<a
-					href={sectionUrl('app')}
-					class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all"
-				>
-					Try Live
-				</a>
-				<a
-					href={GITHUB_RELEASES}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all"
-				>
-					Download
-				</a>
-				<a
-					href={sectionUrl('docs')}
-					class="skeu-btn-glass-outline text-sm font-medium px-6 py-3 rounded-full transition-all"
-				>
-					Docs
-				</a>
-			</div>
-
-			<p use:reveal={200} class="reveal text-sm text-white/60 max-w-sm">
-				Desktop app available for macOS 14+ with Apple Silicon. Web app works in any modern
-				browser.
-			</p>
-		</div>
-	</section>
-
 	</main>
 
 	<!-- Footer -->
@@ -614,17 +625,6 @@
 					</div>
 				</div>
 			</div>
-		</div>
-
-		<!-- Giant logo -->
-		<div
-			class="w-full flex justify-center items-end select-none pointer-events-none overflow-hidden pb-0"
-		>
-			<img
-				src="/brand-assets/logo.svg"
-				alt=""
-				class="footer-giant-logo-light translate-y-[12%]"
-			/>
 		</div>
 
 		<!-- Bottom bar -->
@@ -703,61 +703,68 @@
 		filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgba(0, 0, 0, 0.25));
 	}
 
-	/* Animated aurora wash over the hero gradient */
-	.hero-aurora {
-		background:
-			radial-gradient(60% 50% at 20% 20%, rgba(255, 255, 255, 0.5) 0%, transparent 60%),
-			radial-gradient(50% 40% at 85% 15%, rgba(180, 240, 255, 0.55) 0%, transparent 55%),
-			radial-gradient(55% 45% at 70% 70%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
-		opacity: 0.7;
-		animation: auroraDrift 18s ease-in-out infinite alternate;
-		will-change: transform, opacity;
-	}
-
-	@keyframes auroraDrift {
-		0% {
-			transform: translate3d(-3%, -2%, 0) scale(1.05);
-			opacity: 0.55;
-		}
-		100% {
-			transform: translate3d(3%, 2%, 0) scale(1.15);
-			opacity: 0.8;
-		}
-	}
-
-	/* Frutiger Aero glass bubbles */
-	.aero-bubble {
+	/* Full-bleed hero video: fills the whole hero, below the content. The
+	   bottom blend is handled by .hero-fade so it can stay theme-aware. */
+	.hero-video-wrap {
 		position: absolute;
-		left: var(--x);
-		top: var(--y);
-		width: var(--size);
-		height: var(--size);
-		border-radius: 50%;
-		background:
-			radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.25) 22%, transparent 45%),
-			linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(1, 178, 255, 0.12) 100%);
-		box-shadow:
-			inset 0 0 20px rgba(255, 255, 255, 0.45),
-			inset 0 -6px 14px rgba(1, 130, 200, 0.25),
-			0 8px 30px rgba(0, 80, 130, 0.15);
-		backdrop-filter: blur(2px);
-		-webkit-backdrop-filter: blur(2px);
-		animation: floatBubble var(--dur, 16s) ease-in-out var(--delay, 0s) infinite alternate;
-		will-change: transform;
+		inset: 0;
+		overflow: hidden;
 	}
 
-	@keyframes floatBubble {
-		0% {
-			transform: translateY(0) translateX(0) scale(1);
-			opacity: 0.7;
-		}
-		50% {
-			opacity: 0.95;
-		}
-		100% {
-			transform: translateY(-40px) translateX(16px) scale(1.08);
-			opacity: 0.6;
-		}
+	.hero-video {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center 32%;
+		opacity: 0;
+		transform: scale(1.04);
+		transition: opacity 1.1s ease, transform 18s ease-out;
+		will-change: opacity, transform;
+	}
+
+	.hero-video.is-ready {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	/* Keeps the white nav + headline legible over a bright clip without
+	   muddying the rest of the frame. */
+	.hero-video-scrim {
+		position: absolute;
+		inset: 0;
+		background:
+			/* ever-so-slight overall darken for white text legibility */
+			linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
+			linear-gradient(
+				180deg,
+				rgba(4, 40, 74, 0.5) 0%,
+				rgba(4, 40, 74, 0.14) 24%,
+				transparent 48%
+			),
+			radial-gradient(130% 100% at 50% -12%, transparent 50%, rgba(0, 50, 95, 0.28) 100%);
+	}
+
+	/* Bottom fade. The video dissolves through a touch of brand blue and lands
+	   on the page background so it melts into the next section — the page-bg
+	   layer is swapped for dark mode, the blue glow stays the same in both. */
+	.hero-fade {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: clamp(220px, 38vh, 480px);
+		pointer-events: none;
+		background:
+			linear-gradient(to top, #ffffff 0%, #ffffff 7%, rgba(255, 255, 255, 0) 62%),
+			linear-gradient(to top, rgba(1, 178, 255, 0.42) 3%, rgba(1, 178, 255, 0) 46%);
+	}
+
+	:global(.dark) .hero-fade {
+		background:
+			linear-gradient(to top, #0a0a0a 0%, #0a0a0a 7%, rgba(10, 10, 10, 0) 62%),
+			linear-gradient(to top, rgba(1, 178, 255, 0.38) 3%, rgba(1, 178, 255, 0) 46%);
 	}
 
 	/* Glass eyebrow pill on the blue hero */
@@ -792,32 +799,6 @@
 	@keyframes pulseDot {
 		0%, 100% { opacity: 1; transform: scale(1); }
 		50% { opacity: 0.5; transform: scale(0.8); }
-	}
-
-	/* Screenshot frame with 3D tilt + glow ring */
-	.screenshot-stage {
-		perspective: 1600px;
-	}
-
-	.screenshot-frame {
-		position: relative;
-		border: 1px solid rgba(255, 255, 255, 0.5);
-		box-shadow:
-			0 2px 8px rgba(0, 60, 100, 0.12),
-			0 24px 60px rgba(0, 60, 100, 0.28);
-		transition:
-			transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-			box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-		transform-style: preserve-3d;
-		will-change: transform;
-	}
-
-	.screenshot-stage:hover .screenshot-frame {
-		transform: rotateX(2deg) rotateY(-2.5deg) translateY(-8px) scale(1.01);
-		box-shadow:
-			0 0 0 1px rgba(255, 255, 255, 0.6),
-			0 30px 80px rgba(0, 60, 100, 0.35),
-			0 0 60px rgba(1, 178, 255, 0.25);
 	}
 
 	/* Section eyebrow (editorial label) */
@@ -858,74 +839,131 @@
 			0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
-	/* Provider chips */
-	.provider-chip {
+	/* Provider logo marquee */
+	.provider-marquee {
+		position: relative;
+		width: 100%;
+		overflow: hidden;
+		-webkit-mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+		mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+	}
+
+	.provider-marquee-track {
+		display: flex;
+		width: max-content;
+		animation: providerMarquee 38s linear infinite;
+	}
+
+	.provider-marquee:hover .provider-marquee-track {
+		animation-play-state: paused;
+	}
+
+	.provider-marquee-group {
+		display: flex;
+		align-items: center;
+		gap: 3rem;
+		padding-right: 3rem;
+	}
+
+	@keyframes providerMarquee {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	/* Provider logos: wide wordmarks where available, monochrome glyph marks
+	   (themed prop -> currentColor) for the rest. */
+	.provider-logo {
+		flex-shrink: 0;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: #1a1a1a;
-		padding: 0.5rem 1.05rem 0.5rem 0.85rem;
-		border-radius: 9999px;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 248, 255, 0.75) 100%);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		border: 1px solid rgba(1, 178, 255, 0.18);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			0 2px 8px rgba(0, 0, 0, 0.05);
+		justify-content: center;
+		color: rgba(11, 28, 45, 0.72);
+		transition: color 0.3s ease, opacity 0.3s ease;
+	}
+
+	.provider-logo:hover {
+		color: rgba(11, 28, 45, 0.95);
+	}
+
+	/* Wide wordmark images — swap light/dark with the theme class. */
+	.provider-wordmark {
+		height: 26px;
+		width: auto;
+		display: block;
+	}
+
+	.wm-dark {
+		display: none;
+	}
+
+	:global(.dark) .wm-light {
+		display: none;
+	}
+
+	:global(.dark) .wm-dark {
+		display: block;
+	}
+
+	/* Pinned feature showcase: visual sticks, copy scrolls, active step lights up */
+	.feature-sticky {
+		position: sticky;
+		top: 6rem;
+	}
+
+	.feature-visual {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 16 / 10;
+	}
+
+	.feature-visual img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		transform: scale(0.98);
 		transition:
-			transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-			box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-			border-color 0.3s ease;
+			opacity 0.6s ease,
+			transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.provider-chip:hover {
-		transform: translateY(-2px);
-		border-color: rgba(1, 178, 255, 0.4);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			0 0 16px rgba(1, 178, 255, 0.15),
-			0 6px 18px rgba(0, 0, 0, 0.08);
+	.feature-visual img.is-active {
+		opacity: 1;
+		transform: scale(1);
 	}
 
-	/* Stat tiles */
-	.stat-tile {
-		text-align: center;
-		padding: 1rem 0.75rem;
-		border-radius: 1rem;
-		background: linear-gradient(165deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 248, 255, 0.7) 100%);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		border: 1px solid rgba(255, 255, 255, 0.6);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			0 4px 16px rgba(0, 60, 100, 0.1);
+	.feature-step {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
 	}
 
-	.stat-value {
-		font-family: 'Exo 2', sans-serif;
-		font-size: 1.85rem;
-		font-weight: 700;
-		line-height: 1;
-		font-variant-numeric: tabular-nums;
-		background: linear-gradient(180deg, #2bb8ff 0%, #0088cc 100%);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-	}
+	@media (min-width: 1024px) {
+		.feature-step {
+			min-height: 76vh;
+			justify-content: center;
+			opacity: 0.32;
+			transition: opacity 0.45s ease;
+		}
 
-	.stat-label {
-		margin-top: 0.4rem;
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		color: rgba(0, 0, 0, 0.45);
+		.feature-step.is-active {
+			opacity: 1;
+		}
 	}
 
 	/* Bento tiles */
 	.bento-tile {
+		position: relative;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		gap: 1.1rem;
 		padding: 1.6rem;
 		border-radius: 1.25rem;
 		background: linear-gradient(165deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 248, 255, 0.8) 55%, rgba(1, 178, 255, 0.06) 100%);
@@ -951,8 +989,67 @@
 			0 16px 40px rgba(0, 60, 100, 0.12);
 	}
 
+	.bento-title {
+		font-size: 1.05rem;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: #1a1a1a;
+		margin-bottom: 0.4rem;
+	}
+
+	.bento-body {
+		font-size: 0.875rem;
+		line-height: 1.6;
+		color: rgba(0, 0, 0, 0.55);
+		text-wrap: pretty;
+	}
+
+	/* Flagship tile: bigger, copy pinned to the bottom, a soft corner glow. */
+	.bento-tile--hero {
+		gap: 1.5rem;
+	}
+
+	.bento-tile--hero .bento-text {
+		margin-top: auto;
+	}
+
+	.bento-tile--hero .bento-title {
+		font-size: 1.5rem;
+		margin-bottom: 0.55rem;
+	}
+
+	.bento-tile--hero .bento-body {
+		font-size: 1rem;
+		max-width: 34ch;
+	}
+
+	.bento-tile--hero .bento-icon {
+		width: 3.5rem;
+		height: 3.5rem;
+		border-radius: 1.1rem;
+	}
+
+	.bento-tile--hero::after {
+		content: '';
+		position: absolute;
+		top: -40%;
+		right: -20%;
+		width: 70%;
+		height: 80%;
+		background: radial-gradient(circle, rgba(1, 178, 255, 0.18) 0%, transparent 70%);
+		pointer-events: none;
+	}
+
+	/* Wide tile: icon and copy sit side by side to use the extra width. */
+	.bento-tile--wide {
+		flex-direction: row;
+		align-items: flex-start;
+		gap: 1.25rem;
+	}
+
 	/* Glossy skeu icon tile inside bento */
 	.bento-icon {
+		flex-shrink: 0;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -1102,14 +1199,6 @@
 		opacity: 0.7;
 	}
 
-	.footer-giant-logo-light {
-		width: 80vw;
-		max-width: 1200px;
-		height: auto;
-		filter: brightness(0);
-		opacity: 0.06;
-	}
-
 	/* Blog cards — Sims 2000s / Frutiger Aero (light) */
 	.blog-card {
 		display: flex;
@@ -1211,21 +1300,12 @@
 			0 1px 3px rgba(0, 0, 0, 0.3);
 	}
 
-	:global(.dark) .provider-chip {
-		color: #eef4f8;
-		background: linear-gradient(180deg, rgba(40, 44, 52, 0.85) 0%, rgba(22, 26, 34, 0.7) 100%);
-		border-color: rgba(1, 178, 255, 0.22);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.08),
-			0 2px 8px rgba(0, 0, 0, 0.35);
+	:global(.dark) .provider-logo {
+		color: rgba(255, 255, 255, 0.75);
 	}
 
-	:global(.dark) .provider-chip:hover {
-		border-color: rgba(1, 178, 255, 0.5);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.12),
-			0 0 16px rgba(1, 178, 255, 0.25),
-			0 6px 18px rgba(0, 0, 0, 0.4);
+	:global(.dark) .provider-logo:hover {
+		color: rgba(255, 255, 255, 0.95);
 	}
 
 	:global(.dark) .feature-chip {
@@ -1235,18 +1315,6 @@
 		box-shadow:
 			inset 0 1px 0 rgba(255, 255, 255, 0.07),
 			0 1px 3px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(.dark) .stat-tile {
-		background: linear-gradient(165deg, rgba(40, 44, 52, 0.7) 0%, rgba(22, 26, 34, 0.55) 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.08),
-			0 4px 16px rgba(0, 0, 0, 0.4);
-	}
-
-	:global(.dark) .stat-label {
-		color: rgba(255, 255, 255, 0.5);
 	}
 
 	:global(.dark) .bento-tile {
@@ -1269,6 +1337,14 @@
 			inset 0 1px 0 rgba(255, 255, 255, 0.12),
 			0 0 30px rgba(1, 178, 255, 0.18),
 			0 16px 40px rgba(0, 0, 0, 0.5);
+	}
+
+	:global(.dark) .bento-title {
+		color: #fafafa;
+	}
+
+	:global(.dark) .bento-body {
+		color: rgba(255, 255, 255, 0.55);
 	}
 
 	:global(.dark) .eyebrow {
@@ -1316,11 +1392,6 @@
 		opacity: 0.7;
 	}
 
-	:global(.dark) .footer-giant-logo-light {
-		filter: brightness(0) invert(1);
-		opacity: 0.06;
-	}
-
 	/* Respect reduced motion across the whole page */
 	@media (prefers-reduced-motion: reduce) {
 		.reveal {
@@ -1329,15 +1400,30 @@
 			transition: none;
 		}
 
-		.hero-aurora,
-		.aero-bubble,
 		.glass-pill-dot {
 			animation: none;
 		}
 
-		.screenshot-stage:hover .screenshot-frame,
+		.hero-video {
+			transition: none;
+			transform: none;
+		}
+
+		.feature-visual img {
+			transition: none;
+			transform: none;
+		}
+
+		.feature-step {
+			opacity: 1;
+			transition: none;
+		}
+
+		.provider-marquee-track {
+			animation: none;
+		}
+
 		.bento-tile:hover,
-		.provider-chip:hover,
 		.blog-card:hover {
 			transform: none;
 		}

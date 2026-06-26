@@ -86,21 +86,7 @@
 		scrollbar-color: transparent transparent;
 	}
 
-	/* Ambient Frutiger Aero blue glow at the top of the content surface */
-	.docs-main::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 280px;
-		background: radial-gradient(72% 100% at 50% 0%, var(--docs-glow) 0%, transparent 72%);
-		opacity: 0.5;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	/* Keep page content above the glow */
+	/* Keep page content in a clean stacking context */
 	.docs-main > :global(*) {
 		position: relative;
 		z-index: 1;

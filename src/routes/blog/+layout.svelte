@@ -83,10 +83,7 @@
 <style>
 	.blog-site {
 		min-height: 100vh;
-		/* Ambient Frutiger Aero blue glow at the top, over the themed background */
-		background:
-			radial-gradient(62% 32% at 50% 0%, var(--docs-glow) 0%, transparent 70%),
-			var(--docs-bg);
+		background: var(--docs-bg);
 		color: var(--docs-text);
 		font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	}
