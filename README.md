@@ -4,7 +4,11 @@
 > Utsuwa and The Lab by Ordinary Company have not minted, launched, endorsed, or authorized any cryptocurrency, token, coin, NFT, or blockchain project. We never will. If you see crypto associated with Utsuwa or The Lab, it is a scam. This repository is the only authentic Utsuwa project repository.
 
 <p align="center">
-  <img src="static/brand-assets/read-me-banner.png" alt="Utsuwa Banner" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/banner-dark.avif">
+    <source media="(prefers-color-scheme: light)" srcset="static/brand-assets/banner-light.avif">
+    <img alt="Utsuwa — a vessel for AI to live in" src="static/brand-assets/banner-light.avif" width="100%">
+  </picture>
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
