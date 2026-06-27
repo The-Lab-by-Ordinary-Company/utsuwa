@@ -129,7 +129,7 @@
 		{ name: 'Anthropic', icon: 'anthropic', wm: { light: `${WM}/anthropic-wordmark-light.svg`, dark: `${WM}/anthropic-wordmark-dark.svg` } },
 		{ name: 'Google Gemini', icon: 'google', wm: { light: `${WM}/gemini-wordmark-light.svg`, dark: `${WM}/gemini-wordmark-dark.svg` } },
 		{ name: 'DeepSeek', icon: 'deepseek', wm: { light: `${WM}/deepseek-wordmark-light.svg`, dark: `${WM}/deepseek-wordmark-dark.svg` } },
-		{ name: 'xAI', icon: 'xai', wm: { light: `${WM}/grok-wordmark-light.svg`, dark: `${WM}/grok-wordmark-dark.svg` } },
+		{ name: 'xAI Grok', icon: 'xai', wm: { light: `${WM}/grok-wordmark-light.svg`, dark: `${WM}/grok-wordmark-dark.svg` } },
 		{ name: 'Ollama', icon: 'ollama', wm: null },
 		{ name: 'LM Studio', icon: 'lmstudio', wm: null },
 		{ name: 'Groq Whisper', icon: 'groq', wm: { light: `${WM}/groq-wordmark-light.svg`, dark: `${WM}/groq-wordmark-dark.svg` } },
@@ -944,12 +944,21 @@
 		align-items: flex-start;
 	}
 
+	/* Space the stacked callouts apart on mobile (desktop uses the pinned 76vh steps) */
+	.feature-step:not(:last-child) {
+		margin-bottom: 4.5rem;
+	}
+
 	@media (min-width: 1024px) {
 		.feature-step {
 			min-height: 76vh;
 			justify-content: center;
 			opacity: 0.32;
 			transition: opacity 0.45s ease;
+		}
+
+		.feature-step:not(:last-child) {
+			margin-bottom: 0;
 		}
 
 		.feature-step.is-active {
