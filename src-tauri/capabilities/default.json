@@ -20,6 +20,8 @@
     "global-shortcut:allow-unregister",
     "global-shortcut:allow-unregister-all",
     "opener:default",
+    "updater:default",
+    "process:allow-restart",
     {
       "identifier": "fs:allow-read-file",
       "allow": [{ "path": "**" }]
