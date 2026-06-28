@@ -37,7 +37,7 @@
 - **Memory Graph**: Interactive visualization showing how memories connect semantically
 - **Data Export/Import**: Download your data as a save file, restore anytime
 - **Theming**: Light and dark mode support with system preference detection
-- **Desktop App** *(beta, macOS only)*: Native desktop app with transparent overlay mode — your companion floats on your desktop
+- **Desktop App** *(beta)*: Native desktop app for macOS, Windows, and Linux with transparent overlay mode — your companion floats on your desktop
 
 ### Local-First Storage
 
@@ -105,7 +105,22 @@ Voice input is accessed via the microphone button in the chat bar. Groq STT uses
 
 ### Try it Online
 
-Use Utsuwa directly at **[utsuwa.ai](https://utsuwa.ai)** — no installation required. Or download the macOS desktop app from [GitHub Releases](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases).
+Use Utsuwa directly at **[utsuwa.ai](https://utsuwa.ai)** — no installation required.
+
+### Download the Desktop App
+
+Native desktop builds (with transparent overlay mode) are available for all three platforms on the [GitHub Releases](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases) page:
+
+| Platform | Download |
+|----------|----------|
+| **macOS** | `.dmg` (universal — Apple Silicon + Intel) |
+| **Windows** | `.exe` installer |
+| **Linux** | `.AppImage`, `.deb`, or `.rpm` |
+
+> [!NOTE]
+> The desktop app is in beta and currently **unsigned**, so your OS will warn you the first time you open it.
+> - **macOS:** right-click the app → **Open** → **Open** (or run `xattr -dr com.apple.quarantine /Applications/Utsuwa.app`).
+> - **Windows:** on the SmartScreen prompt, click **More info** → **Run anyway**.
 
 ### Self-Hosting
 
@@ -238,7 +253,8 @@ pnpm tauri build  # Build desktop app installer
 - [x] Local-first IndexedDB storage with export/import
 - [x] Theme system with light/dark modes
 - [x] Voice input via Groq STT (Whisper) and Web Speech API
-- [x] Desktop application with transparent overlay mode (macOS only, Windows/Linux planned)
+- [x] Desktop application with transparent overlay mode (macOS, Windows, and Linux)
+- [x] Cross-platform desktop builds via CI (macOS, Windows, Linux)
 
 ### In Progress / Planned
 
@@ -246,7 +262,7 @@ pnpm tauri build  # Build desktop app installer
 - [ ] **OpenAI-Compatible Models** - Add a configurable option for OpenAI-compatible model endpoints beyond the currently listed providers
 - [ ] **Multi-provider STT** - Support for additional speech-to-text providers beyond Groq and Web Speech API
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
-- [ ] **Windows and Linux Desktop Apps** - Expand desktop builds beyond the current macOS beta
+- [ ] **In-App Auto-Updates** - Let installed desktop apps update themselves when a new release ships
 
 ## Contributing
 

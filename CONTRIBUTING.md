@@ -102,6 +102,26 @@ src/
 src-tauri/              # Tauri desktop app (Rust)
 ```
 
+## Releases
+
+Desktop builds are produced automatically by CI — there's no need to build installers on your own machine for a release.
+
+Maintainers cut a release by pushing a version tag:
+
+```bash
+# Bump the version in package.json, src-tauri/Cargo.toml, and src-tauri/tauri.conf.json first
+git tag v0.3.0
+git push origin v0.3.0
+```
+
+The [`Release` workflow](.github/workflows/release.yml) then builds the app on macOS, Windows, and Linux runners in parallel and attaches the installers to a **draft** GitHub Release:
+
+- **macOS** — `.dmg` (universal: Apple Silicon + Intel)
+- **Windows** — `.exe` installer
+- **Linux** — `.AppImage`, `.deb`, and `.rpm`
+
+A maintainer reviews the draft, edits the release notes, and publishes it. You can also trigger the workflow manually from the Actions tab to verify a build without cutting a release.
+
 ## Questions?
 
 If you have questions about contributing, feel free to open an issue for discussion.
