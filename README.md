@@ -255,6 +255,7 @@ pnpm tauri build  # Build desktop app installer
 - [x] Voice input via Groq STT (Whisper) and Web Speech API
 - [x] Desktop application with transparent overlay mode (macOS, Windows, and Linux)
 - [x] Cross-platform desktop builds via CI (macOS, Windows, Linux)
+- [x] In-app auto-updates for the desktop app
 
 ### In Progress / Planned
 
@@ -262,7 +263,6 @@ pnpm tauri build  # Build desktop app installer
 - [ ] **OpenAI-Compatible Models** - Add a configurable option for OpenAI-compatible model endpoints beyond the currently listed providers
 - [ ] **Multi-provider STT** - Support for additional speech-to-text providers beyond Groq and Web Speech API
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
-- [ ] **In-App Auto-Updates** - Let installed desktop apps update themselves when a new release ships
 
 ## Contributing
 

@@ -57,6 +57,14 @@ pnpm tauri build
 
 The dev command launches both a development server and the desktop window. The build command produces an installer for your current platform in `src-tauri/target/release/bundle/`.
 
+## Updating
+
+The desktop app keeps itself up to date. On launch it quietly checks for a new release, and when one is available a small banner appears offering to **Install & Restart** — click it and the app downloads the update, installs it, and relaunches.
+
+You can also check manually any time from the **About** dialog (the info button in the app) via **Check for updates**.
+
+> Auto-updates work for the macOS `.dmg`, the Windows `.exe`, and the Linux `.AppImage`. If you installed via `.deb` or `.rpm`, update through your package manager instead.
+
 ## Features
 
 ### Main Window
@@ -112,7 +120,7 @@ Some features are still being worked on:
 | Linux support | ✅ Available |
 | Click-through transparency | ❌ Disabled (blocks UI) |
 | Global hotkeys | ✅ Available |
-| In-app auto-updates | ⏳ Planned |
+| In-app auto-updates | ✅ Available |
 | Position persistence | ⏳ Planned |
 | System tray | ⏳ Planned |
 
