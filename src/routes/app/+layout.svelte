@@ -1,4 +1,6 @@
 <script lang="ts">
+	import UpdateBanner from '$lib/components/updater/UpdateBanner.svelte';
+
 	let { children } = $props();
 </script>
 
@@ -8,6 +10,7 @@
 
 <div class="app">
 	{@render children()}
+	<UpdateBanner />
 </div>
 
 <style>

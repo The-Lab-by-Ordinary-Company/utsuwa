@@ -2,6 +2,8 @@
 	import { Icon } from '$lib/components/ui';
 	import { onMount } from 'svelte';
 	import { sectionUrl } from '$lib/config/links';
+	import { isTauri } from '$lib/services/platform/platform';
+	import { updaterStore } from '$lib/stores/updater.svelte';
 
 	interface Props {
 		onClose: () => void;
@@ -10,6 +12,29 @@
 	let { onClose }: Props = $props();
 
 	const version = `v${import.meta.env.VITE_APP_VERSION}`;
+
+	const updateStatusText = $derived.by(() => {
+		switch (updaterStore.status) {
+			case 'checking':
+				return 'Checking for updates…';
+			case 'uptodate':
+				return "You're on the latest version";
+			case 'available':
+				return `Update available: Utsuwa ${updaterStore.availableVersion}`;
+			case 'downloading':
+				return `Downloading… ${updaterStore.progress}%`;
+			case 'ready':
+				return 'Update installed — restarting…';
+			case 'error':
+				return updaterStore.errorMessage ?? 'Update check failed';
+			default:
+				return '';
+		}
+	});
+
+	const updateBusy = $derived(
+		updaterStore.status === 'checking' || updaterStore.status === 'downloading'
+	);
 
 	// System info
 	let sttSupport = $state('Checking...');
@@ -65,6 +90,24 @@
 				<span class="version-shine"></span>
 			</span>
 		</div>
+
+		<!-- Updates (desktop only) -->
+		{#if isTauri()}
+			<div class="updates-row">
+				<button
+					class="update-check-btn"
+					onclick={() =>
+						updaterStore.status === 'available' ? updaterStore.install() : updaterStore.check()}
+					disabled={updateBusy}
+				>
+					<Icon name={updaterStore.status === 'available' ? 'download' : 'refresh-cw'} size={13} />
+					<span>{updaterStore.status === 'available' ? 'Install & Restart' : 'Check for updates'}</span>
+				</button>
+				{#if updateStatusText}
+					<span class="update-status-text">{updateStatusText}</span>
+				{/if}
+			</div>
+		{/if}
 
 		<!-- Links -->
 		<div class="link-tiles">
@@ -321,6 +364,59 @@
 		background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
 		border-radius: 999px 999px 50% 50%;
 		pointer-events: none;
+	}
+
+	/* Updates row */
+	.updates-row {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: 1rem;
+	}
+
+	.update-check-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.4rem 0.85rem;
+		border-radius: 999px;
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+		cursor: pointer;
+		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.06),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		transition: all 0.15s ease-out;
+	}
+
+	:global(.dark) .update-check-btn {
+		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
+		border-color: rgba(255, 255, 255, 0.08);
+		color: var(--text-secondary);
+		box-shadow:
+			0 2px 6px rgba(0, 0, 0, 0.25),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	.update-check-btn:hover:not(:disabled) {
+		transform: translateY(-1px);
+		border-color: rgba(1, 178, 255, 0.4);
+		color: var(--text-primary);
+	}
+
+	.update-check-btn:disabled {
+		opacity: 0.6;
+		cursor: default;
+	}
+
+	.update-status-text {
+		font-size: 0.65rem;
+		color: var(--text-tertiary);
+		text-align: center;
 	}
 
 	/* Link Tiles */
