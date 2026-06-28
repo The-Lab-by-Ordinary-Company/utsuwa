@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-28
+
+### Added
+- Cross-platform desktop builds for **macOS, Windows, and Linux**, produced automatically by CI on each tagged release
+- In-app auto-updates for the desktop app: a quiet check on launch, an unobtrusive update banner with download progress, and a manual "Check for updates" in the About dialog
+- Tauri desktop application with transparent overlay mode (macOS, Windows, and Linux)
+- Transparent overlay mode with always-on-top window
+- Draggable companion character positioning
+- Floating chat icon with expandable input bar
+- Window switching between main app and overlay mode
+- Platform detection layer (`isTauri()` / `isWeb()`)
+- Global hotkey infrastructure (Ctrl+Shift shortcuts)
+- Groq STT provider (Whisper) for voice input on all platforms including desktop
+
+### Technical
+- `.github/workflows/release.yml` - cross-platform release pipeline (macOS universal, Windows, Linux) on `v*` tag push
+- `src-tauri/` - Tauri v2 project with Rust backend, updater + process plugins, and signed updater artifacts
+- `src/lib/stores/updater.svelte.ts` / `src/lib/components/updater/UpdateBanner.svelte` - update flow and banner UI
+- `src/lib/services/platform/` - Platform abstraction layer
+- `src/routes/overlay/` - Overlay mode route and components
+- `src/lib/stores/overlay.svelte.ts` - Overlay state management
+- `src/lib/services/stt/groq-stt.ts` - Groq STT service
+- `src/lib/stores/stt.svelte.ts` - STT store with auto-selection (Groq if key configured, else Web Speech)
+
 ## [0.2.5] - 2026-05-29
 
 ### Fixed
@@ -17,26 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated local LLM onboarding and settings to use discovered local models for Ollama and LM Studio.
 - Updated local LLM setup and troubleshooting documentation.
 - Removed the stale local LLM blog article.
-
-## [Unreleased] - Desktop App
-
-### Added
-- Tauri desktop application (macOS only, Windows/Linux planned)
-- Transparent overlay mode with always-on-top window
-- Draggable companion character positioning
-- Floating chat icon with expandable input bar
-- Window switching between main app and overlay mode
-- Platform detection layer (`isTauri()` / `isWeb()`)
-- Global hotkey infrastructure (Ctrl+Shift shortcuts)
-- Groq STT provider (Whisper) for voice input on all platforms including desktop
-
-### Technical
-- `src-tauri/` - Tauri v2 project with Rust backend
-- `src/lib/services/platform/` - Platform abstraction layer
-- `src/routes/overlay/` - Overlay mode route and components
-- `src/lib/stores/overlay.svelte.ts` - Overlay state management
-- `src/lib/services/stt/groq-stt.ts` - Groq STT service
-- `src/lib/stores/stt.svelte.ts` - STT store with auto-selection (Groq if key configured, else Web Speech)
 
 ## [0.2.2] - 2026-01-31
 
