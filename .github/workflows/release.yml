@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+# Needed so tauri-action can create the GitHub Release and upload installers.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Universal binary covers both Apple Silicon and Intel Macs.
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+          # 22.04 builds against an older glibc/webkit, so the AppImage runs on more distros.
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            libayatana-appindicator3-dev \
+            patchelf
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Only publish a release on a tag push. Manual runs just verify the build.
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: ${{ github.ref_type == 'tag' && 'Utsuwa __VERSION__' || '' }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+          releaseBody: |
+            Desktop builds for macOS, Windows, and Linux.
+
+            **Downloads**
+            - macOS: `.dmg` (universal — Apple Silicon + Intel)
+            - Windows: `.exe` installer
+            - Linux: `.AppImage`, `.deb`, or `.rpm`
+
+            > These builds are **unsigned** while the desktop app is in beta, so your OS will warn you the first time you open it.
+            > - **macOS:** right-click the app → **Open** → **Open** (or run `xattr -dr com.apple.quarantine /Applications/Utsuwa.app`).
+            > - **Windows:** on the SmartScreen prompt, click **More info** → **Run anyway**.
+            >
+            > See the [Desktop Guide](https://docs.utsuwa.ai/docs/guides/desktop-guide) for details.
