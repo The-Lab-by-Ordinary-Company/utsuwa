@@ -135,9 +135,10 @@ If you selected **Local TTS** but hear nothing:
 1. **Server running** - Confirm your TTS server is up, e.g. `curl http://localhost:8880/v1/audio/voices`
 2. **Voice is set** - The voice field must hold a name your server knows (e.g. `af_bella` for Kokoro)
 3. **Base URL** - It should point at the server's `/v1`; Utsuwa normalizes the trailing slash for you
-4. **CORS (web only)** - In a browser, the server must allow the page's origin. Kokoro-FastAPI allows all origins by default; this never applies to the desktop app
+4. **Desktop app** - Just needs the server running on `localhost`; no origin or CORS setup is required
+5. **Hosted site** (`https://www.utsuwa.ai`) - The server must be on `localhost` (one on another machine is blocked as mixed content), must allow the `utsuwa.ai` origin (Kokoro-FastAPI does by default), and your browser may prompt to allow local-network access. Allow it if asked
 
-See [Local TTS Setup](/docs/guides/local-tts-setup) for the full walkthrough.
+See [Local TTS Setup](/docs/guides/local-tts-setup#desktop-app-vs-hosted-website) for the hosted vs desktop details.
 
 ## Voice Input Issues
 
@@ -162,6 +163,37 @@ Your browser or OS is blocking microphone access:
 
 1. **Browser permissions** - Click the lock icon in the address bar and allow microphone access
 2. **System permissions** - On macOS, go to System Settings > Privacy & Security > Microphone and enable access for your browser or Utsuwa
+
+## Desktop App
+
+### App won't open
+
+The desktop app is in beta and currently **unsigned**, so your OS warns you the first time you open it. This is expected, not a broken download.
+
+1. **macOS** - Right-click the app → **Open** → **Open**, or run `xattr -dr com.apple.quarantine /Applications/Utsuwa.app` once
+2. **Windows** - On the SmartScreen prompt, click **More info** → **Run anyway**
+3. **Linux** - Give the AppImage the executable bit: `chmod +x Utsuwa.AppImage`
+
+See the [Desktop Guide](/docs/guides/desktop-guide) for the full install walkthrough.
+
+### Local LLM or TTS won't connect (desktop)
+
+On the desktop app, local providers need **only** that the server is running. The browser origin, CORS, and local-network rules that apply on the hosted website do **not** apply here, so there's no `OLLAMA_ORIGINS` or CORS setup to do.
+
+1. **Ollama** - Start it with `ollama serve` and pull a model (`ollama pull <model>`)
+2. **LM Studio** - Load a model and click Start Server
+3. **Local TTS** - Start your TTS server (e.g. Kokoro-FastAPI on `http://localhost:8880`)
+4. **Base URL** - Confirm the port in **Settings > Character** matches the port your server is using
+
+### No sound (desktop)
+
+1. **System audio** - Check your OS volume and that Utsuwa isn't muted in the system mixer
+2. **TTS configured** - Confirm a TTS provider is set up and a voice is selected (see Text-to-Speech Issues above)
+3. **Microphone/voice input** - The desktop webview has no Web Speech API, so the mic needs a Groq key; see [Mic button not responding (desktop)](#mic-button-not-responding-desktop)
+
+### Updates not installing
+
+Auto-updates work for the macOS `.dmg`, Windows `.exe`, and Linux `.AppImage`. If you installed via `.deb` or `.rpm`, update through your package manager instead. Restarting the app re-checks for an update.
 
 ## Memory & Performance
 
