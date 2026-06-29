@@ -92,7 +92,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 ];
 
 // ============================================
-// TTS PROVIDERS (2 total)
+// TTS PROVIDERS (3 total)
 // ============================================
 
 export const TTS_PROVIDERS: ProviderMetadata[] = [
@@ -142,6 +142,32 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 			{ id: 'verse', name: 'Verse' },
 			{ id: 'marin', name: 'Marin' },
 			{ id: 'cedar', name: 'Cedar' }
+		]
+	},
+	// Local TTS - OpenAI-compatible server running on the user's machine
+	// (Kokoro-FastAPI, openedai-speech, etc). Voices/model are server-specific,
+	// so these are sensible Kokoro defaults plus a free-text override in the UI.
+	{
+		id: 'local-tts',
+		name: 'Local TTS',
+		description: 'Run a voice model locally (Kokoro, openedai-speech)',
+		category: 'tts',
+		icon: '🏠',
+		requiresApiKey: false,
+		isLocal: true,
+		defaultBaseUrl: 'http://localhost:8880/v1/',
+		models: [
+			{ id: 'kokoro', name: 'Kokoro' },
+			{ id: 'tts-1', name: 'tts-1 (compatibility alias)' }
+		],
+		voices: [
+			{ id: 'af_bella', name: 'Bella (US, female)' },
+			{ id: 'af_sky', name: 'Sky (US, female)' },
+			{ id: 'af_sarah', name: 'Sarah (US, female)' },
+			{ id: 'am_adam', name: 'Adam (US, male)' },
+			{ id: 'am_michael', name: 'Michael (US, male)' },
+			{ id: 'bf_emma', name: 'Emma (UK, female)' },
+			{ id: 'bm_george', name: 'George (UK, male)' }
 		]
 	},
 ];

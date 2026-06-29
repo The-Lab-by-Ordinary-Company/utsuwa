@@ -28,7 +28,7 @@
 - **Voice Input**: Speech-to-text via Groq (Whisper) or Web Speech API with real-time audio visualization
 - **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, and LM Studio
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
-- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS
+- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech)
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
 - **Character Customization**: Customize your companion's name, personality, and system prompt
@@ -83,11 +83,12 @@ The desktop app uses the same codebase as the web version — your save files ar
 | **Cloud** | OpenAI, Anthropic, Google Gemini, DeepSeek, xAI (Grok) |
 | **Local** | Ollama, LM Studio |
 
-### TTS Providers (2)
+### TTS Providers (3)
 
 | Category | Providers |
 |----------|-----------|
 | **Cloud** | ElevenLabs, OpenAI TTS |
+| **Local** | Local TTS (Kokoro-FastAPI, openedai-speech, any OpenAI-compatible server) |
 
 ### STT Providers (2)
 

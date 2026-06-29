@@ -128,6 +128,17 @@ If the avatar's mouth isn't moving:
 1. **Check voice settings** - ElevenLabs and OpenAI TTS have different available voices
 2. **Custom voice ID** - If using ElevenLabs custom voice, verify the voice ID is correct
 
+### Local TTS not speaking
+
+If you selected **Local TTS** but hear nothing:
+
+1. **Server running** - Confirm your TTS server is up, e.g. `curl http://localhost:8880/v1/audio/voices`
+2. **Voice is set** - The voice field must hold a name your server knows (e.g. `af_bella` for Kokoro)
+3. **Base URL** - It should point at the server's `/v1`; Utsuwa normalizes the trailing slash for you
+4. **CORS (web only)** - In a browser, the server must allow the page's origin. Kokoro-FastAPI allows all origins by default; this never applies to the desktop app
+
+See [Local TTS Setup](/docs/guides/local-tts-setup) for the full walkthrough.
+
 ## Voice Input Issues
 
 ### Mic button not responding (desktop)

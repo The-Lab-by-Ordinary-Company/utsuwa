@@ -1,8 +1,10 @@
 const LOCAL_LLM_PROVIDERS = new Set(['ollama', 'lmstudio']);
+const LOCAL_TTS_PROVIDERS = new Set(['local-tts']);
 
 const DEFAULT_BASE_URLS: Record<string, string> = {
 	ollama: 'http://localhost:11434',
-	lmstudio: 'http://localhost:1234/v1'
+	lmstudio: 'http://localhost:1234/v1',
+	'local-tts': 'http://localhost:8880/v1'
 };
 
 const OLLAMA_ORIGINS_DOC_URL =
@@ -23,6 +25,31 @@ function ensureOpenAIPath(url: string): string {
 
 export function isLocalLLMProvider(providerId: string): boolean {
 	return LOCAL_LLM_PROVIDERS.has(providerId);
+}
+
+export function isLocalTTSProvider(providerId: string): boolean {
+	return LOCAL_TTS_PROVIDERS.has(providerId);
+}
+
+// OpenAI-compatible TTS clients append "audio/speech" to the base URL, so the
+// base must end with "/v1/". Local servers (Kokoro-FastAPI, openedai-speech)
+// mount there, and users routinely paste the bare host or drop the slash.
+export function getTTSBaseUrl(providerId: string, baseUrl?: string): string {
+	const cleanUrl = trimTrailingSlashes(baseUrl || DEFAULT_BASE_URLS[providerId] || '');
+
+	if (isLocalTTSProvider(providerId)) {
+		return `${ensureOpenAIPath(cleanUrl)}/`;
+	}
+
+	return `${cleanUrl}/`;
+}
+
+export function getLocalTTSConnectionHint(baseUrl?: string, siteOrigin?: string): string {
+	const ttsBaseUrl = getTTSBaseUrl('local-tts', baseUrl);
+	const originHint = siteOrigin
+		? ` If the server blocks this site (${siteOrigin}), enable CORS for that origin.`
+		: ' If the server blocks this site, enable CORS for the app origin.';
+	return `Could not reach a local TTS server at ${ttsBaseUrl}. Make sure it is running and exposes the OpenAI /v1/audio/speech endpoint (e.g. Kokoro-FastAPI or openedai-speech).${originHint}`;
 }
 
 export function getModelsBaseUrl(providerId: string, baseUrl?: string): string {

@@ -1,4 +1,5 @@
 import { getTTSProvider, type TTSOptions } from '$lib/services/tts';
+import { isLocalTTSProvider } from '$lib/services/providers/local-endpoints';
 
 function createTTSStore() {
 	let isSpeaking = $state(false);
@@ -7,8 +8,8 @@ function createTTSStore() {
 	let queue = $state<string[]>([]);
 
 	async function speak(text: string, options: TTSOptions) {
-		// All TTS providers require API keys
-		if (!options.apiKey) {
+		// Cloud providers need a key; local servers (e.g. Kokoro) don't.
+		if (!options.apiKey && !isLocalTTSProvider(options.provider)) {
 			console.warn('TTS not configured - missing API key');
 			return;
 		}

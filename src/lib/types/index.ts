@@ -29,7 +29,7 @@ export interface LLMConfig {
 }
 
 // TTS Provider IDs
-export type TTSProvider = 'elevenlabs' | 'openai-tts';
+export type TTSProvider = 'elevenlabs' | 'openai-tts' | 'local-tts';
 
 export interface TTSConfig {
 	provider: TTSProvider;

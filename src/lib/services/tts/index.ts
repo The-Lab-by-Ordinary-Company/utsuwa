@@ -5,6 +5,7 @@ export interface TTSOptions {
 	provider: TTSProvider;
 	apiKey?: string;
 	voiceId?: string;
+	model?: string;
 	baseUrl?: string;
 	speed?: number;
 	pitch?: number;
@@ -36,13 +37,15 @@ export function getSharedAudioContext(): AudioContext {
 // Provider base URLs
 export const TTS_BASE_URLS: Partial<Record<TTSProvider, string>> = {
 	elevenlabs: 'https://api.elevenlabs.io/v1/',
-	'openai-tts': 'https://api.openai.com/v1/'
+	'openai-tts': 'https://api.openai.com/v1/',
+	'local-tts': 'http://localhost:8880/v1/'
 };
 
 // Default voices per provider
 export const DEFAULT_VOICES: Partial<Record<TTSProvider, string>> = {
 	elevenlabs: 'EXAVITQu4vr4xnSDxMaL', // Bella
-	'openai-tts': 'alloy'
+	'openai-tts': 'alloy',
+	'local-tts': 'af_bella'
 };
 
 // Import individual providers
@@ -61,6 +64,7 @@ export function getTTSProvider(options: TTSOptions): ITTSProvider {
 		currentOptions.provider === options.provider &&
 		currentOptions.apiKey === options.apiKey &&
 		currentOptions.voiceId === options.voiceId &&
+		currentOptions.model === options.model &&
 		currentOptions.baseUrl === options.baseUrl
 	) {
 		return currentProvider;
@@ -73,6 +77,12 @@ export function getTTSProvider(options: TTSOptions): ITTSProvider {
 			break;
 
 		case 'openai-tts':
+			currentProvider = new OpenAITTS(options);
+			break;
+
+		// Local TTS is OpenAI-compatible, so it reuses the OpenAI client with a
+		// localhost base URL. The provider id drives URL/key/error handling.
+		case 'local-tts':
 			currentProvider = new OpenAITTS(options);
 			break;
 

@@ -325,6 +325,10 @@
 		if (provider?.models?.length) {
 			modulesStore.setModuleSetting('speech', 'activeModel', provider.models[0].id);
 		}
+		// Local providers ship a default voice so requests work before the user picks one
+		if (provider?.isLocal && provider.voices?.length) {
+			modulesStore.setModuleSetting('speech', 'activeVoiceId', provider.voices[0].id);
+		}
 		// Mark local providers as added immediately (they don't need API keys)
 		if (provider?.isLocal || !provider?.requiresApiKey) {
 			settingsStore.markProviderAdded(providerId);
@@ -333,6 +337,10 @@
 
 	function handleTTSModelChange(modelId: string) {
 		modulesStore.setModuleSetting('speech', 'activeModel', modelId);
+	}
+
+	function handleTTSVoiceChange(voiceId: string) {
+		modulesStore.setModuleSetting('speech', 'activeVoiceId', voiceId);
 	}
 
 	function handleTTSApiKeyBlur() {
@@ -650,18 +658,31 @@
 											<input
 												type="text"
 												class="api-key-input"
-												placeholder="Model/voice name"
-												value={speechSettings.activeModel as string ?? ''}
-												onchange={(e) => handleTTSModelChange(e.currentTarget.value)}
+												list="local-tts-voices"
+												placeholder="Voice (e.g. af_bella)"
+												value={speechSettings.activeVoiceId as string ?? ''}
+												onchange={(e) => handleTTSVoiceChange(e.currentTarget.value)}
 											/>
+											<datalist id="local-tts-voices">
+												{#each provider.voices ?? [] as voice}
+													<option value={voice.id}>{voice.name}</option>
+												{/each}
+											</datalist>
 										</div>
-									{/if}
-									{#if provider?.isLocal}
 										<div class="api-key-row">
 											<input
 												type="text"
 												class="api-key-input"
-												placeholder={provider.defaultBaseUrl || 'http://localhost:5000/'}
+												placeholder="Model (optional, e.g. kokoro)"
+												value={speechSettings.activeModel as string ?? ''}
+												onchange={(e) => handleTTSModelChange(e.currentTarget.value)}
+											/>
+										</div>
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder={provider.defaultBaseUrl || 'http://localhost:8880/v1/'}
 												value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
 												onchange={(e) => settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value })}
 											/>
