@@ -47,8 +47,20 @@ Kokoro voice names encode region and gender, for example `af_bella` (American fe
 
 Running the server on a different machine or port? Enter the full URL in the Local TTS base URL field. Utsuwa normalizes it to end in `/v1/`, so `http://localhost:8880`, `http://localhost:8880/v1`, and `http://localhost:8880/v1/` all work. Examples:
 
-- Remote machine: `http://192.168.1.50:8880/v1/`
 - Custom port: `http://localhost:9000/v1/`
+- Remote machine: `http://192.168.1.50:8880/v1/` (desktop app only, see below)
+
+## Desktop app vs hosted website
+
+Local TTS works best in the **desktop app**, where it needs no extra setup. The desktop app talks to your local server directly, with no browser origin, mixed-content, or local-network restrictions. If you want the smoothest experience, use the desktop app.
+
+On the **hosted website** (`https://www.utsuwa.ai`) it can still work, but because a public HTTPS page is reaching a server on your own machine, the browser adds a few rules:
+
+- **Same machine only.** The server has to be on `localhost` / `127.0.0.1`. A TTS server on another machine over plain `http://` is blocked by the browser as mixed content. (`localhost` is exempt from that block, which is the only reason the local case works at all.) The remote-machine base URL above therefore works in the desktop app but not on the hosted site.
+- **The server must allow the site's origin.** Your TTS server needs to send CORS headers permitting `https://www.utsuwa.ai`. Kokoro-FastAPI and openedai-speech allow all origins by default, so this usually just works; a hardened or proxied server may need the origin added explicitly.
+- **Your browser may ask permission.** Recent versions of Chrome treat a public site reaching `localhost` as a local-network request and may prompt you to allow it (or require the server to opt in). Allow it if asked.
+
+None of this applies to the desktop app. It is the same set of rules local LLMs (Ollama, LM Studio) follow on the hosted site.
 
 ## Troubleshooting
 
@@ -64,7 +76,7 @@ The server isn't running or isn't reachable at the base URL. Confirm it's up:
 curl http://localhost:8880/v1/audio/voices
 ```
 
-If that returns data but Utsuwa still can't reach it from a browser, it's almost certainly a CORS block. The server has to allow the page's origin. Kokoro-FastAPI allows all origins by default; if you front it with a proxy or use a server that locks CORS down, allow the Utsuwa origin (for the hosted site, `https://www.utsuwa.ai`). This is the same class of issue as the Ollama origins setup, and like that one, **it does not apply to the desktop app**.
+If that returns data but Utsuwa still can't reach it from a browser, it's almost certainly an origin or local-network block. On the hosted site the server has to allow the `https://www.utsuwa.ai` origin (Kokoro-FastAPI allows all origins by default; a proxied or hardened server may need it added), and your browser may prompt to allow access to local-network devices. See [Desktop app vs hosted website](#desktop-app-vs-hosted-website) for the full list. None of this applies to the **desktop app**, which is the smoothest way to run local TTS.
 
 ### "Local TTS server returned 400/404"
 
