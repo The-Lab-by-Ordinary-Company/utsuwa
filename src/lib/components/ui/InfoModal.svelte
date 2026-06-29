@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
 	import { onMount } from 'svelte';
-	import { sectionUrl } from '$lib/config/links';
+	import { DOCS_URL } from '$lib/config/site';
 	import { isTauri } from '$lib/services/platform/platform';
 	import { updaterStore } from '$lib/stores/updater.svelte';
 
@@ -63,6 +63,14 @@
 	function handleOverlayClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) onClose();
 	}
+
+	// Always open the docs subdomain; on desktop route it to the system browser.
+	function handleDocsClick(e: MouseEvent) {
+		if (isTauri()) {
+			e.preventDefault();
+			import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl(DOCS_URL));
+		}
+	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -79,12 +87,7 @@
 
 		<!-- Logo & Version centered -->
 		<div class="app-header">
-			<div class="logo-badge">
-				<div class="logo-badge-inner">
-					<img src="/brand-assets/logo.svg" alt="Utsuwa - Open Source AI Soul Vessel" class="app-logo-svg" />
-				</div>
-				<div class="logo-badge-shine"></div>
-			</div>
+			<span class="app-logo" role="img" aria-label="Utsuwa - Open Source AI Soul Vessel"></span>
 			<span class="version-badge">
 				{version}
 				<span class="version-shine"></span>
@@ -123,7 +126,7 @@
 				<span class="tile-label">GitHub</span>
 				<span class="tile-shine"></span>
 			</a>
-			<a href={sectionUrl('docs')} class="link-tile" style="--delay: 1; --tile-color: #01B2FF; --tile-glow: rgba(1, 178, 255, 0.3)">
+			<a href={DOCS_URL} target="_blank" rel="noopener" onclick={handleDocsClick} class="link-tile" style="--delay: 1; --tile-color: #00B2FF; --tile-glow: rgba(0, 178, 255, 0.3)">
 				<div class="tile-icon-wrapper">
 					<span class="tile-icon">
 						<Icon name="file-text" size={20} />
@@ -298,44 +301,17 @@
 		margin-bottom: 1rem;
 	}
 
-	.logo-badge {
-		position: relative;
+	.app-logo {
+		display: block;
+		height: 28px;
+		aspect-ratio: 1530 / 257;
+		background-color: #00B2FF;
+		-webkit-mask: url('/brand-assets/logo.svg') no-repeat center / contain;
+		mask: url('/brand-assets/logo.svg') no-repeat center / contain;
 	}
 
-	.logo-badge-inner {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1rem 1.5rem;
-		background: linear-gradient(180deg, #66d9ff 0%, #01B2FF 40%, #0088cc 100%);
-		border-radius: 1rem;
-		box-shadow:
-			0 6px 24px rgba(1, 178, 255, 0.45),
-			0 3px 8px rgba(0, 0, 0, 0.12),
-			inset 0 2px 0 rgba(255, 255, 255, 0.4),
-			inset 0 -2px 4px rgba(0, 0, 0, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-	}
-
-	.logo-badge-shine {
-		position: absolute;
-		top: 3px;
-		left: 12%;
-		right: 12%;
-		height: 45%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
-		border-radius: 0.75rem 0.75rem 50% 50%;
-		pointer-events: none;
-	}
-
-	.app-logo-svg {
-		height: 24px;
-		width: auto;
-		filter: brightness(10);
-	}
-
-	:global(.dark) .app-logo-svg {
-		filter: brightness(10);
+	:global(.dark) .app-logo {
+		background-color: #ffffff;
 	}
 
 	.version-badge {

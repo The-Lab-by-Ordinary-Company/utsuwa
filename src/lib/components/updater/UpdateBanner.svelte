@@ -75,7 +75,7 @@
 <style>
 	.update-banner {
 		position: fixed;
-		bottom: calc(1.25rem + env(safe-area-inset-bottom, 0));
+		top: calc(1.25rem + env(safe-area-inset-top, 0));
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 900;
@@ -106,7 +106,7 @@
 	@keyframes bannerIn {
 		from {
 			opacity: 0;
-			transform: translate(-50%, 16px) scale(0.98);
+			transform: translate(-50%, -16px) scale(0.98);
 		}
 		to {
 			opacity: 1;
