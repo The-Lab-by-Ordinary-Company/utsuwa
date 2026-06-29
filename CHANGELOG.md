@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-29
+
+### Added
+- **Local text-to-speech**: connect any OpenAI-compatible TTS server (Kokoro-FastAPI, openedai-speech) for a self-hosted companion voice with no API key. New "Local TTS" provider with voice, model, and base URL settings, plus a setup guide.
+
+### Fixed
+- Desktop app now reliably boots into the app on **macOS** (and all platforms). The previous launch raced on macOS WebKit; the window now opens directly into the app, with routing gated by a build-time flag so the landing page and docs are never reachable inside the desktop window.
+- Info modal "Docs" link now points to the docs subdomain (docs.utsuwa.ai) and opens in the system browser on desktop.
+- Info modal logo is now a clean mark (blue in light mode, white in dark) without the badge container.
+- Desktop update notification now appears from the top of the window.
+- OpenAI TTS now respects the selected model instead of always using `tts-1`.
+
 ## [0.3.1] - 2026-06-28
 
 ### Fixed
