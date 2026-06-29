@@ -16,6 +16,16 @@ export function isWeb(): boolean {
 }
 
 /**
+ * True only in the Tauri desktop build, decided at build time (see
+ * vite.config.ts). Prefer this over isTauri() for routing/marketing-gating
+ * decisions: isTauri() reads the Tauri globals, which inject after first paint
+ * on macOS WKWebView and race the initial render. This never races.
+ */
+export function isDesktopBuild(): boolean {
+	return typeof __IS_DESKTOP__ !== 'undefined' && __IS_DESKTOP__;
+}
+
+/**
  * Get the current platform name
  */
 export function getPlatform(): 'tauri' | 'web' | 'server' {

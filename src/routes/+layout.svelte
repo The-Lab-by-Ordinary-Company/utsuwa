@@ -5,7 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { modulesStore } from '$lib/stores/modules.svelte';
 	import { moduleRegistry } from '$lib/services/modules';
-	import { isTauri } from '$lib/services/platform/platform';
+	import { isDesktopBuild } from '$lib/services/platform/platform';
 	import { SITE_URL } from '$lib/config/site';
 
 	let { children } = $props();
@@ -14,9 +14,10 @@
 	const isWebOnly = (path: string) =>
 		path === '/' || path.startsWith('/docs') || path.startsWith('/blog');
 
-	// The desktop window launches at "/" (the landing route). Send it straight
-	// into the app so the marketing site never renders inside the window.
-	const redirecting = $derived(browser && isTauri() && page.url.pathname === '/');
+	// The desktop build must only ever show the app. The window now boots at
+	// "/app" (tauri.conf.json), but this also bounces any web-only route to the
+	// app as a safety net, using the build-time flag so it can't race.
+	const redirecting = $derived(browser && isDesktopBuild() && isWebOnly(page.url.pathname));
 
 	if (browser) {
 		for (const mod of moduleRegistry) {
@@ -35,7 +36,7 @@
 		// In the desktop app, marketing/docs/blog links open in the system
 		// browser instead of navigating the webview.
 		document.addEventListener('click', (e) => {
-			if (!isTauri()) return;
+			if (!isDesktopBuild()) return;
 			const anchor = (e.target as Element).closest('a');
 			if (!anchor) return;
 			const href = anchor.getAttribute('href');
