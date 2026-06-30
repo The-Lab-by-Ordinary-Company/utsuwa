@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { LLM_PROVIDERS, TTS_PROVIDERS, getTTSProvider } from './registry.ts';
+import { LLM_PROVIDERS, TTS_PROVIDERS, getTTSProvider, providerSupportsVision } from './registry.ts';
 
 test('local LLM providers rely on discovered installed models', () => {
 	const localProviders = LLM_PROVIDERS.filter((provider) => provider.isLocal);
@@ -25,4 +25,14 @@ test('every TTS provider declares whether it needs an API key', () => {
 	for (const provider of TTS_PROVIDERS) {
 		assert.equal(typeof provider.requiresApiKey, 'boolean', `${provider.name} must declare requiresApiKey`);
 	}
+});
+
+test('vision-capable cloud providers are flagged; text-only and local are not', () => {
+	assert.equal(providerSupportsVision('openai'), true);
+	assert.equal(providerSupportsVision('anthropic'), true);
+	assert.equal(providerSupportsVision('google'), true);
+	assert.equal(providerSupportsVision('xai'), true);
+	assert.equal(providerSupportsVision('deepseek'), false);
+	assert.equal(providerSupportsVision('ollama'), false);
+	assert.equal(providerSupportsVision('lmstudio'), false);
 });

@@ -10,6 +10,10 @@ export interface ProviderMetadata {
 	requiresApiKey: boolean;
 	defaultBaseUrl?: string;
 	isLocal?: boolean;
+	// Whether this provider's models are broadly vision-capable. Coarse, cloud
+	// only. Local providers (Ollama/LM Studio) leave this unset and rely on a
+	// per-model heuristic, since vision depends on the installed model.
+	supportsVision?: boolean;
 	models?: Array<{ id: string; name: string }>;
 	voices?: Array<{ id: string; name: string }>;
 }
@@ -27,6 +31,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		category: 'llm',
 		icon: '🤖',
 		requiresApiKey: true,
+		supportsVision: true,
 		defaultBaseUrl: 'https://api.openai.com/v1/'
 	},
 	{
@@ -36,6 +41,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		category: 'llm',
 		icon: '🧠',
 		requiresApiKey: true,
+		supportsVision: true,
 		defaultBaseUrl: 'https://api.anthropic.com/v1/'
 	},
 	{
@@ -46,6 +52,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '✨',
 		iconColor: '#4285F4',
 		requiresApiKey: true,
+		supportsVision: true,
 		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
 	},
 	{
@@ -64,6 +71,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		category: 'llm',
 		icon: '𝕏',
 		requiresApiKey: true,
+		supportsVision: true,
 		defaultBaseUrl: 'https://api.x.ai/v1/'
 	},
 	// Local LLMs discover installed models from the user's running local server.
@@ -195,4 +203,9 @@ export function getLLMProvider(id: string): ProviderMetadata | undefined {
 
 export function getTTSProvider(id: string): ProviderMetadata | undefined {
 	return TTS_PROVIDERS.find((p) => p.id === id);
+}
+
+/** Whether an LLM provider's models are broadly vision-capable (cloud providers). */
+export function providerSupportsVision(id: string): boolean {
+	return getLLMProvider(id)?.supportsVision === true;
 }
