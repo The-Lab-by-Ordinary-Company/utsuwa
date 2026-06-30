@@ -39,44 +39,109 @@ const VALID_EMOTIONS: Emotion[] = [
 	'neutral'
 ];
 
+// JSON objects we care about carry at least one of these keys.
+const STATE_KEY_RE =
+	/"(?:mood_change|affection_delta|trust_delta|intimacy_delta|comfort_delta|respect_delta|new_memory)"/;
+
+// Reasoning models (R1-style) emit a scratchpad before the answer. Strip it so
+// the trace never reaches the chat bubble or the JSON parser. Handles the
+// well-formed <think>...</think> pair and the lone </think> some endpoints
+// return when the opening tag was consumed as a special token.
+function stripReasoning(text: string): string {
+	let out = text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '');
+	const close = out.match(/<\/think(?:ing)?>/i);
+	if (close && close.index !== undefined) {
+		out = out.slice(close.index + close[0].length);
+	}
+	return out.trim();
+}
+
+// Scan from `start` (a '{') to its matching '}', ignoring braces inside strings.
+function balancedObjectFrom(text: string, start: number): string | null {
+	let depth = 0;
+	let inStr = false;
+	let esc = false;
+	for (let i = start; i < text.length; i++) {
+		const ch = text[i];
+		if (inStr) {
+			if (esc) esc = false;
+			else if (ch === '\\') esc = true;
+			else if (ch === '"') inStr = false;
+		} else if (ch === '"') inStr = true;
+		else if (ch === '{') depth++;
+		else if (ch === '}') {
+			depth--;
+			if (depth === 0) return text.slice(start, i + 1);
+		}
+	}
+	return null;
+}
+
+// First balanced {...} that actually carries a state key, so we don't grab
+// unrelated JSON the user may have pasted into the chat.
+function findStateObject(text: string): string | null {
+	for (let i = text.indexOf('{'); i !== -1; i = text.indexOf('{', i + 1)) {
+		const obj = balancedObjectFrom(text, i);
+		if (obj && STATE_KEY_RE.test(obj)) return obj;
+	}
+	return null;
+}
+
+// Tolerant parse for the JSON weaker models and non-conforming endpoints emit:
+// strips // and /* */ comments and trailing commas, then falls back to pulling
+// the first balanced object out of surrounding prose.
+function tryParseJson(text: string): LLMStateOutput | null {
+	const repaired = text
+		.replace(/\/\/[^\n\r]*/g, '')
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.replace(/,\s*([}\]])/g, '$1')
+		.trim();
+	try {
+		return JSON.parse(repaired) as LLMStateOutput;
+	} catch {
+		const obj = findStateObject(repaired);
+		if (obj && obj !== repaired) {
+			try {
+				return JSON.parse(obj) as LLMStateOutput;
+			} catch {
+				/* give up */
+			}
+		}
+		return null;
+	}
+}
+
 // Parse LLM response to extract dialogue and state updates
 export function parseResponse(rawResponse: string): ParsedResponse {
-	// Default result
-	let dialogue = rawResponse.trim();
+	const raw = stripReasoning(rawResponse);
+	let dialogue = raw.trim();
 	let stateUpdates: Partial<StateUpdates> | null = null;
 	let parseError: string | undefined;
 
-	// Try to extract JSON block
-	const jsonMatch = rawResponse.match(/```json\s*([\s\S]*?)\s*```/i);
-
-	if (jsonMatch) {
-		// Remove JSON block from dialogue
-		dialogue = rawResponse.replace(jsonMatch[0], '').trim();
-
-		try {
-			const parsed: LLMStateOutput = JSON.parse(jsonMatch[1]);
+	// Prefer a fenced ```json block; otherwise grab the first bare JSON object
+	// that carries a state key (models that skip the fence).
+	const fenced = raw.match(/```json\s*([\s\S]*?)\s*```/i);
+	if (fenced) {
+		const parsed = tryParseJson(fenced[1]);
+		if (parsed) {
 			stateUpdates = convertLLMOutput(parsed);
-		} catch (e) {
-			parseError = `Failed to parse JSON: ${e instanceof Error ? e.message : 'Unknown error'}`;
-			console.debug('Failed to parse LLM state updates:', e);
+		} else {
+			parseError = 'Failed to parse JSON state block';
+			console.debug('Failed to parse LLM state updates:', fenced[1]);
 		}
+		dialogue = raw.replace(fenced[0], '').trim();
 	} else {
-		// Try to find inline JSON (some models don't use code blocks)
-		const inlineJsonMatch = rawResponse.match(/\{[\s\S]*"(?:mood_change|affection_delta|trust_delta)"[\s\S]*\}/);
-		if (inlineJsonMatch) {
-			dialogue = rawResponse.replace(inlineJsonMatch[0], '').trim();
-			try {
-				const parsed: LLMStateOutput = JSON.parse(inlineJsonMatch[0]);
+		const obj = findStateObject(raw);
+		if (obj) {
+			const parsed = tryParseJson(obj);
+			if (parsed) {
 				stateUpdates = convertLLMOutput(parsed);
-			} catch (e) {
-				// Ignore parse errors for inline JSON - might be false positive
+				dialogue = raw.replace(obj, '').trim();
 			}
 		}
 	}
 
-	// Clean up dialogue
 	dialogue = cleanDialogue(dialogue);
-
 	return { dialogue, stateUpdates, parseError };
 }
 
