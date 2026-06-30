@@ -68,9 +68,44 @@ export async function prepareImage(file: Blob): Promise<PreparedImage> {
 	};
 }
 
-/** Persist a shown image as a keepsake. Call when it becomes a kept memory. */
-export async function keepImage(id: string, blob: Blob): Promise<void> {
+// A "photo memory": the lightweight record of a kept image (the blob lives
+// under keepsake-blob-${id}). These are what the photoboard reads.
+export interface KeepsakeRecord {
+	id: string;
+	mimeType: string;
+	createdAt: number; // epoch ms
+	note?: string; // optional: what she remembered about it
+}
+
+const INDEX_KEY = 'keepsake-index';
+
+async function readIndex(): Promise<KeepsakeRecord[]> {
+	return (await keepsakeStorage?.getItem<KeepsakeRecord[]>(INDEX_KEY)) ?? [];
+}
+
+/** Persist a shown image as a keepsake (blob + photo-memory record). */
+export async function keepImage(
+	id: string,
+	blob: Blob,
+	meta?: { mimeType?: string; note?: string }
+): Promise<void> {
 	await keepsakeStorage?.setItem(`keepsake-blob-${id}`, blob);
+	const list = await readIndex();
+	if (!list.some((k) => k.id === id)) {
+		list.push({
+			id,
+			mimeType: meta?.mimeType ?? blob.type ?? 'image/jpeg',
+			createdAt: Date.now(),
+			note: meta?.note
+		});
+		await keepsakeStorage?.setItem(INDEX_KEY, list);
+	}
+}
+
+/** All kept photo-memories, newest first. */
+export async function listKeepsakes(): Promise<KeepsakeRecord[]> {
+	const list = await readIndex();
+	return [...list].sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export async function getKeepsakeBlob(id: string): Promise<Blob | null> {
@@ -83,7 +118,9 @@ export async function getKeepsakeImageUrl(id: string): Promise<string | null> {
 	return blob ? URL.createObjectURL(blob) : null;
 }
 
-/** She forgets it: hard-delete the blob. */
+/** She forgets it: hard-delete the blob and its record. */
 export async function forgetKeepsakeImage(id: string): Promise<void> {
 	await keepsakeStorage?.removeItem(`keepsake-blob-${id}`);
+	const list = await readIndex();
+	await keepsakeStorage?.setItem(INDEX_KEY, list.filter((k) => k.id !== id));
 }

@@ -7,9 +7,10 @@
 
 	interface Props {
 		onInfoClick: () => void;
+		onBoardClick?: () => void;
 	}
 
-	let { onInfoClick }: Props = $props();
+	let { onInfoClick, onBoardClick }: Props = $props();
 	let showOverlayBtn = $state(false);
 
 	onMount(() => {
@@ -35,6 +36,11 @@
 	{#if showOverlayBtn}
 		<button class="icon-btn overlay-btn" onclick={launchOverlay} aria-label="Launch overlay" title="Launch Overlay Mode">
 			<Icon name="monitor" size={20} />
+		</button>
+	{/if}
+	{#if onBoardClick}
+		<button class="icon-btn" onclick={onBoardClick} aria-label="Photoboard" title="Things you've shown her">
+			<Icon name="image" size={20} />
 		</button>
 	{/if}
 	<button class="icon-btn" onclick={onInfoClick} aria-label="App info">

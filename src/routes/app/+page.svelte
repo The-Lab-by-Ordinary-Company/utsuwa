@@ -6,6 +6,7 @@
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
+	import Photoboard from '$lib/components/chat/Photoboard.svelte';
 	import { EventScene } from '$lib/components/events';
 	import { OnboardingModal } from '$lib/components/onboarding';
 	import MemoryGraphModal from '$lib/components/memory/MemoryGraphModal.svelte';
@@ -55,6 +56,7 @@
 
 	// Info modal state
 	let showInfoModal = $state(false);
+	let showBoard = $state(false);
 
 	// Memory graph modal state
 	let showMemoryGraph = $state(false);
@@ -351,7 +353,9 @@
 
 			// She's seen it and responded; keep the shown images as local keepsakes
 			if (images.length > 0) {
-				await Promise.all(images.map((img) => keepImage(img.id, img.blob)));
+				await Promise.all(
+					images.map((img) => keepImage(img.id, img.blob, { mimeType: img.mimeType }))
+				);
 			}
 
 			chatStore.updateLastMessage(cleanedResponse);
@@ -424,9 +428,12 @@
 
 <div class="app-container">
 	<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} />
-	<TopRightButtons onInfoClick={() => showInfoModal = true} />
+	<TopRightButtons onInfoClick={() => showInfoModal = true} onBoardClick={() => showBoard = true} />
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />
+	{/if}
+	{#if showBoard}
+		<Photoboard onClose={() => showBoard = false} />
 	{/if}
 	{#if showMemoryGraph}
 		<MemoryGraphModal onClose={() => showMemoryGraph = false} />
