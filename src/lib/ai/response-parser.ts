@@ -39,6 +39,50 @@ const VALID_EMOTIONS: Emotion[] = [
 	'neutral'
 ];
 
+// Common free-form / compound emotions weaker and RP-tuned models emit, mapped
+// to our canonical set. Lets their mood signal land instead of being dropped.
+const EMOTION_SYNONYMS: Record<string, Emotion> = {
+	joy: 'happy', joyful: 'happy', glad: 'happy', cheerful: 'happy', pleased: 'happy',
+	grateful: 'happy', thankful: 'happy', delighted: 'happy', proud: 'happy',
+	excitement: 'excited', thrilled: 'excited', eager: 'excited', enthusiastic: 'excited',
+	nervous: 'anxious', worried: 'anxious', scared: 'anxious', afraid: 'anxious',
+	fearful: 'anxious', uneasy: 'anxious', tense: 'anxious', stressed: 'anxious',
+	calm: 'content', relaxed: 'content', peaceful: 'content', satisfied: 'content',
+	comfortable: 'content', 'cared-for': 'content', serene: 'content', reassured: 'content',
+	angry: 'frustrated', annoyed: 'frustrated', irritated: 'frustrated', upset: 'frustrated',
+	mad: 'frustrated', exasperated: 'frustrated',
+	interested: 'curious', intrigued: 'curious', inquisitive: 'curious',
+	loving: 'affectionate', warm: 'affectionate', tender: 'affectionate', fond: 'affectionate',
+	caring: 'affectionate', affection: 'affectionate', adoring: 'affectionate',
+	fun: 'playful', teasing: 'playful', mischievous: 'playful', silly: 'playful', cheeky: 'playful',
+	down: 'melancholy', blue: 'melancholy', wistful: 'melancholy', nostalgic: 'melancholy',
+	lonely: 'melancholy', somber: 'melancholy', gloomy: 'melancholy',
+	unhappy: 'sad', hurt: 'sad', disappointed: 'sad', heartbroken: 'sad', sorrowful: 'sad',
+	embarrassed: 'flustered', shy: 'flustered', bashful: 'flustered', blushing: 'flustered',
+	fine: 'neutral', okay: 'neutral', indifferent: 'neutral'
+};
+
+// Resolve a model's emotion string to one of our canonical emotions, taking the
+// first of a compound ("happy|curious", "warm, caring") and mapping synonyms.
+function normalizeEmotion(raw: string | undefined): Emotion | null {
+	if (!raw) return null;
+	const first = raw.toLowerCase().trim().split(/[|/,]/)[0].trim();
+	if (VALID_EMOTIONS.includes(first as Emotion)) return first as Emotion;
+	return EMOTION_SYNONYMS[first] ?? null;
+}
+
+// Chat-template / stop tokens some local GGUFs leak into their text output. An
+// end-of-turn marker means the turn is over, so anything after it is a
+// hallucinated next turn and gets cut; the rest are just removed.
+const END_OF_TURN_RE = /<\/s>|<\|im_end\|>|<\|eot_id\|>|<\|end_of_text\|>|<\|endoftext\|>|<end_of_turn>/i;
+const STRAY_TOKEN_RE = /<\|[a-z0-9_]+\|>|<\/?s>|<\/?(?:bos|eos)>|<\/?(?:start|end)_of_turn>|\[\/?INST\]/gi;
+
+function stripControlTokens(text: string): string {
+	const idx = text.search(END_OF_TURN_RE);
+	const cut = idx === -1 ? text : text.slice(0, idx);
+	return cut.replace(STRAY_TOKEN_RE, '');
+}
+
 // JSON objects we care about carry at least one of these keys.
 const STATE_KEY_RE =
 	/"(?:mood_change|affection_delta|trust_delta|intimacy_delta|comfort_delta|respect_delta|new_memory)"/;
@@ -151,8 +195,8 @@ function convertLLMOutput(output: LLMStateOutput): Partial<StateUpdates> {
 
 	// Convert mood change
 	if (output.mood_change) {
-		const emotion = output.mood_change.emotion?.toLowerCase() as Emotion;
-		if (VALID_EMOTIONS.includes(emotion)) {
+		const emotion = normalizeEmotion(output.mood_change.emotion);
+		if (emotion) {
 			updates.moodChange = {
 				emotion,
 				intensityDelta: clampDelta(output.mood_change.intensity_delta, -30, 30)
@@ -201,7 +245,8 @@ function clampDelta(value: number | undefined, min: number, max: number): number
 
 // Clean up dialogue text
 function cleanDialogue(text: string): string {
-	let cleaned = text;
+	// Cut runaway output at a leaked stop token and drop stray template tokens.
+	let cleaned = stripControlTokens(text);
 
 	// Remove any leftover JSON-like content
 	cleaned = cleaned.replace(/\{[^}]*"(?:mood|delta|emotion)[^}]*\}/gi, '');

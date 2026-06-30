@@ -95,3 +95,43 @@ test('returns null state for plain prose', () => {
 	const { stateUpdates } = parseResponse('Just a normal reply with no JSON at all.');
 	assert.equal(stateUpdates, null);
 });
+
+test('cuts runaway output at a leaked </s> stop token', () => {
+	const raw =
+		"I'm really glad you told me.</s>\nPlease tell me more, I'm all ears and ready to";
+	const { dialogue } = parseResponse(raw);
+	assert.equal(dialogue, "I'm really glad you told me.");
+	assert.ok(!dialogue.includes('</s>'));
+	assert.ok(!dialogue.includes('Please tell me more'));
+});
+
+test('strips stray ChatML / Llama template tokens', () => {
+	const raw = '<|im_start|>assistant\nHey there.<|im_end|>';
+	const { dialogue } = parseResponse(raw);
+	assert.ok(!dialogue.includes('<|im_start|>'));
+	assert.ok(!dialogue.includes('<|im_end|>'));
+	assert.ok(dialogue.includes('Hey there.'));
+});
+
+test('cuts at <|eot_id|> and keeps the dialogue before it', () => {
+	const raw = 'Take care of yourself tonight.<|eot_id|>garbage continuation here';
+	const { dialogue } = parseResponse(raw);
+	assert.equal(dialogue, 'Take care of yourself tonight.');
+});
+
+test('maps compound and synonym emotions to the canonical set', () => {
+	const compound = parseResponse('```json\n{ "mood_change": { "emotion": "grateful|cared-for", "intensity_delta": 4 } }\n```');
+	assert.equal(compound.stateUpdates?.moodChange?.emotion, 'happy');
+
+	const synonym = parseResponse('```json\n{ "mood_change": { "emotion": "excitement", "intensity_delta": 6 } }\n```');
+	assert.equal(synonym.stateUpdates?.moodChange?.emotion, 'excited');
+
+	const firstOfCompound = parseResponse('```json\n{ "mood_change": { "emotion": "happy|curious", "intensity_delta": 3 } }\n```');
+	assert.equal(firstOfCompound.stateUpdates?.moodChange?.emotion, 'happy');
+});
+
+test('drops a truly unknown emotion rather than guessing', () => {
+	const { stateUpdates } = parseResponse('```json\n{ "mood_change": { "emotion": "zorblax", "intensity_delta": 5 }, "trust_delta": 2 }\n```');
+	assert.equal(stateUpdates?.moodChange, undefined);
+	assert.equal(stateUpdates?.trustDelta, 2);
+});
