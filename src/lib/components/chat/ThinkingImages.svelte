@@ -39,8 +39,8 @@
 
 	.thinking-image {
 		/* clean square thumbnail preview */
-		width: 110px;
-		height: 110px;
+		width: 72px;
+		height: 72px;
 		object-fit: cover;
 		border-radius: 0.875rem;
 		border: 2px solid rgba(255, 255, 255, 0.9);
