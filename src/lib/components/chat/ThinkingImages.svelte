@@ -38,24 +38,19 @@
 	}
 
 	.thinking-image {
-		max-width: 120px;
-		max-height: 150px;
+		/* clean square thumbnail preview */
+		width: 110px;
+		height: 110px;
 		object-fit: cover;
 		border-radius: 0.875rem;
-		/* a held-up photo: white frame, soft shadow, slight tilt */
-		border: 4px solid white;
+		border: 2px solid rgba(255, 255, 255, 0.9);
 		box-shadow:
-			0 10px 28px rgba(0, 0, 0, 0.28),
-			0 3px 8px rgba(0, 0, 0, 0.16);
-		transform: rotate(-2.5deg);
-	}
-
-	.thinking-image:nth-child(even) {
-		transform: rotate(2.5deg);
+			0 8px 22px rgba(0, 0, 0, 0.22),
+			0 2px 6px rgba(0, 0, 0, 0.14);
 	}
 
 	:global(.dark) .thinking-image {
-		border-color: #2a2a2a;
+		border-color: rgba(255, 255, 255, 0.12);
 	}
 
 	@keyframes float {
