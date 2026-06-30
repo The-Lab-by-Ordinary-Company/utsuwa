@@ -83,6 +83,20 @@ function stripControlTokens(text: string): string {
 	return cut.replace(STRAY_TOKEN_RE, '');
 }
 
+// The model sometimes keeps writing past its own reply and starts a new
+// transcript turn as the user or a narrator (e.g. `CJ: "..."`, `They: ...`,
+// `User: ...`), often a third-person note it meant for the memory JSON. Cut at
+// the first such turn on a LATER line (anchored to \n, so the real reply on
+// line one is never the cut point). Names vary, so we key on a known transcript
+// label or any `Name: "` that opens a quoted line.
+const HALLUCINATED_TURN_RE =
+	/\n[ \t]*(?:(?:They|You|User|Human|Assistant|Narrator|System|AI)[ \t]*:[ \t]|[A-Z][\w'’.-]{0,19}[ \t]*:[ \t]*["“])/;
+
+function cutHallucinatedTurn(text: string): string {
+	const m = text.match(HALLUCINATED_TURN_RE);
+	return m && m.index !== undefined ? text.slice(0, m.index) : text;
+}
+
 // JSON objects we care about carry at least one of these keys.
 const STATE_KEY_RE =
 	/"(?:mood_change|affection_delta|trust_delta|intimacy_delta|comfort_delta|respect_delta|new_memory)"/;
@@ -247,6 +261,9 @@ function clampDelta(value: number | undefined, min: number, max: number): number
 function cleanDialogue(text: string): string {
 	// Cut runaway output at a leaked stop token and drop stray template tokens.
 	let cleaned = stripControlTokens(text);
+
+	// Cut if the model kept going as the user / a narrator instead of replying.
+	cleaned = cutHallucinatedTurn(cleaned);
 
 	// Remove any leftover JSON-like content
 	cleaned = cleaned.replace(/\{[^}]*"(?:mood|delta|emotion)[^}]*\}/gi, '');

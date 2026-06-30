@@ -50,6 +50,7 @@ RULES:
 - Be helpful, friendly, and conversational
 - Keep responses natural (1-3 paragraphs typically)
 - Remember context from recent conversations
+- Write only your own spoken reply. Never write the user's lines, transcript labels (like "${ctx.persona.name}:" or their name), or third-person notes about them. Observations go in the JSON only.
 </system>`);
 
 	// Character personality
@@ -127,6 +128,7 @@ CRITICAL RULES:
 - Be consistent with established memories and facts
 - Express emotions through dialogue, not stage directions
 - Keep responses conversational and natural (1-3 paragraphs typically)
+- Write only your own spoken reply; never write the user's lines, transcript labels, or third-person notes about them (those go in the JSON only)
 
 OUTPUT FORMAT:
 1. Respond naturally in character (dialogue only, no actions in asterisks)

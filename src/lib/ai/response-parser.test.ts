@@ -135,3 +135,29 @@ test('drops a truly unknown emotion rather than guessing', () => {
 	assert.equal(stateUpdates?.moodChange, undefined);
 	assert.equal(stateUpdates?.trustDelta, 2);
 });
+
+test('cuts a hallucinated user turn the model appended as a note', () => {
+	const raw =
+		'I apologize for the confusion earlier, CJ. How are you doing today?\n\nCJ: "They corrected me on their name and asked how my day is going. Seems polite but formal."';
+	const { dialogue } = parseResponse(raw);
+	assert.equal(dialogue, 'I apologize for the confusion earlier, CJ. How are you doing today?');
+	assert.ok(!dialogue.includes('They corrected me'));
+});
+
+test('cuts known transcript labels (They:/User:) the model keeps writing', () => {
+	const they = parseResponse('That sounds lovely.\nThey: tell me more about it');
+	assert.equal(they.dialogue, 'That sounds lovely.');
+	const user = parseResponse('Glad to hear it!\nUser: what should I do next?');
+	assert.equal(user.dialogue, 'Glad to hear it!');
+});
+
+test('does not cut a legit reply that just contains a colon line', () => {
+	const raw = 'Here is the plan:\nFirst we get coffee, then we walk.';
+	const { dialogue } = parseResponse(raw);
+	assert.ok(dialogue.includes('First we get coffee'));
+});
+
+test('strips a leading self-label without nuking the reply', () => {
+	const { dialogue } = parseResponse('Luna: Hey, good to see you.');
+	assert.equal(dialogue, 'Hey, good to see you.');
+});
