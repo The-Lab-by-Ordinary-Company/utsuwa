@@ -21,7 +21,7 @@
 	import { getLLMProvider, getTTSProvider, providerSupportsVision } from '$lib/services/providers/registry';
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
 	import { canShowImages } from '$lib/services/providers/vision';
-	import { streamChatDirect } from '$lib/services/chat/client-chat';
+	import { streamChatDirect, extractStateUpdates } from '$lib/services/chat/client-chat';
 	import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { type ContentPart, toOpenAIContent } from '$lib/services/chat/content';
 	import { isTauri } from '$lib/services/platform';
@@ -31,7 +31,7 @@
 	import { onMount } from 'svelte';
 
 	// V2 companion system imports
-	import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
+	import { buildSystemPrompt, buildExtractionSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
 	import { parseResponse, validateStateUpdates, extractPotentialFacts } from '$lib/ai/response-parser';
 	import { calculateBaselineUpdates, analyzeMessage } from '$lib/engine/heuristics';
 	import { mergeUpdates, checkAndApplyStageTransition } from '$lib/engine/state-updates';
@@ -139,14 +139,18 @@
 	});
 
 	// Process companion response with v2 system
-	async function processCompanionResponse(userMessage: string, companionResponse: string): Promise<string> {
+	async function processCompanionResponse(
+		userMessage: string,
+		companionResponse: string,
+		llm: { provider: string; model: string; apiKey?: string; baseURL?: string; hasImages: boolean }
+	): Promise<string> {
 		const state = characterStore.state;
 
 		const baselineUpdates = calculateBaselineUpdates(userMessage, state);
 
 		const parsed = parseResponse(companionResponse);
 		const dialogue = parsed.dialogue;
-		const llmUpdates = parsed.stateUpdates;
+		let llmUpdates = parsed.stateUpdates;
 
 		if (import.meta.env.DEV) {
 			console.log('%c[LLM raw response]', 'color:#01B2FF;font-weight:bold', companionResponse);
@@ -154,6 +158,26 @@
 				stateUpdates: llmUpdates,
 				new_memory: llmUpdates?.newMemory ?? null
 			});
+		}
+
+		// Decoupled fallback: the model skipped the inline JSON, so ask a dedicated
+		// forced-JSON call to extract mood + memory from the exchange.
+		if (!llmUpdates) {
+			const extracted = await extractStateUpdates({
+				provider: llm.provider as import('$lib/types').LLMProvider,
+				model: llm.model,
+				apiKey: llm.apiKey,
+				baseURL: llm.baseURL,
+				system: buildExtractionSystemPrompt(llm.hasImages),
+				userMessage,
+				reply: dialogue
+			});
+			if (extracted) {
+				llmUpdates = parseResponse('```json\n' + extracted + '\n```').stateUpdates;
+				if (import.meta.env.DEV) {
+					console.log('%c[extraction fallback]', 'color:#f59e0b;font-weight:bold', extracted, '->', llmUpdates);
+				}
+			}
 		}
 
 		let validatedLLMUpdates = null;
@@ -360,7 +384,13 @@
 			}
 
 			isTyping = false;
-			const cleanedResponse = await processCompanionResponse(content, fullContent);
+			const cleanedResponse = await processCompanionResponse(content, fullContent, {
+				provider,
+				model: selectedModel,
+				apiKey: apiKey || undefined,
+				baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+				hasImages: images.length > 0
+			});
 
 			// She's seen it and responded; keep the shown images as local keepsakes
 			if (images.length > 0) {

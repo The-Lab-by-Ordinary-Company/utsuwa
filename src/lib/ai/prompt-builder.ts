@@ -245,6 +245,28 @@ If it is worth keeping, put it in new_memory as your impression in your own word
 </being_shown>`;
 }
 
+// Decoupled extraction: a tight, forced-JSON prompt used as a fallback when the
+// chat model didn't append a usable state block. A separate call derives it.
+export function buildExtractionSystemPrompt(hasImages = false): string {
+	const imageLine = hasImages
+		? " The user showed the companion an image this turn, so new_memory should capture the companion's impression of what they were shown."
+		: '';
+	return `You read a short exchange between a user and their AI companion and output ONLY a JSON object describing what changed. No prose, no markdown fences, just the JSON object.
+
+Shape:
+{
+  "mood_change": { "emotion": "happy|sad|excited|anxious|content|frustrated|curious|affectionate|playful|melancholy|flustered|neutral", "intensity_delta": -10 to 10 },
+  "new_memory": null | "one sentence worth remembering about the user, in the companion's own voice"
+}
+
+Set new_memory when the user revealed something about themselves: a preference, a plan, a feeling, someone in their life, or a moment they shared.${imageLine} Otherwise use null.
+
+Examples:
+{"mood_change":{"emotion":"affectionate","intensity_delta":4},"new_memory":"They showed me their dog, a scruffy terrier they clearly adore"}
+{"mood_change":{"emotion":"curious","intensity_delta":2},"new_memory":"They're learning to play piano"}
+{"mood_change":{"emotion":"neutral","intensity_delta":0},"new_memory":null}`;
+}
+
 // Instruction layer - how to respond
 function buildInstructionLayer(ctx: PromptContext): string {
 	const stage = ctx.state.relationshipStage;

@@ -164,3 +164,72 @@ export async function streamChatDirect(
 		onError(msg);
 	}
 }
+
+interface ExtractOptions {
+	provider: LLMProvider;
+	model: string;
+	apiKey?: string;
+	baseURL?: string;
+	system: string;
+	userMessage: string;
+	reply: string;
+}
+
+/**
+ * Non-streaming, forced-JSON call used as the decoupled state/memory extractor.
+ * Returns the raw JSON string the model produced (or null on any failure).
+ * Uses response_format json_object for OpenAI-compatible providers (incl. Ollama
+ * and LM Studio), which constrains the output to valid JSON.
+ */
+export async function extractStateUpdates(options: ExtractOptions): Promise<string | null> {
+	const { provider, model, apiKey, baseURL, system, userMessage, reply } = options;
+	const isLocal = isLocalLLMProvider(provider);
+	if (!apiKey && !isLocal) return null;
+
+	const base = isLocal ? getChatBaseUrl(provider, baseURL) : baseURL || PROVIDER_BASE_URLS[provider];
+	if (!base) return null;
+
+	const trimmedBase = base.replace(/\/+$/, '');
+	const userContent = `User: ${userMessage}\nCompanion: ${reply}\n\nReturn the JSON.`;
+	const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+	let url: string;
+	let body: string;
+	if (provider === 'anthropic') {
+		headers['x-api-key'] = apiKey || '';
+		headers['anthropic-version'] = '2023-06-01';
+		headers['anthropic-dangerous-direct-browser-access'] = 'true';
+		url = `${trimmedBase}/messages`;
+		body = JSON.stringify({
+			model,
+			max_tokens: 400,
+			system,
+			messages: [{ role: 'user', content: userContent }]
+		});
+	} else {
+		if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+		url = `${trimmedBase}/chat/completions`;
+		body = JSON.stringify({
+			model,
+			messages: [
+				{ role: 'system', content: system },
+				{ role: 'user', content: userContent }
+			],
+			response_format: { type: 'json_object' },
+			stream: false,
+			max_tokens: 400
+		});
+	}
+
+	try {
+		const response = await fetch(url, { method: 'POST', headers, body });
+		if (!response.ok) return null;
+		const json = await response.json();
+		if (provider === 'anthropic') {
+			return json?.content?.[0]?.text ?? null;
+		}
+		return json?.choices?.[0]?.message?.content ?? null;
+	} catch {
+		return null;
+	}
+}
