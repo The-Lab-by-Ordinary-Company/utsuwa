@@ -254,6 +254,14 @@
 
 		const memories = await retrieveRelevantContext(userMessage);
 
+		if (import.meta.env.DEV) {
+			console.log('%c[memory hydration]', 'color:#a855f7;font-weight:bold', {
+				relevantFacts: memories.relevantFacts.map((f) => f.content),
+				triggered: memories.triggeredMemories.map((m) => m.content),
+				recentTurns: memories.recentTurns.length
+			});
+		}
+
 		const context: PromptContext = {
 			persona,
 			state,

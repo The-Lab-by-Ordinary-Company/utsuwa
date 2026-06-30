@@ -99,7 +99,7 @@ After your reply, ALWAYS end with a JSON block, even when little changed:
 }
 \`\`\`
 
-Use new_memory whenever they reveal something about themselves: a preference, a plan, a feeling, someone in their life, or a moment you shared (like a photo they show you). One sentence, in your own words. Use null only when nothing meaningful came up.
+Use new_memory whenever they reveal something about themselves: a preference, a plan, a feeling, someone in their life, or a moment you shared (like a photo they show you). Write it in third person about them (they/them, never assume gender), one short factual sentence stating only what they actually said. Never invent details. Use null only when nothing meaningful came up.
 
 Examples of good new_memory values:
 - "They have a job interview this Thursday they're nervous about"
@@ -256,14 +256,18 @@ export function buildExtractionSystemPrompt(hasImages = false): string {
 Shape:
 {
   "mood_change": { "emotion": "happy|sad|excited|anxious|content|frustrated|curious|affectionate|playful|melancholy|flustered|neutral", "intensity_delta": -10 to 10 },
-  "new_memory": null | "one sentence worth remembering about the user, in the companion's own voice"
+  "new_memory": null | "a fact about the user"
 }
 
-Set new_memory when the user revealed something about themselves: a preference, a plan, a feeling, someone in their life, or a moment they shared.${imageLine} Otherwise use null.
+new_memory rules:
+- Third person about the user, using "they/them". Never assume their gender or a name.
+- One short, plain, factual sentence. State only what they actually said this turn. No interpretation, no advice, no flourish.
+- Only when they revealed something concrete (a preference, plan, feeling, someone in their life, or a moment they shared).${imageLine} Otherwise null. Never invent details that were not stated.
 
 Examples:
-{"mood_change":{"emotion":"affectionate","intensity_delta":4},"new_memory":"They showed me their dog, a scruffy terrier they clearly adore"}
-{"mood_change":{"emotion":"curious","intensity_delta":2},"new_memory":"They're learning to play piano"}
+{"mood_change":{"emotion":"frustrated","intensity_delta":3},"new_memory":"Their manager keeps assigning projects with no warning"}
+{"mood_change":{"emotion":"content","intensity_delta":4},"new_memory":"They are a graphic designer of 8 years and feel burnt out"}
+{"mood_change":{"emotion":"affectionate","intensity_delta":4},"new_memory":"They grew up with cats and want to adopt one"}
 {"mood_change":{"emotion":"neutral","intensity_delta":0},"new_memory":null}`;
 }
 
@@ -301,7 +305,7 @@ After your reply, ALWAYS end with a JSON block, even when little changed:
 }
 \`\`\`
 
-Keep deltas small (-10 to +10 for most interactions). Use new_memory whenever they reveal something about themselves: a preference, a plan, a feeling, someone in their life, or a moment you shared (like a photo they show you). One sentence, in your own words. Use null only when nothing meaningful came up.
+Keep deltas small (-10 to +10 for most interactions). Use new_memory whenever they reveal something about themselves: a preference, a plan, a feeling, someone in their life, or a moment you shared (like a photo they show you). Write it in third person about them (they/them, never assume gender), one short factual sentence stating only what they actually said. Never invent details. Use null only when nothing meaningful came up.
 
 Examples of good new_memory values:
 - "They grew up in Seattle and miss the rain"
