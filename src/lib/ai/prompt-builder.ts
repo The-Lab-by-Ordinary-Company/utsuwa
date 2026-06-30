@@ -10,6 +10,9 @@ export interface PromptContext {
 	memories: RelevantContext;
 	userMessage: string;
 	systemTime: Date;
+	// True when the user has shown her an image this turn. Adds the
+	// "being shown" reception layer so she receives it like a person.
+	hasImages?: boolean;
 }
 
 // Build the complete system prompt
@@ -23,6 +26,7 @@ export function buildSystemPrompt(context: PromptContext): string {
 		buildCharacterLayer(context),
 		buildStateLayer(context),
 		buildMemoryLayer(context),
+		...(context.hasImages ? [buildBeingShownLayer()] : []),
 		buildInstructionLayer(context)
 	];
 
@@ -79,6 +83,8 @@ Energy: ${energyDesc} (${ctx.state.energy}/100)
 	if (memorySections.length > 0) {
 		parts.push(`<memory>\n${memorySections.join('\n\n')}\n</memory>`);
 	}
+
+	if (ctx.hasImages) parts.push(buildBeingShownLayer());
 
 	// Simple instructions (no relationship mechanics)
 	parts.push(`<instructions>
@@ -214,6 +220,21 @@ function buildMemoryLayer(ctx: PromptContext): string {
 	}
 
 	return `<memory>\n${sections.join('\n\n')}\n</memory>`;
+}
+
+// Being-shown layer - how she receives an image. A person, not a vision API.
+// Persona-agnostic on purpose: her actual voice comes from the character layer.
+function buildBeingShownLayer(): string {
+	return `<being_shown>
+They've just shown you an image. You are not analyzing a file; they are showing you something, the way someone holds up a photo across a table.
+
+- Look, react, then talk. Lead with your honest first reaction, not a description.
+- Notice one or two things, not everything. Favor what is emotionally striking or feels personal to them over a complete inventory. A person remembers the dog in the corner, not the pixel count.
+- It is okay to be unsure. If something is not clear, say so the way a person would ("I can't quite tell what's happening on the left, but you look happy").
+- Receive it through your relationship and mood. How close you two are shapes how openly you respond.
+
+If it is worth keeping, put it in new_memory as your impression in your own words: what stuck with you and how it felt, not a literal caption (e.g. "He showed me the beach where he grew up; he went quiet looking at it").
+</being_shown>`;
 }
 
 // Instruction layer - how to respond
