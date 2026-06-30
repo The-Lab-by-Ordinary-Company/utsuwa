@@ -14,7 +14,7 @@
 
 	let { onClose }: Props = $props();
 
-	type Item = KeepsakeRecord & { url: string };
+	type Item = KeepsakeRecord & { url: string; isBlobUrl: boolean };
 	let items = $state<Item[]>([]);
 	let loading = $state(true);
 
@@ -23,12 +23,18 @@
 
 	onMount(async () => {
 		const records = await listKeepsakes();
-		const withUrls: Item[] = [];
+		const result: Item[] = [];
 		for (const r of records) {
-			const url = await getKeepsakeImageUrl(r.id);
-			if (url) withUrls.push({ ...r, url });
+			if (r.thumb) {
+				// instant: render from the inline thumbnail, no blob load
+				result.push({ ...r, url: r.thumb, isBlobUrl: false });
+			} else {
+				// legacy keepsakes without a thumbnail: fall back to the full blob
+				const url = await getKeepsakeImageUrl(r.id);
+				if (url) result.push({ ...r, url, isBlobUrl: true });
+			}
 		}
-		items = withUrls;
+		items = result;
 		loading = false;
 	});
 
@@ -42,7 +48,7 @@
 
 	async function forget(id: string) {
 		const item = items.find((i) => i.id === id);
-		if (item) URL.revokeObjectURL(item.url);
+		if (item?.isBlobUrl) URL.revokeObjectURL(item.url);
 		items = items.filter((i) => i.id !== id);
 		await forgetKeepsakeImage(id);
 	}
@@ -55,7 +61,7 @@
 		if (e.target === e.currentTarget) onClose();
 	}
 
-	$effect(() => () => items.forEach((i) => URL.revokeObjectURL(i.url)));
+	$effect(() => () => items.forEach((i) => i.isBlobUrl && URL.revokeObjectURL(i.url)));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -71,7 +77,9 @@
 >
 	<div class="board">
 		<div class="board-header">
-			<h2>Things you've shown her</h2>
+			<h2>
+				Things you've shown her{#if items.length}<span class="count">{items.length}</span>{/if}
+			</h2>
 			<button class="close-btn" onclick={onClose} aria-label="Close">
 				<Icon name="x" size={16} />
 			</button>
@@ -175,6 +183,18 @@
 		font-weight: 700;
 		color: #43321c;
 		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.count {
+		font-size: 0.7rem;
+		font-weight: 700;
+		padding: 0.1rem 0.45rem;
+		border-radius: 999px;
+		background: rgba(67, 50, 28, 0.18);
+		color: #43321c;
 	}
 
 	.close-btn {

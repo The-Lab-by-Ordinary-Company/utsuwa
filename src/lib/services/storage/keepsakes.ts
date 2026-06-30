@@ -75,6 +75,7 @@ export interface KeepsakeRecord {
 	mimeType: string;
 	createdAt: number; // epoch ms
 	note?: string; // optional: what she remembered about it
+	thumb?: string; // small cover-cropped data URL so the board renders without loading full blobs
 }
 
 const INDEX_KEY = 'keepsake-index';
@@ -83,7 +84,31 @@ async function readIndex(): Promise<KeepsakeRecord[]> {
 	return (await keepsakeStorage?.getItem<KeepsakeRecord[]>(INDEX_KEY)) ?? [];
 }
 
-/** Persist a shown image as a keepsake (blob + photo-memory record). */
+// A tiny center-cropped square thumbnail (data URL) stored inline in the record,
+// so the photoboard renders the whole wall from one index read at any scale.
+async function makeThumbnail(blob: Blob, size = 220): Promise<string | undefined> {
+	try {
+		const bitmap = await createImageBitmap(blob);
+		const scale = Math.max(size / bitmap.width, size / bitmap.height);
+		const w = bitmap.width * scale;
+		const h = bitmap.height * scale;
+		const canvas = document.createElement('canvas');
+		canvas.width = size;
+		canvas.height = size;
+		const ctx = canvas.getContext('2d');
+		if (!ctx) {
+			bitmap.close();
+			return undefined;
+		}
+		ctx.drawImage(bitmap, (size - w) / 2, (size - h) / 2, w, h);
+		bitmap.close();
+		return canvas.toDataURL('image/jpeg', 0.7);
+	} catch {
+		return undefined;
+	}
+}
+
+/** Persist a shown image as a keepsake (blob + photo-memory record with thumbnail). */
 export async function keepImage(
 	id: string,
 	blob: Blob,
@@ -96,7 +121,8 @@ export async function keepImage(
 			id,
 			mimeType: meta?.mimeType ?? blob.type ?? 'image/jpeg',
 			createdAt: Date.now(),
-			note: meta?.note
+			note: meta?.note,
+			thumb: await makeThumbnail(blob)
 		});
 		await keepsakeStorage?.setItem(INDEX_KEY, list);
 	}
