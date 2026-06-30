@@ -11,6 +11,7 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import { streamChatDirect } from '$lib/services/chat/client-chat';
+	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
 	import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import type { ContentPart } from '$lib/services/chat/content';
 	import { isTauri } from '$lib/services/platform';
@@ -236,7 +237,10 @@
 				return { role: m.role as 'user' | 'assistant', content: parts };
 			});
 
-			if (isTauri()) {
+			// Local providers (and all desktop traffic) go direct from the client:
+			// the /api/chat server proxy can't reach the user's localhost, and the
+			// direct path is the one that carries images.
+			if (isTauri() || isLocalLLMProvider(provider)) {
 				await new Promise<void>((resolve, reject) => {
 					streamChatDirect(
 						{

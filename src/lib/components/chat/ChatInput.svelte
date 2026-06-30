@@ -1,42 +1,63 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
+	import { prepareImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 
 	interface Props {
-		onSend: (content: string) => void;
+		onSend: (content: string, images?: PreparedImage[]) => void;
 		disabled?: boolean;
 	}
 
 	let { onSend, disabled = false }: Props = $props();
 	let inputValue = $state('');
 	let textareaRef: HTMLTextAreaElement;
+	let fileInput: HTMLInputElement;
+	// Images queued to show her, with a preview URL for the chip.
+	let pending = $state<{ image: PreparedImage; url: string }[]>([]);
+
+	const canSend = $derived(!disabled && (inputValue.trim().length > 0 || pending.length > 0));
+
+	async function handleFiles(files: FileList | null) {
+		if (!files) return;
+		for (const file of Array.from(files)) {
+			if (!file.type.startsWith('image/')) continue;
+			const image = await prepareImage(file);
+			pending = [...pending, { image, url: URL.createObjectURL(file) }];
+		}
+		if (fileInput) fileInput.value = '';
+	}
+
+	function removePending(id: string) {
+		pending = pending.filter((p) => {
+			if (p.image.id === id) URL.revokeObjectURL(p.url);
+			return p.image.id !== id;
+		});
+	}
+
+	function send() {
+		if (!canSend) return;
+		onSend(
+			inputValue.trim(),
+			pending.map((p) => p.image)
+		);
+		pending.forEach((p) => URL.revokeObjectURL(p.url));
+		pending = [];
+		inputValue = '';
+		if (textareaRef) textareaRef.style.height = 'auto';
+	}
 
 	function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
-		if (inputValue.trim() && !disabled) {
-			onSend(inputValue.trim());
-			inputValue = '';
-			// Reset textarea height
-			if (textareaRef) {
-				textareaRef.style.height = 'auto';
-			}
-		}
+		send();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
-			if (inputValue.trim() && !disabled) {
-				onSend(inputValue.trim());
-				inputValue = '';
-				if (textareaRef) {
-					textareaRef.style.height = 'auto';
-				}
-			}
+			send();
 		}
 	}
 
 	function handleInput() {
-		// Auto-resize textarea
 		if (textareaRef) {
 			textareaRef.style.height = 'auto';
 			textareaRef.style.height = Math.min(textareaRef.scrollHeight, 150) + 'px';
@@ -45,7 +66,41 @@
 </script>
 
 <form class="chat-input" onsubmit={handleSubmit}>
+	{#if pending.length > 0}
+		<div class="pending-row">
+			{#each pending as p (p.image.id)}
+				<div class="pending-chip">
+					<img src={p.url} alt="To show her" />
+					<button
+						type="button"
+						class="remove-chip"
+						aria-label="Remove image"
+						onclick={() => removePending(p.image.id)}
+					>
+						<Icon name="close" size={12} />
+					</button>
+				</div>
+			{/each}
+		</div>
+	{/if}
 	<div class="input-wrapper">
+		<input
+			bind:this={fileInput}
+			type="file"
+			accept="image/*"
+			multiple
+			class="file-input"
+			onchange={(e) => handleFiles(e.currentTarget.files)}
+		/>
+		<button
+			type="button"
+			class="show-btn"
+			{disabled}
+			aria-label="Show her an image"
+			onclick={() => fileInput?.click()}
+		>
+			<Icon name="camera" size={18} />
+		</button>
 		<textarea
 			bind:this={textareaRef}
 			bind:value={inputValue}
@@ -55,7 +110,7 @@
 			rows="1"
 			{disabled}
 		></textarea>
-		<button type="submit" disabled={disabled || !inputValue.trim()} aria-label="Send message">
+		<button type="submit" disabled={!canSend} aria-label="Send message">
 			<Icon name="send" size={18} />
 		</button>
 	</div>
@@ -67,6 +122,50 @@
 		border-top: 1px solid var(--color-border);
 	}
 
+	.pending-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.pending-chip {
+		position: relative;
+		width: 56px;
+		height: 56px;
+		border-radius: 0.75rem;
+		overflow: hidden;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+	}
+
+	.pending-chip img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.remove-chip {
+		position: absolute;
+		top: 2px;
+		right: 2px;
+		width: 18px;
+		height: 18px;
+		border: none;
+		border-radius: 50%;
+		background: rgba(0, 0, 0, 0.6);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		padding: 0;
+	}
+
+	.file-input {
+		display: none;
+	}
+
 	.input-wrapper {
 		display: flex;
 		align-items: flex-end;
@@ -74,7 +173,7 @@
 		background: var(--color-neutral-100);
 		border: 2px solid var(--color-neutral-200);
 		border-radius: 1.5rem;
-		padding: 0.375rem 0.5rem 0.375rem 1rem;
+		padding: 0.375rem 0.5rem;
 		transition: all 0.2s;
 	}
 
@@ -118,6 +217,16 @@
 		justify-content: center;
 		transition: all 0.2s;
 		flex-shrink: 0;
+	}
+
+	.show-btn {
+		background: transparent;
+		color: var(--color-neutral-400);
+	}
+
+	.show-btn:hover:not(:disabled) {
+		background: var(--color-neutral-200);
+		color: var(--color-foreground);
 	}
 
 	button:hover:not(:disabled) {
