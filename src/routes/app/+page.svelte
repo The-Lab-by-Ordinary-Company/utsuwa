@@ -18,6 +18,8 @@
 	import { debugEventsStore } from '$lib/stores/debugEvents.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import { streamChatDirect } from '$lib/services/chat/client-chat';
+	import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
+	import type { ContentPart } from '$lib/services/chat/content';
 	import { isTauri } from '$lib/services/platform';
 	import type { TTSProvider } from '$lib/types';
 	import type { StateUpdates } from '$lib/types/character';
@@ -195,7 +197,7 @@
 	}
 
 	// Build system prompt
-	async function buildCompanionSystemPrompt(userMessage: string): Promise<string> {
+	async function buildCompanionSystemPrompt(userMessage: string, hasImages = false): Promise<string> {
 		const state = characterStore.state;
 		const persona = personaStore.activeCard;
 
@@ -206,15 +208,16 @@
 			state,
 			memories,
 			userMessage,
-			systemTime: new Date()
+			systemTime: new Date(),
+			hasImages
 		};
 
 		return buildSystemPrompt(context);
 	}
 
 	// Handle send message
-	async function handleSend(content: string) {
-		if (!content.trim() || chatStore.isLoading) return;
+	async function handleSend(content: string, images: PreparedImage[] = []) {
+		if ((!content.trim() && images.length === 0) || chatStore.isLoading) return;
 
 		// Check if chat is enabled
 		if (!modulesStore.isModuleEnabled('consciousness')) {
@@ -222,7 +225,11 @@
 			return;
 		}
 
-		chatStore.addMessage('user', content);
+		chatStore.addMessage(
+			'user',
+			content,
+			images.map((img) => ({ id: img.id, url: URL.createObjectURL(img.blob) }))
+		);
 		chatStore.setLoading(true);
 		chatStore.setError(null);
 		isTyping = true;
@@ -240,7 +247,7 @@
 				throw new Error('Please configure a provider in Settings > Modules > Consciousness');
 			}
 
-			const systemPrompt = await buildCompanionSystemPrompt(content);
+			const systemPrompt = await buildCompanionSystemPrompt(content, images.length > 0);
 			const providerConfig = settingsStore.getProviderConfig(provider);
 			const apiKey = providerConfig.apiKey;
 			const providerMeta = getLLMProvider(provider);
@@ -255,11 +262,26 @@
 
 			const shouldUseDirectChat = isTauri() || !!providerMeta?.isLocal;
 
+			// The current turn carries the image bytes; prior turns stay text.
+			const history = chatStore.messages.slice(0, -1).filter((m) => m.content || m.images?.length);
+			const directMessages = history.map((m, idx) => {
+				const isCurrentTurn = idx === history.length - 1 && images.length > 0;
+				if (!isCurrentTurn) {
+					return { role: m.role as 'user' | 'assistant', content: m.content };
+				}
+				const parts: ContentPart[] = [];
+				if (m.content) parts.push({ type: 'text', text: m.content });
+				for (const img of images) {
+					parts.push({ type: 'image', mimeType: img.mimeType, data: img.base64 });
+				}
+				return { role: m.role as 'user' | 'assistant', content: parts };
+			});
+
 			if (shouldUseDirectChat) {
 				await new Promise<void>((resolve, reject) => {
 					streamChatDirect(
 						{
-							messages: chatStore.messages.slice(0, -1).map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+							messages: directMessages,
 							provider: provider as import('$lib/types').LLMProvider,
 							model: selectedModel,
 							apiKey: apiKey || undefined,
@@ -311,6 +333,12 @@
 
 			isTyping = false;
 			const cleanedResponse = await processCompanionResponse(content, fullContent);
+
+			// She's seen it and responded; keep the shown images as local keepsakes
+			if (images.length > 0) {
+				await Promise.all(images.map((img) => keepImage(img.id, img.blob)));
+			}
+
 			chatStore.updateLastMessage(cleanedResponse);
 			latestResponse = cleanedResponse;
 
