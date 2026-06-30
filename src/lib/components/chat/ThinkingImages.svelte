@@ -13,8 +13,8 @@
 	// bubble which lives to the right.
 	const screenPos = $derived(vrmStore.headScreenPosition);
 	const style = $derived(() => {
-		const x = screenPos ? Math.min(Math.max(screenPos.x - 12, 6), 80) : 36;
-		const y = screenPos ? Math.min(Math.max(screenPos.y - 10, 6), 60) : 18;
+		const x = screenPos ? Math.min(Math.max(screenPos.x - 8, 6), 80) : 40;
+		const y = screenPos ? Math.min(Math.max(screenPos.y - 6, 6), 60) : 22;
 		return `top: ${y}%; left: ${x}%;`;
 	});
 </script>
