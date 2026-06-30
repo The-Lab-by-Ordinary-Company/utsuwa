@@ -148,6 +148,14 @@
 		const dialogue = parsed.dialogue;
 		const llmUpdates = parsed.stateUpdates;
 
+		if (import.meta.env.DEV) {
+			console.log('%c[LLM raw response]', 'color:#01B2FF;font-weight:bold', companionResponse);
+			console.log('%c[LLM parsed]', 'color:#22c55e;font-weight:bold', {
+				stateUpdates: llmUpdates,
+				new_memory: llmUpdates?.newMemory ?? null
+			});
+		}
+
 		let validatedLLMUpdates = null;
 		if (llmUpdates) {
 			const validation = validateStateUpdates(llmUpdates);
