@@ -305,9 +305,59 @@
 		50% { transform: translateY(-4px) rotate(-6deg); }
 	}
 	.pending-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0 0.5rem; }
-	.pending-chip { position: relative; width: 56px; height: 56px; border-radius: 0.75rem; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-	.pending-chip img { width: 100%; height: 100%; object-fit: cover; }
-	.remove-chip { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border: none; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+	.pending-chip {
+		position: relative;
+		width: 56px;
+		height: 56px;
+		cursor: pointer;
+		transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+	.pending-chip:hover {
+		transform: scale(1.12) translateY(-3px) rotate(-3deg);
+		z-index: 2;
+	}
+	.pending-chip img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: 0.875rem;
+		border: 2px solid rgba(255, 255, 255, 0.9);
+		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+		transition: box-shadow 0.2s ease, border-color 0.2s ease;
+	}
+	.pending-chip:hover img {
+		border-color: #01B2FF;
+		box-shadow:
+			0 10px 22px rgba(1, 178, 255, 0.45),
+			0 4px 8px rgba(0, 0, 0, 0.18);
+	}
+	.remove-chip {
+		position: absolute;
+		top: -5px;
+		right: -5px;
+		width: 19px;
+		height: 19px;
+		border: 2px solid white;
+		border-radius: 50%;
+		background: #ff5a5a;
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		padding: 0;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+		opacity: 0;
+		transform: scale(0.4);
+		transition: opacity 0.16s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+	.pending-chip:hover .remove-chip {
+		opacity: 1;
+		transform: scale(1);
+	}
+	.remove-chip:hover {
+		transform: scale(1.2);
+	}
 	.bottom-chat-bar {
 		position: fixed;
 		bottom: 2.5rem;
