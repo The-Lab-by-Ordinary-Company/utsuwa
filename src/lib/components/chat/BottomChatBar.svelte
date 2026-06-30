@@ -261,20 +261,48 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5rem;
+		gap: 0.55rem;
 		min-height: 52px;
-		border: 2px dashed #01B2FF;
 		border-radius: 1.5rem;
-		color: #01B2FF;
-		font-size: 0.9rem;
-		font-weight: 600;
+		background: linear-gradient(180deg, #5fd6ff 0%, #01B2FF 55%, #0094d6 100%);
+		border: 1px solid rgba(255, 255, 255, 0.4);
+		color: white;
+		font-size: 0.95rem;
+		font-weight: 700;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+		box-shadow:
+			0 10px 26px rgba(1, 178, 255, 0.5),
+			0 2px 6px rgba(0, 0, 0, 0.15),
+			inset 0 2px 0 rgba(255, 255, 255, 0.55),
+			inset 0 -3px 6px rgba(0, 0, 0, 0.12);
 		z-index: 5;
 		pointer-events: none;
-		animation: dropPulse 1.1s ease-in-out infinite;
+		overflow: hidden;
+		animation: dropPop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 	}
-	@keyframes dropPulse {
-		0%, 100% { background: rgba(1, 178, 255, 0.08); border-color: rgba(1, 178, 255, 0.55); }
-		50% { background: rgba(1, 178, 255, 0.18); border-color: rgba(1, 178, 255, 1); }
+	/* glossy shine across the top, like the app's buttons */
+	.drop-zone::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 52%;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.06) 100%);
+		border-radius: 1.5rem 1.5rem 50% 50%;
+		pointer-events: none;
+	}
+	.drop-zone :global(svg) {
+		animation: dropIcon 0.9s ease-in-out infinite;
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+	}
+	@keyframes dropPop {
+		0% { transform: scale(0.8); opacity: 0; }
+		100% { transform: scale(1); opacity: 1; }
+	}
+	@keyframes dropIcon {
+		0%, 100% { transform: translateY(0) rotate(0deg); }
+		50% { transform: translateY(-4px) rotate(-6deg); }
 	}
 	.pending-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0 0.5rem; }
 	.pending-chip { position: relative; width: 56px; height: 56px; border-radius: 0.75rem; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
