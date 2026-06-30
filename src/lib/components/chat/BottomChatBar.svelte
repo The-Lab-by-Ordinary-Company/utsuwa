@@ -286,7 +286,7 @@
 	.mic-btn.vision-off { opacity: 0.45; }
 	.vision-hint {
 		position: fixed;
-		bottom: 6.75rem;
+		top: calc(1.25rem + env(safe-area-inset-top, 0));
 		left: 50%;
 		display: flex;
 		align-items: center;
@@ -304,12 +304,12 @@
 			0 8px 24px rgba(1, 178, 255, 0.45),
 			inset 0 1px 0 rgba(255, 255, 255, 0.4);
 		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-		animation: hintPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+		animation: hintDrop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 	.vision-hint :global(svg) { flex-shrink: 0; }
-	@keyframes hintPop {
-		0% { transform: translateX(-50%) scale(0.9); opacity: 0; }
-		100% { transform: translateX(-50%) scale(1); opacity: 1; }
+	@keyframes hintDrop {
+		from { transform: translate(-50%, -16px) scale(0.96); opacity: 0; }
+		to { transform: translate(-50%, 0) scale(1); opacity: 1; }
 	}
 	.drop-zone {
 		position: absolute;
