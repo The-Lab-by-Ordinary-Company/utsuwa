@@ -7,9 +7,28 @@
 	interface Props {
 		onSend: (content: string, images?: PreparedImage[]) => void;
 		disabled?: boolean;
+		visionCapable?: boolean;
 	}
 
-	let { onSend, disabled = false }: Props = $props();
+	let { onSend, disabled = false, visionCapable = true }: Props = $props();
+	// Brief prompt shown when the user tries to show an image to a blind model.
+	let visionHint = $state(false);
+	let visionHintTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function promptVision() {
+		visionHint = true;
+		if (visionHintTimer) clearTimeout(visionHintTimer);
+		visionHintTimer = setTimeout(() => (visionHint = false), 6000);
+	}
+
+	function openPicker() {
+		if (!visionCapable) {
+			promptVision();
+			return;
+		}
+		fileInput?.click();
+	}
+
 	let inputValue = $state('');
 	let textareaRef: HTMLTextAreaElement;
 	let fileInput: HTMLInputElement;
@@ -63,6 +82,10 @@
 
 	async function handleFiles(files: FileList | null) {
 		if (!files) return;
+		if (!visionCapable) {
+			promptVision();
+			return;
+		}
 		for (const file of Array.from(files)) {
 			if (!file.type.startsWith('image/')) continue;
 			const image = await prepareImage(file);
@@ -148,6 +171,13 @@
 	</div>
 {/if}
 
+{#if visionHint}
+	<div class="vision-hint">
+		<Icon name="camera" size={16} />
+		<span>This model can't see images. Pick a vision model (GPT-4o, Claude, Gemini, or a local one like llava) in Settings.</span>
+	</div>
+{/if}
+
 <svelte:window
 	ondragenter={handleDragEnter}
 	ondragover={handleDragOver}
@@ -218,9 +248,10 @@
 				<button
 					type="button"
 					class="mic-btn"
-					onclick={() => fileInput?.click()}
+					class:vision-off={!visionCapable}
+					onclick={openPicker}
 					aria-label="Show her an image"
-					title="Show her an image"
+					title={visionCapable ? 'Show her an image' : 'This model cannot see images'}
 				>
 					<Icon name="camera" size={20} />
 				</button>
@@ -252,6 +283,34 @@
 </div>
 
 <style>
+	.mic-btn.vision-off { opacity: 0.45; }
+	.vision-hint {
+		position: fixed;
+		bottom: 6.75rem;
+		left: 50%;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.7rem 1rem;
+		max-width: min(420px, 90vw);
+		background: linear-gradient(180deg, #5fd6ff 0%, #01B2FF 100%);
+		color: white;
+		border-radius: 16px;
+		font-size: 0.82rem;
+		font-weight: 600;
+		line-height: 1.35;
+		z-index: 50;
+		box-shadow:
+			0 8px 24px rgba(1, 178, 255, 0.45),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		animation: hintPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+	}
+	.vision-hint :global(svg) { flex-shrink: 0; }
+	@keyframes hintPop {
+		0% { transform: translateX(-50%) scale(0.9); opacity: 0; }
+		100% { transform: translateX(-50%) scale(1); opacity: 1; }
+	}
 	.drop-zone {
 		position: absolute;
 		left: 1rem;

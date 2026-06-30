@@ -24,23 +24,45 @@ const VISION_MODEL_HINTS = [
 	'gpt-4.1',
 	'gpt-4-turbo',
 	'gpt-4-vision',
+	'gpt-5',
+	'o3',
+	'o4',
 	'claude-3',
 	'claude-4',
-	'gemini'
+	'claude-opus',
+	'claude-sonnet',
+	'gemini',
+	'grok-2-vision',
+	'grok-4',
+	'llama4',
+	'llama-4',
+	'mistral-small-3',
+	'phi-3.5-vision',
+	'phi-4-multimodal'
 ];
+
+// Names that match a hint but are actually text-only (e.g. small Gemma 3 has
+// no vision; only the 4b+ variants do).
+const TEXT_ONLY_MODELS = ['gemma3:1b', 'gemma-3-1b', 'gemma3:270m'];
 
 export function modelSupportsVision(modelId: string | undefined | null): boolean {
 	if (!modelId) return false;
 	const m = modelId.toLowerCase();
+	if (TEXT_ONLY_MODELS.some((t) => m.includes(t))) return false;
 	return VISION_MODEL_HINTS.some((hint) => m.includes(hint));
 }
 
 /**
- * The gate the UI uses to decide whether "showing her something" is available
- * right now: true if the provider is broadly vision-capable, or the selected
- * model looks vision-capable (covers local llava/vision models). Pass the
- * provider flag from `providerSupportsVision(providerId)` in registry.ts.
+ * The gate the UI uses to decide whether "showing her something" is possible
+ * right now. The provider must at least potentially do vision (a flagged cloud
+ * provider, or a local one), AND the selected model must look vision-capable.
+ * So a text-only model on any provider returns false, prompting the user.
  */
-export function canShowImages(providerHasVision: boolean, modelId?: string | null): boolean {
-	return providerHasVision || modelSupportsVision(modelId);
+export function canShowImages(
+	providerHasVision: boolean,
+	isLocalProvider: boolean,
+	modelId?: string | null
+): boolean {
+	if (!providerHasVision && !isLocalProvider) return false;
+	return modelSupportsVision(modelId);
 }

@@ -17,10 +17,12 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { debugEventsStore } from '$lib/stores/debugEvents.svelte';
-	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+	import { getLLMProvider, getTTSProvider, providerSupportsVision } from '$lib/services/providers/registry';
+	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
+	import { canShowImages } from '$lib/services/providers/vision';
 	import { streamChatDirect } from '$lib/services/chat/client-chat';
 	import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
-	import type { ContentPart } from '$lib/services/chat/content';
+	import { type ContentPart, toOpenAIContent } from '$lib/services/chat/content';
 	import { isTauri } from '$lib/services/platform';
 	import type { TTSProvider } from '$lib/types';
 	import type { StateUpdates } from '$lib/types/character';
@@ -66,6 +68,15 @@
 	let isTyping = $state(false);
 	// Images she's currently being shown, floated above her head while she thinks
 	let thinkingImages = $state<{ id: string; url: string }[]>([]);
+
+	// Can the active LLM actually see images? Gates the "show" affordance.
+	const visionCapable = $derived.by(() => {
+		const cs = modulesStore.getModuleSettings('consciousness');
+		const provider = cs.activeProvider as string;
+		const model = cs.activeModel as string;
+		if (!provider) return false;
+		return canShowImages(providerSupportsVision(provider), isLocalLLMProvider(provider), model);
+	});
 
 	// Track memory hydration
 	let isMemoryReady = $state(false);
@@ -299,7 +310,10 @@
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						messages: chatStore.messages.map((m) => ({ role: m.role, content: m.content })),
+						messages: directMessages.map((m) => ({
+							role: m.role,
+							content: toOpenAIContent(m.content)
+						})),
 						provider,
 						model: selectedModel,
 						apiKey: apiKey || 'not-needed',
@@ -456,7 +470,7 @@
 		<ThinkingImages images={thinkingImages} show={isTyping} />
 
 		<!-- Bottom Chat Bar -->
-		<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} />
+		<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} {visionCapable} />
 
 		<!-- Error toast for chat errors -->
 		{#if chatStore.error}
