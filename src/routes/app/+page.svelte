@@ -57,6 +57,8 @@
 	// Info modal state
 	let showInfoModal = $state(false);
 	let showBoard = $state(false);
+	// Her impression from the latest turn, attached to a kept photo as its note.
+	let lastNewMemory: string | undefined;
 
 	// Memory graph modal state
 	let showMemoryGraph = $state(false);
@@ -154,6 +156,7 @@
 
 		const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {});
 		characterStore.applyUpdates(finalUpdates);
+		lastNewMemory = finalUpdates.newMemory || undefined;
 
 		// Save LLM memory observation
 		if (finalUpdates.newMemory) {
@@ -354,7 +357,9 @@
 			// She's seen it and responded; keep the shown images as local keepsakes
 			if (images.length > 0) {
 				await Promise.all(
-					images.map((img) => keepImage(img.id, img.blob, { mimeType: img.mimeType }))
+					images.map((img) =>
+						keepImage(img.id, img.blob, { mimeType: img.mimeType, note: lastNewMemory })
+					)
 				);
 			}
 
