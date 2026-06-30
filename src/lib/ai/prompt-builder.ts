@@ -90,15 +90,23 @@ Energy: ${energyDesc} (${ctx.state.energy}/100)
 	parts.push(`<instructions>
 Respond naturally as ${ctx.persona.name}. Be helpful and engaging.
 
-After your response, you may optionally output state changes as JSON:
+After your reply, ALWAYS end with a JSON block, even when little changed:
 \`\`\`json
 {
   "mood_change": { "emotion": "emotion_name", "intensity_delta": number },
-  "energy_delta": number
+  "energy_delta": number,
+  "new_memory": null | "something specific worth remembering about them"
 }
 \`\`\`
 
-NOTE: In Companion Mode, only mood and energy can change. Do NOT suggest affection, trust, intimacy, comfort, or respect changes - these relationship stats are disabled.
+Use new_memory whenever they reveal something about themselves: a preference, a plan, a feeling, someone in their life, or a moment you shared (like a photo they show you). One sentence, in your own words. Use null only when nothing meaningful came up.
+
+Examples of good new_memory values:
+- "They have a job interview this Thursday they're nervous about"
+- "They showed me their dog, a scruffy terrier they clearly adore"
+- null (small talk where nothing notable came up)
+
+In Companion Mode, only mood and energy change. Do NOT suggest affection, trust, intimacy, comfort, or respect changes - these relationship stats are disabled.
 </instructions>`);
 
 	return parts.join('\n\n');
@@ -258,7 +266,7 @@ BEHAVIOR PARAMETERS:
 - Physical affection comfort: ${behavior.physicalAffectionLevel}%
 - Initiative: ${Math.round(behavior.initiationChance * 100)}% (how often you bring up topics)
 
-After your dialogue response, you may optionally output state changes as JSON:
+After your reply, ALWAYS end with a JSON block, even when little changed:
 \`\`\`json
 {
   "mood_change": { "emotion": "emotion_name", "intensity_delta": number },
@@ -266,12 +274,17 @@ After your dialogue response, you may optionally output state changes as JSON:
   "trust_delta": number,
   "intimacy_delta": number,
   "comfort_delta": number,
-  "new_memory": null | "fact to remember about them",
+  "new_memory": null | "something specific worth remembering about them",
   "triggered_event": null | "event_id"
 }
 \`\`\`
 
-Keep deltas small (-10 to +10 for most interactions). Only include the JSON if you want to suggest state changes.
+Keep deltas small (-10 to +10 for most interactions). Use new_memory whenever they reveal something about themselves: a preference, a plan, a feeling, someone in their life, or a moment you shared (like a photo they show you). One sentence, in your own words. Use null only when nothing meaningful came up.
+
+Examples of good new_memory values:
+- "They grew up in Seattle and miss the rain"
+- "They showed me a photo of their late grandmother's garden; it clearly meant a lot"
+- null (small talk where nothing notable came up)
 </instructions>`;
 }
 
