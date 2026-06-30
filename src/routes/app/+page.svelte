@@ -5,6 +5,7 @@
 	import { TopRightButtons, TopLeftButtons, InfoModal } from '$lib/components/ui';
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
+	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
 	import { EventScene } from '$lib/components/events';
 	import { OnboardingModal } from '$lib/components/onboarding';
 	import MemoryGraphModal from '$lib/components/memory/MemoryGraphModal.svelte';
@@ -63,6 +64,8 @@
 	// Speech bubble state
 	let latestResponse = $state('');
 	let isTyping = $state(false);
+	// Images she's currently being shown, floated above her head while she thinks
+	let thinkingImages = $state<{ id: string; url: string }[]>([]);
 
 	// Track memory hydration
 	let isMemoryReady = $state(false);
@@ -225,11 +228,9 @@
 			return;
 		}
 
-		chatStore.addMessage(
-			'user',
-			content,
-			images.map((img) => ({ id: img.id, url: URL.createObjectURL(img.blob) }))
-		);
+		const shown = images.map((img) => ({ id: img.id, url: URL.createObjectURL(img.blob) }));
+		chatStore.addMessage('user', content, shown);
+		thinkingImages = shown;
 		chatStore.setLoading(true);
 		chatStore.setError(null);
 		isTyping = true;
@@ -450,6 +451,9 @@
 			isTyping={isTyping}
 			onHide={handleBubbleHide}
 		/>
+
+		<!-- The image she's being shown, floated above her head while she considers it -->
+		<ThinkingImages images={thinkingImages} show={isTyping} />
 
 		<!-- Bottom Chat Bar -->
 		<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} />
