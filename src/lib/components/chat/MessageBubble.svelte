@@ -11,8 +11,19 @@
 </script>
 
 <div class="message-bubble" class:user={isUser} class:assistant={!isUser}>
-	<div class="bubble">
-		{message.content || '...'}
+	<div class="message-content">
+		{#if message.images?.length}
+			<div class="shown-images">
+				{#each message.images as img (img.id)}
+					<img src={img.url} alt="Shared with her" class="shown-image" />
+				{/each}
+			</div>
+		{/if}
+		{#if message.content || !isUser}
+			<div class="bubble">
+				{message.content || '...'}
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -30,6 +41,42 @@
 	.message-bubble.assistant {
 		justify-content: flex-start;
 		align-self: flex-start;
+	}
+
+	.message-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		min-width: 0;
+	}
+
+	.user .message-content {
+		align-items: flex-end;
+	}
+
+	.assistant .message-content {
+		align-items: flex-start;
+	}
+
+	.shown-images {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+	}
+
+	.user .shown-images {
+		justify-content: flex-end;
+	}
+
+	.shown-image {
+		max-width: 180px;
+		max-height: 220px;
+		object-fit: cover;
+		border-radius: 0.875rem;
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		box-shadow:
+			0 3px 12px rgba(0, 0, 0, 0.14),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
 	}
 
 	.bubble {

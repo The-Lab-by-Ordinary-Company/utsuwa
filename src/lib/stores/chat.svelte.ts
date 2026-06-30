@@ -1,8 +1,15 @@
+/** An image the user showed her, for display in the message (object URL + keepsake id). */
+export interface ShownImage {
+	id: string;
+	url: string;
+}
+
 export interface Message {
 	id: string;
 	role: 'user' | 'assistant';
 	content: string;
 	timestamp: Date;
+	images?: ShownImage[];
 }
 
 function createChatStore() {
@@ -12,12 +19,13 @@ function createChatStore() {
 	let streamingContent = $state('');
 	let errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	function addMessage(role: 'user' | 'assistant', content: string) {
+	function addMessage(role: 'user' | 'assistant', content: string, images?: ShownImage[]) {
 		const message: Message = {
 			id: crypto.randomUUID(),
 			role,
 			content,
-			timestamp: new Date()
+			timestamp: new Date(),
+			...(images?.length ? { images } : {})
 		};
 		messages = [...messages, message];
 		return message;
