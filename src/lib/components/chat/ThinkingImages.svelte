@@ -9,11 +9,12 @@
 
 	let { images, show }: Props = $props();
 
-	// Track the head the same way the speech bubble does, and sit just above it.
+	// Track her head, then sit off to the side (upper-left), clear of the speech
+	// bubble which lives to the right.
 	const screenPos = $derived(vrmStore.headScreenPosition);
 	const style = $derived(() => {
-		const x = screenPos ? Math.min(Math.max(screenPos.x, 8), 92) : 50;
-		const y = screenPos ? Math.min(Math.max(screenPos.y - 4, 6), 60) : 22;
+		const x = screenPos ? Math.min(Math.max(screenPos.x - 12, 6), 80) : 36;
+		const y = screenPos ? Math.min(Math.max(screenPos.y - 10, 6), 60) : 18;
 		return `top: ${y}%; left: ${x}%;`;
 	});
 </script>
@@ -29,12 +30,11 @@
 <style>
 	.thinking-images {
 		position: fixed;
-		transform: translate(-50%, -100%);
+		transform: translate(-50%, -50%);
 		display: flex;
 		gap: 0.4rem;
 		z-index: 35;
 		pointer-events: none;
-		animation: float 3s ease-in-out infinite;
 	}
 
 	.thinking-image {
@@ -47,24 +47,35 @@
 		box-shadow:
 			0 8px 22px rgba(0, 0, 0, 0.22),
 			0 2px 6px rgba(0, 0, 0, 0.14);
+		transform-origin: center bottom;
+		animation: dance 1.1s ease-in-out infinite;
 	}
 
 	:global(.dark) .thinking-image {
 		border-color: rgba(255, 255, 255, 0.12);
 	}
 
-	@keyframes float {
-		0%,
-		100% {
-			translate: 0 0;
+	/* a little hop-and-sway while she thinks */
+	@keyframes dance {
+		0% {
+			transform: translateY(0) rotate(-8deg);
+		}
+		25% {
+			transform: translateY(-9px) rotate(0deg) scale(0.96, 1.06);
 		}
 		50% {
-			translate: 0 -8px;
+			transform: translateY(0) rotate(8deg);
+		}
+		75% {
+			transform: translateY(-9px) rotate(0deg) scale(0.96, 1.06);
+		}
+		100% {
+			transform: translateY(0) rotate(-8deg);
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.thinking-images {
+		.thinking-image {
 			animation: none;
 		}
 	}
