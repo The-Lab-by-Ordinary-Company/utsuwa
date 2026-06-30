@@ -15,6 +15,40 @@
 	let fileInput: HTMLInputElement;
 	// Images queued to show her, each with a preview URL for the chip.
 	let pending = $state<{ image: PreparedImage; url: string }[]>([]);
+	// Drag-to-show: the whole window is a drop target; the bar morphs into one.
+	let dragActive = $state(false);
+	let dragDepth = 0;
+
+	function dragHasFiles(e: DragEvent): boolean {
+		return !!e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files');
+	}
+
+	function handleDragEnter(e: DragEvent) {
+		if (!dragHasFiles(e)) return;
+		dragDepth++;
+		dragActive = true;
+	}
+
+	function handleDragOver(e: DragEvent) {
+		if (dragHasFiles(e)) e.preventDefault();
+	}
+
+	function handleDragLeave(e: DragEvent) {
+		if (!dragHasFiles(e)) return;
+		dragDepth--;
+		if (dragDepth <= 0) {
+			dragDepth = 0;
+			dragActive = false;
+		}
+	}
+
+	function handleDrop(e: DragEvent) {
+		if (!dragHasFiles(e)) return;
+		e.preventDefault();
+		dragDepth = 0;
+		dragActive = false;
+		handleFiles(e.dataTransfer?.files ?? null);
+	}
 
 	const isListening = $derived(sttStore.isListening);
 	const isTranscribing = $derived(sttStore.isTranscribing);
@@ -114,7 +148,20 @@
 	</div>
 {/if}
 
-<div class="bottom-chat-bar">
+<svelte:window
+	ondragenter={handleDragEnter}
+	ondragover={handleDragOver}
+	ondragleave={handleDragLeave}
+	ondrop={handleDrop}
+/>
+
+<div class="bottom-chat-bar" class:dragging={dragActive}>
+	{#if dragActive}
+		<div class="drop-zone">
+			<Icon name="camera" size={22} />
+			<span>Drop a photo to show her</span>
+		</div>
+	{/if}
 	{#if pending.length > 0}
 		<div class="pending-row">
 			{#each pending as p (p.image.id)}
@@ -205,6 +252,30 @@
 </div>
 
 <style>
+	.drop-zone {
+		position: absolute;
+		left: 1rem;
+		right: 1rem;
+		top: 0;
+		bottom: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		min-height: 52px;
+		border: 2px dashed #01B2FF;
+		border-radius: 1.5rem;
+		color: #01B2FF;
+		font-size: 0.9rem;
+		font-weight: 600;
+		z-index: 5;
+		pointer-events: none;
+		animation: dropPulse 1.1s ease-in-out infinite;
+	}
+	@keyframes dropPulse {
+		0%, 100% { background: rgba(1, 178, 255, 0.08); border-color: rgba(1, 178, 255, 0.55); }
+		50% { background: rgba(1, 178, 255, 0.18); border-color: rgba(1, 178, 255, 1); }
+	}
 	.pending-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0 0.5rem; }
 	.pending-chip { position: relative; width: 56px; height: 56px; border-radius: 0.75rem; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
 	.pending-chip img { width: 100%; height: 100%; object-fit: cover; }
