@@ -4,10 +4,11 @@ import {
 	getLocalProviderConnectionHint,
 	isLocalLLMProvider
 } from '$lib/services/providers/local-endpoints';
+import { type MessageContent, toOpenAIContent, toAnthropicContent } from './content';
 
 interface ChatMessage {
 	role: 'system' | 'user' | 'assistant';
-	content: string;
+	content: MessageContent;
 }
 
 interface ChatOptions {
@@ -77,19 +78,25 @@ export async function streamChatDirect(
 		headers['Authorization'] = `Bearer ${apiKey}`;
 	}
 
-	// Anthropic uses a different request format
+	// Anthropic uses a different request format, and each provider wants images
+	// wrapped its own way (image_url data URLs vs base64 source blocks).
 	const body =
 		provider === 'anthropic'
 			? JSON.stringify({
 					model,
 					max_tokens: 4096,
 					system: systemPrompt,
-					messages: messages.filter((m) => m.role !== 'system'),
+					messages: messages
+						.filter((m) => m.role !== 'system')
+						.map((m) => ({ role: m.role, content: toAnthropicContent(m.content) })),
 					stream: true
 				})
 			: JSON.stringify({
 					model,
-					messages: messagesWithSystem,
+					messages: messagesWithSystem.map((m) => ({
+						role: m.role,
+						content: toOpenAIContent(m.content)
+					})),
 					stream: true
 				});
 
