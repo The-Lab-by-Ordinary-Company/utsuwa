@@ -256,18 +256,29 @@ export function buildExtractionSystemPrompt(hasImages = false): string {
 Shape:
 {
   "mood_change": { "emotion": "happy|sad|excited|anxious|content|frustrated|curious|affectionate|playful|melancholy|flustered|neutral", "intensity_delta": -10 to 10 },
+  "affection_delta": -10 to 10,
+  "trust_delta": -10 to 10,
+  "intimacy_delta": -10 to 10,
+  "comfort_delta": -10 to 10,
   "new_memory": null | "a fact about the user"
 }
 
-new_memory rules:
-- Third person about the user, using "they/them". Never assume their gender or a name.
-- One short, plain, factual sentence. State only what they actually said this turn. No interpretation, no advice, no flourish.
-- Only when they revealed something concrete (a preference, plan, feeling, someone in their life, or a moment they shared).${imageLine} Otherwise null. Never invent details that were not stated.
+The four *_delta values are small numbers for how this exchange moved the relationship: positive when they open up, share, or warm to the companion; near 0 for neutral chat; negative if it went badly. Usually between -3 and 5.
+
+new_memory — when to write one:
+- Capture it whenever they reveal something real about themselves or their life: a fact, a preference, a plan, a feeling, their job, or someone in their life (family, friends, pets).${imageLine} When in doubt, capture it.
+- Use null ONLY for pure small talk where nothing about them came up (greetings, thanks, "how are you").
+
+new_memory — how to write it:
+- Third person about them, using "they/them". Never assume their gender or a name.
+- One short, plain, factual sentence stating only what they actually said this turn. No interpretation, no advice, no flourish. Never invent details that were not stated.
 
 Examples:
 {"mood_change":{"emotion":"frustrated","intensity_delta":3},"new_memory":"Their manager keeps assigning projects with no warning"}
 {"mood_change":{"emotion":"content","intensity_delta":4},"new_memory":"They are a graphic designer of 8 years and feel burnt out"}
-{"mood_change":{"emotion":"affectionate","intensity_delta":4},"new_memory":"They grew up with cats and want to adopt one"}
+{"mood_change":{"emotion":"affectionate","intensity_delta":4},"new_memory":"They grew up with cats and are thinking about adopting one"}
+{"mood_change":{"emotion":"excited","intensity_delta":4},"new_memory":"Their sister is visiting next weekend; they haven't seen each other in a year"}
+{"mood_change":{"emotion":"content","intensity_delta":3},"new_memory":"They don't open up to many people"}
 {"mood_change":{"emotion":"neutral","intensity_delta":0},"new_memory":null}`;
 }
 
