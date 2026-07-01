@@ -74,15 +74,17 @@ The 3D avatar system uses Three.js with Threlte (a Svelte wrapper) for integrati
 
 ### Chat System
 
-Messages flow through two paths depending on the platform:
-- **Web:** SvelteKit server route using the xsAI SDK (`src/routes/api/chat/+server.ts`)
-- **Desktop (Tauri):** Direct fetch to provider APIs (`src/lib/services/chat/client-chat.ts`)
+Messages flow through two transports:
+- **Server route (web + cloud providers):** SvelteKit route using the xsAI SDK (`src/routes/api/chat/+server.ts`)
+- **Direct fetch (local providers + desktop):** streams straight from the provider (`src/lib/services/chat/client-chat.ts`) — used for Ollama/LM Studio and all Tauri builds
 
 **Key files:**
-- `src/lib/components/chat/BottomChatBar.svelte` — User input interface
+- `src/lib/components/chat/BottomChatBar.svelte` — User input interface (text, voice, and showing images)
 - `src/lib/components/chat/SpeechBubble.svelte` — Message display
-- `src/lib/ai/prompt-builder.ts` — System prompt construction
-- `src/lib/ai/response-parser.ts` — Extract dialogue and state updates from LLM output
+- `src/lib/ai/prompt-builder.ts` — System prompt construction (incl. the forced-JSON extraction prompt)
+- `src/lib/ai/response-parser.ts` — Extract dialogue + state and defensively normalize model output
+- `src/lib/services/chat/client-chat.ts` — Direct streaming + the decoupled `extractStateUpdates` fallback
+- `src/lib/services/chat/content.ts` — Per-provider image serialization
 - `src/lib/engine/` — Core companion engine logic
 
 **Flow:**
@@ -97,8 +99,8 @@ User Input
        │
        ▼
 ┌──────────────┐
-│ Memory       │ ── Retrieve relevant facts and recent turns
-│ Retrieval    │    using semantic search (embeddings)
+│ Memory       │ ── Retrieve relevant facts + recent turns by semantic
+│ Retrieval    │    similarity (keyword fallback until embeddings warm up)
 └──────┬───────┘
        │
        ▼
@@ -115,16 +117,26 @@ User Input
        │
        ▼
 ┌──────────────┐
-│ Response     │ ── Extract text + JSON state suggestions
-│ Parser       │
+│ Response     │ ── Strip reasoning/stop tokens + hallucinated turns,
+│ Parser       │    extract dialogue + inline JSON (tolerant of malformed)
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
-│ State        │ ── Merge heuristic + LLM deltas
-│ Merger       │    and persist to IndexedDB
+│ Extraction   │ ── If the inline JSON is missing (small/RP models), a
+│ Fallback     │    forced-JSON call re-derives mood/deltas/memory
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ State        │ ── Merge heuristic baseline + LLM deltas, persist to
+│ Merger       │    IndexedDB; store new memories (facts + embeddings)
 └──────────────┘
 ```
+
+**State extraction (two paths):** The model replies in character and ends with a JSON block of state updates (mood, relationship deltas, `new_memory`). Capable models emit it inline; when a model skips or mangles it (common on small, local, and roleplay-tuned models), a second forced-JSON call re-derives the state so memory and relationship movement still land. See [Companion System](/docs/technology/companion-system) for the two-path model and the parser's robustness layers.
+
+**Showing images:** A shown image (camera or drag-drop) is serialized per provider — OpenAI-style `image_url` data URLs or Anthropic base64 `source` blocks (`content.ts`) — and only reaches vision-capable models. Kept photos are stored locally (blob + thumbnail) via `src/lib/services/storage/keepsakes.ts`.
 
 ### TTS Pipeline
 

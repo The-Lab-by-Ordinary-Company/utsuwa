@@ -18,7 +18,7 @@ Click the **brain icon** in the top-left corner of the main screen to open the M
 Each node represents a stored memory (fact) about you, your relationship, or shared experiences.
 
 **Node Colors:**
-- **Cyan** — User facts (your preferences, background, attributes)
+- **Blue** — User facts (your preferences, background, attributes)
 - **Pink** — Relationship facts (dynamics between you and the companion)
 - **Green** — Shared experiences (events you've discussed together)
 
