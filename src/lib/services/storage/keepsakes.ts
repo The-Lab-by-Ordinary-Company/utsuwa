@@ -16,6 +16,23 @@ export interface PreparedImage {
 	blob: Blob;
 }
 
+// Image types the vision APIs (OpenAI, Anthropic, Google, xAI) actually accept.
+// Anything else (HEIC/HEIF from iPhones, TIFF, BMP, ...) is converted to JPEG
+// below when the browser can decode it, or rejected.
+export const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+export function isSupportedImageType(mimeType: string | undefined | null): boolean {
+	return !!mimeType && SUPPORTED_IMAGE_TYPES.includes(mimeType.toLowerCase());
+}
+
+/** Thrown when a picked image is a format the vision models can't accept and the browser can't convert. */
+export class UnsupportedImageError extends Error {
+	constructor(public readonly mimeType: string) {
+		super(`Unsupported image type: ${mimeType || 'unknown'}`);
+		this.name = 'UnsupportedImageError';
+	}
+}
+
 function blobToBase64(blob: Blob): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
@@ -25,15 +42,20 @@ function blobToBase64(blob: Blob): Promise<string> {
 	});
 }
 
-// Downscale oversized images so we don't ship huge base64 to the model (or
-// store huge blobs). Only re-encodes when the image is actually too big, so
-// small screenshots keep their original format and transparency.
-async function downscaleIfNeeded(file: Blob): Promise<{ blob: Blob; mimeType: string }> {
+// Normalize a picked image for the vision APIs: downscale oversized images (so
+// we don't ship huge base64 / store huge blobs), and convert decodable-but-
+// unsupported formats (e.g. HEIC on Safari) to JPEG. Small, already-supported
+// images pass through untouched to keep their format and transparency. A format
+// the browser can't decode and providers won't accept (e.g. HEIC on Chrome)
+// throws UnsupportedImageError so the UI can prompt for a different file.
+async function normalizeImage(file: Blob): Promise<{ blob: Blob; mimeType: string }> {
 	const mimeType = file.type || 'image/png';
+	const unsupported = !isSupportedImageType(mimeType);
 	try {
 		const bitmap = await createImageBitmap(file);
 		const { width, height } = computeScaledDimensions(bitmap.width, bitmap.height);
-		if (width === bitmap.width && height === bitmap.height) {
+		const oversized = width !== bitmap.width || height !== bitmap.height;
+		if (!oversized && !unsupported) {
 			bitmap.close();
 			return { blob: file, mimeType };
 		}
@@ -43,6 +65,7 @@ async function downscaleIfNeeded(file: Blob): Promise<{ blob: Blob; mimeType: st
 		const ctx = canvas.getContext('2d');
 		if (!ctx) {
 			bitmap.close();
+			if (unsupported) throw new UnsupportedImageError(mimeType);
 			return { blob: file, mimeType };
 		}
 		ctx.drawImage(bitmap, 0, 0, width, height);
@@ -50,15 +73,21 @@ async function downscaleIfNeeded(file: Blob): Promise<{ blob: Blob; mimeType: st
 		const scaled = await new Promise<Blob | null>((resolve) =>
 			canvas.toBlob(resolve, 'image/jpeg', 0.85)
 		);
-		return scaled ? { blob: scaled, mimeType: 'image/jpeg' } : { blob: file, mimeType };
-	} catch {
+		if (scaled) return { blob: scaled, mimeType: 'image/jpeg' };
+		if (unsupported) throw new UnsupportedImageError(mimeType);
+		return { blob: file, mimeType };
+	} catch (e) {
+		if (e instanceof UnsupportedImageError) throw e;
+		// Couldn't decode at all. Reject unsupported formats clearly instead of
+		// shipping bytes the provider will bounce.
+		if (unsupported) throw new UnsupportedImageError(mimeType);
 		return { blob: file, mimeType };
 	}
 }
 
 /** Read a picked or dropped image into the shape we need to show it and maybe keep it. */
 export async function prepareImage(file: Blob): Promise<PreparedImage> {
-	const { blob, mimeType } = await downscaleIfNeeded(file);
+	const { blob, mimeType } = await normalizeImage(file);
 	const base64 = await blobToBase64(blob);
 	return {
 		id: crypto.randomUUID(),

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
 	import { sttStore } from '$lib/stores/stt.svelte';
-	import { prepareImage, type PreparedImage } from '$lib/services/storage/keepsakes';
+	import { prepareImage, UnsupportedImageError, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 
 	interface Props {
@@ -11,14 +11,20 @@
 	}
 
 	let { onSend, disabled = false, visionCapable = true }: Props = $props();
-	// Brief prompt shown when the user tries to show an image to a blind model.
-	let visionHint = $state(false);
-	let visionHintTimer: ReturnType<typeof setTimeout> | null = null;
+	// Brief toast for image issues (blind model, unsupported format).
+	let hint = $state<string | null>(null);
+	let hintTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function showHint(message: string) {
+		hint = message;
+		if (hintTimer) clearTimeout(hintTimer);
+		hintTimer = setTimeout(() => (hint = null), 6000);
+	}
 
 	function promptVision() {
-		visionHint = true;
-		if (visionHintTimer) clearTimeout(visionHintTimer);
-		visionHintTimer = setTimeout(() => (visionHint = false), 6000);
+		showHint(
+			"This model can't see images. Pick a vision model (GPT-4o, Claude, Gemini, or a local one like llava) in Settings."
+		);
 	}
 
 	function openPicker() {
@@ -88,8 +94,16 @@
 		}
 		for (const file of Array.from(files)) {
 			if (!file.type.startsWith('image/')) continue;
-			const image = await prepareImage(file);
-			pending = [...pending, { image, url: URL.createObjectURL(file) }];
+			try {
+				const image = await prepareImage(file);
+				pending = [...pending, { image, url: URL.createObjectURL(file) }];
+			} catch (e) {
+				showHint(
+					e instanceof UnsupportedImageError
+						? "That image format isn't supported. Try a JPEG, PNG, GIF or WebP (iPhone HEIC photos won't work)."
+						: "Couldn't read that image. Try a different one."
+				);
+			}
 		}
 		if (fileInput) fileInput.value = '';
 	}
@@ -171,10 +185,10 @@
 	</div>
 {/if}
 
-{#if visionHint}
+{#if hint}
 	<div class="vision-hint">
 		<Icon name="camera" size={16} />
-		<span>This model can't see images. Pick a vision model (GPT-4o, Claude, Gemini, or a local one like llava) in Settings.</span>
+		<span>{hint}</span>
 	</div>
 {/if}
 
