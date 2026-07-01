@@ -315,21 +315,39 @@ The system prompt is built from 5 layers:
 
 ### LLM Output Format
 
-The LLM responds naturally in character, then optionally outputs a JSON block with state updates:
+The companion uses a **two-path state extraction** model, so it stays reliable across everything from GPT-4o down to a 4B local model:
 
-```json
-{
-  "mood_change": { "emotion": "happy", "intensity_delta": 10 },
-  "affection_delta": 5,
-  "trust_delta": 2,
-  "intimacy_delta": 3,
-  "comfort_delta": 1,
-  "respect_delta": 0,             // supported by parser, not in prompt template
-  "new_memory": "User mentioned they like hiking",
-  "new_inside_joke": "optional string (defined in schema but not mapped by parser)",
-  "triggered_event": "optional_event_id"
-}
-```
+1. **Inline fast path** — The model replies in character, then ends with a JSON block of state updates. Capable models do this every turn, so nothing extra is needed.
+
+   ```json
+   {
+     "mood_change": { "emotion": "happy", "intensity_delta": 10 },
+     "affection_delta": 5,
+     "trust_delta": 2,
+     "intimacy_delta": 3,
+     "comfort_delta": 1,
+     "respect_delta": 0,             // supported by parser, not in prompt template
+     "new_memory": "User mentioned they like hiking",
+     "new_inside_joke": "optional string (defined in schema but not mapped by parser)",
+     "triggered_event": "optional_event_id"
+   }
+   ```
+
+2. **Decoupled extraction fallback** — Smaller and roleplay-tuned models often skip or mangle that block. When the inline JSON is missing, a second non-streaming call re-derives the state from the exchange, constrained to JSON (`response_format: json_object` for OpenAI-compatible providers; a dedicated system prompt on Anthropic's `/messages`). It returns the same shape including the relationship deltas, so memory and relationship movement land even when the model ignores the format. Capable models never trigger it — the inline block is already valid — so there's no extra call on the fast path.
+
+Both modes write memories: **Companion Mode** also emits `new_memory` (only mood/energy and memory apply there — relationship deltas are ignored), while **Dating Sim Mode** uses the full set.
+
+### Response Parsing & Robustness
+
+`response-parser.ts` normalizes model output defensively before it's applied — this is what makes small and local models usable:
+
+- **Reasoning traces stripped** — `<think>...</think>` (and a lone `</think>`) from R1-style models are removed before parsing or display, so the scratchpad never leaks into the chat bubble or gets mistaken for the state block.
+- **Tolerant JSON** — trailing commas, `//` and `/* */` comments, and bare (unfenced) JSON are accepted; the parser also pulls the state object out of surrounding prose via a balanced-brace scan.
+- **Leaked stop tokens cut** — `</s>`, `<|im_end|>`, `<|eot_id|>`, `<end_of_turn>` and stray template tokens are stripped, and runaway output after an end-of-turn marker is dropped.
+- **Hallucinated turns cut** — when a model keeps writing as the user or a narrator (e.g. `Name: "a third-person note"`), that trailing fake turn is removed from the dialogue.
+- **Emotion normalization** — free-form and compound emotions (`"grateful|cared-for"`, `"excitement"`, `"nervous"`) are mapped to the canonical set; genuinely unknown ones are dropped rather than guessed.
+
+All deltas are clamped and emotions whitelisted, so a malformed or exaggerated update can't corrupt saved state.
 
 ## Heuristics Engine
 

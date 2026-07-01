@@ -182,7 +182,10 @@
 				reply: dialogue
 			});
 			if (extracted) {
-				llmUpdates = parseResponse('```json\n' + extracted + '\n```').stateUpdates;
+				// parseResponse handles both bare JSON (OpenAI json_object) and a
+				// model-added ```json fence (Anthropic). Don't re-wrap — double
+				// fencing makes the non-greedy fence regex capture an empty block.
+				llmUpdates = parseResponse(extracted).stateUpdates;
 				if (import.meta.env.DEV) {
 					console.log('%c[extraction fallback]', 'color:#f59e0b;font-weight:bold', extracted, '->', llmUpdates);
 				}

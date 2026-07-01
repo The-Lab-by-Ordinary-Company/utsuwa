@@ -161,3 +161,19 @@ test('strips a leading self-label without nuking the reply', () => {
 	const { dialogue } = parseResponse('Luna: Hey, good to see you.');
 	assert.equal(dialogue, 'Hey, good to see you.');
 });
+
+// The extraction fallback feeds parseResponse the raw model output directly.
+// Some providers (Anthropic) fence it, some (OpenAI json_object) return bare
+// JSON. Both must parse — the caller must NOT re-wrap in another ```json fence.
+test('parses an extraction payload whether fenced or bare', () => {
+	const fenced = parseResponse(
+		'```json\n{ "mood_change": { "emotion": "content", "intensity_delta": 2 }, "trust_delta": 2, "new_memory": "They are a graphic designer" }\n```'
+	);
+	assert.equal(fenced.stateUpdates?.moodChange?.emotion, 'content');
+	assert.equal(fenced.stateUpdates?.trustDelta, 2);
+	assert.equal(fenced.stateUpdates?.newMemory, 'They are a graphic designer');
+
+	const bare = parseResponse('{ "mood_change": { "emotion": "happy", "intensity_delta": 3 }, "affection_delta": 4 }');
+	assert.equal(bare.stateUpdates?.moodChange?.emotion, 'happy');
+	assert.equal(bare.stateUpdates?.affectionDelta, 4);
+});
