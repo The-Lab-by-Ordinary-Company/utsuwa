@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
 	import { browser } from '$app/environment';
+	import { isTauri } from '$lib/services/platform/platform';
 	import { sttStore } from '$lib/stores/stt.svelte';
 	import { prepareImage, UnsupportedImageError, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import AudioVisualizer from './AudioVisualizer.svelte';
@@ -11,6 +12,8 @@
 		visionCapable?: boolean;
 		providerLabel?: string;
 		providerIsLocal?: boolean;
+		/** Overlay window: image-showing is disabled (no native file dialog / drop). */
+		overlay?: boolean;
 	}
 
 	let {
@@ -18,7 +21,8 @@
 		disabled = false,
 		visionCapable = true,
 		providerLabel = 'your AI provider',
-		providerIsLocal = false
+		providerIsLocal = false,
+		overlay = false
 	}: Props = $props();
 	// Brief toast for image issues (blind model, unsupported format).
 	let hint = $state<string | null>(null);
@@ -51,6 +55,7 @@
 	}
 
 	function openPicker() {
+		if (overlay) return;
 		if (!visionCapable) {
 			promptVision();
 			return;
@@ -72,7 +77,7 @@
 	}
 
 	function handleDragEnter(e: DragEvent) {
-		if (!dragHasFiles(e)) return;
+		if (overlay || !dragHasFiles(e)) return;
 		dragDepth++;
 		dragActive = true;
 	}
@@ -109,8 +114,8 @@
 		inputValue.trim().length > 0 || displayTranscript.trim().length > 0 || pending.length > 0
 	);
 
-	async function handleFiles(files: FileList | null) {
-		if (!files) return;
+	async function handleFiles(files: FileList | File[] | null) {
+		if (overlay || !files) return;
 		if (!visionCapable) {
 			promptVision();
 			return;
@@ -131,6 +136,66 @@
 		}
 		if (fileInput) fileInput.value = '';
 	}
+
+	// On desktop, Tauri's webview intercepts drag-and-drop so dataTransfer.files
+	// is empty (native drag-drop stays on for VRM upload). Read dropped image
+	// files via Tauri's own event + the fs plugin, mirroring VrmUploader.
+	const IMAGE_MIME: Record<string, string> = {
+		png: 'image/png',
+		jpg: 'image/jpeg',
+		jpeg: 'image/jpeg',
+		gif: 'image/gif',
+		webp: 'image/webp',
+		heic: 'image/heic',
+		heif: 'image/heif',
+		bmp: 'image/bmp'
+	};
+	function imageMimeFromPath(path: string): string | null {
+		return IMAGE_MIME[path.split('.').pop()?.toLowerCase() ?? ''] ?? null;
+	}
+
+	$effect(() => {
+		if (!isTauri() || overlay) return;
+		let cancelled = false;
+		let unlisten: (() => void) | undefined;
+		(async () => {
+			const { getCurrentWindow } = await import('@tauri-apps/api/window');
+			if (cancelled) return;
+			unlisten = await getCurrentWindow().onDragDropEvent(async (event) => {
+				if (event.payload.type === 'over') {
+					dragActive = true;
+				} else if (event.payload.type === 'leave') {
+					dragActive = false;
+					dragDepth = 0;
+				} else if (event.payload.type === 'drop') {
+					dragActive = false;
+					dragDepth = 0;
+					const imagePaths = event.payload.paths.filter((p) => imageMimeFromPath(p));
+					if (imagePaths.length === 0) return; // not images (VrmUploader etc. handle those)
+					if (!visionCapable) {
+						promptVision();
+						return;
+					}
+					const { readFile } = await import('@tauri-apps/plugin-fs');
+					const files: File[] = [];
+					for (const path of imagePaths) {
+						try {
+							const contents = await readFile(path);
+							const name = path.split(/[/\\]/).pop() || 'image';
+							files.push(new File([contents], name, { type: imageMimeFromPath(path)! }));
+						} catch {
+							showHint("Couldn't read that image. Try a different one.");
+						}
+					}
+					if (files.length) await handleFiles(files);
+				}
+			});
+		})();
+		return () => {
+			cancelled = true;
+			unlisten?.();
+		};
+	});
 
 	function removePending(id: string) {
 		pending = pending.filter((p) => {
@@ -258,14 +323,16 @@
 		</div>
 	{/if}
 	<form class="chat-form" onsubmit={handleSubmit}>
-		<input
-			bind:this={fileInput}
-			type="file"
-			accept="image/*"
-			multiple
-			style="display:none"
-			onchange={(e) => handleFiles(e.currentTarget.files)}
-		/>
+		{#if !overlay}
+			<input
+				bind:this={fileInput}
+				type="file"
+				accept="image/*"
+				multiple
+				style="display:none"
+				onchange={(e) => handleFiles(e.currentTarget.files)}
+			/>
+		{/if}
 		<div class="input-wrapper" class:recording={isListening} class:transcribing={isTranscribing} class:focused={hasContent}>
 			{#if isTranscribing}
 				<button
@@ -298,16 +365,18 @@
 				>
 					<Icon name="mic" size={20} />
 				</button>
-				<button
-					type="button"
-					class="mic-btn"
-					class:vision-off={!visionCapable}
-					onclick={openPicker}
-					aria-label="Show her an image"
-					title={visionCapable ? 'Show her an image' : 'This model cannot see images'}
-				>
-					<Icon name="camera" size={20} />
-				</button>
+				{#if !overlay}
+					<button
+						type="button"
+						class="mic-btn"
+						class:vision-off={!visionCapable}
+						onclick={openPicker}
+						aria-label="Show her an image"
+						title={visionCapable ? 'Show her an image' : 'This model cannot see images'}
+					>
+						<Icon name="camera" size={20} />
+					</button>
+				{/if}
 				<textarea
 					bind:this={textareaRef}
 					bind:value={inputValue}

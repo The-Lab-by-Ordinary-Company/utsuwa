@@ -405,7 +405,7 @@
 	<!-- Expandable Chat Bar -->
 	{#if chatExpanded}
 		<div class="chat-bar-container">
-			<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} />
+			<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} overlay />
 		</div>
 	{/if}
 
