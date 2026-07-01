@@ -145,12 +145,14 @@ Text-to-speech converts LLM responses to audio with lip-sync.
 **Key files:**
 - `src/lib/services/lipsync/analyzer.ts` — Lip-sync audio analysis
 - `src/lib/services/tts/elevenlabs.ts` — ElevenLabs provider
-- `src/lib/services/tts/openai-tts.ts` — OpenAI TTS provider
+- `src/lib/services/tts/openai-tts.ts` — OpenAI-compatible provider (cloud OpenAI TTS and local servers)
 - `src/lib/services/tts/index.ts` — Provider factory and shared audio context
+- `src/lib/services/providers/local-endpoints.ts` — Local TTS base-URL resolution and connection hints
 
-**Supported providers:**
-- ElevenLabs (high quality, requires API key)
-- OpenAI TTS (requires API key)
+**Supported providers (3):**
+- **ElevenLabs** (cloud, high quality, requires API key)
+- **OpenAI TTS** (cloud, requires API key)
+- **Local TTS** — any OpenAI-compatible TTS server exposing `/v1/audio/speech` (e.g. Kokoro-FastAPI, openedai-speech). No key; defaults to `http://localhost:8880/v1`, and reuses the OpenAI TTS client pointed at the local base URL
 
 **Flow:**
 1. LLM response text is sent to TTS provider
