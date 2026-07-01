@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
+	import { browser } from '$app/environment';
 	import { sttStore } from '$lib/stores/stt.svelte';
 	import { prepareImage, UnsupportedImageError, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import AudioVisualizer from './AudioVisualizer.svelte';
@@ -8,9 +9,17 @@
 		onSend: (content: string, images?: PreparedImage[]) => void;
 		disabled?: boolean;
 		visionCapable?: boolean;
+		providerLabel?: string;
+		providerIsLocal?: boolean;
 	}
 
-	let { onSend, disabled = false, visionCapable = true }: Props = $props();
+	let {
+		onSend,
+		disabled = false,
+		visionCapable = true,
+		providerLabel = 'your AI provider',
+		providerIsLocal = false
+	}: Props = $props();
 	// Brief toast for image issues (blind model, unsupported format).
 	let hint = $state<string | null>(null);
 	let hintTimer: ReturnType<typeof setTimeout> | null = null;
@@ -25,6 +34,20 @@
 		showHint(
 			"This model can't see images. Pick a vision model (GPT-4o, Claude, Gemini, or a local one like llava) in Settings."
 		);
+	}
+
+	// One-time "where do photos go" disclosure, shown the first time an image is
+	// attached and then remembered so it never nags again.
+	const PRIVACY_ACK_KEY = 'utsuwa-image-privacy-ack';
+	let showPrivacy = $state(false);
+
+	function maybeShowPrivacyNotice() {
+		if (!browser || localStorage.getItem(PRIVACY_ACK_KEY) === '1') return;
+		showPrivacy = true;
+	}
+	function ackPrivacy() {
+		if (browser) localStorage.setItem(PRIVACY_ACK_KEY, '1');
+		showPrivacy = false;
 	}
 
 	function openPicker() {
@@ -97,6 +120,7 @@
 			try {
 				const image = await prepareImage(file);
 				pending = [...pending, { image, url: URL.createObjectURL(file) }];
+				maybeShowPrivacyNotice();
 			} catch (e) {
 				showHint(
 					e instanceof UnsupportedImageError
@@ -189,6 +213,21 @@
 	<div class="vision-hint">
 		<Icon name="camera" size={16} />
 		<span>{hint}</span>
+	</div>
+{/if}
+
+{#if showPrivacy}
+	<div class="privacy-notice" role="dialog" aria-label="Photo privacy">
+		<Icon name="camera" size={16} />
+		<span>
+			{#if providerIsLocal}
+				Photos you show her stay on your machine — they never leave this device.
+			{:else}
+				Photos you show her are sent to {providerLabel} so she can see them. They're also
+				saved on this device; delete them anytime from the board.
+			{/if}
+		</span>
+		<button type="button" class="privacy-ack" onclick={ackPrivacy}>Got it</button>
 	</div>
 {/if}
 
@@ -325,6 +364,51 @@
 		from { transform: translate(-50%, -16px) scale(0.96); opacity: 0; }
 		to { transform: translate(-50%, 0) scale(1); opacity: 1; }
 	}
+	/* One-time photo-privacy disclosure (dismissable, light informational card). */
+	.privacy-notice {
+		position: fixed;
+		top: calc(1.25rem + env(safe-area-inset-top, 0));
+		left: 50%;
+		transform: translateX(-50%);
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.7rem 0.75rem 0.7rem 1rem;
+		max-width: min(460px, 92vw);
+		background: linear-gradient(180deg, #ffffff 0%, #f4f6f8 100%);
+		color: #1a2733;
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		border-radius: 16px;
+		font-size: 0.8rem;
+		font-weight: 500;
+		line-height: 1.35;
+		z-index: 60;
+		box-shadow:
+			0 8px 28px rgba(0, 0, 0, 0.14),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		animation: hintDrop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+	:global(.dark) .privacy-notice {
+		background: linear-gradient(180deg, #2a2a2e 0%, #202024 100%);
+		color: #e8ebef;
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+	.privacy-notice :global(svg) { flex-shrink: 0; opacity: 0.65; }
+	.privacy-ack {
+		flex-shrink: 0;
+		border: none;
+		border-radius: 10px;
+		padding: 0.35rem 0.7rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: white;
+		background: linear-gradient(180deg, #5fd6ff 0%, #01b2ff 100%);
+		cursor: pointer;
+		box-shadow: 0 2px 6px rgba(1, 178, 255, 0.4);
+		transition: filter 0.15s ease;
+	}
+	.privacy-ack:hover { filter: brightness(1.05); }
 	.drop-zone {
 		position: absolute;
 		left: 1rem;

@@ -82,6 +82,15 @@
 		return canShowImages(providerSupportsVision(provider), isLocalLLMProvider(provider), model);
 	});
 
+	// Provider info for the one-time "where do photos go" disclosure.
+	const imageProvider = $derived.by(() => {
+		const provider = modulesStore.getModuleSettings('consciousness').activeProvider as string;
+		return {
+			label: getLLMProvider(provider)?.name ?? 'your AI provider',
+			isLocal: provider ? isLocalLLMProvider(provider) : false
+		};
+	});
+
 	// Track memory hydration
 	let isMemoryReady = $state(false);
 
@@ -528,7 +537,13 @@
 		<ThinkingImages images={thinkingImages} show={isTyping} />
 
 		<!-- Bottom Chat Bar -->
-		<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} {visionCapable} />
+		<BottomChatBar
+			onSend={handleSend}
+			disabled={chatStore.isLoading}
+			{visionCapable}
+			providerLabel={imageProvider.label}
+			providerIsLocal={imageProvider.isLocal}
+		/>
 
 		<!-- Error toast for chat errors -->
 		{#if chatStore.error}

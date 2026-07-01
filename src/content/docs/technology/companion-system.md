@@ -182,6 +182,21 @@ When building prompts, the system retrieves:
 - Triggered memories (high-importance facts semantically related to conversation)
 - Recent session summaries (if returning after absence)
 
+## Showing Her Images (Multimodal)
+
+Users can "show" their companion an image the way you'd show a friend something on your phone: via the camera button in the chat bar, or by dragging a photo onto it. It is framed as *showing her something*, not "attaching a file."
+
+### How it works
+
+- **Vision gating**: The camera affordance is only active when the selected model can actually see. `canShowImages()` combines a provider-level `supportsVision` flag (OpenAI, Anthropic, Google, xAI) with a model-name heuristic (`modelSupportsVision`) for local providers (Ollama / LM Studio), where capability depends on the installed model (LLaVA, gemma3:4b, qwen2.5-vl, ...). Text-only models get a gentle prompt to switch, not a silent failure.
+- **Format handling**: Picked images are normalized before send. Oversized images are downscaled (longest edge clamped) and re-encoded to JPEG; decodable-but-unsupported formats (e.g. HEIC on Safari) are converted to JPEG; formats the browser cannot decode and the vision APIs will not accept (e.g. HEIC on Chrome) are rejected with a clear message. Supported wire formats are JPEG, PNG, GIF, and WebP.
+- **Provider wire formats**: The same in-memory image is serialized per provider (OpenAI-style `image_url` data URLs, or Anthropic-style base64 `source` blocks) by `toOpenAIContent` / `toAnthropicContent`.
+- **Memory + the board**: A shown image can become a "photo memory" — the companion may leave a note about what she saw — and kept photos are stored locally (blob + thumbnail) and surfaced on a scrapbook-style **photoboard**.
+
+### Privacy
+
+Images stay on your device. Only vision-capable models receive them, and only for the single inference where you show them. When a cloud provider is selected, a one-time disclosure tells the user their photo is sent to that provider to be seen; with a local provider it notes the image never leaves the machine. Kept photos can be deleted from the board at any time.
+
 ## Time-Based Recovery and Decay
 
 When the app loads, it calculates hours since the last interaction and applies recovery or decay.
