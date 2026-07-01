@@ -9,11 +9,11 @@ export const reroute: Reroute = ({ url }) => {
 	const host = url.hostname;
 
 	if (host.startsWith('docs.')) {
-		if (!url.pathname.startsWith('/docs')) {
+		if (!url.pathname.startsWith('/docs') && !url.pathname.startsWith('/api')) {
 			return url.pathname === '/' ? '/docs' : `/docs${url.pathname}`;
 		}
 	} else if (host.startsWith('app.')) {
-		if (!url.pathname.startsWith('/app')) {
+		if (!url.pathname.startsWith('/app') && !url.pathname.startsWith('/api')) {
 			return url.pathname === '/' ? '/app' : `/app${url.pathname}`;
 		}
 	}
