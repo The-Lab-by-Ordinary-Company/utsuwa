@@ -78,119 +78,82 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="modal-overlay" onclick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby="modal-title">
 	<div class="modal-container">
-		<!-- Close button row -->
-		<div class="close-row">
-			<button class="close-btn" onclick={onClose} aria-label="Close">
-				<Icon name="x" size={14} />
-			</button>
-		</div>
+		<button class="close-btn" onclick={onClose} aria-label="Close">
+			<Icon name="x" size={16} />
+		</button>
 
-		<!-- Logo & Version centered -->
-		<div class="app-header">
-			<span class="app-logo" role="img" aria-label="Utsuwa - Open Source AI Soul Vessel"></span>
-			<span class="version-badge">
-				{version}
-				<span class="version-shine"></span>
-			</span>
-		</div>
-
-		<!-- Updates (desktop only) -->
-		{#if isTauri()}
-			<div class="updates-row">
-				<button
-					class="update-check-btn"
-					onclick={() =>
-						updaterStore.status === 'available' ? updaterStore.install() : updaterStore.check()}
-					disabled={updateBusy}
-				>
-					<Icon name={updaterStore.status === 'available' ? 'download' : 'refresh-cw'} size={13} />
-					<span>{updaterStore.status === 'available' ? 'Install & Restart' : 'Check for updates'}</span>
-				</button>
-				{#if updateStatusText}
-					<span class="update-status-text">{updateStatusText}</span>
+		<!-- Hero -->
+		<div class="hero">
+			<span class="app-logo" role="img" aria-label="Utsuwa"></span>
+			<p id="modal-title" class="tagline">Open-source AI companion</p>
+			<div class="hero-meta">
+				<span class="version-chip">{version}</span>
+				{#if isTauri()}
+					<button
+						class="update-link"
+						onclick={() =>
+							updaterStore.status === 'available' ? updaterStore.install() : updaterStore.check()}
+						disabled={updateBusy}
+					>
+						<Icon name={updaterStore.status === 'available' ? 'download' : 'refresh-cw'} size={12} />
+						<span>{updaterStore.status === 'available' ? 'Install & restart' : 'Check for updates'}</span>
+					</button>
 				{/if}
 			</div>
-		{/if}
-
-		<!-- Links -->
-		<div class="link-tiles">
-			<a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa" target="_blank" rel="noopener" class="link-tile" style="--delay: 0; --tile-color: #333; --tile-glow: rgba(0, 0, 0, 0.2)">
-				<div class="tile-icon-wrapper">
-					<span class="tile-icon">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-						</svg>
-					</span>
-					<span class="tile-icon-shine"></span>
-				</div>
-				<span class="tile-label">GitHub</span>
-				<span class="tile-shine"></span>
-			</a>
-			<a href={DOCS_URL} target="_blank" rel="noopener" onclick={handleDocsClick} class="link-tile" style="--delay: 1; --tile-color: #00B2FF; --tile-glow: rgba(0, 178, 255, 0.3)">
-				<div class="tile-icon-wrapper">
-					<span class="tile-icon">
-						<Icon name="file-text" size={20} />
-					</span>
-					<span class="tile-icon-shine"></span>
-				</div>
-				<span class="tile-label">Docs</span>
-				<span class="tile-shine"></span>
-			</a>
+			{#if isTauri() && updateStatusText}
+				<span class="update-status">{updateStatusText}</span>
+			{/if}
 		</div>
 
-		<!-- System Info -->
-		<div class="section-label">System</div>
-		<div class="system-tiles">
-			<div class="system-tile" style="--delay: 2">
-				<span class="system-icon">
-					<Icon name="mic" size={18} />
+		<!-- Links -->
+		<nav class="link-list">
+			<a
+				href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa"
+				target="_blank"
+				rel="noopener"
+				class="link-row"
+			>
+				<span class="row-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+					</svg>
 				</span>
-				<span class="system-label">STT</span>
-				<span class="system-status" class:success={sttSupport === 'Supported'} class:error={sttSupport === 'Unsupported'}>
-					{#if sttSupport === 'Supported'}
-						<Icon name="check" size={12} />
-					{:else if sttSupport === 'Unsupported'}
-						<Icon name="x" size={12} />
-					{:else}
-						...
-					{/if}
-					<span class="status-shine"></span>
+				<span class="row-label">GitHub</span>
+				<span class="row-ext"><Icon name="external-link" size={14} /></span>
+			</a>
+			<a
+				href={DOCS_URL}
+				target="_blank"
+				rel="noopener"
+				onclick={handleDocsClick}
+				class="link-row"
+			>
+				<span class="row-icon"><Icon name="file-text" size={18} /></span>
+				<span class="row-label">Documentation</span>
+				<span class="row-ext"><Icon name="external-link" size={14} /></span>
+			</a>
+		</nav>
+
+		<!-- System -->
+		<p class="sys-label">System</p>
+		<div class="sys-list">
+			<div class="sys-row">
+				<span class="sys-name">Speech recognition</span>
+				<span class="sys-val" class:ok={sttSupport === 'Supported'} class:bad={sttSupport === 'Unsupported'}>
+					<span class="dot"></span>{sttSupport}
 				</span>
-				<span class="tile-shine"></span>
 			</div>
-			<div class="system-tile" style="--delay: 3">
-				<span class="system-icon">
-					<Icon name="monitor" size={18} />
+			<div class="sys-row">
+				<span class="sys-name">3D graphics</span>
+				<span class="sys-val" class:ok={webglSupport === 'Supported'} class:bad={webglSupport === 'Unsupported'}>
+					<span class="dot"></span>{webglSupport}
 				</span>
-				<span class="system-label">WebGL</span>
-				<span class="system-status" class:success={webglSupport === 'Supported'} class:error={webglSupport === 'Unsupported'}>
-					{#if webglSupport === 'Supported'}
-						<Icon name="check" size={12} />
-					{:else if webglSupport === 'Unsupported'}
-						<Icon name="x" size={12} />
-					{:else}
-						...
-					{/if}
-					<span class="status-shine"></span>
-				</span>
-				<span class="tile-shine"></span>
 			</div>
-			<div class="system-tile" style="--delay: 4">
-				<span class="system-icon">
-					<Icon name="database" size={18} />
+			<div class="sys-row">
+				<span class="sys-name">Local storage</span>
+				<span class="sys-val" class:ok={storageStatus === 'Available'} class:bad={storageStatus === 'Unavailable'}>
+					<span class="dot"></span>{storageStatus}
 				</span>
-				<span class="system-label">Storage</span>
-				<span class="system-status" class:success={storageStatus === 'Available'} class:error={storageStatus === 'Unavailable'}>
-					{#if storageStatus === 'Available'}
-						<Icon name="check" size={12} />
-					{:else if storageStatus === 'Unsupported'}
-						<Icon name="x" size={12} />
-					{:else}
-						...
-					{/if}
-					<span class="status-shine"></span>
-				</span>
-				<span class="tile-shine"></span>
 			</div>
 		</div>
 	</div>
@@ -200,13 +163,14 @@
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.3);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
+		background: rgba(28, 43, 51, 0.28);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		z-index: 1000;
+		padding: 1.5rem;
 		animation: fadeIn 0.2s ease-out;
 	}
 
@@ -217,415 +181,207 @@
 
 	.modal-container {
 		position: relative;
-		background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-		border: 1px solid rgba(255, 255, 255, 0.8);
-		border-radius: 20px;
-		max-width: 300px;
-		width: 90%;
-		padding: 1.25rem;
-		animation: slideUp 0.25s ease-out;
-		box-shadow:
-			0 20px 60px rgba(0, 0, 0, 0.2),
-			0 8px 24px rgba(0, 0, 0, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .modal-container {
-		background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 20px 60px rgba(0, 0, 0, 0.5),
-			0 8px 24px rgba(0, 0, 0, 0.4),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		background: var(--bg-primary);
+		border-radius: var(--radius-xl);
+		max-width: 340px;
+		width: 100%;
+		padding: 1.5rem;
+		box-shadow: var(--shadow-xl);
+		animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	@keyframes slideUp {
-		from {
-			transform: translateY(16px) scale(0.98);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0) scale(1);
-			opacity: 1;
-		}
-	}
-
-	/* Close button row */
-	.close-row {
-		display: flex;
-		justify-content: flex-end;
-		margin-bottom: 0.25rem;
+		from { transform: translateY(16px) scale(0.98); opacity: 0; }
+		to { transform: translateY(0) scale(1); opacity: 1; }
 	}
 
 	.close-btn {
+		position: absolute;
+		top: 0.85rem;
+		right: 0.85rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 24px;
-		height: 24px;
-		background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		border-radius: 50%;
+		width: 30px;
+		height: 30px;
+		background: transparent;
+		border: none;
+		border-radius: var(--radius-full);
 		color: var(--text-tertiary);
 		cursor: pointer;
-		transition: all 0.15s;
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.08),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .close-btn {
-		background: linear-gradient(180deg, #333333 0%, #262626 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		transition: background 0.15s ease, color 0.15s ease;
 	}
 
 	.close-btn:hover {
-		background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+		background: var(--bg-secondary);
 		color: var(--text-primary);
-		transform: scale(1.05);
 	}
 
-	:global(.dark) .close-btn:hover {
-		background: linear-gradient(180deg, #404040 0%, #333333 100%);
-	}
-
-	/* App header - centered logo & version */
-	.app-header {
+	/* Hero */
+	.hero {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
+		text-align: center;
+		gap: 0.6rem;
+		padding: 0.75rem 0 1.25rem;
 	}
 
 	.app-logo {
 		display: block;
-		height: 28px;
+		height: 30px;
 		aspect-ratio: 1530 / 257;
-		background-color: #00B2FF;
+		background-color: var(--text-primary);
 		-webkit-mask: url('/brand-assets/logo.svg') no-repeat center / contain;
 		mask: url('/brand-assets/logo.svg') no-repeat center / contain;
 	}
 
-	:global(.dark) .app-logo {
-		background-color: #ffffff;
+	.tagline {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--text-secondary);
 	}
 
-	.version-badge {
-		position: relative;
-		display: inline-block;
-		padding: 0.3rem 0.75rem;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
-		border-radius: 999px;
-		font-size: 0.7rem;
-		font-weight: 600;
-		color: white;
-		box-shadow:
-			0 3px 10px rgba(1, 178, 255, 0.4),
-			0 1px 3px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-		overflow: hidden;
-	}
-
-	.version-shine {
-		position: absolute;
-		top: 2px;
-		left: 15%;
-		right: 15%;
-		height: 50%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
-		border-radius: 999px 999px 50% 50%;
-		pointer-events: none;
-	}
-
-	/* Updates row */
-	.updates-row {
+	.hero-meta {
 		display: flex;
-		flex-direction: column;
 		align-items: center;
-		gap: 0.4rem;
-		margin-bottom: 1rem;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		justify-content: center;
 	}
 
-	.update-check-btn {
+	.version-chip {
+		padding: 0.25rem 0.6rem;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-full);
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+	}
+
+	.update-link {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.4rem 0.85rem;
-		border-radius: 999px;
-		font-size: 0.7rem;
-		font-weight: 600;
-		color: var(--text-secondary);
+		gap: 0.35rem;
+		padding: 0.25rem 0.6rem;
+		border: none;
+		border-radius: var(--radius-full);
+		background: transparent;
+		font-size: 0.72rem;
+		font-weight: 500;
+		color: var(--accent);
 		cursor: pointer;
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-		transition: all 0.15s ease-out;
+		font-family: inherit;
+		transition: background 0.15s ease;
 	}
 
-	:global(.dark) .update-check-btn {
-		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		color: var(--text-secondary);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.25),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	.update-link:hover:not(:disabled) {
+		background: var(--accent-muted);
 	}
 
-	.update-check-btn:hover:not(:disabled) {
-		transform: translateY(-1px);
-		border-color: rgba(1, 178, 255, 0.4);
-		color: var(--text-primary);
-	}
-
-	.update-check-btn:disabled {
+	.update-link:disabled {
 		opacity: 0.6;
 		cursor: default;
-	}
-
-	.update-status-text {
-		font-size: 0.65rem;
 		color: var(--text-tertiary);
-		text-align: center;
 	}
 
-	/* Link Tiles */
-	.link-tiles {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 10px;
-		margin-bottom: 1rem;
+	.update-status {
+		font-size: 0.7rem;
+		color: var(--text-tertiary);
 	}
 
-	.link-tile {
-		position: relative;
+	/* Link rows */
+	.link-list {
 		display: flex;
 		flex-direction: column;
+		gap: 2px;
+	}
+
+	.link-row {
+		display: flex;
 		align-items: center;
-		justify-content: center;
-		gap: 8px;
-		padding: 1rem 0.5rem;
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-		border: 1px solid rgba(0, 0, 0, 0.06);
-		border-radius: 16px;
+		gap: 0.75rem;
+		padding: 0.7rem 0.75rem;
+		border-radius: var(--radius-lg);
 		text-decoration: none;
-		color: var(--text-secondary);
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.1),
-			0 2px 4px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			inset 0 -1px 2px rgba(0, 0, 0, 0.03);
-		animation: bounceIn 0.35s ease-out backwards;
-		animation-delay: calc(var(--delay, 0) * 50ms);
-		overflow: hidden;
+		color: var(--text-primary);
+		transition: background 0.15s ease;
 	}
 
-	:global(.dark) .link-tile {
-		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.3),
-			0 2px 4px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.06),
-			inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+	.link-row:hover {
+		background: var(--bg-secondary);
 	}
 
-	.link-tile:hover {
-		transform: translateY(-3px);
-		border-color: rgba(1, 178, 255, 0.4);
-		box-shadow:
-			0 8px 24px rgba(0, 0, 0, 0.15),
-			0 4px 8px rgba(0, 0, 0, 0.1),
-			0 0 20px var(--tile-glow, rgba(1, 178, 255, 0.2)),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .link-tile:hover {
-		box-shadow:
-			0 8px 24px rgba(0, 0, 0, 0.4),
-			0 4px 8px rgba(0, 0, 0, 0.25),
-			0 0 24px var(--tile-glow, rgba(1, 178, 255, 0.25)),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
-	}
-
-	.tile-shine {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 50%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-		pointer-events: none;
-		border-radius: 16px 16px 0 0;
-	}
-
-	:global(.dark) .tile-shine {
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%);
-	}
-
-	.tile-icon-wrapper {
-		position: relative;
+	.row-icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 44px;
-		height: 44px;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
-		border-radius: 12px;
-		box-shadow:
-			0 4px 12px rgba(1, 178, 255, 0.4),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			inset 0 -1px 2px rgba(0, 0, 0, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		color: var(--text-secondary);
+		flex-shrink: 0;
 	}
 
-	.tile-icon-shine {
-		position: absolute;
-		top: 2px;
-		left: 15%;
-		right: 15%;
-		height: 45%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
-		border-radius: 0.5rem 0.5rem 50% 50%;
-		pointer-events: none;
+	.row-label {
+		flex: 1;
+		font-size: 0.9rem;
+		font-weight: 500;
 	}
 
-	.tile-icon {
+	.row-ext {
 		display: flex;
-		color: white;
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+		color: var(--text-tertiary);
+		flex-shrink: 0;
 	}
 
-	.tile-label {
-		font-size: 0.7rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+	/* System list */
+	.sys-label {
+		margin: 1.25rem 0 0.25rem;
+		padding: 0 0.75rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--text-tertiary);
+	}
+
+	.sys-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.sys-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.65rem 0.75rem;
+		font-size: 0.85rem;
+	}
+
+	.sys-row + .sys-row {
+		border-top: 1px solid var(--border-subtle);
+	}
+
+	.sys-name {
+		color: var(--text-secondary);
+	}
+
+	.sys-val {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-weight: 500;
 		color: var(--text-primary);
 	}
 
-	/* Section Label */
-	.section-label {
-		font-size: 0.6rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--text-tertiary);
-		margin-bottom: 0.5rem;
-		text-align: center;
-	}
-
-	/* System Tiles */
-	.system-tiles {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 10px;
-	}
-
-	.system-tile {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 6px;
-		padding: 0.875rem 0.25rem;
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-		border: 1px solid rgba(0, 0, 0, 0.06);
-		border-radius: 14px;
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.1),
-			0 2px 4px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			inset 0 -1px 2px rgba(0, 0, 0, 0.03);
-		animation: bounceIn 0.35s ease-out backwards;
-		animation-delay: calc(var(--delay, 0) * 50ms);
-		overflow: hidden;
-	}
-
-	:global(.dark) .system-tile {
-		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.3),
-			0 2px 4px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.06),
-			inset 0 -1px 2px rgba(0, 0, 0, 0.2);
-	}
-
-	.system-icon {
-		display: flex;
-		color: var(--text-tertiary);
-	}
-
-	.system-label {
-		font-size: 0.6rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		color: var(--text-tertiary);
-	}
-
-	.system-status {
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 24px;
-		height: 24px;
+	.sys-val .dot {
+		width: 7px;
+		height: 7px;
 		border-radius: 50%;
-		font-size: 0.65rem;
-		font-weight: 600;
-		overflow: hidden;
+		background: var(--text-tertiary);
 	}
 
-	.system-status.success {
-		background: linear-gradient(180deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
-		color: white;
-		box-shadow:
-			0 3px 8px rgba(34, 197, 94, 0.45),
-			0 1px 3px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+	.sys-val.ok .dot {
+		background: var(--color-success);
 	}
 
-	.system-status.error {
-		background: linear-gradient(180deg, #f87171 0%, #ef4444 50%, #dc2626 100%);
-		color: white;
-		box-shadow:
-			0 3px 8px rgba(239, 68, 68, 0.45),
-			0 1px 3px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-	}
-
-	.status-shine {
-		position: absolute;
-		top: 1px;
-		left: 15%;
-		right: 15%;
-		height: 50%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
-		border-radius: 50% 50% 40% 40%;
-		pointer-events: none;
-	}
-
-	@keyframes bounceIn {
-		0% {
-			opacity: 0;
-			transform: scale(0.8) translateY(10px);
-		}
-		60% {
-			transform: scale(1.05) translateY(-2px);
-		}
-		100% {
-			opacity: 1;
-			transform: scale(1) translateY(0);
-		}
+	.sys-val.bad .dot {
+		background: var(--color-error);
 	}
 </style>

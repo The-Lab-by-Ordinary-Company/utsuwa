@@ -46,54 +46,23 @@
 <style>
 	.vrm-card {
 		position: relative;
-		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		border-radius: 1rem;
+		background: var(--bg-secondary);
+		border: 1px solid transparent;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
-		transition: all 0.2s ease-out;
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.08),
-			0 2px 4px rgba(0, 0, 0, 0.04),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .vrm-card {
-		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.3),
-			0 2px 4px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.vrm-card:hover {
-		transform: translateY(-2px);
-		box-shadow:
-			0 8px 20px rgba(0, 0, 0, 0.12),
-			0 4px 8px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .vrm-card:hover {
-		box-shadow:
-			0 8px 20px rgba(0, 0, 0, 0.4),
-			0 4px 8px rgba(0, 0, 0, 0.25),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		transform: translateY(-1px);
+		border-color: var(--accent);
+		box-shadow: var(--shadow-glow);
 	}
 
 	.vrm-card.active {
-		border-color: #01B2FF;
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.08),
-			0 0 16px rgba(1, 178, 255, 0.25),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .vrm-card.active {
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.3),
-			0 0 20px rgba(1, 178, 255, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px var(--accent-muted), var(--shadow-sm);
 	}
 
 	.card-content {
@@ -110,12 +79,8 @@
 	.preview {
 		position: relative;
 		aspect-ratio: 1;
-		background: var(--color-neutral-200);
+		background: var(--bg-tertiary);
 		overflow: hidden;
-	}
-
-	:global(.dark) .preview {
-		background: var(--color-neutral-700);
 	}
 
 	.preview img {
@@ -130,7 +95,7 @@
 		justify-content: center;
 		width: 100%;
 		height: 100%;
-		color: var(--color-neutral-400);
+		color: var(--text-tertiary);
 	}
 
 	.active-badge {
@@ -142,14 +107,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: linear-gradient(180deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
-		color: white;
-		border-radius: 50%;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		box-shadow:
-			0 3px 8px rgba(34, 197, 94, 0.4),
-			0 1px 2px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		background: var(--accent);
+		color: #fff;
+		border-radius: var(--radius-full);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.info {
@@ -163,14 +124,10 @@
 	.name {
 		font-size: 0.8rem;
 		font-weight: 600;
-		color: var(--color-neutral-800);
+		color: var(--text-primary);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-
-	:global(.dark) .name {
-		color: var(--color-neutral-200);
 	}
 
 	.badge {
@@ -178,14 +135,11 @@
 		font-size: 0.65rem;
 		font-weight: 600;
 		padding: 0.2rem 0.5rem;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 100%);
-		color: white;
-		border-radius: 0.375rem;
+		background: var(--bg-tertiary);
+		color: var(--text-tertiary);
+		border-radius: var(--radius-sm);
 		text-transform: uppercase;
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-		box-shadow:
-			0 2px 4px rgba(1, 178, 255, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		letter-spacing: 0.02em;
 	}
 
 	.delete-btn {
@@ -197,17 +151,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: linear-gradient(180deg, #f87171 0%, #ef4444 50%, #dc2626 100%);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 50%;
-		color: white;
+		background: var(--color-error);
+		border: none;
+		border-radius: var(--radius-full);
+		color: #fff;
 		cursor: pointer;
 		opacity: 0;
-		transition: all 0.15s;
-		box-shadow:
-			0 3px 8px rgba(239, 68, 68, 0.35),
-			0 1px 2px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		transition: opacity 0.15s, box-shadow 0.15s, transform 0.1s;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.vrm-card:hover .delete-btn {
@@ -215,10 +166,10 @@
 	}
 
 	.delete-btn:hover {
-		background: linear-gradient(180deg, #fca5a5 0%, #f87171 50%, #ef4444 100%);
-		box-shadow:
-			0 4px 10px rgba(239, 68, 68, 0.45),
-			0 2px 4px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		box-shadow: var(--shadow-md);
+	}
+
+	.delete-btn:active {
+		transform: scale(0.94);
 	}
 </style>

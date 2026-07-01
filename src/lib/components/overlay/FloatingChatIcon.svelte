@@ -23,112 +23,55 @@
 			<Icon name="message-circle" size={20} />
 		{/if}
 	</span>
-	<span class="btn-shine"></span>
 </button>
 
 <style>
 	.floating-chat-icon {
 		width: 48px;
 		height: 48px;
-		border: none;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		position: relative;
-		overflow: hidden;
-
-		background: linear-gradient(
-			180deg,
-			#66d9ff 0%,
-			#4dd0ff 25%,
-			#01B2FF 60%,
-			#0099dd 100%
-		);
-		color: white;
-		box-shadow:
-			0 4px 16px rgba(1, 178, 255, 0.45),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-sm);
+		transition: color 0.15s ease, background 0.15s ease,
+			box-shadow 0.15s ease, transform 0.15s ease;
 	}
 
 	.floating-chat-icon:hover {
-		background: linear-gradient(
-			180deg,
-			#80e0ff 0%,
-			#66d9ff 25%,
-			#1ebfff 60%,
-			#00a6e6 100%
-		);
-		transform: translateY(-2px);
-		box-shadow:
-			0 6px 24px rgba(1, 178, 255, 0.55),
-			0 3px 6px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+		box-shadow: var(--shadow-md);
+		transform: translateY(-1px);
+	}
+
+	.floating-chat-icon:focus-visible {
+		outline: none;
+		color: var(--text-primary);
+		box-shadow: 0 0 0 3px var(--accent-muted);
 	}
 
 	.floating-chat-icon:active {
 		transform: translateY(0) scale(0.96);
-		background: linear-gradient(
-			180deg,
-			#01B2FF 0%,
-			#0099dd 50%,
-			#0088cc 100%
-		);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.floating-chat-icon.expanded {
-		background: linear-gradient(
-			180deg,
-			#ffffff 0%,
-			#f0f0f2 50%,
-			#e8e8ea 100%
-		);
-		color: var(--text-primary, #1a1a1a);
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.08),
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+		background: var(--accent);
+		color: #fff;
 	}
 
-	:global(.dark) .floating-chat-icon.expanded {
-		background: linear-gradient(
-			180deg,
-			#3a3a3e 0%,
-			#2e2e32 50%,
-			#262628 100%
-		);
-		color: var(--text-primary, #fafafa);
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+	.floating-chat-icon.expanded:hover {
+		background: var(--accent-hover);
+		color: #fff;
 	}
 
 	.icon-inner {
-		position: relative;
-		z-index: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-	}
-
-	.btn-shine {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 50%;
-		height: 50%;
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.4) 0%,
-			rgba(255, 255, 255, 0) 100%
-		);
-		border-radius: 50% 50% 0 0;
-		pointer-events: none;
 	}
 </style>

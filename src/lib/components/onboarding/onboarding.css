@@ -1,0 +1,160 @@
+/* Shared onboarding vocabulary — global, used across all step components. */
+
+.ob-step {
+	display: flex;
+	flex-direction: column;
+	gap: 1.75rem;
+	padding: 2.5rem 2rem 2rem;
+}
+
+.ob-step--center {
+	align-items: center;
+	text-align: center;
+	gap: 1.25rem;
+	padding-top: 3.5rem;
+	padding-bottom: 3rem;
+}
+
+.ob-head {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+}
+
+/* Centered header only on the "moment" screens (welcome / complete) */
+.ob-step--center .ob-head {
+	align-items: center;
+	text-align: center;
+}
+
+.ob-title {
+	margin: 0;
+	font-size: 1.75rem;
+	font-weight: 600;
+	line-height: 1.12;
+	letter-spacing: -0.03em;
+	color: var(--text-primary);
+}
+
+.ob-subtitle {
+	margin: 0;
+	max-width: 320px;
+	font-size: 0.95rem;
+	line-height: 1.6;
+	color: var(--text-secondary);
+}
+
+/* Form fields */
+.ob-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.ob-label {
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: var(--text-secondary);
+}
+
+.ob-input,
+.ob-textarea {
+	width: 100%;
+	padding: 0.85rem 1rem;
+	background: var(--bg-secondary);
+	border: 1px solid var(--border-light);
+	border-radius: var(--radius-lg);
+	font-family: inherit;
+	font-size: 0.95rem;
+	color: var(--text-primary);
+	transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.ob-textarea {
+	resize: vertical;
+	min-height: 116px;
+	line-height: 1.6;
+}
+
+.ob-input::placeholder,
+.ob-textarea::placeholder {
+	color: var(--text-tertiary);
+}
+
+.ob-input:focus,
+.ob-textarea:focus {
+	outline: none;
+	background: var(--bg-primary);
+	border-color: var(--accent);
+	box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.ob-hint {
+	font-size: 0.78rem;
+	color: var(--text-tertiary);
+}
+
+/* Actions */
+.ob-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-top: 0.25rem;
+}
+
+.ob-actions--split {
+	justify-content: space-between;
+}
+
+.ob-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	padding: 0.85rem 1.5rem;
+	border: 1px solid transparent;
+	border-radius: var(--radius-full);
+	font-family: inherit;
+	font-size: 0.95rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.15s, box-shadow 0.15s, color 0.15s, transform 0.1s;
+}
+
+.ob-btn:active {
+	transform: scale(0.98);
+}
+
+.ob-btn-primary {
+	background: var(--accent);
+	color: #fff;
+}
+
+.ob-btn-primary:hover:not(:disabled) {
+	background: var(--accent-hover);
+	box-shadow: var(--shadow-glow);
+}
+
+.ob-btn-primary:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.ob-btn-ghost {
+	background: var(--bg-tertiary);
+	color: var(--text-secondary);
+}
+
+.ob-btn-ghost:hover {
+	background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+	color: var(--text-primary);
+}
+
+.ob-btn-lg {
+	padding: 1rem 2.5rem;
+	font-size: 1rem;
+}
+
+.ob-btn-block {
+	width: 100%;
+}

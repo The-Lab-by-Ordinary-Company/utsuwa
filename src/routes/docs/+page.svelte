@@ -23,12 +23,6 @@
 
 <div class="docs-home" data-pagefind-ignore>
 	<header class="home-hero">
-		<div class="hero-bubbles" aria-hidden="true">
-			<span class="doc-bubble" style="--size:70px;  --x:7%;  --y:20%; --dur:15s; --delay:-2s;"></span>
-			<span class="doc-bubble" style="--size:120px; --x:84%; --y:14%; --dur:21s; --delay:-7s;"></span>
-			<span class="doc-bubble" style="--size:40px;  --x:70%; --y:62%; --dur:12s; --delay:-4s;"></span>
-			<span class="doc-bubble" style="--size:54px;  --x:18%; --y:70%; --dur:17s; --delay:-9s;"></span>
-		</div>
 		<p class="eyebrow">Documentation</p>
 		<h1 class="home-title">Everything you need to run your vessel.</h1>
 		<p class="home-lead">
@@ -53,7 +47,6 @@
 					<div class="panel-head">
 						<div class="panel-icon">
 							<Icon name={section.icon} size={18} />
-							<div class="panel-icon-shine"></div>
 						</div>
 						<h3 class="panel-title">{section.title}</h3>
 					</div>
@@ -93,49 +86,6 @@
 		padding-top: 1rem;
 	}
 
-	/* Keep hero content above the decorative bubbles */
-	.home-hero > :not(.hero-bubbles) {
-		position: relative;
-		z-index: 1;
-	}
-
-	/* Frutiger Aero glass bubbles, clipped to the hero, behind content */
-	.hero-bubbles {
-		position: absolute;
-		inset: -1rem 0 0;
-		overflow: hidden;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.doc-bubble {
-		position: absolute;
-		left: var(--x);
-		top: var(--y);
-		width: var(--size);
-		height: var(--size);
-		border-radius: 50%;
-		background:
-			radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.2) 24%, transparent 46%),
-			linear-gradient(180deg, rgba(120, 215, 255, 0.3) 0%, rgba(1, 178, 255, 0.12) 100%);
-		box-shadow:
-			inset 0 0 16px rgba(255, 255, 255, 0.4),
-			inset 0 -5px 12px rgba(1, 130, 200, 0.22),
-			0 6px 24px rgba(0, 120, 190, 0.12);
-		opacity: 0.55;
-		animation: docFloat var(--dur, 16s) ease-in-out var(--delay, 0s) infinite alternate;
-		will-change: transform;
-	}
-
-	@keyframes docFloat {
-		0% {
-			transform: translateY(0) translateX(0) scale(1);
-		}
-		100% {
-			transform: translateY(-30px) translateX(12px) scale(1.07);
-		}
-	}
-
 	.eyebrow {
 		font-size: 0.72rem;
 		font-weight: 700;
@@ -146,17 +96,13 @@
 	}
 
 	.home-title {
-		font-family: 'Exo 2', sans-serif;
+		font-family: var(--font-sans);
 		font-size: clamp(2rem, 4vw, 3rem);
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1.05;
-		letter-spacing: -0.01em;
+		letter-spacing: -0.02em;
 		text-wrap: balance;
 		margin: 0 0 1rem;
-		background: linear-gradient(118deg, var(--docs-text) 38%, var(--docs-accent) 100%);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
 		color: var(--docs-text);
 	}
 
@@ -175,29 +121,13 @@
 		margin: 0 auto;
 	}
 
-	/* Soft glow halo behind the search box */
-	.home-search::before {
-		content: '';
-		position: absolute;
-		inset: -55% -12%;
-		background: radial-gradient(50% 60% at 50% 50%, var(--docs-glow) 0%, transparent 70%);
-		opacity: 0.7;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.home-search :global(.search-container) {
-		position: relative;
-		z-index: 1;
-	}
-
 	/* Sections */
 	.home-section {
 		margin-top: 3rem;
 	}
 
 	.section-heading {
-		font-family: 'Exo 2', sans-serif;
+		font-family: var(--font-sans);
 		font-size: 1.35rem;
 		font-weight: 600;
 		color: var(--docs-text);
@@ -211,24 +141,17 @@
 	}
 
 	.section-panel {
-		border: 1px solid var(--docs-glass-border);
+		border: 1px solid var(--docs-border);
 		border-radius: 1rem;
 		padding: 1.5rem;
-		background: var(--docs-glass-bg);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 4px 16px rgba(0, 0, 0, 0.08);
+		background: var(--docs-surface);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.section-panel:hover {
 		border-color: var(--docs-accent);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 0 20px var(--docs-glow),
-			0 8px 28px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-md);
 	}
 
 	.panel-head {
@@ -239,36 +162,19 @@
 	}
 
 	.panel-icon {
-		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		width: 2.25rem;
 		height: 2.25rem;
 		border-radius: 0.625rem;
-		background: var(--docs-btn-gradient);
-		color: white;
-		box-shadow:
-			0 2px 0 rgba(255, 255, 255, 0.35) inset,
-			0 -1px 2px rgba(0, 0, 0, 0.1) inset,
-			0 4px 12px var(--docs-glow);
-		border: 1px solid rgba(255, 255, 255, 0.15);
+		background: var(--docs-accent);
+		color: #fff;
 		flex-shrink: 0;
 	}
 
-	.panel-icon-shine {
-		position: absolute;
-		top: 2px;
-		left: 15%;
-		right: 15%;
-		height: 40%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
-		border-radius: 0.4rem 0.4rem 50% 50%;
-		pointer-events: none;
-	}
-
 	.panel-title {
-		font-family: 'Exo 2', sans-serif;
+		font-family: var(--font-sans);
 		font-size: 1.05rem;
 		font-weight: 600;
 		color: var(--docs-text);
@@ -292,13 +198,12 @@
 		border-radius: 0.6rem;
 		text-decoration: none;
 		border: 1px solid transparent;
-		transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+		transition: background 0.18s ease, border-color 0.18s ease;
 	}
 
 	.panel-link:hover {
-		background: var(--docs-surface);
+		background: var(--accent-subtle);
 		border-color: var(--docs-border);
-		box-shadow: 0 1px 0 var(--docs-inner-highlight) inset;
 	}
 
 	.link-title {
@@ -313,7 +218,7 @@
 	.link-title :global(svg) {
 		opacity: 0;
 		transform: translateX(-4px);
-		transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+		transition: opacity 0.18s ease, transform 0.18s ease;
 		color: var(--docs-accent);
 	}
 
@@ -339,12 +244,6 @@
 
 		.section-grid {
 			grid-template-columns: 1fr;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.doc-bubble {
-			animation: none;
 		}
 	}
 </style>

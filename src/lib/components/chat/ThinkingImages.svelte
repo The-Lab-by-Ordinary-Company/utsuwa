@@ -42,17 +42,10 @@
 		width: 72px;
 		height: 72px;
 		object-fit: cover;
-		border-radius: 0.875rem;
-		border: 2px solid rgba(255, 255, 255, 0.9);
-		box-shadow:
-			0 8px 22px rgba(0, 0, 0, 0.22),
-			0 2px 6px rgba(0, 0, 0, 0.14);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-sm);
 		transform-origin: center bottom;
 		animation: dance 1.1s ease-in-out infinite;
-	}
-
-	:global(.dark) .thinking-image {
-		border-color: rgba(255, 255, 255, 0.12);
 	}
 
 	/* a little hop-and-sway while she thinks */

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '@fontsource-variable/inter';
 	import '../app.css';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';

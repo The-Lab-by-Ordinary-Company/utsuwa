@@ -73,6 +73,8 @@
 		padding: 0.75rem 1rem;
 		position: relative;
 		z-index: 50;
+		background: var(--bg-primary);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.header-left {
@@ -86,55 +88,24 @@
 		gap: 0.625rem;
 		text-decoration: none;
 		padding: 0.375rem 0.875rem 0.375rem 0.5rem;
-		border-radius: 2rem;
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
-		transition: all 0.15s ease-out;
-		box-shadow:
-			0 3px 10px rgba(0, 0, 0, 0.08),
-			0 1px 3px rgba(0, 0, 0, 0.04),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .logo-link {
-		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 3px 10px rgba(0, 0, 0, 0.3),
-			0 1px 3px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		border-radius: var(--radius-full);
+		border: 1px solid transparent;
+		background: transparent;
+		transition: background 0.15s ease-out, border-color 0.15s ease-out;
 	}
 
 	.logo-link:hover {
-		transform: translateY(-1px);
-		border-color: rgba(1, 178, 255, 0.3);
-		box-shadow:
-			0 6px 16px rgba(0, 0, 0, 0.1),
-			0 2px 6px rgba(0, 0, 0, 0.06),
-			0 0 0 2px rgba(1, 178, 255, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .logo-link:hover {
-		box-shadow:
-			0 6px 16px rgba(0, 0, 0, 0.4),
-			0 2px 6px rgba(0, 0, 0, 0.25),
-			0 0 0 2px rgba(1, 178, 255, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		background: var(--bg-secondary);
 	}
 
 	.logo {
-		color: #01B2FF;
-		filter: drop-shadow(0 0 4px rgba(1, 178, 255, 0.3));
+		color: var(--accent);
 	}
 
 	.logo-text {
 		font-size: 1.125rem;
 		font-weight: 600;
-		background: linear-gradient(135deg, #01B2FF, #0088cc);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
+		color: var(--text-primary);
 	}
 
 	.header-right {
@@ -148,62 +119,28 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.375rem 0.75rem 0.375rem 0.375rem;
-		border-radius: 2rem;
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+		border-radius: var(--radius-full);
+		border: 1px solid transparent;
+		background: transparent;
 		cursor: pointer;
-		transition: all 0.15s ease-out;
-		box-shadow:
-			0 3px 10px rgba(0, 0, 0, 0.08),
-			0 1px 3px rgba(0, 0, 0, 0.04),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .avatar-btn {
-		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 3px 10px rgba(0, 0, 0, 0.3),
-			0 1px 3px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		transition: background 0.15s ease-out, border-color 0.15s ease-out, box-shadow 0.15s ease-out;
 	}
 
 	.avatar-btn:hover {
-		border-color: rgba(1, 178, 255, 0.4);
-		transform: translateY(-1px);
-		box-shadow:
-			0 6px 16px rgba(0, 0, 0, 0.1),
-			0 2px 6px rgba(0, 0, 0, 0.06),
-			0 0 0 2px rgba(1, 178, 255, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .avatar-btn:hover {
-		box-shadow:
-			0 6px 16px rgba(0, 0, 0, 0.4),
-			0 2px 6px rgba(0, 0, 0, 0.25),
-			0 0 0 2px rgba(1, 178, 255, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		background: var(--bg-secondary);
 	}
 
 	.avatar {
 		width: 32px;
 		height: 32px;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		color: var(--text-tertiary);
-		background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+		background: var(--bg-secondary);
 		overflow: hidden;
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-		border: 1px solid rgba(0, 0, 0, 0.05);
-	}
-
-	:global(.dark) .avatar {
-		background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-		border-color: rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--border-light);
 	}
 
 	.avatar img {
@@ -222,18 +159,9 @@
 	}
 
 	:global([data-state='open']) .avatar-btn {
-		border-color: #01B2FF;
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.1),
-			0 0 0 3px rgba(1, 178, 255, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) :global([data-state='open']) .avatar-btn {
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.4),
-			0 0 0 3px rgba(1, 178, 255, 0.25),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		background: var(--bg-secondary);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px var(--accent-muted);
 	}
 
 	.dropdown-header {

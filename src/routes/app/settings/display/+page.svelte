@@ -169,22 +169,9 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 1rem 1.25rem;
-		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		border-radius: 14px;
-		box-shadow:
-			0 3px 10px rgba(0, 0, 0, 0.06),
-			0 1px 3px rgba(0, 0, 0, 0.04),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .setting-row {
-		background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 3px 10px rgba(0, 0, 0, 0.25),
-			0 1px 3px rgba(0, 0, 0, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		background: var(--bg-primary);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.setting-info {
@@ -204,23 +191,10 @@
 		color: var(--text-tertiary);
 	}
 
-	/* Mode Selector - Skeuomorphic */
+	/* Mode Selector - flat selectable tiles */
 	.mode-selector {
 		display: flex;
-		background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
-		border-radius: 12px;
-		padding: 4px;
-		gap: 3px;
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.08),
-			0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .mode-selector {
-		background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.3),
-			0 1px 0 rgba(255, 255, 255, 0.05);
+		gap: 0.5rem;
 	}
 
 	.mode-option {
@@ -228,44 +202,27 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 0.875rem;
-		background: transparent;
-		border: none;
-		border-radius: 9px;
-		color: var(--text-tertiary);
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
 		font-size: 0.8125rem;
 		font-weight: 500;
 		font-family: inherit;
 		cursor: pointer;
-		transition: all 0.15s ease-out;
+		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 	}
 
 	.mode-option:hover:not(.active) {
-		color: var(--text-secondary);
-		background: rgba(255, 255, 255, 0.5);
-	}
-
-	:global(.dark) .mode-option:hover:not(.active) {
-		background: rgba(255, 255, 255, 0.05);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
 	.mode-option.active {
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-		color: var(--text-primary);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.12),
-			0 1px 2px rgba(0, 0, 0, 0.08),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		background: var(--accent-muted);
+		color: var(--accent);
 	}
 
-	:global(.dark) .mode-option.active {
-		background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.3),
-			0 1px 2px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
-	}
-
-	/* Slider - Skeuomorphic */
+	/* Slider - flat track, solid accent thumb */
 	.slider-container {
 		display: flex;
 		align-items: center;
@@ -280,34 +237,23 @@
 
 	.zoom-slider {
 		width: 120px;
-		height: 8px;
+		height: 6px;
 		appearance: none;
-		background: linear-gradient(180deg, #d0d0d0 0%, #e0e0e0 100%);
-		border-radius: 4px;
+		-webkit-appearance: none;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-full);
 		cursor: pointer;
-		box-shadow:
-			inset 0 1px 3px rgba(0, 0, 0, 0.15),
-			0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .zoom-slider {
-		background: linear-gradient(180deg, #1a1a1a 0%, #252525 100%);
-		box-shadow:
-			inset 0 1px 3px rgba(0, 0, 0, 0.4),
-			0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
 	.zoom-slider::-webkit-slider-thumb {
 		appearance: none;
-		width: 20px;
-		height: 20px;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 100%);
+		-webkit-appearance: none;
+		width: 18px;
+		height: 18px;
+		background: var(--accent);
 		border-radius: 50%;
 		cursor: pointer;
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.2),
-			0 1px 2px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		box-shadow: var(--shadow-sm);
 		transition: transform 0.1s ease-out;
 	}
 
@@ -316,16 +262,13 @@
 	}
 
 	.zoom-slider::-moz-range-thumb {
-		width: 20px;
-		height: 20px;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 100%);
+		width: 18px;
+		height: 18px;
+		background: var(--accent);
 		border: none;
 		border-radius: 50%;
 		cursor: pointer;
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.2),
-			0 1px 2px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		box-shadow: var(--shadow-sm);
 	}
 
 	/* Tablet and below */

@@ -220,11 +220,11 @@
 	})}</script>`}
 </svelte:head>
 
-<div class="bg-white dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-[#fafafa] overflow-x-clip">
+<div class="page-root overflow-x-clip">
 <main>
 	<!-- Hero -->
-	<section class="hero relative min-h-screen flex flex-col bg-white dark:bg-[#0a0a0a]">
-		<!-- Hybrid hero video: full-bleed up top, masked so it dissolves into the gradient below -->
+	<section class="hero relative min-h-screen flex flex-col bg-[var(--bg-primary)]">
+		<!-- Hybrid hero video: full-bleed up top, masked so it dissolves into the page below -->
 		<div class="hero-video-wrap pointer-events-none" aria-hidden="true">
 			{#if allowVideo}
 				<video
@@ -285,7 +285,7 @@
 				</button>
 				<a
 					href={sectionUrl('app')}
-					class="skeu-btn-sm text-xs font-semibold px-4 py-2 rounded-full transition-all"
+					class="btn-primary text-xs font-semibold px-4 py-2 rounded-full"
 				>
 					Try Live
 				</a>
@@ -297,8 +297,8 @@
 			<h1 class="sr-only">Utsuwa — Open-Source AI Companion with 3D VRM Avatars</h1>
 
 			<!-- Eyebrow pill -->
-			<div use:reveal class="reveal glass-pill mb-7" >
-				<span class="glass-pill-dot"></span>
+			<div use:reveal class="reveal hero-pill mb-7" >
+				<span class="hero-pill-dot"></span>
 				Open source &middot; MIT &middot; Self-hosted
 			</div>
 
@@ -318,20 +318,20 @@
 
 			<!-- CTA buttons -->
 			<div use:reveal={240} class="reveal flex flex-wrap items-center justify-center gap-3 mb-12">
-				<a href={sectionUrl('app')} class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all">
+				<a href={sectionUrl('app')} class="btn-primary text-sm font-bold px-6 py-3 rounded-full">
 					Try Live
 				</a>
 				<a
 					href={GITHUB_RELEASES}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="skeu-btn-glass text-sm font-bold px-6 py-3 rounded-full transition-all"
+					class="btn-on-media text-sm font-bold px-6 py-3 rounded-full"
 				>
 					Download
 				</a>
 				<a
 					href={sectionUrl('docs')}
-					class="skeu-btn-glass-outline text-sm font-medium px-6 py-3 rounded-full transition-all"
+					class="btn-on-media text-sm font-medium px-6 py-3 rounded-full"
 				>
 					Docs
 				</a>
@@ -339,20 +339,20 @@
 
 		</div>
 
-		<!-- Bottom fade: video melts through the brand blue into the page background (light + dark) -->
+		<!-- Bottom fade: video dissolves cleanly into the page background (light + dark) -->
 		<div class="hero-fade" aria-hidden="true"></div>
 	</section>
 
 	<!-- Provider strip -->
 	<section
-		class="bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 py-20 md:py-28 overflow-hidden"
+		class="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] py-20 md:py-28 overflow-hidden"
 	>
 		<div class="max-w-5xl mx-auto px-6 text-center mb-12 md:mb-14">
 			<p use:reveal class="reveal eyebrow justify-center mb-5">Bring your own brain</p>
 			<h2
 				use:reveal={60}
-				class="reveal text-2xl md:text-3xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] tracking-tight text-balance"
-				style="font-family: 'Exo 2', sans-serif;"
+				class="reveal text-2xl md:text-3xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+				style="font-family: var(--font-sans);"
 			>
 				Plug in any model. Use your own keys.
 			</h2>
@@ -391,13 +391,13 @@
 	</section>
 
 	<!-- Features: pinned visual, scrolling copy -->
-	<section id="features" class="bg-[#f5f7fa] dark:bg-[#101013] border-t border-black/5 dark:border-white/5">
+	<section id="features" class="bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)]">
 		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
 			<div class="grid lg:grid-cols-2 gap-12 lg:gap-20">
 				<!-- Pinned visual (lg+): screenshots cross-fade as you scroll the copy -->
 				<div class="hidden lg:block">
 					<div class="feature-sticky">
-						<div class="skeu-card-light rounded-2xl p-4 overflow-hidden">
+						<div class="surface-card rounded-2xl p-4 overflow-hidden">
 							<div class="feature-visual">
 								{#each features as f, i}
 									<img
@@ -419,7 +419,7 @@
 						<div class="feature-step" class:is-active={activeFeature === i} use:trackStep={i}>
 							<!-- Inline visual on small screens (no sticky) -->
 							<div
-								class="lg:hidden w-full skeu-card-light rounded-2xl p-4 mb-7 aspect-[16/10] flex items-center justify-center overflow-hidden"
+								class="lg:hidden w-full surface-card rounded-2xl p-4 mb-7 aspect-[16/10] flex items-center justify-center overflow-hidden"
 							>
 								<img
 									src={f.img}
@@ -431,12 +431,12 @@
 
 							<p class="eyebrow mb-5"><span class="eyebrow-num">{f.num}</span> {f.eyebrow}</p>
 							<h2
-								class="text-3xl md:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] mb-4 tracking-tight text-balance"
-								style="font-family: 'Exo 2', sans-serif;"
+								class="text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] mb-4 tracking-tight text-balance"
+								style="font-family: var(--font-sans);"
 							>
 								{f.title}
 							</h2>
-							<p class="text-lg text-black/55 dark:text-white/55 leading-relaxed text-pretty mb-6 max-w-lg">
+							<p class="text-lg text-[var(--text-secondary)] leading-relaxed text-pretty mb-6 max-w-lg">
 								{f.body}
 							</p>
 							<div class="flex flex-wrap gap-2">
@@ -452,14 +452,14 @@
 	</section>
 
 	<!-- Everything in the vessel — bento -->
-	<section class="bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 py-24 md:py-32">
+	<section class="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] py-24 md:py-32">
 		<div class="max-w-7xl mx-auto px-6">
 			<div class="text-center mb-16 md:mb-20">
 				<p use:reveal class="reveal eyebrow justify-center mb-5">The whole kit</p>
 				<h2
 					use:reveal={60}
-					class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] tracking-tight text-balance"
-					style="font-family: 'Exo 2', sans-serif;"
+					class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+					style="font-family: var(--font-sans);"
 				>
 					Everything packed into the vessel.
 				</h2>
@@ -490,18 +490,18 @@
 
 	<!-- Latest Updates (Blog) -->
 	{#if data.posts.length > 0}
-		<section class="bg-[#f5f7fa] dark:bg-[#101013] border-t border-black/5 dark:border-white/5 py-24 md:py-32">
+		<section class="bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)] py-24 md:py-32">
 			<div class="max-w-7xl mx-auto px-6">
 				<div use:reveal class="reveal flex items-end justify-between mb-12 md:mb-16">
 					<h2
-						class="text-3xl md:text-4xl font-semibold text-[#1a1a1a] dark:text-[#fafafa] tracking-tight"
-						style="font-family: 'Exo 2', sans-serif;"
+						class="text-3xl md:text-4xl font-semibold text-[var(--text-primary)] tracking-tight"
+						style="font-family: var(--font-sans);"
 					>
 						Latest updates
 					</h2>
 					<a
 						href="/blog"
-						class="text-sm font-medium text-[#01B2FF] hover:text-[#4dd0ff] transition-colors hidden sm:inline-flex items-center gap-1"
+						class="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors hidden sm:inline-flex items-center gap-1"
 					>
 						View all
 						<svg
@@ -528,18 +528,18 @@
 							</div>
 							<div class="blog-card-body">
 								<div class="flex items-center gap-1.5 text-xs font-medium">
-									<time datetime={post.date} class="text-[#01B2FF]">
+									<time datetime={post.date} class="text-[var(--accent)]">
 										{formatDate(post.date)}
 									</time>
-									<span class="text-black/25 dark:text-white/30">&middot;</span>
-									<span class="text-black/40 dark:text-white/40">CJ Dyas</span>
+									<span class="text-[var(--text-tertiary)]">&middot;</span>
+									<span class="text-[var(--text-secondary)]">CJ Dyas</span>
 								</div>
 								<h3
-									class="text-base font-semibold text-[#1a1a1a] dark:text-[#fafafa] group-hover:text-[#01B2FF] transition-colors tracking-tight"
+									class="text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors tracking-tight"
 								>
 									{post.title}
 								</h3>
-								<p class="text-sm text-black/50 dark:text-white/50 leading-relaxed line-clamp-2">
+								<p class="text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-2">
 									{post.description}
 								</p>
 							</div>
@@ -550,7 +550,7 @@
 				<div class="mt-8 text-center sm:hidden">
 					<a
 						href="/blog"
-						class="text-sm font-medium text-[#01B2FF] hover:text-[#4dd0ff] transition-colors inline-flex items-center gap-1"
+						class="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors inline-flex items-center gap-1"
 					>
 						View all posts
 						<svg
@@ -575,7 +575,7 @@
 	</main>
 
 	<!-- Footer -->
-	<footer class="bg-[#f5f7fa] dark:bg-[#101013] border-t border-black/5 dark:border-white/5 pt-20 md:pt-24 overflow-hidden">
+	<footer class="bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)] pt-20 md:pt-24 overflow-hidden">
 		<div class="max-w-7xl mx-auto px-6 mb-24 md:mb-32">
 			<div
 				class="flex flex-col md:flex-row justify-between items-start gap-16 md:gap-12"
@@ -588,40 +588,40 @@
 				<!-- Link columns -->
 				<div class="flex flex-wrap gap-12 sm:gap-24 lg:gap-32">
 					<div class="flex flex-col gap-4 min-w-[120px]">
-						<h3 class="text-xs font-semibold text-black/35 dark:text-white/35 mb-1">Project</h3>
+						<h3 class="text-xs font-semibold text-[var(--text-tertiary)] mb-1">Project</h3>
 						<a
 							href={GITHUB_REPO}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="text-xs font-medium text-black/60 dark:text-white/60 hover:text-[#01B2FF] transition-colors"
+							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
 							>GitHub</a
 						>
 						<a
 							href={GITHUB_RELEASES}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="text-xs font-medium text-black/60 dark:text-white/60 hover:text-[#01B2FF] transition-colors"
+							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
 							>Releases</a
 						>
 						<a
 							href={sectionUrl('docs')}
-							class="text-xs font-medium text-black/60 dark:text-white/60 hover:text-[#01B2FF] transition-colors"
+							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
 							>Docs</a
 						>
 						<a
 							href="/blog"
-							class="text-xs font-medium text-black/60 dark:text-white/60 hover:text-[#01B2FF] transition-colors"
+							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
 							>Blog</a
 						>
 					</div>
 
 					<div class="flex flex-col gap-4 min-w-[120px]">
-						<h3 class="text-xs font-semibold text-black/35 dark:text-white/35 mb-1">Legal</h3>
+						<h3 class="text-xs font-semibold text-[var(--text-tertiary)] mb-1">Legal</h3>
 						<a
 							href={`${GITHUB_REPO}/blob/main/LICENSE`}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="text-xs font-medium text-black/60 dark:text-white/60 hover:text-[#01B2FF] transition-colors"
+							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
 							>MIT License</a
 						>
 					</div>
@@ -630,12 +630,12 @@
 		</div>
 
 		<!-- Bottom bar -->
-		<div class="w-full border-t border-black/8 dark:border-white/8 bg-[#f5f7fa] dark:bg-[#101013] relative z-10">
+		<div class="w-full border-t border-[var(--border-subtle)] bg-[var(--bg-secondary)] relative z-10">
 			<div
 				class="max-w-7xl mx-auto px-6 py-8 md:py-10 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-0"
 			>
 				<div
-					class="text-[11px] text-black/35 dark:text-white/35 font-medium tracking-tight order-2 md:order-1"
+					class="text-[11px] text-[var(--text-tertiary)] font-medium tracking-tight order-2 md:order-1"
 				>
 					&copy; 2026 Ordinary Company Group LLC. Open source under MIT.
 				</div>
@@ -644,7 +644,7 @@
 						href={GITHUB_REPO}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="text-black/40 dark:text-white/40 hover:text-[#01B2FF] transition-colors"
+						class="text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
 						aria-label="GitHub"
 					>
 						<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"
@@ -660,28 +660,31 @@
 </div>
 
 <style>
+	.page-root {
+		background: var(--bg-primary);
+		color: var(--text-primary);
+	}
+
+	/* Nav logo — inverted to white so it reads over the hero video */
 	.nav-logo {
 		height: 1.125rem;
 		width: auto;
 		filter: brightness(0) invert(1);
 	}
 
-	/* Glass theme toggle in the hero nav (sits on the bright blue gradient) */
+	/* Theme toggle in the hero nav (flat, translucent — sits on the video) */
 	.nav-theme-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		width: 2rem;
 		height: 2rem;
-		border-radius: 9999px;
+		border-radius: var(--radius-full);
 		color: #fff;
-		background: rgba(255, 255, 255, 0.14);
+		background: rgba(255, 255, 255, 0.12);
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.3),
-			0 2px 6px rgba(0, 0, 0, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.28);
 		cursor: pointer;
 		transition:
 			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
@@ -690,8 +693,8 @@
 	}
 
 	.nav-theme-btn:hover {
-		background: rgba(255, 255, 255, 0.24);
-		border-color: rgba(255, 255, 255, 0.5);
+		background: rgba(255, 255, 255, 0.2);
+		border-color: rgba(255, 255, 255, 0.45);
 		transform: translateY(-1px);
 	}
 
@@ -702,7 +705,8 @@
 	.hero-logo {
 		width: min(80vw, 500px);
 		height: auto;
-		filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgba(0, 0, 0, 0.25));
+		/* White over the video; a whisper of shadow keeps it legible on bright frames */
+		filter: brightness(0) invert(1) drop-shadow(0 1px 6px rgba(0, 0, 0, 0.18));
 	}
 
 	/* Full-bleed hero video: fills the whole hero, below the content. The
@@ -731,70 +735,59 @@
 		transform: scale(1);
 	}
 
-	/* Keeps the white nav + headline legible over a bright clip without
-	   muddying the rest of the frame. */
+	/* Neutral legibility scrim — keeps the white nav + copy readable without
+	   tinting the frame. */
 	.hero-video-scrim {
 		position: absolute;
 		inset: 0;
-		background:
-			/* ever-so-slight overall darken for white text legibility */
-			linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
-			linear-gradient(
-				180deg,
-				rgba(4, 40, 74, 0.5) 0%,
-				rgba(4, 40, 74, 0.14) 24%,
-				transparent 48%
-			),
-			radial-gradient(130% 100% at 50% -12%, transparent 50%, rgba(0, 50, 95, 0.28) 100%);
+		background: linear-gradient(
+			180deg,
+			rgba(0, 0, 0, 0.34) 0%,
+			rgba(0, 0, 0, 0.08) 24%,
+			transparent 46%,
+			rgba(0, 0, 0, 0.12) 100%
+		);
 	}
 
-	/* Bottom fade. The video dissolves through a touch of brand blue and lands
-	   on the page background so it melts into the next section — the page-bg
-	   layer is swapped for dark mode, the blue glow stays the same in both. */
+	/* Bottom fade: the video dissolves straight into the page background so it
+	   melts into the next section. Token-driven, so dark mode just works. */
 	.hero-fade {
 		position: absolute;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		height: clamp(220px, 38vh, 480px);
+		height: clamp(200px, 34vh, 440px);
 		pointer-events: none;
-		background:
-			linear-gradient(to top, #ffffff 0%, #ffffff 7%, rgba(255, 255, 255, 0) 62%),
-			linear-gradient(to top, rgba(1, 178, 255, 0.42) 3%, rgba(1, 178, 255, 0) 46%);
+		background: linear-gradient(
+			to top,
+			var(--bg-primary) 0%,
+			var(--bg-primary) 6%,
+			transparent 62%
+		);
 	}
 
-	:global(.dark) .hero-fade {
-		background:
-			linear-gradient(to top, #0a0a0a 0%, #0a0a0a 7%, rgba(10, 10, 10, 0) 62%),
-			linear-gradient(to top, rgba(1, 178, 255, 0.38) 3%, rgba(1, 178, 255, 0) 46%);
-	}
-
-	/* Glass eyebrow pill on the blue hero */
-	.glass-pill {
+	/* Eyebrow pill on the hero video (flat, translucent) */
+	.hero-pill {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.4rem 0.9rem;
-		border-radius: 9999px;
+		border-radius: var(--radius-full);
 		font-size: 0.75rem;
 		font-weight: 600;
 		letter-spacing: 0.01em;
 		color: #fff;
-		background: rgba(255, 255, 255, 0.16);
+		background: rgba(255, 255, 255, 0.12);
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.35);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			0 2px 10px rgba(0, 0, 0, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.28);
 	}
 
-	.glass-pill-dot {
+	.hero-pill-dot {
 		width: 0.5rem;
 		height: 0.5rem;
 		border-radius: 50%;
 		background: #fff;
-		box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
 		animation: pulseDot 2.4s ease-in-out infinite;
 	}
 
@@ -812,33 +805,27 @@
 		font-weight: 700;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: #0088cc;
+		color: var(--accent);
 	}
 
 	.eyebrow-num {
-		font-family: 'Exo 2', sans-serif;
+		font-family: var(--font-sans);
 		font-size: 0.72rem;
 		font-weight: 700;
-		color: #01b2ff;
+		color: var(--accent);
 		padding: 0.15rem 0.45rem;
-		border-radius: 0.4rem;
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.14) 0%, rgba(1, 178, 255, 0.06) 100%);
-		border: 1px solid rgba(1, 178, 255, 0.25);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+		border-radius: var(--radius-xs);
+		background: var(--accent-subtle);
 	}
 
-	/* Feature callout chips */
+	/* Feature callout chips (flat, accent-tinted) */
 	.feature-chip {
 		font-size: 0.78rem;
 		font-weight: 600;
-		color: #0a7bb0;
+		color: var(--accent);
 		padding: 0.35rem 0.75rem;
-		border-radius: 9999px;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 248, 255, 0.7) 100%);
-		border: 1px solid rgba(1, 178, 255, 0.22);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.8),
-			0 1px 3px rgba(0, 0, 0, 0.05);
+		border-radius: var(--radius-full);
+		background: var(--accent-subtle);
 	}
 
 	/* Provider logo marquee */
@@ -883,12 +870,12 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		color: rgba(11, 28, 45, 0.72);
+		color: var(--text-secondary);
 		transition: color 0.3s ease, opacity 0.3s ease;
 	}
 
 	.provider-logo:hover {
-		color: rgba(11, 28, 45, 0.95);
+		color: var(--text-primary);
 	}
 
 	/* Wide wordmark images — swap light/dark with the theme class. */
@@ -968,7 +955,13 @@
 		}
 	}
 
-	/* Bento tiles */
+	/* Flat surface card — the base for framed visuals */
+	.surface-card {
+		background: var(--bg-primary);
+		box-shadow: var(--shadow-md);
+	}
+
+	/* Bento tiles (flat) */
 	.bento-tile {
 		position: relative;
 		overflow: hidden;
@@ -976,46 +969,35 @@
 		flex-direction: column;
 		gap: 1.1rem;
 		padding: 1.6rem;
-		border-radius: 1.25rem;
-		background: linear-gradient(165deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 248, 255, 0.8) 55%, rgba(1, 178, 255, 0.06) 100%);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid rgba(1, 178, 255, 0.16);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			0 4px 20px rgba(0, 0, 0, 0.06),
-			0 1px 3px rgba(0, 0, 0, 0.04);
+		border-radius: var(--radius-xl);
+		background: var(--bg-primary);
+		box-shadow: var(--shadow-sm);
 		transition:
 			transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-			box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-			border-color 0.4s ease;
+			box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.bento-tile:hover {
-		transform: translateY(-6px);
-		border-color: rgba(1, 178, 255, 0.4);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			0 0 30px rgba(1, 178, 255, 0.12),
-			0 16px 40px rgba(0, 60, 100, 0.12);
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.bento-title {
 		font-size: 1.05rem;
 		font-weight: 600;
 		letter-spacing: -0.01em;
-		color: #1a1a1a;
+		color: var(--text-primary);
 		margin-bottom: 0.4rem;
 	}
 
 	.bento-body {
 		font-size: 0.875rem;
 		line-height: 1.6;
-		color: rgba(0, 0, 0, 0.55);
+		color: var(--text-secondary);
 		text-wrap: pretty;
 	}
 
-	/* Flagship tile: bigger, copy pinned to the bottom, a soft corner glow. */
+	/* Flagship tile: bigger, copy pinned to the bottom. */
 	.bento-tile--hero {
 		gap: 1.5rem;
 	}
@@ -1037,18 +1019,7 @@
 	.bento-tile--hero .bento-icon {
 		width: 3.5rem;
 		height: 3.5rem;
-		border-radius: 1.1rem;
-	}
-
-	.bento-tile--hero::after {
-		content: '';
-		position: absolute;
-		top: -40%;
-		right: -20%;
-		width: 70%;
-		height: 80%;
-		background: radial-gradient(circle, rgba(1, 178, 255, 0.18) 0%, transparent 70%);
-		pointer-events: none;
+		border-radius: var(--radius-lg);
 	}
 
 	/* Wide tile: icon and copy sit side by side to use the extra width. */
@@ -1058,7 +1029,7 @@
 		gap: 1.25rem;
 	}
 
-	/* Glossy skeu icon tile inside bento */
+	/* Flat accent icon tile inside bento */
 	.bento-icon {
 		flex-shrink: 0;
 		display: inline-flex;
@@ -1066,19 +1037,13 @@
 		justify-content: center;
 		width: 3rem;
 		height: 3rem;
-		border-radius: 0.875rem;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01b2ff 45%, #0099dd 100%);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.5),
-			inset 0 -2px 4px rgba(0, 0, 0, 0.15),
-			0 4px 12px rgba(1, 178, 255, 0.4),
-			0 0 18px rgba(1, 178, 255, 0.2);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: var(--radius-md);
+		background: var(--accent);
 	}
 
 	/* Subtle image outline for depth */
 	.img-outline {
-		outline: 1px solid rgba(0, 0, 0, 0.06);
+		outline: 1px solid var(--border-subtle);
 		outline-offset: -1px;
 	}
 
@@ -1099,184 +1064,98 @@
 		transform: none;
 	}
 
-	.skeu-btn-sm {
-		color: white;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01b2ff 40%, #0099dd 100%);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.3),
-			0 2px 4px rgba(1, 178, 255, 0.2);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+	/* Primary CTA — solid accent pill */
+	.btn-primary {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: #fff;
+		background: var(--accent);
+		border: 1px solid transparent;
+		box-shadow: var(--shadow-sm);
+		transition:
+			background 0.2s ease,
+			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+			box-shadow 0.2s ease;
 	}
 
-	.skeu-btn-sm:hover {
-		background: linear-gradient(180deg, #5dd8ff 0%, #1abcff 40%, #01a8ee 100%);
+	.btn-primary:hover {
+		background: var(--accent-hover);
 		transform: translateY(-1px);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			0 0 12px rgba(1, 178, 255, 0.35),
-			0 2px 8px rgba(1, 178, 255, 0.25);
+		box-shadow: var(--shadow-md);
 	}
 
-	.skeu-btn-sm:active {
-		transform: translateY(0) scale(0.97);
-		box-shadow:
-			inset 0 2px 3px rgba(0, 0, 0, 0.2),
-			0 1px 2px rgba(0, 0, 0, 0.1);
+	.btn-primary:active {
+		transform: translateY(0) scale(0.98);
 	}
 
-	/* Glass buttons for blue backgrounds */
-	.skeu-btn-glass {
-		color: #0a0a0a;
-		font-weight: 700;
-		background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 100%);
-		border: 1px solid rgba(255, 255, 255, 0.6);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.8),
-			inset 0 -1px 2px rgba(0, 0, 0, 0.06),
-			0 2px 8px rgba(0, 0, 0, 0.15),
-			0 4px 16px rgba(0, 0, 0, 0.1);
-		text-shadow: none;
-	}
-
-	.skeu-btn-glass:hover {
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-		transform: translateY(-1px);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			0 0 16px rgba(255, 255, 255, 0.2),
-			0 4px 20px rgba(0, 0, 0, 0.15);
-	}
-
-	.skeu-btn-glass:active {
-		transform: translateY(0) scale(0.97);
-		background: linear-gradient(180deg, #e8e8e8 0%, #ddd 100%);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.1),
-			0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	.skeu-btn-glass-outline {
-		color: white;
-		background: rgba(255, 255, 255, 0.1);
+	/* Ghost CTA over the hero video (flat, translucent white) */
+	.btn-on-media {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: #fff;
+		background: rgba(255, 255, 255, 0.08);
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
-		border: 1px solid rgba(255, 255, 255, 0.25);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.15),
-			0 2px 8px rgba(0, 0, 0, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.4);
+		transition:
+			background 0.2s ease,
+			border-color 0.2s ease,
+			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.skeu-btn-glass-outline:hover {
-		background: rgba(255, 255, 255, 0.18);
-		border-color: rgba(255, 255, 255, 0.4);
+	.btn-on-media:hover {
+		background: rgba(255, 255, 255, 0.16);
+		border-color: rgba(255, 255, 255, 0.6);
 		transform: translateY(-1px);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.2),
-			0 0 12px rgba(255, 255, 255, 0.1),
-			0 4px 16px rgba(0, 0, 0, 0.12);
 	}
 
-	.skeu-btn-glass-outline:active {
-		transform: translateY(0) scale(0.97);
-		background: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.15),
-			0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	/* Skeuomorphic card (light) — Frutiger Aero glass */
-	.skeu-card-light {
-		background: linear-gradient(
-			165deg,
-			rgba(255, 255, 255, 0.9) 0%,
-			rgba(240, 248, 255, 0.7) 50%,
-			rgba(1, 178, 255, 0.06) 100%
-		);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid rgba(1, 178, 255, 0.15);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.8),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-			0 4px 20px rgba(0, 0, 0, 0.08),
-			0 1px 3px rgba(0, 0, 0, 0.05);
+	.btn-on-media:active {
+		transform: translateY(0) scale(0.98);
 	}
 
 	.footer-brand-logo-light {
 		height: 1.25rem;
 		width: auto;
 		filter: brightness(0);
-		opacity: 0.7;
+		opacity: 0.6;
 	}
 
-	/* Blog cards — Sims 2000s / Frutiger Aero (light) */
+	/* Blog cards (flat) */
 	.blog-card {
 		display: flex;
 		flex-direction: column;
 		text-decoration: none;
-		border-radius: 1.25rem;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
-		background: linear-gradient(
-			165deg,
-			rgba(255, 255, 255, 0.95) 0%,
-			rgba(240, 248, 255, 0.8) 50%,
-			rgba(1, 178, 255, 0.08) 100%
-		);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid rgba(1, 178, 255, 0.18);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-			0 4px 20px rgba(0, 0, 0, 0.08),
-			0 1px 4px rgba(0, 0, 0, 0.05);
-		transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+		background: var(--bg-primary);
+		box-shadow: var(--shadow-sm);
+		transition:
+			transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+			box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 		position: relative;
 	}
 
-	/* Glossy top shine */
-	.blog-card::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 50%;
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.6) 0%,
-			transparent 100%
-		);
-		border-radius: 1.25rem 1.25rem 0 0;
-		pointer-events: none;
-		z-index: 1;
-	}
-
 	.blog-card:hover {
-		border-color: rgba(1, 178, 255, 0.4);
-		transform: translateY(-6px) scale(1.02);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			0 0 30px rgba(1, 178, 255, 0.15),
-			0 8px 32px rgba(1, 178, 255, 0.1),
-			0 20px 48px rgba(0, 0, 0, 0.1);
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.blog-card-image {
 		position: relative;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
-		background: linear-gradient(135deg, #e8f0f8 0%, #dde8f2 100%);
+		background: var(--bg-tertiary);
 		margin: 0.5rem 0.5rem 0;
-		border-radius: 0.875rem;
+		border-radius: var(--radius-md);
 	}
 
 	.blog-card-image img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		border-radius: 0.875rem;
+		border-radius: var(--radius-md);
 		transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
@@ -1294,113 +1173,11 @@
 		z-index: 2;
 	}
 
-	/* ===== Dark mode (matches the app/docs #0a0a0a theme) =====
-	   The hero keeps its bright blue gradient; everything below goes dark glass. */
-	:global(.dark) .skeu-card-light {
-		background: linear-gradient(
-			165deg,
-			rgba(40, 44, 52, 0.7) 0%,
-			rgba(20, 24, 32, 0.6) 50%,
-			rgba(1, 178, 255, 0.08) 100%
-		);
-		border-color: rgba(1, 178, 255, 0.18);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.07),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-			0 4px 20px rgba(0, 0, 0, 0.4),
-			0 1px 3px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(.dark) .provider-logo {
-		color: rgba(255, 255, 255, 0.75);
-	}
-
-	:global(.dark) .provider-logo:hover {
-		color: rgba(255, 255, 255, 0.95);
-	}
-
-	:global(.dark) .feature-chip {
-		color: #7fd8ff;
-		background: linear-gradient(180deg, rgba(40, 44, 52, 0.8) 0%, rgba(22, 26, 34, 0.6) 100%);
-		border-color: rgba(1, 178, 255, 0.25);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.07),
-			0 1px 3px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(.dark) .bento-tile {
-		background: linear-gradient(
-			165deg,
-			rgba(40, 44, 52, 0.7) 0%,
-			rgba(20, 24, 32, 0.6) 55%,
-			rgba(1, 178, 255, 0.07) 100%
-		);
-		border-color: rgba(1, 178, 255, 0.18);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.07),
-			0 4px 20px rgba(0, 0, 0, 0.4),
-			0 1px 3px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(.dark) .bento-tile:hover {
-		border-color: rgba(1, 178, 255, 0.45);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.12),
-			0 0 30px rgba(1, 178, 255, 0.18),
-			0 16px 40px rgba(0, 0, 0, 0.5);
-	}
-
-	:global(.dark) .bento-title {
-		color: #fafafa;
-	}
-
-	:global(.dark) .bento-body {
-		color: rgba(255, 255, 255, 0.55);
-	}
-
-	:global(.dark) .eyebrow {
-		color: #4dd0ff;
-	}
-
-	:global(.dark) .blog-card {
-		background: linear-gradient(
-			165deg,
-			rgba(40, 44, 52, 0.8) 0%,
-			rgba(20, 24, 32, 0.65) 50%,
-			rgba(1, 178, 255, 0.08) 100%
-		);
-		border-color: rgba(1, 178, 255, 0.2);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.08),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-			0 4px 20px rgba(0, 0, 0, 0.4),
-			0 1px 4px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(.dark) .blog-card::before {
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 100%);
-	}
-
-	:global(.dark) .blog-card:hover {
-		border-color: rgba(1, 178, 255, 0.45);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.14),
-			0 0 30px rgba(1, 178, 255, 0.18),
-			0 8px 32px rgba(1, 178, 255, 0.12),
-			0 20px 48px rgba(0, 0, 0, 0.5);
-	}
-
-	:global(.dark) .blog-card-image {
-		background: linear-gradient(135deg, #1a1f28 0%, #12161d 100%);
-	}
-
-	:global(.dark) .img-outline {
-		outline-color: rgba(255, 255, 255, 0.08);
-	}
-
+	/* Dark mode only needs asset treatments — the surfaces, text, borders and
+	   shadows above are all token-driven and swap automatically under .dark. */
 	:global(.dark) .footer-brand-logo-light {
 		filter: brightness(0) invert(1);
-		opacity: 0.7;
+		opacity: 0.6;
 	}
 
 	/* Respect reduced motion across the whole page */
@@ -1411,7 +1188,7 @@
 			transition: none;
 		}
 
-		.glass-pill-dot {
+		.hero-pill-dot {
 			animation: none;
 		}
 

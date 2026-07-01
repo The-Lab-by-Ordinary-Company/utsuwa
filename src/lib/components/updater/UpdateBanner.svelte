@@ -31,7 +31,6 @@
 			{:else}
 				<Icon name="download" size={18} />
 			{/if}
-			<span class="icon-shine"></span>
 		</div>
 
 		<div class="banner-body">
@@ -57,7 +56,6 @@
 				<button class="btn ghost" onclick={() => updaterStore.dismiss()}>Later</button>
 				<button class="btn primary" onclick={() => updaterStore.install()}>
 					<span>Install &amp; Restart</span>
-					<span class="btn-shine"></span>
 				</button>
 			</div>
 		{:else if status === 'error'}
@@ -65,7 +63,6 @@
 				<button class="btn ghost" onclick={() => updaterStore.dismiss()}>Dismiss</button>
 				<button class="btn primary" onclick={() => updaterStore.install()}>
 					<span>Retry</span>
-					<span class="btn-shine"></span>
 				</button>
 			</div>
 		{/if}
@@ -84,23 +81,10 @@
 		gap: 0.875rem;
 		max-width: min(540px, calc(100vw - 2rem));
 		padding: 0.875rem 1rem;
-		border-radius: 16px;
-		background: linear-gradient(180deg, #ffffff 0%, #f4f6f8 100%);
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		box-shadow:
-			0 12px 40px rgba(0, 0, 0, 0.18),
-			0 4px 12px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		border-radius: var(--radius-lg);
+		background: var(--bg-primary);
+		box-shadow: var(--shadow-lg);
 		animation: bannerIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-	}
-
-	:global(.dark) .update-banner {
-		background: linear-gradient(180deg, #232323 0%, #181818 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 12px 40px rgba(0, 0, 0, 0.5),
-			0 4px 12px rgba(0, 0, 0, 0.35),
-			inset 0 1px 0 rgba(255, 255, 255, 0.06);
 	}
 
 	@keyframes bannerIn {
@@ -115,32 +99,15 @@
 	}
 
 	.banner-icon {
-		position: relative;
 		flex-shrink: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 38px;
 		height: 38px;
-		border-radius: 11px;
-		color: white;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01b2ff 50%, #0099dd 100%);
-		box-shadow:
-			0 4px 12px rgba(1, 178, 255, 0.4),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		overflow: hidden;
-	}
-
-	.icon-shine {
-		position: absolute;
-		top: 2px;
-		left: 15%;
-		right: 15%;
-		height: 45%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
-		border-radius: 0.5rem 0.5rem 50% 50%;
-		pointer-events: none;
+		border-radius: var(--radius-md);
+		color: var(--accent);
+		background: var(--accent-muted);
 	}
 
 	.banner-body {
@@ -172,20 +139,15 @@
 		width: 200px;
 		max-width: 100%;
 		height: 6px;
-		border-radius: 999px;
-		background: rgba(0, 0, 0, 0.08);
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
 		overflow: hidden;
-		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
-	}
-
-	:global(.dark) .progress-track {
-		background: rgba(255, 255, 255, 0.08);
 	}
 
 	.progress-fill {
 		height: 100%;
-		border-radius: 999px;
-		background: linear-gradient(90deg, #4dd0ff 0%, #01b2ff 100%);
+		border-radius: var(--radius-full);
+		background: var(--accent);
 		transition: width 0.2s ease-out;
 	}
 
@@ -199,56 +161,33 @@
 	.btn {
 		font-size: 0.8125rem;
 		font-weight: 600;
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 		padding: 0.5rem 0.9rem;
 		cursor: pointer;
-		transition: all 0.15s ease-out;
+		transition: background 0.15s ease-out, color 0.15s ease-out, box-shadow 0.15s ease-out, transform 0.15s ease-out;
 		white-space: nowrap;
 	}
 
 	.btn.ghost {
 		background: transparent;
-		border: 1px solid transparent;
-		color: var(--text-tertiary);
+		color: var(--text-secondary);
 	}
 
 	.btn.ghost:hover {
 		color: var(--text-primary);
-		background: rgba(0, 0, 0, 0.04);
-	}
-
-	:global(.dark) .btn.ghost:hover {
-		background: rgba(255, 255, 255, 0.06);
+		background: var(--bg-secondary);
 	}
 
 	.btn.primary {
-		position: relative;
-		overflow: hidden;
-		color: white;
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		background: linear-gradient(180deg, #4dd0ff 0%, #01b2ff 50%, #0099dd 100%);
-		box-shadow:
-			0 3px 10px rgba(1, 178, 255, 0.4),
-			inset 0 1px 0 rgba(255, 255, 255, 0.35);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		color: #fff;
+		border: none;
+		background: var(--accent);
 	}
 
 	.btn.primary:hover {
+		background: var(--accent-hover);
 		transform: translateY(-1px);
-		box-shadow:
-			0 5px 14px rgba(1, 178, 255, 0.5),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-	}
-
-	.btn-shine {
-		position: absolute;
-		top: 1px;
-		left: 15%;
-		right: 15%;
-		height: 45%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 60%, transparent 100%);
-		border-radius: 999px 999px 50% 50%;
-		pointer-events: none;
+		box-shadow: var(--shadow-glow);
 	}
 
 	@media (max-width: 520px) {

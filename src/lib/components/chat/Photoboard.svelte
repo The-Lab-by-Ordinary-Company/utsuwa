@@ -158,8 +158,7 @@
 					<div class="section-label">{section.label}</div>
 					<div class="section-photos">
 						{#each section.items as item, i (item.id)}
-							<div class="polaroid" style="--rot: {ROTATIONS[i % ROTATIONS.length]}deg">
-								<div class="pin"></div>
+							<div class="photo-card" style="--rot: {ROTATIONS[i % ROTATIONS.length]}deg">
 								<button class="photo-btn" onclick={() => openLightbox(item)} aria-label="View photo">
 									<img src={item.url} alt="" loading="lazy" />
 								</button>
@@ -245,20 +244,10 @@
 		max-height: 86vh;
 		display: flex;
 		flex-direction: column;
-		border-radius: 22px;
-		background:
-			radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.05) 0 2px, transparent 3px),
-			radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.05) 0 2px, transparent 3px),
-			linear-gradient(180deg, #d6b483 0%, #c79c66 100%);
-		background-size:
-			26px 26px,
-			32px 32px,
-			100% 100%;
-		border: 1px solid rgba(0, 0, 0, 0.15);
-		box-shadow:
-			0 24px 70px rgba(0, 0, 0, 0.35),
-			inset 0 2px 0 rgba(255, 255, 255, 0.35),
-			inset 0 -3px 8px rgba(0, 0, 0, 0.15);
+		border-radius: var(--radius-xl);
+		background: var(--bg-primary);
+		box-shadow: var(--shadow-xl);
+		overflow: hidden;
 		animation: pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
@@ -278,15 +267,14 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 1rem 1.25rem;
-		border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.board-header h2 {
 		margin: 0;
 		font-size: 1.05rem;
-		font-weight: 700;
-		color: #43321c;
-		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+		font-weight: 600;
+		color: var(--text-primary);
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -294,29 +282,30 @@
 
 	.count {
 		font-size: 0.7rem;
-		font-weight: 700;
+		font-weight: 600;
 		padding: 0.1rem 0.45rem;
-		border-radius: 999px;
-		background: rgba(67, 50, 28, 0.18);
-		color: #43321c;
+		border-radius: var(--radius-full);
+		background: var(--accent-subtle);
+		color: var(--accent);
 	}
 
 	.close-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border: 1px solid rgba(0, 0, 0, 0.15);
-		border-radius: 50%;
-		background: linear-gradient(180deg, #fff 0%, #eee 100%);
-		color: #5a4528;
+		width: 30px;
+		height: 30px;
+		border: none;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
 		cursor: pointer;
-		transition: transform 0.15s;
+		transition: color 0.15s, background 0.15s;
 	}
 
 	.close-btn:hover {
-		transform: scale(1.08);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
 	.board-wall {
@@ -328,38 +317,26 @@
 	}
 
 	.section-label {
-		font-size: 0.78rem;
-		font-weight: 700;
+		font-size: 0.72rem;
+		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		color: #5a4528;
-		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+		color: var(--text-tertiary);
 		margin: 0.75rem 0 0.25rem;
 		padding-left: 0.25rem;
 	}
 
 	.section-photos {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 		gap: 1.25rem 1rem;
-		justify-content: center;
 	}
 
-	.polaroid {
+	.photo-card {
 		position: relative;
-		padding: 8px 8px 26px;
-		background: #fff;
-		border-radius: 4px;
-		box-shadow:
-			0 6px 16px rgba(0, 0, 0, 0.3),
-			0 2px 4px rgba(0, 0, 0, 0.2);
-		transform: rotate(var(--rot));
-		transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
-	.polaroid:hover {
-		transform: rotate(0deg) scale(1.06) translateY(-4px);
-		z-index: 2;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
 	}
 
 	.photo-btn {
@@ -369,39 +346,33 @@
 		background: none;
 		cursor: pointer;
 		line-height: 0;
-		border-radius: 2px;
+		border-radius: var(--radius-md);
 	}
 
 	.photo-btn img {
 		display: block;
-		width: 150px;
-		height: 150px;
+		width: 100%;
+		aspect-ratio: 1 / 1;
 		object-fit: cover;
-		border-radius: 2px;
-		background: #eee;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-light);
+		background: var(--bg-tertiary);
+		box-shadow: var(--shadow-sm);
+		transition:
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
-	.pin {
-		position: absolute;
-		top: -7px;
-		left: 50%;
-		transform: translateX(-50%);
-		width: 14px;
-		height: 14px;
-		border-radius: 50%;
-		background: radial-gradient(circle at 35% 30%, #ff8a8a 0%, #e23b3b 70%);
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.35),
-			inset 0 1px 1px rgba(255, 255, 255, 0.6);
-		z-index: 1;
+	.photo-card:hover .photo-btn img {
+		border-color: var(--accent);
+		box-shadow: var(--shadow-glow);
 	}
 
 	.caption {
-		margin-top: 8px;
 		text-align: center;
 		font-size: 0.72rem;
-		font-weight: 600;
-		color: #6a5436;
+		font-weight: 500;
+		color: var(--text-tertiary);
 		letter-spacing: 0.02em;
 	}
 
@@ -411,10 +382,10 @@
 		right: -7px;
 		width: 20px;
 		height: 20px;
-		border: 2px solid white;
-		border-radius: 50%;
-		background: #ff5a5a;
-		color: white;
+		border: 2px solid var(--bg-primary);
+		border-radius: var(--radius-full);
+		background: var(--color-error);
+		color: #fff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -422,13 +393,13 @@
 		padding: 0;
 		opacity: 0;
 		transform: scale(0.4);
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+		box-shadow: var(--shadow-sm);
 		transition:
 			opacity 0.16s ease,
 			transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
-	.polaroid:hover .forget-btn {
+	.photo-card:hover .forget-btn {
 		opacity: 1;
 		transform: scale(1);
 	}
@@ -448,19 +419,20 @@
 		justify-content: center;
 		gap: 0.5rem;
 		padding: 4rem 2rem;
-		color: #6a5436;
+		color: var(--text-secondary);
 		text-align: center;
 	}
 
 	.board-empty p {
 		margin: 0.5rem 0 0;
-		font-weight: 700;
+		font-weight: 600;
 		font-size: 1rem;
+		color: var(--text-primary);
 	}
 
 	.board-empty span {
 		font-size: 0.85rem;
-		opacity: 0.8;
+		color: var(--text-tertiary);
 	}
 
 	/* Lightbox */
@@ -487,14 +459,16 @@
 		width: 38px;
 		height: 38px;
 		border: none;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		background: rgba(255, 255, 255, 0.15);
-		color: white;
+		color: #fff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: transform 0.15s;
+		transition:
+			transform 0.15s,
+			background 0.15s;
 	}
 
 	.lb-close:hover {
@@ -531,7 +505,7 @@
 		inset: 0;
 		backface-visibility: hidden;
 		-webkit-backface-visibility: hidden;
-		border-radius: 10px;
+		border-radius: var(--radius-lg);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -539,8 +513,8 @@
 	}
 
 	.flip-front {
-		background: #111;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+		background: var(--bg-primary);
+		box-shadow: var(--shadow-xl);
 	}
 
 	.flip-front img {
@@ -551,8 +525,8 @@
 
 	.flip-back {
 		transform: rotateY(180deg);
-		background: linear-gradient(180deg, #fffdf6 0%, #f3ead4 100%);
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+		background: var(--bg-primary);
+		box-shadow: var(--shadow-xl);
 		padding: 2rem;
 	}
 
@@ -563,8 +537,8 @@
 
 	.back-date {
 		font-size: 0.85rem;
-		font-weight: 700;
-		color: #8a6d3b;
+		font-weight: 600;
+		color: var(--text-secondary);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		margin-bottom: 1.25rem;
@@ -573,14 +547,14 @@
 	.back-note {
 		font-size: 1.15rem;
 		line-height: 1.6;
-		color: #4a3a22;
+		color: var(--text-primary);
 		font-style: italic;
 		margin: 0;
 	}
 
 	.back-empty {
 		font-size: 1rem;
-		color: #9a8455;
+		color: var(--text-tertiary);
 		font-style: italic;
 		margin: 0;
 	}

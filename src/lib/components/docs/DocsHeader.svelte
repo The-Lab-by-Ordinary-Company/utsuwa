@@ -107,7 +107,7 @@
 	.logo-img {
 		height: 1.5rem;
 		width: auto;
-		filter: var(--docs-logo-filter, none) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+		filter: var(--docs-logo-filter, none);
 	}
 
 	.header-nav {
@@ -151,28 +151,13 @@
 		border-radius: 0.5rem;
 		color: var(--docs-text-muted);
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 2px 4px rgba(0, 0, 0, 0.05);
+		transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 	}
 
 	.header-btn:hover {
 		color: var(--docs-accent);
 		background: var(--docs-surface-solid);
 		border-color: var(--docs-accent);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 0 12px var(--docs-glow),
-			0 2px 8px rgba(0, 0, 0, 0.08);
-		transform: translateY(-1px);
-	}
-
-	.header-btn:active {
-		transform: translateY(0);
-		box-shadow:
-			0 1px 2px var(--docs-inner-shadow) inset,
-			0 0 8px var(--docs-glow);
 	}
 
 	.download-btn {
@@ -183,34 +168,17 @@
 		font-size: 0.8125rem;
 		font-weight: 600;
 		color: var(--docs-text);
-		background: var(--docs-glass-bg);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
+		background: var(--docs-surface);
 		border: 1px solid var(--docs-border);
 		border-radius: 0.5rem;
 		text-decoration: none;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 2px 4px rgba(0, 0, 0, 0.05);
+		transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 	}
 
 	.download-btn:hover {
 		color: var(--docs-accent);
 		border-color: var(--docs-accent);
 		background: var(--docs-surface-solid);
-		transform: translateY(-1px);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 0 12px var(--docs-glow),
-			0 2px 8px rgba(0, 0, 0, 0.08);
-	}
-
-	.download-btn:active {
-		transform: translateY(0);
-		box-shadow:
-			0 1px 2px var(--docs-inner-shadow) inset,
-			0 0 8px var(--docs-glow);
 	}
 
 	.try-live-btn {
@@ -221,30 +189,21 @@
 		font-weight: 600;
 		color: white;
 		background: var(--docs-btn-gradient);
-		border: 1px solid rgba(0, 0, 0, 0.1);
+		border: 1px solid transparent;
 		border-radius: 0.5rem;
 		text-decoration: none;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.3),
-			0 2px 6px rgba(1, 178, 255, 0.25);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+		box-shadow: var(--docs-btn-shadow);
 	}
 
 	.try-live-btn:hover {
 		background: var(--docs-btn-gradient-hover);
 		transform: translateY(-1px);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			0 0 16px var(--docs-glow),
-			0 4px 12px rgba(1, 178, 255, 0.3);
+		box-shadow: var(--docs-btn-shadow-hover);
 	}
 
 	.try-live-btn:active {
 		transform: translateY(0);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.2),
-			0 1px 2px rgba(0, 0, 0, 0.1);
 	}
 
 	.hamburger {
@@ -257,19 +216,13 @@
 		border-radius: 0.5rem;
 		color: var(--docs-text-muted);
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 2px 4px rgba(0, 0, 0, 0.05);
+		transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 	}
 
 	.hamburger:hover {
 		color: var(--docs-accent);
 		background: var(--docs-surface-solid);
 		border-color: var(--docs-accent);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 0 12px var(--docs-glow);
 	}
 
 	.mobile-logo {

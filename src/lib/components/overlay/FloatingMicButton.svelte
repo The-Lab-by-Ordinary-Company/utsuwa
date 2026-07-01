@@ -67,7 +67,6 @@
 		<span class="icon-inner">
 			<Icon name="mic" size={20} />
 		</span>
-		<span class="btn-shine"></span>
 	</button>
 {/if}
 
@@ -75,76 +74,52 @@
 	.floating-mic-btn {
 		width: 48px;
 		height: 48px;
-		border: none;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow: var(--shadow-sm);
+		transition: color 0.15s ease, background 0.15s ease,
+			box-shadow 0.15s ease, transform 0.15s ease;
 		position: relative;
-		overflow: hidden;
-
-		background: linear-gradient(
-			180deg,
-			#66d9ff 0%,
-			#4dd0ff 25%,
-			#01B2FF 60%,
-			#0099dd 100%
-		);
-		color: white;
-		box-shadow:
-			0 4px 16px rgba(1, 178, 255, 0.45),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 	}
 
-	.floating-mic-btn:hover {
-		background: linear-gradient(
-			180deg,
-			#80e0ff 0%,
-			#66d9ff 25%,
-			#1ebfff 60%,
-			#00a6e6 100%
-		);
-		transform: translateY(-2px);
-		box-shadow:
-			0 6px 24px rgba(1, 178, 255, 0.55),
-			0 3px 6px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+	.floating-mic-btn:hover:not(:disabled) {
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+		box-shadow: var(--shadow-md);
+		transform: translateY(-1px);
 	}
 
-	.floating-mic-btn:active {
+	.floating-mic-btn:focus-visible {
+		outline: none;
+		color: var(--text-primary);
+		box-shadow: 0 0 0 3px var(--accent-muted);
+	}
+
+	.floating-mic-btn:active:not(:disabled) {
 		transform: translateY(0) scale(0.96);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.floating-mic-btn.recording {
-		background: linear-gradient(
-			180deg,
-			#ff4444 0%,
-			#ee3333 50%,
-			#cc2222 100%
-		);
-		box-shadow:
-			0 4px 16px rgba(255, 68, 68, 0.5),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-		animation: pulse-glow 1.5s ease-in-out infinite;
+		background: var(--accent);
+		color: #fff;
+		box-shadow: var(--shadow-glow);
+	}
+
+	.floating-mic-btn.recording:hover {
+		background: var(--accent-hover);
+		color: #fff;
 	}
 
 	.floating-mic-btn.transcribing {
-		background: linear-gradient(
-			180deg,
-			#666 0%,
-			#555 50%,
-			#444 100%
-		);
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		background: var(--bg-secondary);
+		color: var(--text-tertiary);
+		box-shadow: var(--shadow-sm);
 		cursor: wait;
 	}
 
@@ -157,56 +132,26 @@
 		to { transform: rotate(360deg); }
 	}
 
-	@keyframes pulse-glow {
-		0%, 100% {
-			box-shadow:
-				0 4px 16px rgba(255, 68, 68, 0.5),
-				0 2px 4px rgba(0, 0, 0, 0.1),
-				inset 0 1px 0 rgba(255, 255, 255, 0.3);
-		}
-		50% {
-			box-shadow:
-				0 4px 24px rgba(255, 68, 68, 0.7),
-				0 2px 4px rgba(0, 0, 0, 0.1),
-				inset 0 1px 0 rgba(255, 255, 255, 0.3);
-		}
-	}
-
 	.icon-inner {
-		position: relative;
-		z-index: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-	}
-
-	.btn-shine {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 50%;
-		height: 50%;
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.4) 0%,
-			rgba(255, 255, 255, 0) 100%
-		);
-		border-radius: 50% 50% 0 0;
-		pointer-events: none;
 	}
 
 	.pulse-ring {
 		position: absolute;
 		inset: -4px;
 		border-radius: 50%;
-		border: 2px solid rgba(255, 68, 68, 0.4);
+		border: 2px solid var(--accent);
+		opacity: 0.4;
+		pointer-events: none;
 		animation: pulse-ring-anim 1.5s ease-out infinite;
 	}
 
 	@keyframes pulse-ring-anim {
 		0% {
 			transform: scale(1);
-			opacity: 1;
+			opacity: 0.4;
 		}
 		100% {
 			transform: scale(1.4);
@@ -224,7 +169,7 @@
 
 	.listening-pill {
 		padding: 0.25rem 0.75rem;
-		border-radius: 20px;
+		border-radius: var(--radius-full);
 		display: flex;
 		align-items: center;
 		gap: 0.375rem;
@@ -232,38 +177,22 @@
 		font-weight: 600;
 		letter-spacing: 0.02em;
 		white-space: nowrap;
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
+		box-shadow: var(--shadow-sm);
 		animation: pill-appear 0.25s ease-out;
-
-		background: linear-gradient(
-			180deg,
-			#3a3a3e 0%,
-			#2a2a2e 50%,
-			#222224 100%
-		);
-		color: #ff6b6b;
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.4),
-			0 1px 2px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-		border: 1px solid rgba(255, 255, 255, 0.06);
 	}
 
 	.transcribing-pill {
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--text-tertiary);
 	}
 
 	.listening-dot {
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
-		background: #ff4444;
-		box-shadow: 0 0 6px rgba(255, 68, 68, 0.6);
+		background: var(--accent);
 		animation: dot-blink 1.2s ease-in-out infinite;
-	}
-
-	.listening-text {
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 	}
 
 	@keyframes dot-blink {

@@ -45,7 +45,6 @@
 		letter-spacing: 0.06em;
 		padding: 0.5rem 0.75rem;
 		margin-bottom: 0.375rem;
-		text-shadow: 0 1px 0 var(--docs-inner-highlight);
 	}
 
 	.section-items {
@@ -65,7 +64,7 @@
 		color: var(--docs-text-muted);
 		text-decoration: none;
 		border-radius: 0.5rem;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		transition: color 0.15s ease, background 0.15s ease;
 		border: 1px solid transparent;
 	}
 
@@ -73,28 +72,12 @@
 		color: var(--docs-text);
 		background: var(--docs-surface);
 		border-color: var(--docs-border);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 2px 4px rgba(0, 0, 0, 0.05);
 	}
 
 	.section-link.active {
 		color: white;
 		background: var(--docs-btn-gradient);
 		font-weight: 500;
-		border-color: rgba(0, 0, 0, 0.1);
-		box-shadow:
-			0 1px 0 rgba(255, 255, 255, 0.3) inset,
-			0 0 12px var(--docs-glow),
-			0 2px 6px rgba(1, 178, 255, 0.3);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-	}
-
-	.section-link.active:hover {
-		box-shadow:
-			0 1px 0 rgba(255, 255, 255, 0.4) inset,
-			0 0 16px var(--docs-glow-strong),
-			0 4px 8px rgba(1, 178, 255, 0.35);
 	}
 
 	@media (max-width: 768px) {

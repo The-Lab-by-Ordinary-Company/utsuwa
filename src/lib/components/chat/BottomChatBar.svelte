@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
+	import { characterStore } from '$lib/stores/character.svelte';
+	import { localPath } from '$lib/config/links';
 	import { browser } from '$app/environment';
 	import { isTauri } from '$lib/services/platform/platform';
 	import { sttStore } from '$lib/stores/stt.svelte';
@@ -24,6 +26,28 @@
 		providerIsLocal = false,
 		overlay = false
 	}: Props = $props();
+
+	// Companion mood + stats, merged into the command bar.
+	const moodInfo = $derived(characterStore.moodInfo);
+	const charState = $derived(characterStore.state);
+	const affectionPercent = $derived(characterStore.affectionPercent);
+	const isCompanionMode = $derived(characterStore.appMode === 'companion');
+	let showStats = $state(false);
+
+	const datingStats = $derived([
+		{ key: 'affection', label: 'Love', icon: 'heart', value: affectionPercent, color: 'var(--stat-affection)' },
+		{ key: 'trust', label: 'Trust', icon: 'shield', value: charState.trust, color: 'var(--stat-trust)' },
+		{ key: 'intimacy', label: 'Intimacy', icon: 'sparkles', value: charState.intimacy, color: 'var(--stat-intimacy)' },
+		{ key: 'comfort', label: 'Comfort', icon: 'home', value: charState.comfort, color: 'var(--stat-comfort)' },
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)' },
+		{ key: 'respect', label: 'Respect', icon: 'award', value: charState.respect, color: 'var(--stat-respect)' }
+	]);
+	const companionStats = $derived([
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)' },
+		{ key: 'chats', label: 'Chats', icon: 'message-circle', value: Math.min(charState.totalInteractions, 100), color: 'var(--stat-trust)' }
+	]);
+	const stats = $derived(isCompanionMode ? companionStats : datingStats);
+
 	// Brief toast for image issues (blind model, unsupported format).
 	let hint = $state<string | null>(null);
 	let hintTimer: ReturnType<typeof setTimeout> | null = null;
@@ -253,15 +277,6 @@
 		sttStore.cancel();
 	}
 
-	function handleSendClick() {
-		if (isListening && displayTranscript.trim()) {
-			const text = displayTranscript.trim();
-			sttStore.cancel();
-			onSend(text);
-		} else {
-			doSend(inputValue.trim());
-		}
-	}
 </script>
 
 {#if sttError}
@@ -310,6 +325,28 @@
 			<span>Drop a photo to show her</span>
 		</div>
 	{/if}
+	{#if showStats && !overlay}
+		<div class="stats-tray">
+			<div class="stat-list">
+				{#each stats as stat}
+					<div class="stat-row">
+						<span class="s-icon" style="color: {stat.color}"><Icon name={stat.icon} size={15} /></span>
+						<span class="s-label">{stat.label}</span>
+						<span class="s-track"><span class="s-fill" style="width: {stat.value}%; background: {stat.color}"></span></span>
+						<span class="s-val">{Math.round(stat.value)}</span>
+					</div>
+				{/each}
+			</div>
+			<div class="stat-foot">
+				<span class="foot-stat"><Icon name="calendar" size={12} />{charState.daysKnown}d</span>
+				<span class="foot-stat"><Icon name="message-circle" size={12} />{charState.totalInteractions}</span>
+				{#if charState.currentStreak > 1}
+					<span class="foot-stat streak"><Icon name="flame" size={12} />{charState.currentStreak}</span>
+				{/if}
+				<a href={localPath('app', '/settings/persona')} class="foot-link">Profile <Icon name="arrow-right" size={12} /></a>
+			</div>
+		</div>
+	{/if}
 	{#if pending.length > 0}
 		<div class="pending-row">
 			{#each pending as p (p.image.id)}
@@ -322,86 +359,91 @@
 			{/each}
 		</div>
 	{/if}
-	<form class="chat-form" onsubmit={handleSubmit}>
+	<div class="bar-row">
 		{#if !overlay}
-			<input
-				bind:this={fileInput}
-				type="file"
-				accept="image/*"
-				multiple
-				style="display:none"
-				onchange={(e) => handleFiles(e.currentTarget.files)}
-			/>
+			<button
+				type="button"
+				class="mood-fab"
+				class:active={showStats}
+				onclick={() => (showStats = !showStats)}
+				aria-label="Companion status"
+				aria-expanded={showStats}
+				title={moodInfo.description}
+			>
+				<span class="mood-dot" style="color: {moodInfo.color}"><Icon name={moodInfo.icon} size={20} /></span>
+				{#if showStats}
+					<span class="mood-fab-label">{moodInfo.description}</span>
+				{/if}
+			</button>
 		{/if}
-		<div class="input-wrapper" class:recording={isListening} class:transcribing={isTranscribing} class:focused={hasContent}>
-			{#if isTranscribing}
-				<button
-					type="button"
-					class="mic-btn recording"
-					disabled
-					aria-label="Transcribing"
-				>
-					<Icon name="loader" size={20} />
-				</button>
-				<div class="transcribing-label">Transcribing...</div>
-			{:else if isListening}
-				<button
-					type="button"
-					class="mic-btn recording"
-					onclick={() => sttStore.stopListening()}
-					aria-label="Stop recording"
-					title="Stop recording"
-				>
-					<Icon name="stop" size={16} />
-				</button>
-				<AudioVisualizer {audioLevel} transcript={displayTranscript} />
-			{:else}
-				<button
-					type="button"
-					class="mic-btn"
-					onclick={handleMicClick}
-					aria-label="Voice input"
-					title="Voice input"
-				>
-					<Icon name="mic" size={20} />
-				</button>
-				{#if !overlay}
+		<form class="chat-form" onsubmit={handleSubmit}>
+			{#if !overlay}
+				<input
+					bind:this={fileInput}
+					type="file"
+					accept="image/*"
+					multiple
+					style="display:none"
+					onchange={(e) => handleFiles(e.currentTarget.files)}
+				/>
+			{/if}
+			<div class="input-wrapper" class:recording={isListening} class:transcribing={isTranscribing} class:focused={hasContent}>
+				{#if isTranscribing}
+					<div class="transcribing-label">Transcribing...</div>
+					<button
+						type="button"
+						class="mic-btn recording"
+						disabled
+						aria-label="Transcribing"
+					>
+						<Icon name="loader" size={20} />
+					</button>
+				{:else if isListening}
+					<AudioVisualizer {audioLevel} transcript={displayTranscript} />
+					<button
+						type="button"
+						class="mic-btn recording"
+						onclick={() => sttStore.stopListening()}
+						aria-label="Stop recording"
+						title="Stop recording"
+					>
+						<Icon name="stop" size={16} />
+					</button>
+				{:else}
+					{#if !overlay}
+						<button
+							type="button"
+							class="mic-btn"
+							class:vision-off={!visionCapable}
+							onclick={openPicker}
+							aria-label="Attach an image"
+							title={visionCapable ? 'Attach an image' : 'This model cannot see images'}
+						>
+							<Icon name="paperclip" size={20} />
+						</button>
+					{/if}
+					<textarea
+						bind:this={textareaRef}
+						bind:value={inputValue}
+						onkeydown={handleKeydown}
+						oninput={handleInput}
+						placeholder="Type a message..."
+						rows="1"
+						{disabled}
+					></textarea>
 					<button
 						type="button"
 						class="mic-btn"
-						class:vision-off={!visionCapable}
-						onclick={openPicker}
-						aria-label="Show her an image"
-						title={visionCapable ? 'Show her an image' : 'This model cannot see images'}
+						onclick={handleMicClick}
+						aria-label="Voice input"
+						title="Voice input"
 					>
-						<Icon name="camera" size={20} />
+						<Icon name="mic" size={20} />
 					</button>
 				{/if}
-				<textarea
-					bind:this={textareaRef}
-					bind:value={inputValue}
-					onkeydown={handleKeydown}
-					oninput={handleInput}
-					placeholder="Type a message..."
-					rows="1"
-					{disabled}
-				></textarea>
-			{/if}
-			<button
-				type="button"
-				class="send-btn"
-				class:has-content={hasContent}
-				onclick={handleSendClick}
-				disabled={disabled || isTranscribing || !hasContent}
-				aria-label={hasContent ? "Send message" : "Waiting for input"}
-			>
-				<span class="send-icon">
-					<Icon name="send" size={20} />
-				</span>
-				<span class="btn-shine"></span>
-			</button>
-		</div>
-	</form>
+			</div>
+		</form>
+	</div>
 </div>
 
 <style>
@@ -415,17 +457,14 @@
 		gap: 0.5rem;
 		padding: 0.7rem 1rem;
 		max-width: min(420px, 90vw);
-		background: linear-gradient(180deg, #5fd6ff 0%, #01B2FF 100%);
-		color: white;
-		border-radius: 16px;
+		background: var(--accent);
+		color: #fff;
+		border-radius: var(--radius-lg);
 		font-size: 0.82rem;
 		font-weight: 600;
 		line-height: 1.35;
 		z-index: 50;
-		box-shadow:
-			0 8px 24px rgba(1, 178, 255, 0.45),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-lg);
 		animation: hintDrop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 	.vision-hint :global(svg) { flex-shrink: 0; }
@@ -444,40 +483,30 @@
 		gap: 0.6rem;
 		padding: 0.7rem 0.75rem 0.7rem 1rem;
 		max-width: min(460px, 92vw);
-		background: linear-gradient(180deg, #ffffff 0%, #f4f6f8 100%);
-		color: #1a2733;
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		border-radius: 16px;
+		background: var(--bg-primary);
+		color: var(--text-primary);
+		border-radius: var(--radius-lg);
 		font-size: 0.8rem;
 		font-weight: 500;
 		line-height: 1.35;
 		z-index: 60;
-		box-shadow:
-			0 8px 28px rgba(0, 0, 0, 0.14),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		box-shadow: var(--shadow-lg);
 		animation: hintDrop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-	}
-	:global(.dark) .privacy-notice {
-		background: linear-gradient(180deg, #2a2a2e 0%, #202024 100%);
-		color: #e8ebef;
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 	}
 	.privacy-notice :global(svg) { flex-shrink: 0; opacity: 0.65; }
 	.privacy-ack {
 		flex-shrink: 0;
 		border: none;
-		border-radius: 10px;
-		padding: 0.35rem 0.7rem;
+		border-radius: var(--radius-full);
+		padding: 0.35rem 0.85rem;
 		font-size: 0.78rem;
-		font-weight: 700;
-		color: white;
-		background: linear-gradient(180deg, #5fd6ff 0%, #01b2ff 100%);
+		font-weight: 600;
+		color: #fff;
+		background: var(--accent);
 		cursor: pointer;
-		box-shadow: 0 2px 6px rgba(1, 178, 255, 0.4);
-		transition: filter 0.15s ease;
+		transition: background 0.15s ease;
 	}
-	.privacy-ack:hover { filter: brightness(1.05); }
+	.privacy-ack:hover { background: var(--accent-hover); }
 	.drop-zone {
 		position: absolute;
 		left: 1rem;
@@ -489,38 +518,20 @@
 		justify-content: center;
 		gap: 0.55rem;
 		min-height: 52px;
-		border-radius: 1.5rem;
-		background: linear-gradient(180deg, #5fd6ff 0%, #01B2FF 55%, #0094d6 100%);
-		border: 1px solid rgba(255, 255, 255, 0.4);
-		color: white;
+		border-radius: var(--radius-full);
+		background: var(--accent-subtle);
+		border: 2px dashed var(--accent);
+		color: var(--accent);
 		font-size: 0.95rem;
-		font-weight: 700;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-		box-shadow:
-			0 10px 26px rgba(1, 178, 255, 0.5),
-			0 2px 6px rgba(0, 0, 0, 0.15),
-			inset 0 2px 0 rgba(255, 255, 255, 0.55),
-			inset 0 -3px 6px rgba(0, 0, 0, 0.12);
+		font-weight: 600;
+		box-shadow: var(--shadow-sm);
 		z-index: 5;
 		pointer-events: none;
 		overflow: hidden;
 		animation: dropPop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 	}
-	/* glossy shine across the top, like the app's buttons */
-	.drop-zone::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 52%;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.06) 100%);
-		border-radius: 1.5rem 1.5rem 50% 50%;
-		pointer-events: none;
-	}
 	.drop-zone :global(svg) {
 		animation: dropIcon 0.9s ease-in-out infinite;
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 	}
 	@keyframes dropPop {
 		0% { transform: scale(0.8); opacity: 0; }
@@ -546,16 +557,14 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		border-radius: 0.875rem;
-		border: 2px solid rgba(255, 255, 255, 0.9);
-		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-light);
+		box-shadow: var(--shadow-sm);
 		transition: box-shadow 0.2s ease, border-color 0.2s ease;
 	}
 	.pending-chip:hover img {
-		border-color: #01B2FF;
-		box-shadow:
-			0 10px 22px rgba(1, 178, 255, 0.45),
-			0 4px 8px rgba(0, 0, 0, 0.18);
+		border-color: var(--accent);
+		box-shadow: var(--shadow-glow);
 	}
 	.remove-chip {
 		position: absolute;
@@ -563,16 +572,16 @@
 		right: -5px;
 		width: 19px;
 		height: 19px;
-		border: 2px solid white;
+		border: 2px solid var(--bg-primary);
 		border-radius: 50%;
-		background: #ff5a5a;
-		color: white;
+		background: var(--color-error);
+		color: #fff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
 		padding: 0;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+		box-shadow: var(--shadow-sm);
 		opacity: 0;
 		transform: scale(0.4);
 		transition: opacity 0.16s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -595,6 +604,154 @@
 		z-index: 40;
 	}
 
+	/* Command row: mood satellite + input pill */
+	.bar-row {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.5rem;
+	}
+
+	/* Floating mood button (companion status) */
+	.mood-fab {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		flex-shrink: 0;
+		height: 56px;
+		min-width: 56px;
+		padding: 0 1rem;
+		border: none;
+		border-radius: var(--radius-full);
+		background: var(--bg-primary);
+		color: var(--text-primary);
+		cursor: pointer;
+		font-family: inherit;
+		box-shadow: var(--shadow-md);
+		transition: background 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.mood-fab:hover,
+	.mood-fab.active {
+		box-shadow: var(--shadow-lg);
+	}
+
+	.mood-dot {
+		display: flex;
+		flex-shrink: 0;
+	}
+
+	.mood-fab-label {
+		font-size: 0.85rem;
+		font-weight: 500;
+		white-space: nowrap;
+	}
+
+	/* Stats tray (expands above the pill) */
+	.stats-tray {
+		margin-bottom: 0.5rem;
+		padding: 0.9rem 1rem;
+		background: var(--bg-primary);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-lg);
+		animation: trayIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes trayIn {
+		from { opacity: 0; transform: translateY(8px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	.stat-list {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.5rem 1.25rem;
+	}
+
+	.stat-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.s-icon {
+		display: flex;
+		flex-shrink: 0;
+	}
+
+	.s-label {
+		font-size: 0.78rem;
+		color: var(--text-secondary);
+		width: 4.5rem;
+		flex-shrink: 0;
+	}
+
+	.s-track {
+		flex: 1;
+		height: 6px;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-full);
+		overflow: hidden;
+	}
+
+	.s-fill {
+		display: block;
+		height: 100%;
+		border-radius: var(--radius-full);
+		transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.s-val {
+		font-size: 0.72rem;
+		color: var(--text-tertiary);
+		font-variant-numeric: tabular-nums;
+		width: 1.75rem;
+		text-align: right;
+		flex-shrink: 0;
+	}
+
+	.stat-foot {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-top: 0.85rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--border-subtle);
+	}
+
+	.foot-stat {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.75rem;
+		color: var(--text-secondary);
+	}
+
+	.foot-stat.streak {
+		color: var(--color-warning);
+	}
+
+	.foot-link {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-left: auto;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--accent);
+		text-decoration: none;
+	}
+
+	.foot-link:hover {
+		color: var(--accent-hover);
+	}
+
+	@media (max-width: 640px) {
+		.stat-list {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	.stt-error {
 		position: fixed;
 		top: 4.5rem;
@@ -606,18 +763,15 @@
 		padding: 0.75rem 1rem;
 		width: fit-content;
 		max-width: 600px;
-		background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 100%);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		border-radius: 16px;
-		color: white;
+		background: var(--color-error);
+		border: 1px solid transparent;
+		border-radius: var(--radius-lg);
+		color: #fff;
 		font-size: 0.875rem;
 		cursor: pointer;
 		z-index: 50;
 		animation: slideDownShake 0.5s ease-out;
-		box-shadow:
-			0 4px 20px rgba(238, 90, 90, 0.4),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-lg);
 	}
 
 	@keyframes slideDownShake {
@@ -671,106 +825,35 @@
 	}
 
 	.chat-form {
-		width: 100%;
+		flex: 1;
+		min-width: 0;
 	}
 
-	/* PS2/Y2K style glossy input wrapper */
 	.input-wrapper {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.98) 0%,
-			rgba(250, 250, 252, 0.95) 50%,
-			rgba(245, 245, 248, 0.98) 100%
-		);
+		background: var(--bg-primary);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
-		border: 2px solid rgba(255, 255, 255, 0.8);
-		border-radius: 28px;
+		border-radius: var(--radius-full);
 		padding: 0.5rem;
 		min-height: 56px;
-		/* Layered shadows for depth */
-		box-shadow:
-			0 0 0 1px rgba(0, 0, 0, 0.06),
-			0 4px 20px rgba(0, 0, 0, 0.08),
-			0 8px 32px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.03);
-		transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	:global(.dark) .input-wrapper {
-		background: linear-gradient(
-			180deg,
-			rgba(45, 45, 50, 0.98) 0%,
-			rgba(38, 38, 42, 0.95) 50%,
-			rgba(32, 32, 36, 0.98) 100%
-		);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 0 0 1px rgba(0, 0, 0, 0.3),
-			0 4px 20px rgba(0, 0, 0, 0.3),
-			0 8px 32px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+		box-shadow: var(--shadow-md);
+		transition: box-shadow 0.2s;
 	}
 
 	.input-wrapper:focus-within,
 	.input-wrapper.focused {
-		border-color: rgba(1, 178, 255, 0.5);
-		box-shadow:
-			0 0 0 1px rgba(1, 178, 255, 0.2),
-			0 0 0 4px rgba(1, 178, 255, 0.1),
-			0 4px 20px rgba(0, 0, 0, 0.08),
-			0 0 30px rgba(1, 178, 255, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 1);
-	}
-
-	:global(.dark) .input-wrapper:focus-within,
-	:global(.dark) .input-wrapper.focused {
-		border-color: rgba(1, 178, 255, 0.4);
-		box-shadow:
-			0 0 0 1px rgba(1, 178, 255, 0.3),
-			0 0 0 4px rgba(1, 178, 255, 0.15),
-			0 4px 20px rgba(0, 0, 0, 0.3),
-			0 0 40px rgba(1, 178, 255, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		box-shadow: 0 0 0 3px var(--accent-muted), var(--shadow-glow);
 	}
 
 	.input-wrapper.recording {
-		border-color: rgba(1, 178, 255, 0.6);
-		box-shadow:
-			0 0 0 1px rgba(1, 178, 255, 0.3),
-			0 0 0 4px rgba(1, 178, 255, 0.15),
-			0 4px 20px rgba(0, 0, 0, 0.08),
-			0 0 30px rgba(1, 178, 255, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 1);
-		animation: pulse-glow 2s ease-in-out infinite;
-	}
-
-	@keyframes pulse-glow {
-		0%, 100% {
-			box-shadow:
-				0 0 0 1px rgba(1, 178, 255, 0.3),
-				0 0 0 4px rgba(1, 178, 255, 0.15),
-				0 4px 20px rgba(0, 0, 0, 0.08),
-				0 0 30px rgba(1, 178, 255, 0.2),
-				inset 0 1px 0 rgba(255, 255, 255, 1);
-		}
-		50% {
-			box-shadow:
-				0 0 0 1px rgba(1, 178, 255, 0.4),
-				0 0 0 6px rgba(1, 178, 255, 0.1),
-				0 4px 20px rgba(0, 0, 0, 0.08),
-				0 0 40px rgba(1, 178, 255, 0.3),
-				inset 0 1px 0 rgba(255, 255, 255, 1);
-		}
+		box-shadow: 0 0 0 3px var(--accent-muted), var(--shadow-glow);
 	}
 
 	.input-wrapper.transcribing {
-		border-color: rgba(1, 178, 255, 0.4);
+		box-shadow: 0 0 0 3px var(--accent-muted), var(--shadow-md);
 	}
 
 	.transcribing-label {
@@ -810,9 +893,7 @@
 		cursor: not-allowed;
 	}
 
-	/* Glossy Y2K buttons */
-	.mic-btn,
-	.send-btn {
+	.mic-btn {
 		width: 44px;
 		height: 44px;
 		border: none;
@@ -821,217 +902,41 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
 		flex-shrink: 0;
 		position: relative;
-		overflow: hidden;
 	}
 
 	.mic-btn {
-		background: linear-gradient(
-			180deg,
-			#ffffff 0%,
-			#f0f0f2 50%,
-			#e8e8ea 100%
-		);
+		background: transparent;
 		color: var(--text-tertiary);
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.08),
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.04);
-	}
-
-	:global(.dark) .mic-btn {
-		background: linear-gradient(
-			180deg,
-			#3a3a3e 0%,
-			#2e2e32 50%,
-			#262628 100%
-		);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 	}
 
 	.mic-btn:hover:not(:disabled) {
 		color: var(--text-primary);
-		transform: translateY(-2px);
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.04);
-	}
-
-	:global(.dark) .mic-btn:hover:not(:disabled) {
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.4),
-			inset 0 1px 0 rgba(255, 255, 255, 0.12);
+		background: var(--bg-secondary);
 	}
 
 	.mic-btn:active:not(:disabled) {
-		transform: translateY(0) scale(0.96);
+		transform: scale(0.94);
 	}
 
 	.mic-btn.recording {
-		background: linear-gradient(
-			180deg,
-			#66d9ff 0%,
-			#4dd0ff 30%,
-			#01B2FF 70%,
-			#0099dd 100%
-		);
-		color: white;
-		border-color: rgba(0, 0, 0, 0.1);
-		animation: recording-pulse 1.5s ease-in-out infinite;
-		box-shadow:
-			0 4px 16px rgba(1, 178, 255, 0.5),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		background: var(--accent);
+		color: #fff;
+		animation: recording-pulse 1.6s ease-in-out infinite;
 	}
 
 	.mic-btn.recording:hover {
-		background: linear-gradient(
-			180deg,
-			#80e0ff 0%,
-			#66d9ff 30%,
-			#1ebfff 70%,
-			#00a6e6 100%
-		);
+		background: var(--accent-hover);
 	}
 
 	@keyframes recording-pulse {
-		0%, 100% {
-			box-shadow:
-				0 4px 16px rgba(1, 178, 255, 0.5),
-				0 0 0 0 rgba(1, 178, 255, 0.4),
-				inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		}
-		50% {
-			box-shadow:
-				0 4px 16px rgba(1, 178, 255, 0.5),
-				0 0 0 8px rgba(1, 178, 255, 0),
-				inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		}
+		0%, 100% { box-shadow: 0 0 0 0 var(--accent-muted); }
+		50% { box-shadow: 0 0 0 6px transparent; }
 	}
 
-	/* Send button - starts subtle, becomes vibrant when has content */
-	.send-btn {
-		background: linear-gradient(
-			180deg,
-			#e8e8ea 0%,
-			#dcdcde 50%,
-			#d0d0d2 100%
-		);
-		color: var(--text-tertiary);
-		border: 1px solid rgba(0, 0, 0, 0.06);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .send-btn {
-		background: linear-gradient(
-			180deg,
-			#2a2a2e 0%,
-			#242428 50%,
-			#1e1e22 100%
-		);
-		border-color: rgba(255, 255, 255, 0.06);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	}
-
-	.send-icon {
-		position: relative;
-		z-index: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.2s ease;
-	}
-
-	.btn-shine {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 50%;
-		height: 50%;
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.4) 0%,
-			rgba(255, 255, 255, 0) 100%
-		);
-		border-radius: 50% 50% 0 0;
-		pointer-events: none;
-		opacity: 0;
-		transition: opacity 0.2s ease;
-	}
-
-	/* Active send button with content */
-	.send-btn.has-content {
-		background: linear-gradient(
-			180deg,
-			#66d9ff 0%,
-			#4dd0ff 25%,
-			#01B2FF 60%,
-			#0099dd 100%
-		);
-		color: white;
-		border-color: rgba(0, 0, 0, 0.1);
-		box-shadow:
-			0 4px 16px rgba(1, 178, 255, 0.45),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-	}
-
-	.send-btn.has-content .btn-shine {
-		opacity: 1;
-	}
-
-	.send-btn.has-content:hover:not(:disabled) {
-		background: linear-gradient(
-			180deg,
-			#80e0ff 0%,
-			#66d9ff 25%,
-			#1ebfff 60%,
-			#00a6e6 100%
-		);
-		transform: translateY(-2px);
-		box-shadow:
-			0 6px 24px rgba(1, 178, 255, 0.55),
-			0 3px 6px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-	}
-
-	.send-btn.has-content:active:not(:disabled) {
-		transform: translateY(0) scale(0.96);
-		background: linear-gradient(
-			180deg,
-			#01B2FF 0%,
-			#0099dd 50%,
-			#0088cc 100%
-		);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.2),
-			0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	.send-btn:disabled:not(.has-content) {
-		cursor: default;
-	}
-
-	.send-btn.has-content:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
+	/* Mic sits where send used to; Enter sends the message. */
 
 	@media (max-width: 640px) {
 		.bottom-chat-bar {

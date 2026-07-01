@@ -27,53 +27,68 @@
 }
 
 :root {
-	/* Backgrounds */
+	/* Backgrounds (white -> light gray -> gray ladder; grays used as fills) */
 	--bg-primary: #ffffff;
-	--bg-secondary: #f7f7f8;
-	--bg-tertiary: #efefef;
+	--bg-secondary: #f2f4f7;
+	--bg-tertiary: #e8ecf1;
 
-	/* Text */
-	--text-primary: #1a1a1a;
-	--text-secondary: #666666;
-	--text-tertiary: #999999;
+	/* Text (one ink, varied strength) */
+	--text-primary: #1c2b33;
+	--text-secondary: #70767d;
+	--text-tertiary: #9da9b7;
 
 	/* Borders */
-	--border-light: #e5e5e5;
-	--border-subtle: #f0f0f0;
+	--border-light: #d9d9d9;
+	--border-subtle: #eceef1;
 
 	/* Accent */
-	--accent: #ec4899;
-	--accent-hover: #db2777;
-	--accent-muted: rgba(236, 72, 153, 0.1);
-	--accent-subtle: rgba(236, 72, 153, 0.05);
+	--accent: #00b2ff;
+	--accent-hover: #0096d6;
+	--accent-muted: rgba(0, 178, 255, 0.1);
+	--accent-subtle: rgba(0, 178, 255, 0.05);
 
-	/* Gradient orbs */
-	--gradient-orb-blue: radial-gradient(circle, rgba(147, 197, 253, 0.7) 0%, rgba(147, 197, 253, 0) 70%);
-	--gradient-orb-pink: radial-gradient(circle, rgba(251, 207, 232, 0.8) 0%, rgba(251, 207, 232, 0) 70%);
-	--gradient-orb-purple: radial-gradient(circle, rgba(196, 181, 253, 0.7) 0%, rgba(196, 181, 253, 0) 70%);
-	--gradient-orb-peach: radial-gradient(circle, rgba(254, 215, 170, 0.7) 0%, rgba(254, 215, 170, 0) 70%);
+	/* Fonts */
+	--font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-mono: ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
 
-	/* Button gradient */
-	--gradient-button: linear-gradient(135deg, #fce7f3 0%, #fdf2f8 100%);
-	--gradient-button-hover: linear-gradient(135deg, #fbcfe8 0%, #fce7f3 100%);
+	/* Glass surfaces */
+	--glass-bg: rgba(255, 255, 255, 0.72);
+	--glass-bg-subtle: rgba(255, 255, 255, 0.55);
 
-	/* Shadows */
-	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
-	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-	--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-	--shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+	/* Gradient orbs (pastel aurora) */
+	--gradient-orb-blue: radial-gradient(circle, rgba(216, 237, 255, 0.85) 0%, rgba(216, 237, 255, 0) 70%);
+	--gradient-orb-pink: radial-gradient(circle, rgba(253, 221, 222, 0.85) 0%, rgba(253, 221, 222, 0) 70%);
+	--gradient-orb-purple: radial-gradient(circle, rgba(244, 231, 255, 0.85) 0%, rgba(244, 231, 255, 0) 70%);
+	--gradient-orb-peach: radial-gradient(circle, rgba(255, 247, 231, 0.85) 0%, rgba(255, 247, 231, 0) 70%);
 
-	/* Skeuomorphic effects (Frutiger Aero / Wii style) */
-	--skeu-shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
-	--skeu-shadow-lifted: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1);
-	--skeu-shadow-button: 0 4px 12px rgba(1, 178, 255, 0.4), 0 2px 4px rgba(0, 0, 0, 0.1);
-	--skeu-inset: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-	--skeu-inset-deep: inset 0 3px 6px rgba(0, 0, 0, 0.15);
-	--skeu-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-	--skeu-highlight-strong: inset 0 2px 0 rgba(255, 255, 255, 0.5);
-	--skeu-glow-blue: 0 0 20px rgba(1, 178, 255, 0.4);
-	--skeu-glow-blue-strong: 0 0 30px rgba(1, 178, 255, 0.6);
+	/* Aurora gradients (hero shapes, avatars, thumbnails) */
+	--gradient-aurora: linear-gradient(135deg, #f4e7ff 0%, #fdddde 100%);
+	--gradient-aurora-cool: linear-gradient(135deg, #e7fdff 0%, #ede4ff 100%);
+	--gradient-aurora-iris: linear-gradient(135deg, #feefff 0%, #effcff 49%, #f9fae9 100%);
+	--gradient-aurora-mint: linear-gradient(135deg, #dffdf1 0%, #fcfddd 100%);
+
+	/* Button gradient (decorative pastel) */
+	--gradient-button: linear-gradient(135deg, #f4e7ff 0%, #fdddde 100%);
+	--gradient-button-hover: linear-gradient(135deg, #ebd9ff 0%, #fcced0 100%);
+
+	/* Shadows (soft, ambient) */
+	--shadow-xs: 0 0 6px rgba(28, 43, 51, 0.04);
+	--shadow-sm: 0 0 10px rgba(28, 43, 51, 0.06);
+	--shadow-md: 0 0 16px rgba(28, 43, 51, 0.08);
+	--shadow-lg: 0 8px 24px rgba(28, 43, 51, 0.1);
+	--shadow-xl: 0 16px 48px rgba(28, 43, 51, 0.12);
+	--shadow-glow: 0 4px 20px 6px rgba(58, 156, 255, 0.1);
+
+	/* Interactive surface effects (soft + accent blue) */
+	--skeu-shadow-soft: 0 0 16px rgba(28, 43, 51, 0.08);
+	--skeu-shadow-lifted: 0 8px 24px rgba(28, 43, 51, 0.12);
+	--skeu-shadow-button: 0 4px 20px 6px rgba(58, 156, 255, 0.1);
+	--skeu-inset: inset 0 1px 2px rgba(28, 43, 51, 0.05);
+	--skeu-inset-deep: inset 0 2px 4px rgba(28, 43, 51, 0.08);
+	--skeu-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	--skeu-highlight-strong: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+	--skeu-glow-blue: 0 0 20px rgba(0, 178, 255, 0.35);
+	--skeu-glow-blue-strong: 0 0 30px rgba(0, 178, 255, 0.5);
 
 	/* Radius */
 	--radius-xs: 4px;
@@ -86,38 +101,38 @@
 	/* Semantic colors */
 	--color-success: #22c55e;
 	--color-error: #ef4444;
-	--color-warning: #f59e0b;
-	--color-info: #3b82f6;
+	--color-warning: #ffae00;
+	--color-info: #00b2ff;
 
 	/* Stat colors */
 	--stat-trust: #22c55e;
-	--stat-intimacy: #ec4899;
+	--stat-intimacy: #ff477f;
 	--stat-comfort: #8b5cf6;
-	--stat-energy: #06b6d4;
+	--stat-energy: #00b2ff;
 	--stat-respect: #f97316;
-	--stat-affection: #ec4899;
+	--stat-affection: #ff477f;
 
 	/* Relationship tier colors */
 	--tier-stranger: #9ca3af;
-	--tier-acquaintance: #3b82f6;
+	--tier-acquaintance: #00b2ff;
 	--tier-friend: #22c55e;
 	--tier-close-friend: #14b8a6;
-	--tier-best-friend: #eab308;
-	--tier-soulmate: #ec4899;
+	--tier-best-friend: #ffae00;
+	--tier-soulmate: #ff477f;
 	--tier-eternal-bond: #8b5cf6;
 
 	/* Scrollbar */
-	--scrollbar-thumb: rgba(0, 0, 0, 0.12);
-	--scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
+	--scrollbar-thumb: rgba(28, 43, 51, 0.12);
+	--scrollbar-thumb-hover: rgba(28, 43, 51, 0.2);
 
 	/* Scene colors for 3D */
-	--scene-bg: #f7f7f8;
+	--scene-bg: #f2f4f7;
 	--scene-placeholder: #8b5cf6;
 
 	/* Primary color scale (maps to accent) */
-	--color-primary-400: #f472b6;
+	--color-primary-400: #4cc9ff;
 	--color-primary-500: var(--accent);
-	--color-primary-700: #be185d;
+	--color-primary-700: #0077b3;
 
 	/* Red color scale (for destructive states) */
 	--color-red-100: #fef2f2;
@@ -152,35 +167,39 @@
 }
 
 .dark {
-	/* Backgrounds */
-	--bg-primary: #0a0a0a;
-	--bg-secondary: #171717;
-	--bg-tertiary: #262626;
+	/* Backgrounds (slate from the #1c2b33 ink) */
+	--bg-primary: #0c1116;
+	--bg-secondary: #141b21;
+	--bg-tertiary: #1d262e;
 
 	/* Text */
-	--text-primary: #fafafa;
-	--text-secondary: #a3a3a3;
-	--text-tertiary: #737373;
+	--text-primary: #f6f8f9;
+	--text-secondary: #9da9b7;
+	--text-tertiary: #70767d;
 
 	/* Borders */
-	--border-light: #262626;
-	--border-subtle: #1f1f1f;
+	--border-light: #26313a;
+	--border-subtle: #1b242b;
 
 	/* Accent */
-	--accent: #f472b6;
-	--accent-hover: #ec4899;
-	--accent-muted: rgba(244, 114, 182, 0.15);
-	--accent-subtle: rgba(244, 114, 182, 0.08);
+	--accent: #00b2ff;
+	--accent-hover: #33c1ff;
+	--accent-muted: rgba(0, 178, 255, 0.16);
+	--accent-subtle: rgba(0, 178, 255, 0.08);
 
-	/* Gradient orbs (darker, more subtle) */
-	--gradient-orb-blue: radial-gradient(circle, rgba(96, 165, 250, 0.3) 0%, rgba(96, 165, 250, 0) 70%);
-	--gradient-orb-pink: radial-gradient(circle, rgba(244, 114, 182, 0.3) 0%, rgba(244, 114, 182, 0) 70%);
-	--gradient-orb-purple: radial-gradient(circle, rgba(167, 139, 250, 0.3) 0%, rgba(167, 139, 250, 0) 70%);
-	--gradient-orb-peach: radial-gradient(circle, rgba(251, 146, 60, 0.25) 0%, rgba(251, 146, 60, 0) 70%);
+	/* Glass surfaces */
+	--glass-bg: rgba(20, 27, 33, 0.72);
+	--glass-bg-subtle: rgba(20, 27, 33, 0.55);
+
+	/* Gradient orbs (dimmed for dark) */
+	--gradient-orb-blue: radial-gradient(circle, rgba(0, 178, 255, 0.18) 0%, rgba(0, 178, 255, 0) 70%);
+	--gradient-orb-pink: radial-gradient(circle, rgba(255, 71, 127, 0.16) 0%, rgba(255, 71, 127, 0) 70%);
+	--gradient-orb-purple: radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, rgba(139, 92, 246, 0) 70%);
+	--gradient-orb-peach: radial-gradient(circle, rgba(255, 174, 0, 0.14) 0%, rgba(255, 174, 0, 0) 70%);
 
 	/* Button gradient */
-	--gradient-button: linear-gradient(135deg, rgba(244, 114, 182, 0.2) 0%, rgba(244, 114, 182, 0.1) 100%);
-	--gradient-button-hover: linear-gradient(135deg, rgba(244, 114, 182, 0.3) 0%, rgba(244, 114, 182, 0.2) 100%);
+	--gradient-button: linear-gradient(135deg, rgba(0, 178, 255, 0.18) 0%, rgba(0, 178, 255, 0.08) 100%);
+	--gradient-button-hover: linear-gradient(135deg, rgba(0, 178, 255, 0.28) 0%, rgba(0, 178, 255, 0.16) 100%);
 
 	/* Shadows (subtle in dark mode) */
 	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -188,28 +207,29 @@
 	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
 	--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 	--shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+	--shadow-glow: 0 4px 24px 6px rgba(0, 178, 255, 0.18);
 
 	/* Semantic colors */
 	--color-success: #4ade80;
 	--color-error: #f87171;
-	--color-warning: #fbbf24;
-	--color-info: #60a5fa;
+	--color-warning: #ffbf33;
+	--color-info: #33c1ff;
 
 	/* Stat colors */
 	--stat-trust: #4ade80;
-	--stat-intimacy: #f472b6;
+	--stat-intimacy: #ff6b96;
 	--stat-comfort: #a78bfa;
-	--stat-energy: #22d3ee;
+	--stat-energy: #33c1ff;
 	--stat-respect: #fb923c;
-	--stat-affection: #f472b6;
+	--stat-affection: #ff6b96;
 
 	/* Tier colors */
 	--tier-stranger: #6b7280;
-	--tier-acquaintance: #60a5fa;
+	--tier-acquaintance: #33c1ff;
 	--tier-friend: #4ade80;
 	--tier-close-friend: #2dd4bf;
-	--tier-best-friend: #facc15;
-	--tier-soulmate: #f472b6;
+	--tier-best-friend: #ffcb33;
+	--tier-soulmate: #ff6b96;
 	--tier-eternal-bond: #a78bfa;
 
 	/* Scrollbar */
@@ -217,13 +237,13 @@
 	--scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
 
 	/* Scene colors */
-	--scene-bg: #0a0a0a;
+	--scene-bg: #0c1116;
 	--scene-placeholder: #a78bfa;
 
 	/* Primary color scale */
-	--color-primary-400: #f9a8d4;
+	--color-primary-400: #66d0ff;
 	--color-primary-500: var(--accent);
-	--color-primary-700: #ec4899;
+	--color-primary-700: #0077b3;
 
 	/* Red color scale (inverted for dark mode) */
 	--color-red-100: #450a0a;
@@ -266,7 +286,7 @@ body {
 	margin: 0;
 	padding: 0;
 	height: 100%;
-	font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	font-family: var(--font-sans);
 	background-color: var(--bg-primary);
 	color: var(--text-primary);
 	transition: background-color 0.2s, color 0.2s;
@@ -275,7 +295,8 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-	font-family: 'Exo 2', 'M PLUS Rounded 1c', sans-serif;
+	font-family: var(--font-sans);
+	letter-spacing: -0.02em;
 }
 
 /* Scrollbar styling */

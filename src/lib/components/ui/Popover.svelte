@@ -25,13 +25,32 @@
 	</PopoverPrimitive.Trigger>
 
 	<PopoverPrimitive.Portal>
-		<PopoverPrimitive.Content
-			class="z-50 max-w-xs bg-background border border-border rounded-popover p-4 shadow-popover outline-none animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
-			{align}
-			{side}
-			{sideOffset}
-		>
+		<PopoverPrimitive.Content class="popover-content" {align} {side} {sideOffset}>
 			{@render children()}
 		</PopoverPrimitive.Content>
 	</PopoverPrimitive.Portal>
 </PopoverPrimitive.Root>
+
+<style>
+	:global(.popover-content) {
+		z-index: 50;
+		max-width: 20rem;
+		padding: 1rem;
+		background: var(--bg-primary);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-lg);
+		outline: none;
+		animation: popover-in 0.15s ease-out;
+	}
+
+	@keyframes popover-in {
+		from {
+			opacity: 0;
+			transform: translateY(-4px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+</style>

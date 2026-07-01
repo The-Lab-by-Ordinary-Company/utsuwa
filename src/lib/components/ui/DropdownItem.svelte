@@ -29,7 +29,7 @@
 </script>
 
 <DropdownMenu.Item
-	class="flex h-10 select-none items-center gap-3 rounded-button px-3 text-sm font-medium text-foreground outline-none transition-colors data-[highlighted]:bg-muted focus-visible:outline-none cursor-pointer {className}"
+	class="flex h-10 select-none items-center gap-3 rounded-md px-3 text-sm font-medium text-foreground outline-none transition-colors data-[highlighted]:bg-muted focus-visible:outline-none cursor-pointer {className}"
 	{disabled}
 	onclick={handleClick}
 >

@@ -85,7 +85,7 @@
 		min-height: 100vh;
 		background: var(--docs-bg);
 		color: var(--docs-text);
-		font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		font-family: var(--font-sans);
 	}
 
 	/* Nav */
@@ -149,49 +149,34 @@
 		background: var(--docs-surface);
 		border: 1px solid var(--docs-border);
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 2px 4px rgba(0, 0, 0, 0.05);
+		transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 	}
 
 	.nav-theme-btn:hover {
 		color: var(--docs-accent);
 		background: var(--docs-surface-solid);
 		border-color: var(--docs-accent);
-		transform: translateY(-1px);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 0 12px var(--docs-glow);
 	}
 
 	.nav-theme-btn:active {
-		transform: translateY(0) scale(0.96);
+		transform: scale(0.96);
 	}
 
 	.nav-cta {
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: white;
+		color: #fff;
 		text-decoration: none;
 		padding: 0.5rem 1rem;
 		border-radius: 9999px;
-		background: var(--docs-btn-gradient);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.3),
-			0 2px 4px rgba(1, 178, 255, 0.2);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		background: var(--docs-accent);
+		box-shadow: var(--docs-btn-shadow);
+		transition: background 0.2s ease, box-shadow 0.2s ease;
 	}
 
 	.nav-cta:hover {
-		background: var(--docs-btn-gradient-hover);
-		transform: translateY(-1px);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			0 0 12px rgba(1, 178, 255, 0.35),
-			0 2px 8px rgba(1, 178, 255, 0.25);
+		background: var(--docs-accent-hover);
+		box-shadow: var(--docs-btn-shadow-hover);
 	}
 
 	/* Main content */

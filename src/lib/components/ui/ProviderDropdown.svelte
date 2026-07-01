@@ -115,50 +115,26 @@
 		gap: 0.5rem;
 		width: 100%;
 		padding: 0.75rem 1rem;
-		background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%);
-		border: 1px solid rgba(0, 0, 0, 0.12);
+		background: var(--bg-tertiary);
+		border: 1px solid transparent;
 		border-radius: var(--radius-md);
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 		font-family: inherit;
 		font-size: 0.875rem;
 		color: var(--text-primary);
 		text-align: left;
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.06),
-			inset 0 1px 2px rgba(0, 0, 0, 0.04);
-	}
-
-	:global(.dark .dropdown-trigger) {
-		background: linear-gradient(180deg, #1a1a1a 0%, #222222 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.3),
-			inset 0 1px 2px rgba(0, 0, 0, 0.2);
 	}
 
 	:global(.dropdown-trigger:hover) {
-		border-color: rgba(0, 0, 0, 0.2);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
-	:global(.dark .dropdown-trigger:hover) {
-		border-color: rgba(255, 255, 255, 0.15);
-	}
-
-	:global(.dropdown-trigger:focus) {
+	:global(.dropdown-trigger:focus),
+	:global(.dropdown-trigger[data-state='open']) {
 		outline: none;
-		border-color: #01B2FF;
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.06),
-			0 0 0 3px rgba(1, 178, 255, 0.2),
-			0 0 12px rgba(1, 178, 255, 0.15);
-	}
-
-	:global(.dark .dropdown-trigger:focus) {
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.3),
-			0 0 0 3px rgba(1, 178, 255, 0.25),
-			0 0 16px rgba(1, 178, 255, 0.2);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px var(--accent-muted);
 	}
 
 	.trigger-icon {
@@ -180,24 +156,11 @@
 		z-index: 1050;
 		min-width: 280px;
 		max-width: 320px;
-		background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%);
-		border: 1px solid rgba(0, 0, 0, 0.1);
+		background: var(--bg-primary);
 		border-radius: var(--radius-lg);
 		padding: 0.5rem;
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.15),
-			0 4px 12px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		box-shadow: var(--shadow-lg);
 		animation: slideDown 0.15s ease-out;
-	}
-
-	:global(.dark .dropdown-content) {
-		background: linear-gradient(180deg, #252525 0%, #1a1a1a 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.5),
-			0 4px 12px rgba(0, 0, 0, 0.4),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
 	@keyframes slideDown {
@@ -241,29 +204,17 @@
 		padding: 0.5rem 0.625rem;
 		border-radius: var(--radius-sm);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition: background 0.15s, color 0.15s;
 		outline: none;
 	}
 
 	:global(.provider-item:hover),
 	:global(.provider-item[data-highlighted]) {
-		background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark .provider-item:hover),
-	:global(.dark .provider-item[data-highlighted]) {
-		background: linear-gradient(180deg, #333333 0%, #2a2a2a 100%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		background: var(--bg-secondary);
 	}
 
 	:global(.provider-item.selected) {
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.15) 0%, rgba(1, 178, 255, 0.1) 100%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-	}
-
-	:global(.dark .provider-item.selected) {
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.2) 0%, rgba(1, 178, 255, 0.12) 100%);
+		background: var(--accent-muted);
 	}
 
 	.provider-icon {
@@ -293,12 +244,8 @@
 	}
 
 	.badge.local {
-		background: linear-gradient(180deg, #66d9ff 0%, #01B2FF 100%);
-		color: white;
-		box-shadow:
-			0 1px 3px rgba(1, 178, 255, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		background: var(--accent-muted);
+		color: var(--accent);
 	}
 
 	.badge.configured {
@@ -308,11 +255,8 @@
 		width: 18px;
 		height: 18px;
 		padding: 0;
-		background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
-		color: white;
+		background: var(--color-success);
+		color: #fff;
 		border-radius: 50%;
-		box-shadow:
-			0 1px 3px rgba(34, 197, 94, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
 	}
 </style>

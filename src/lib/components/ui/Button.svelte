@@ -46,19 +46,25 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		border-radius: 0.5rem;
+		padding: 0.6rem 1.25rem;
+		border: 1px solid transparent;
+		border-radius: var(--radius-full);
+		font-family: inherit;
 		font-size: 0.875rem;
 		font-weight: 500;
+		line-height: 1;
 		cursor: pointer;
-		transition: all 0.15s ease-out;
-		border: 2px solid transparent;
 		outline: none;
+		transition:
+			background 0.15s ease,
+			color 0.15s ease,
+			border-color 0.15s ease,
+			box-shadow 0.15s ease,
+			transform 0.1s ease;
 	}
 
 	:global(.btn:focus-visible) {
-		outline: 2px solid var(--color-primary-400);
-		outline-offset: 2px;
+		box-shadow: 0 0 0 3px var(--accent-muted);
 	}
 
 	:global(.btn:disabled) {
@@ -71,99 +77,54 @@
 	}
 
 	:global(.btn-sm) {
-		padding: 0.375rem 0.75rem;
-		font-size: 0.75rem;
+		padding: 0.4rem 0.85rem;
+		font-size: 0.8rem;
 	}
 
 	:global(.btn-lg) {
-		padding: 0.75rem 1.5rem;
+		padding: 0.8rem 1.75rem;
 		font-size: 1rem;
 	}
 
-	/* Primary - Cyan glossy */
+	/* Primary - solid accent */
 	:global(.btn-primary) {
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		color: white;
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-		box-shadow:
-			0 4px 12px rgba(1, 178, 255, 0.35),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		background: var(--accent);
+		color: #fff;
 	}
 
 	:global(.btn-primary:hover:not(:disabled)) {
-		background: linear-gradient(180deg, #66d9ff 0%, #1abfff 50%, #01B2FF 100%);
-		box-shadow:
-			0 6px 16px rgba(1, 178, 255, 0.45),
-			0 3px 6px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5);
+		background: var(--accent-hover);
+		box-shadow: var(--shadow-glow);
 	}
 
-	/* Secondary - Neutral glossy */
+	/* Secondary - gray fill, no stroke */
 	:global(.btn-secondary) {
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-		border: 1px solid rgba(0, 0, 0, 0.08);
+		background: var(--bg-tertiary);
 		color: var(--text-primary);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.08),
-			0 1px 2px rgba(0, 0, 0, 0.04),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark .btn-secondary) {
-		background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.25),
-			0 1px 2px rgba(0, 0, 0, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	:global(.btn-secondary:hover:not(:disabled)) {
-		background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
-		box-shadow:
-			0 3px 8px rgba(0, 0, 0, 0.1),
-			0 1px 3px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
-	:global(.dark .btn-secondary:hover:not(:disabled)) {
-		background: linear-gradient(180deg, #454545 0%, #353535 100%);
-	}
-
-	/* Ghost - Transparent with subtle hover */
+	/* Ghost - transparent, fills gray on hover */
 	:global(.btn-ghost) {
 		background: transparent;
-		border-color: transparent;
 		color: var(--text-secondary);
 	}
 
 	:global(.btn-ghost:hover:not(:disabled)) {
-		background: linear-gradient(180deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.06) 100%);
+		background: var(--bg-tertiary);
+		color: var(--text-primary);
 	}
 
-	:global(.dark .btn-ghost:hover:not(:disabled)) {
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.08) 100%);
-	}
-
-	/* Danger - Red glossy */
+	/* Danger - solid error */
 	:global(.btn-danger) {
-		background: linear-gradient(180deg, #f87171 0%, #ef4444 50%, #dc2626 100%);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		color: white;
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-		box-shadow:
-			0 4px 12px rgba(239, 68, 68, 0.35),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		background: var(--color-error);
+		color: #fff;
 	}
 
 	:global(.btn-danger:hover:not(:disabled)) {
-		background: linear-gradient(180deg, #fca5a5 0%, #f87171 50%, #ef4444 100%);
-		box-shadow:
-			0 6px 16px rgba(239, 68, 68, 0.45),
-			0 3px 6px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5);
+		filter: brightness(0.94);
 	}
 </style>

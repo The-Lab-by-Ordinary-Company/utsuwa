@@ -34,17 +34,13 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.875rem 1rem;
-		background: linear-gradient(180deg, #3a3a3e 0%, #2e2e32 100%);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		border-radius: 0.75rem;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-md);
 		text-align: left;
-		color: rgba(255, 255, 255, 0.9);
+		color: var(--text-primary);
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: background 0.15s, transform 0.15s;
 		animation: slideIn 0.3s ease-out backwards;
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	@keyframes slideIn {
@@ -59,14 +55,12 @@
 	}
 
 	.choice-btn:hover {
-		background: linear-gradient(180deg, #444448 0%, #383838 100%);
-		border-color: rgba(255, 255, 255, 0.15);
+		background: var(--accent-muted);
 		transform: translateX(3px);
 	}
 
 	.choice-btn:active {
 		transform: translateX(3px) scale(0.98);
-		background: linear-gradient(180deg, #3a3a3e 0%, #2e2e32 100%);
 	}
 
 	.choice-number {
@@ -75,13 +69,12 @@
 		justify-content: center;
 		width: 1.5rem;
 		height: 1.5rem;
-		background: linear-gradient(180deg, #4dd0ff, #01B2FF);
-		border-radius: 50%;
+		background: var(--accent-muted);
+		border-radius: var(--radius-full);
 		font-size: 0.75rem;
 		font-weight: 600;
 		flex-shrink: 0;
-		color: white;
-		box-shadow: 0 2px 6px rgba(1, 178, 255, 0.4);
+		color: var(--accent);
 	}
 
 	.choice-text {

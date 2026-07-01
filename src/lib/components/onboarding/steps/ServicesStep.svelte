@@ -291,11 +291,10 @@
 	}
 </script>
 
-<div class="step-content">
-	<div class="step-header">
-		<Icon name="settings" size={24} />
-		<h2 class="title">Configure AI Services</h2>
-		<p class="subtitle">Set up your LLM for chat (required) and TTS for speech (optional)</p>
+<div class="ob-step services-step">
+	<div class="ob-head">
+		<h2 class="ob-title">Configure AI services</h2>
+		<p class="ob-subtitle">Set up your LLM for chat (required) and TTS for speech (optional).</p>
 	</div>
 
 	<div class="security-note">
@@ -450,12 +449,12 @@
 		{/if}
 	</div>
 
-	<div class="actions">
-		<button class="back-btn" onclick={onBack}>
+	<div class="ob-actions ob-actions--split">
+		<button class="ob-btn ob-btn-ghost" onclick={onBack}>
 			<Icon name="chevron-left" size={16} />
 			Back
 		</button>
-		<button class="next-btn" onclick={handleNext} disabled={!isLLMConfigured}>
+		<button class="ob-btn ob-btn-primary" onclick={handleNext} disabled={!isLLMConfigured}>
 			Next
 			<Icon name="chevron-right" size={16} />
 		</button>
@@ -463,36 +462,10 @@
 </div>
 
 <style>
-	.step-content {
-		display: flex;
-		flex-direction: column;
-		padding: 1.5rem;
-		gap: 1.25rem;
+	/* Scrollable variant of the shared ob-step layout */
+	.services-step {
 		max-height: 70vh;
 		overflow-y: auto;
-	}
-
-	.step-header {
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5rem;
-		color: var(--text-secondary);
-	}
-
-	.title {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		margin: 0;
-		letter-spacing: -0.02em;
-	}
-
-	.subtitle {
-		font-size: 0.875rem;
-		color: var(--text-secondary);
-		margin: 0;
 	}
 
 	.security-note {
@@ -500,36 +473,26 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		padding: 0.625rem 1rem;
-		background: linear-gradient(180deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
-		border-radius: var(--radius-md);
+		padding: 0.7rem 1rem;
+		background: var(--bg-secondary);
+		border-radius: var(--radius-lg);
 		font-size: 0.75rem;
-		color: white;
-		box-shadow:
-			0 2px 8px rgba(34, 197, 94, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		color: var(--text-secondary);
+	}
+
+	.security-note :global(svg) {
+		color: var(--text-tertiary);
+		flex-shrink: 0;
 	}
 
 	.service-section {
 		display: flex;
 		flex-direction: column;
-		gap: 0.625rem;
-		padding: 1rem;
-		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
-		border: 1px solid rgba(0, 0, 0, 0.08);
-		border-radius: var(--radius-md);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .service-section {
-		background: linear-gradient(180deg, #252525 0%, #1a1a1a 100%);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		gap: 0.75rem;
+		padding: 1.1rem;
+		background: var(--bg-primary);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.service-header {
@@ -548,36 +511,24 @@
 	.required-badge {
 		font-size: 0.65rem;
 		font-weight: 600;
+		letter-spacing: 0.02em;
 		text-transform: uppercase;
-		color: white;
-		background: linear-gradient(180deg, #fb7185 0%, #ef4444 50%, #dc2626 100%);
-		padding: 0.2rem 0.5rem;
+		color: var(--accent);
+		background: var(--accent-subtle);
+		padding: 0.2rem 0.55rem;
 		border-radius: var(--radius-full);
 		margin-left: auto;
-		box-shadow:
-			0 1px 3px rgba(239, 68, 68, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.25);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 	}
 
 	.optional-badge {
 		font-size: 0.65rem;
 		font-weight: 600;
+		letter-spacing: 0.02em;
 		text-transform: uppercase;
-		color: var(--text-secondary);
-		background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
-		padding: 0.2rem 0.5rem;
+		color: var(--text-tertiary);
+		background: var(--bg-tertiary);
+		padding: 0.2rem 0.55rem;
 		border-radius: var(--radius-full);
-		box-shadow:
-			0 1px 2px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .optional-badge {
-		background: linear-gradient(180deg, #404040 0%, #333333 100%);
-		box-shadow:
-			0 1px 2px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	.toggle-btn {
@@ -595,70 +546,41 @@
 		display: block;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(180deg, #c8c8c8 0%, #e0e0e0 100%);
-		border-radius: 12px;
-		transition: all 0.2s;
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.15),
-			inset 0 1px 2px rgba(0, 0, 0, 0.1),
-			0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .toggle-track {
-		background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.4),
-			inset 0 1px 2px rgba(0, 0, 0, 0.3),
-			0 1px 0 rgba(255, 255, 255, 0.05);
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-full);
+		transition: background 0.2s;
 	}
 
 	.toggle-btn.enabled .toggle-track {
-		background: linear-gradient(180deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.1),
-			0 0 8px rgba(34, 197, 94, 0.4),
-			0 1px 0 rgba(255, 255, 255, 0.3);
+		background: var(--accent);
 	}
 
 	.toggle-thumb {
 		position: absolute;
-		top: 2px;
-		left: 2px;
-		width: 20px;
-		height: 20px;
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+		top: 3px;
+		left: 3px;
+		width: 18px;
+		height: 18px;
+		background: var(--bg-primary);
 		border-radius: 50%;
 		transition: transform 0.2s;
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.2),
-			0 1px 2px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		box-shadow: var(--shadow-xs);
 	}
 
 	.toggle-btn.enabled .toggle-thumb {
+		background: #fff;
 		transform: translateX(18px);
 	}
 
 	.api-key-input {
-		padding: 0.75rem 1rem;
-		background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%);
-		border: 1px solid rgba(0, 0, 0, 0.12);
-		border-radius: var(--radius-md);
-		font-size: 0.875rem;
-		font-family: 'Share Tech Mono', monospace;
+		width: 100%;
+		padding: 0.85rem 1rem;
+		background: var(--bg-secondary);
+		border-radius: var(--radius-lg);
+		font-size: 0.9rem;
+		font-family: var(--font-mono);
 		color: var(--text-primary);
-		transition: all 0.2s;
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.06),
-			inset 0 1px 2px rgba(0, 0, 0, 0.04);
-	}
-
-	:global(.dark) .api-key-input {
-		background: linear-gradient(180deg, #1a1a1a 0%, #222222 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.3),
-			inset 0 1px 2px rgba(0, 0, 0, 0.2);
+		transition: box-shadow 0.15s, background 0.15s;
 	}
 
 	.api-key-input::placeholder {
@@ -667,22 +589,12 @@
 
 	.api-key-input:focus {
 		outline: none;
-		border-color: #01B2FF;
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.06),
-			0 0 0 3px rgba(1, 178, 255, 0.2),
-			0 0 12px rgba(1, 178, 255, 0.15);
-	}
-
-	:global(.dark) .api-key-input:focus {
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.3),
-			0 0 0 3px rgba(1, 178, 255, 0.25),
-			0 0 16px rgba(1, 178, 255, 0.2);
+		background: var(--bg-primary);
+		box-shadow: 0 0 0 3px var(--accent-muted);
 	}
 
 	.api-key-input.error {
-		border-color: var(--color-error);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error), transparent 78%);
 		animation: shake 0.4s ease-out;
 	}
 
@@ -711,100 +623,5 @@
 		margin: 0;
 		font-size: 0.8rem;
 		color: var(--text-tertiary);
-		font-style: italic;
-	}
-
-	.actions {
-		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		margin-top: 0.5rem;
-	}
-
-	.back-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.75rem 1.25rem;
-		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		border-radius: var(--radius-full);
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--text-secondary);
-		cursor: pointer;
-		transition: all 0.2s;
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.08),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	.back-btn:hover {
-		background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
-		color: var(--text-primary);
-		transform: translateY(-1px);
-		box-shadow:
-			0 4px 8px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
-	.back-btn:active {
-		transform: translateY(0);
-		background: linear-gradient(180deg, #e8e8e8 0%, #e0e0e0 100%);
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	:global(.dark) .back-btn {
-		background: linear-gradient(180deg, #333333 0%, #262626 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
-	}
-
-	:global(.dark) .back-btn:hover {
-		background: linear-gradient(180deg, #404040 0%, #333333 100%);
-	}
-
-	.next-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.75rem 1.5rem;
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 40%, #0099dd 100%);
-		color: white;
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		border-radius: var(--radius-full);
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-		box-shadow:
-			0 4px 12px rgba(1, 178, 255, 0.35),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
-	}
-
-	.next-btn:hover:not(:disabled) {
-		background: linear-gradient(180deg, #66d9ff 0%, #1ebfff 40%, #00a6e6 100%);
-		transform: translateY(-2px);
-		box-shadow:
-			0 6px 18px rgba(1, 178, 255, 0.45),
-			0 3px 6px rgba(0, 0, 0, 0.12),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5);
-	}
-
-	.next-btn:active:not(:disabled) {
-		transform: translateY(0);
-		background: linear-gradient(180deg, #0099dd 0%, #0088cc 100%);
-		box-shadow:
-			inset 0 2px 4px rgba(0, 0, 0, 0.2),
-			0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	.next-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
 	}
 </style>

@@ -115,50 +115,22 @@
 		justify-content: center;
 		gap: 0.75rem;
 		aspect-ratio: 1;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 248, 248, 0.6) 100%);
-		border: 2px dashed rgba(0, 0, 0, 0.15);
+		background: var(--bg-secondary);
+		border: 1px dashed var(--border-light);
 		border-radius: var(--radius-lg);
 		cursor: pointer;
-		transition: all 0.2s;
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
-	}
-
-	:global(.dark) .uploader {
-		background: linear-gradient(180deg, rgba(40, 40, 40, 0.8) 0%, rgba(30, 30, 30, 0.6) 100%);
-		border-color: rgba(255, 255, 255, 0.1);
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+		transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 	}
 
 	.uploader:hover {
-		border-color: #01B2FF;
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.12) 0%, rgba(1, 178, 255, 0.06) 100%);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.6),
-			0 0 16px rgba(1, 178, 255, 0.15);
-	}
-
-	:global(.dark) .uploader:hover {
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.18) 0%, rgba(1, 178, 255, 0.1) 100%);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.1),
-			0 0 20px rgba(1, 178, 255, 0.25);
+		border-color: var(--accent);
+		background: var(--accent-subtle);
 	}
 
 	.uploader.dragging {
-		border-color: #01B2FF;
-		border-style: solid;
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.2) 0%, rgba(1, 178, 255, 0.12) 100%);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.5),
-			0 0 24px rgba(1, 178, 255, 0.3);
-		transform: scale(1.02);
-	}
-
-	:global(.dark) .uploader.dragging {
-		background: linear-gradient(180deg, rgba(1, 178, 255, 0.25) 0%, rgba(1, 178, 255, 0.15) 100%);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.1),
-			0 0 30px rgba(1, 178, 255, 0.4);
+		border-color: var(--accent);
+		background: var(--accent-subtle);
+		box-shadow: var(--shadow-glow);
 	}
 
 	.icon {
@@ -167,29 +139,16 @@
 		justify-content: center;
 		width: 56px;
 		height: 56px;
-		background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
-		border-radius: 50%;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-full);
 		color: var(--text-tertiary);
-		transition: all 0.2s;
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.dark) .icon {
-		background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
-		box-shadow:
-			0 2px 6px rgba(0, 0, 0, 0.3),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		transition: background 0.15s, color 0.15s;
 	}
 
 	.uploader:hover .icon,
 	.uploader.dragging .icon {
-		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 50%, #0099dd 100%);
-		color: white;
-		box-shadow:
-			0 4px 12px rgba(1, 178, 255, 0.4),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		background: var(--accent);
+		color: #fff;
 	}
 
 	.label {
@@ -201,10 +160,11 @@
 	.hint {
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
+		transition: color 0.15s;
 	}
 
 	.uploader:hover .hint,
 	.uploader.dragging .hint {
-		color: #01B2FF;
+		color: var(--accent);
 	}
 </style>

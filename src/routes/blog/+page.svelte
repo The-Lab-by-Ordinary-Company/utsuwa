@@ -32,7 +32,6 @@
 			<div class="featured-image-wrap">
 				<img src={featuredPost.image} alt={featuredPost.title} class="featured-image" />
 			</div>
-			<div class="featured-shine"></div>
 			<div class="featured-overlay"></div>
 			<div class="featured-content">
 				<div class="card-meta">
@@ -74,14 +73,10 @@
 
 	.blog-title {
 		font-size: 2.5rem;
-		font-weight: 700;
+		font-weight: 600;
 		margin: 0 0 0.5rem 0;
 		letter-spacing: -0.03em;
-		font-family: 'Exo 2', sans-serif;
-		background: linear-gradient(118deg, var(--docs-text) 45%, var(--docs-accent) 100%);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
+		font-family: var(--font-sans);
 		color: var(--docs-text);
 	}
 
@@ -91,7 +86,7 @@
 		margin: 0 0 2.5rem 0;
 	}
 
-	/* Featured hero card — glossy Frutiger Aero panel */
+	/* Featured hero card */
 	.featured-card {
 		position: relative;
 		display: block;
@@ -100,46 +95,16 @@
 		overflow: hidden;
 		text-decoration: none;
 		margin-bottom: 2rem;
-		background: linear-gradient(
-			165deg,
-			rgba(255, 255, 255, 0.95) 0%,
-			rgba(240, 248, 255, 0.8) 50%,
-			rgba(1, 178, 255, 0.08) 100%
-		);
-		border: 1px solid rgba(1, 178, 255, 0.18);
-		transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-			0 8px 32px rgba(0, 0, 0, 0.08),
-			0 1px 4px rgba(0, 0, 0, 0.05);
-	}
-
-	/* Glossy top shine */
-	.featured-shine {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 45%;
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.6) 0%,
-			rgba(255, 255, 255, 0.1) 60%,
-			transparent 100%
-		);
-		pointer-events: none;
-		z-index: 2;
+		background: var(--docs-surface);
+		border: 1px solid var(--docs-border);
+		transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.featured-card:hover {
-		border-color: rgba(1, 178, 255, 0.4);
-		transform: translateY(-6px) scale(1.01);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			0 0 40px rgba(1, 178, 255, 0.15),
-			0 12px 48px rgba(1, 178, 255, 0.08),
-			0 24px 64px rgba(0, 0, 0, 0.1);
+		border-color: var(--docs-accent);
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.featured-image-wrap {
@@ -164,8 +129,8 @@
 		background: linear-gradient(
 			to top,
 			rgba(0, 0, 0, 0.75) 0%,
-			rgba(0, 10, 20, 0.3) 45%,
-			rgba(1, 178, 255, 0.03) 100%
+			rgba(0, 0, 0, 0.3) 45%,
+			transparent 100%
 		);
 		z-index: 1;
 	}
@@ -209,14 +174,13 @@
 	.featured-content time {
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: #4dd0ff;
-		text-shadow: 0 0 12px rgba(1, 178, 255, 0.4);
+		color: var(--docs-accent-light);
 	}
 
 	.featured-content h2 {
 		font-size: 1.75rem;
 		font-weight: 700;
-		color: white;
+		color: #fff;
 		margin: 0;
 		line-height: 1.3;
 	}
@@ -241,64 +205,30 @@
 		gap: 1.5rem;
 	}
 
-	/* Grid cards — Frutiger Aero light */
 	.blog-card {
 		display: flex;
 		flex-direction: column;
 		text-decoration: none;
 		border-radius: 1.25rem;
 		overflow: hidden;
-		background: linear-gradient(
-			165deg,
-			rgba(255, 255, 255, 0.95) 0%,
-			rgba(240, 248, 255, 0.8) 50%,
-			rgba(1, 178, 255, 0.08) 100%
-		);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid rgba(1, 178, 255, 0.18);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.9),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-			0 4px 20px rgba(0, 0, 0, 0.08),
-			0 1px 4px rgba(0, 0, 0, 0.05);
-		transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+		background: var(--docs-surface);
+		border: 1px solid var(--docs-border);
+		box-shadow: var(--shadow-sm);
+		transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 		position: relative;
 	}
 
-	/* Glossy top shine */
-	.blog-card::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 50%;
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.6) 0%,
-			transparent 100%
-		);
-		border-radius: 1.25rem 1.25rem 0 0;
-		pointer-events: none;
-		z-index: 1;
-	}
-
 	.blog-card:hover {
-		border-color: rgba(1, 178, 255, 0.4);
-		transform: translateY(-6px) scale(1.02);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 1),
-			0 0 30px rgba(1, 178, 255, 0.15),
-			0 8px 32px rgba(1, 178, 255, 0.1),
-			0 20px 48px rgba(0, 0, 0, 0.1);
+		border-color: var(--docs-accent);
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-md);
 	}
 
 	.card-image {
 		position: relative;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
-		background: linear-gradient(135deg, #e8f0f8 0%, #dde8f2 100%);
+		background: var(--docs-code-bg);
 		margin: 0.5rem 0.5rem 0;
 		border-radius: 0.875rem;
 	}
@@ -354,50 +284,6 @@
 		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
-	}
-
-	/* ===== Dark mode glass ===== */
-	:global(.dark) .featured-card,
-	:global(.dark) .blog-card {
-		background: linear-gradient(
-			165deg,
-			rgba(40, 44, 52, 0.8) 0%,
-			rgba(20, 24, 32, 0.65) 50%,
-			rgba(1, 178, 255, 0.08) 100%
-		);
-		border-color: rgba(1, 178, 255, 0.2);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.08),
-			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-			0 6px 26px rgba(0, 0, 0, 0.4),
-			0 1px 4px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(.dark) .featured-shine,
-	:global(.dark) .blog-card::before {
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
-	}
-
-	:global(.dark) .featured-card:hover {
-		border-color: rgba(1, 178, 255, 0.45);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.14),
-			0 0 40px rgba(1, 178, 255, 0.18),
-			0 12px 48px rgba(1, 178, 255, 0.1),
-			0 24px 64px rgba(0, 0, 0, 0.5);
-	}
-
-	:global(.dark) .blog-card:hover {
-		border-color: rgba(1, 178, 255, 0.45);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.14),
-			0 0 30px rgba(1, 178, 255, 0.18),
-			0 8px 32px rgba(1, 178, 255, 0.12),
-			0 20px 48px rgba(0, 0, 0, 0.5);
-	}
-
-	:global(.dark) .card-image {
-		background: linear-gradient(135deg, #1a1f28 0%, #12161d 100%);
 	}
 
 	@media (max-width: 640px) {

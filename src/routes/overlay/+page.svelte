@@ -466,18 +466,19 @@
 		right: 0.75rem;
 		width: 32px;
 		height: 32px;
-		border: none;
-		border-radius: 50%;
-		background: rgba(0, 0, 0, 0.5);
-		color: white;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		box-shadow: var(--shadow-sm);
 		z-index: 50;
 		opacity: 0;
 		pointer-events: none;
-		transition: opacity 0.15s ease, transform 0.15s ease;
+		transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease,
+			box-shadow 0.15s ease, transform 0.15s ease;
 	}
 
 	.overlay-container:hover .exit-btn {
@@ -487,6 +488,9 @@
 
 	.exit-btn:hover {
 		opacity: 1;
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+		box-shadow: var(--shadow-md);
 		transform: scale(1.1);
 	}
 
@@ -530,21 +534,17 @@
 		left: 50%;
 		transform: translateX(-50%);
 		padding: 0.5rem 0.875rem;
-		background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 100%);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 12px;
-		color: white;
+		background: var(--color-error);
+		border: 1px solid transparent;
+		border-radius: var(--radius-lg);
+		color: #fff;
 		font-size: 0.75rem;
 		max-width: calc(100% - 2rem);
 		text-align: center;
 		cursor: pointer;
 		z-index: 50;
 		animation: slideUpShake 0.5s ease-out;
-		box-shadow:
-			0 4px 20px rgba(238, 90, 90, 0.4),
-			0 2px 4px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.3);
-		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-lg);
 	}
 
 	@keyframes slideUpShake {

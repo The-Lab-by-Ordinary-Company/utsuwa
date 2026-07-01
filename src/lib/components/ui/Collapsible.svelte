@@ -32,7 +32,7 @@
 	{disabled}
 	class="w-full {className}"
 >
-	<CollapsiblePrimitive.Trigger class="flex w-full outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-button">
+	<CollapsiblePrimitive.Trigger class="collapsible-trigger flex w-full outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
 		{@render trigger({ open })}
 	</CollapsiblePrimitive.Trigger>
 
@@ -42,6 +42,20 @@
 </CollapsiblePrimitive.Root>
 
 <style>
+	:global(.collapsible-trigger) {
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+
+	:global(.collapsible-trigger:hover:not(:disabled)) {
+		background: var(--bg-secondary);
+	}
+
+	:global(.collapsible-trigger:disabled) {
+		cursor: not-allowed;
+	}
+
 	@keyframes collapsible-down {
 		from {
 			height: 0;
