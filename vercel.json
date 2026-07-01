@@ -6,9 +6,9 @@
 			"destination": "/docs"
 		},
 		{
-			"source": "/:path+",
+			"source": "/((?!api/).+)",
 			"has": [{ "type": "host", "value": "docs.utsuwa.ai" }],
-			"destination": "/docs/:path+"
+			"destination": "/docs/$1"
 		},
 		{
 			"source": "/",
@@ -16,9 +16,9 @@
 			"destination": "/app"
 		},
 		{
-			"source": "/:path+",
+			"source": "/((?!api/).+)",
 			"has": [{ "type": "host", "value": "app.utsuwa.ai" }],
-			"destination": "/app/:path+"
+			"destination": "/app/$1"
 		}
 	],
 	"redirects": [
