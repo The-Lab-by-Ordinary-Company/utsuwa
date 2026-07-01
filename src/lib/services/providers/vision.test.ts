@@ -10,6 +10,12 @@ test('model heuristic catches vision models and rejects text-only ones', () => {
 	assert.equal(modelSupportsVision('moondream'), true);
 	assert.equal(modelSupportsVision('gpt-4o'), true);
 	assert.equal(modelSupportsVision('gemma3:4b'), true);
+	// Current Claude models are all vision-capable, incl. Haiku 4.x which the
+	// hints previously missed ("claude-4" is not a substring of "claude-haiku-4-5")
+	assert.equal(modelSupportsVision('claude-haiku-4-5-20251001'), true);
+	assert.equal(modelSupportsVision('claude-sonnet-4-6'), true);
+	assert.equal(modelSupportsVision('claude-opus-4-8'), true);
+	assert.equal(modelSupportsVision('claude-3-5-haiku-latest'), true);
 	assert.equal(modelSupportsVision('llama3.1:8b'), false);
 	assert.equal(modelSupportsVision('mistral'), false);
 	assert.equal(modelSupportsVision('gpt-3.5-turbo'), false);

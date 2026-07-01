@@ -31,6 +31,7 @@ const VISION_MODEL_HINTS = [
 	'claude-4',
 	'claude-opus',
 	'claude-sonnet',
+	'claude-haiku',
 	'gemini',
 	'grok-2-vision',
 	'grok-4',
