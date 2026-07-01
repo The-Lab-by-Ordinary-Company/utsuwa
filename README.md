@@ -244,7 +244,7 @@ pnpm tauri build  # Build desktop app installer
 - [x] VRM model loading and display with orbit controls
 - [x] 3D speech bubbles tracking model head position
 - [x] Multi-provider LLM support (7 providers)
-- [x] Multi-provider TTS support (2 providers)
+- [x] Multi-provider TTS support (3 providers)
 - [x] Audio-driven lip-sync
 - [x] VRMA-based animations (idle, talking, blinking)
 - [x] Companion system with multi-axis relationships
