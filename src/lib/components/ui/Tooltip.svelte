@@ -26,7 +26,7 @@
 		</TooltipPrimitive.Trigger>
 
 		<TooltipPrimitive.Portal>
-			<TooltipPrimitive.Content class="tooltip-content" {side} {sideOffset}>
+			<TooltipPrimitive.Content class="ui-tooltip-content" {side} {sideOffset}>
 				{content}
 				<TooltipPrimitive.Arrow class="fill-foreground" />
 			</TooltipPrimitive.Content>
@@ -35,7 +35,7 @@
 </TooltipPrimitive.Provider>
 
 <style>
-	:global(.tooltip-content) {
+	:global(.ui-tooltip-content) {
 		z-index: 50;
 		max-width: 20rem;
 		padding: 0.4rem 0.7rem;
@@ -49,7 +49,7 @@
 		animation: tooltip-in 0.16s var(--ease-brand);
 	}
 
-	:global(.tooltip-content[data-state='closed']) {
+	:global(.ui-tooltip-content[data-state='closed']) {
 		animation: tooltip-out 0.1s var(--ease-brand) forwards;
 	}
 
