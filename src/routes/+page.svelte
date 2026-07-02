@@ -148,7 +148,11 @@
 	<!-- Hero: centered text with a contained video below -->
 	<section class="hero">
 		<div class="hero-copy">
-			<img src="/brand-assets/logo.svg" alt="Utsuwa" class="hero-fade hero-logo" style="--wd: 0ms" />
+			<!-- Fade lives on the wrapper: the animation's fill would otherwise
+			     override the logo's own theme filter -->
+			<span class="hero-fade hero-logo-wrap" style="--wd: 0ms">
+				<img src="/brand-assets/logo.svg" alt="Utsuwa" class="hero-logo" />
+			</span>
 
 			<h1 class="hero-title text-balance">
 				{#each heroWords as word, i}<span class="hero-word" style="--wd: {120 + i * 50}ms"
@@ -407,11 +411,16 @@
 		text-align: center;
 	}
 
+	.hero-logo-wrap {
+		display: block;
+		margin: 0 auto 1.5rem;
+	}
+
 	.hero-logo {
 		display: block;
 		height: 1.75rem;
 		width: auto;
-		margin: 0 auto 1.5rem;
+		margin: 0 auto;
 		filter: brightness(0);
 		opacity: 0.9;
 	}
