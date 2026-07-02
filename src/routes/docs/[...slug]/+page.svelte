@@ -131,8 +131,8 @@
 	</div>
 
 	{#if toc.length}
-		<aside class="toc" aria-label="On this page">
-			<p class="toc-title">On this page</p>
+		<aside class="toc" aria-label="Table of contents">
+			<p class="toc-title">Table of contents</p>
 			<ul class="toc-list">
 				{#each toc as heading}
 					<li class:sub={heading.level === 3}>
@@ -219,43 +219,42 @@
 		top: 1.5rem;
 		width: 14rem;
 		flex-shrink: 0;
+		align-self: start;
 		max-height: calc(100vh - 6rem);
 		overflow-y: auto;
-		padding-top: 0.25rem;
 	}
 
 	.toc-title {
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
+		font-size: 0.8125rem;
+		font-weight: 600;
 		color: var(--text-secondary);
 		margin: 0 0 0.75rem;
-		padding-left: 0.85rem;
+		padding-left: 0.75rem;
 	}
 
 	.toc-list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		border-left: 1px solid var(--border-subtle);
-	}
-
-	.toc-list li.sub a {
-		padding-left: 1.75rem;
-		font-size: 0.78rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
 	}
 
 	.toc-list a {
 		display: block;
-		padding: 0.32rem 0.85rem;
-		margin-left: -1px;
-		border-left: 2px solid transparent;
-		font-size: 0.82rem;
+		padding: 0.4rem 0.75rem;
+		border-radius: var(--radius-md);
+		font-size: 0.8125rem;
 		line-height: 1.4;
 		color: var(--text-secondary);
 		text-decoration: none;
-		transition: color 0.15s ease, border-color 0.15s ease;
+		transition: color 0.15s ease, background 0.15s ease;
+	}
+
+	.toc-list li.sub a {
+		padding-left: 1.5rem;
+		font-size: 0.78rem;
 	}
 
 	.toc-list a:hover {
@@ -263,9 +262,9 @@
 	}
 
 	.toc-list a.active {
-		color: var(--accent);
-		border-left-color: var(--accent);
-		font-weight: 600;
+		background: var(--bg-tertiary);
+		color: var(--text-primary);
+		font-weight: 500;
 	}
 
 	@media (max-width: 1100px) {
