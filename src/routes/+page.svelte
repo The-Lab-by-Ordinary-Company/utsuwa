@@ -211,6 +211,12 @@
 
 			<div use:reveal={240} class="reveal hero-actions">
 				<a href={sectionUrl('app')} class="btn btn-primary btn-lg">Try it live</a>
+				<a
+					href={GITHUB_RELEASES}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn btn-secondary btn-lg">Download</a
+				>
 				<a href={sectionUrl('docs')} class="hero-textlink">Read the docs &rarr;</a>
 			</div>
 		</div>
