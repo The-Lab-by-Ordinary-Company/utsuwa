@@ -125,10 +125,11 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
 	class="board-overlay"
 	onclick={handleOverlayClick}
+	onkeydown={handleKeydown}
 	role="dialog"
 	aria-modal="true"
 	aria-label="Photoboard"
@@ -179,12 +180,13 @@
 </div>
 
 {#if selected}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="lightbox"
 		onclick={(e) => {
 			if (e.target === e.currentTarget) closeLightbox();
 		}}
+		onkeydown={handleKeydown}
 		role="dialog"
 		aria-modal="true"
 		aria-label="Photo"

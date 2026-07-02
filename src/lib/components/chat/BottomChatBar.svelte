@@ -88,8 +88,8 @@
 	}
 
 	let inputValue = $state('');
-	let textareaRef: HTMLTextAreaElement;
-	let fileInput: HTMLInputElement;
+	let textareaRef = $state<HTMLTextAreaElement | null>(null);
+	let fileInput = $state<HTMLInputElement | null>(null);
 	// Images queued to show her, each with a preview URL for the chip.
 	let pending = $state<{ image: PreparedImage; url: string }[]>([]);
 	// Drag-to-show: the whole window is a drop target; the bar morphs into one.
@@ -280,7 +280,18 @@
 </script>
 
 {#if sttError}
-	<div class="stt-error" onclick={() => sttStore.clearError()}>
+	<div
+		class="stt-error"
+		onclick={() => sttStore.clearError()}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				sttStore.clearError();
+			}
+		}}
+		role="button"
+		tabindex="0"
+	>
 		<Icon name="alert" size={16} />
 		<span>{sttError}</span>
 		<button type="button" class="dismiss-btn" aria-label="Dismiss">

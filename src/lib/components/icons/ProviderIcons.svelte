@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
 	// Provider icons - using simple-icons (https://github.com/simple-icons/simple-icons) where available
 	// Icons are rendered with viewBox="0 0 24 24" to match simple-icons standard
 	export const PROVIDER_ICONS: Record<string, { body: string; color?: string }> = {

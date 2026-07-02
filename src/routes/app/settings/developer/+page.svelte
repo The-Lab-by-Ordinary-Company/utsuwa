@@ -626,6 +626,7 @@
 		border-radius: var(--radius-full);
 		outline: none;
 		-webkit-appearance: none;
+		appearance: none;
 	}
 
 
@@ -745,10 +746,6 @@
 		.viewport {
 			min-height: 200px;
 			max-height: 240px;
-		}
-
-		.event-btn span {
-			display: none;
 		}
 
 		.event-btn {

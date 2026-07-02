@@ -516,7 +516,7 @@
 							<div class="service-header">
 								<Icon name="brain" size={14} />
 								<span>Chat (LLM)</span>
-								<button class="service-toggle" class:enabled={isLLMEnabled} onclick={toggleLLM}>
+								<button class="service-toggle" class:enabled={isLLMEnabled} onclick={toggleLLM} aria-label="Toggle chat (LLM)">
 									<span class="toggle-track">
 										<span class="toggle-thumb"></span>
 									</span>
@@ -591,7 +591,7 @@
 							<div class="service-header">
 								<Icon name="mic" size={14} />
 								<span>Speech (TTS)</span>
-								<button class="service-toggle" class:enabled={isTTSEnabled} onclick={toggleTTS}>
+								<button class="service-toggle" class:enabled={isTTSEnabled} onclick={toggleTTS} aria-label="Toggle speech (TTS)">
 									<span class="toggle-track">
 										<span class="toggle-thumb"></span>
 									</span>
@@ -758,7 +758,7 @@
 					</Tooltip>
 					<div class="sims-stat-bars">
 						<Tooltip content="How much she relies on and believes in you. Built through honesty and keeping promises.">
-							<div class="sims-stat" style="--bar-color: #4dd0ff; --bar-glow: rgba(77, 208, 255, 0.5)">
+							<div class="sims-stat" style="--bar-color: var(--stat-trust); --bar-glow: rgba(77, 208, 255, 0.5)">
 								<div class="sims-bar-track">
 									<div class="sims-bar-fill" style="height: {charState.trust}%">
 									</div>
@@ -770,7 +770,7 @@
 							</div>
 						</Tooltip>
 						<Tooltip content="Emotional closeness and vulnerability. Grows from meaningful conversations and shared experiences.">
-							<div class="sims-stat" style="--bar-color: #c084fc; --bar-glow: rgba(192, 132, 252, 0.5)">
+							<div class="sims-stat" style="--bar-color: var(--stat-intimacy); --bar-glow: rgba(192, 132, 252, 0.5)">
 								<div class="sims-bar-track">
 									<div class="sims-bar-fill" style="height: {charState.intimacy}%">
 									</div>
@@ -782,7 +782,7 @@
 							</div>
 						</Tooltip>
 						<Tooltip content="How at ease she feels around you. Increases with consistent, supportive presence.">
-							<div class="sims-stat" style="--bar-color: #4ade80; --bar-glow: rgba(74, 222, 128, 0.5)">
+							<div class="sims-stat" style="--bar-color: var(--stat-comfort); --bar-glow: rgba(74, 222, 128, 0.5)">
 								<div class="sims-bar-track">
 									<div class="sims-bar-fill" style="height: {charState.comfort}%">
 									</div>
@@ -794,7 +794,7 @@
 							</div>
 						</Tooltip>
 						<Tooltip content="How much she admires and values you. Earned through thoughtful actions and integrity.">
-							<div class="sims-stat" style="--bar-color: #60a5fa; --bar-glow: rgba(96, 165, 250, 0.5)">
+							<div class="sims-stat" style="--bar-color: var(--stat-respect); --bar-glow: rgba(96, 165, 250, 0.5)">
 								<div class="sims-bar-track">
 									<div class="sims-bar-fill" style="height: {charState.respect}%">
 									</div>
@@ -806,7 +806,7 @@
 							</div>
 						</Tooltip>
 						<Tooltip content="Her current energy level. Affects mood and responsiveness. Replenishes over time.">
-							<div class="sims-stat" style="--bar-color: #fbbf24; --bar-glow: rgba(251, 191, 36, 0.5)">
+							<div class="sims-stat" style="--bar-color: var(--stat-energy); --bar-glow: rgba(251, 191, 36, 0.5)">
 								<div class="sims-bar-track">
 									<div class="sims-bar-fill" style="height: {charState.energy}%">
 									</div>
@@ -833,7 +833,7 @@
 				<div class="stats-section companion-energy">
 					<span class="section-label">Energy</span>
 					<div class="sims-stat-bars single">
-						<div class="sims-stat" style="--bar-color: #fbbf24; --bar-glow: rgba(251, 191, 36, 0.5)">
+						<div class="sims-stat" style="--bar-color: var(--stat-energy); --bar-glow: rgba(251, 191, 36, 0.5)">
 							<div class="sims-bar-track tall">
 								<div class="sims-bar-fill" style="height: {charState.energy}%">
 								</div>
@@ -961,10 +961,15 @@
 
 	<!-- Upload Modal -->
 	{#if uploadModalOpen}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="upload-modal" onclick={() => uploadModalOpen = false}>
+		<div
+			class="upload-modal"
+			role="button"
+			tabindex="0"
+			onclick={() => uploadModalOpen = false}
+			onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); uploadModalOpen = false; } }}
+		>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="upload-content" onclick={(e) => e.stopPropagation()}>
+			<div class="upload-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 				<div class="upload-header">
 					<h3>Upload Custom Model</h3>
 					<button class="close-btn" onclick={() => uploadModalOpen = false}>
@@ -978,10 +983,15 @@
 
 	<!-- Mode Change Confirmation Modal -->
 	{#if modeConfirmOpen}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="confirm-modal" onclick={cancelModeChange}>
+		<div
+			class="confirm-modal"
+			role="button"
+			tabindex="0"
+			onclick={cancelModeChange}
+			onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cancelModeChange(); } }}
+		>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="confirm-content" onclick={(e) => e.stopPropagation()}>
+			<div class="confirm-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 				<div class="confirm-icon">
 					<Icon name="alert" size={32} />
 				</div>

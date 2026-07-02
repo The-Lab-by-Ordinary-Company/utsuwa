@@ -516,7 +516,13 @@
 			{/if}
 
 			{#if vrmStore.error}
-				<div class="error-toast" onclick={() => vrmStore.setError(null)}>
+				<div
+					class="error-toast"
+					role="button"
+					tabindex="0"
+					onclick={() => vrmStore.setError(null)}
+					onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vrmStore.setError(null); } }}
+				>
 					<span>{vrmStore.error}</span>
 					<button type="button" class="toast-dismiss" aria-label="Dismiss">✕</button>
 				</div>
@@ -549,7 +555,13 @@
 
 		<!-- Error toast for chat errors -->
 		{#if chatStore.error}
-			<div class="chat-error-toast" onclick={() => chatStore.setError(null)}>
+			<div
+				class="chat-error-toast"
+				role="button"
+				tabindex="0"
+				onclick={() => chatStore.setError(null)}
+				onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chatStore.setError(null); } }}
+			>
 				<span>{chatStore.error}</span>
 				<button type="button" class="toast-dismiss" aria-label="Dismiss">✕</button>
 			</div>

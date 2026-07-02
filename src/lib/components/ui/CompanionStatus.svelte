@@ -18,16 +18,17 @@
 
 	// Stats config with colors for the vertical bars
 	const datingStats = $derived([
-		{ key: 'affection', label: 'Love', icon: 'heart', value: affectionPercent, color: '#ff6b9d', glowColor: 'rgba(255, 107, 157, 0.5)' },
-		{ key: 'trust', label: 'Trust', icon: 'shield', value: charState.trust, color: '#4dd0ff', glowColor: 'rgba(77, 208, 255, 0.5)' },
-		{ key: 'intimacy', label: 'Intimacy', icon: 'sparkles', value: charState.intimacy, color: '#c084fc', glowColor: 'rgba(192, 132, 252, 0.5)' },
-		{ key: 'comfort', label: 'Comfort', icon: 'home', value: charState.comfort, color: '#4ade80', glowColor: 'rgba(74, 222, 128, 0.5)' },
-		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: '#fbbf24', glowColor: 'rgba(251, 191, 36, 0.5)' },
-		{ key: 'respect', label: 'Respect', icon: 'award', value: charState.respect, color: '#60a5fa', glowColor: 'rgba(96, 165, 250, 0.5)' }
+		{ key: 'affection', label: 'Love', icon: 'heart', value: affectionPercent, color: 'var(--stat-affection)', glowColor: 'rgba(255, 107, 157, 0.5)' },
+		{ key: 'trust', label: 'Trust', icon: 'shield', value: charState.trust, color: 'var(--stat-trust)', glowColor: 'rgba(77, 208, 255, 0.5)' },
+		{ key: 'intimacy', label: 'Intimacy', icon: 'sparkles', value: charState.intimacy, color: 'var(--stat-intimacy)', glowColor: 'rgba(192, 132, 252, 0.5)' },
+		{ key: 'comfort', label: 'Comfort', icon: 'home', value: charState.comfort, color: 'var(--stat-comfort)', glowColor: 'rgba(74, 222, 128, 0.5)' },
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)', glowColor: 'rgba(251, 191, 36, 0.5)' },
+		{ key: 'respect', label: 'Respect', icon: 'award', value: charState.respect, color: 'var(--stat-respect)', glowColor: 'rgba(96, 165, 250, 0.5)' }
 	]);
 
 	const companionStats = $derived([
-		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: '#4dd0ff', glowColor: 'rgba(77, 208, 255, 0.5)' },
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)', glowColor: 'rgba(77, 208, 255, 0.5)' },
+		// No dedicated stat token for chat count, so this keeps its own green
 		{ key: 'chats', label: 'Chats', icon: 'message-circle', value: Math.min(charState.totalInteractions, 100), color: '#4ade80', glowColor: 'rgba(74, 222, 128, 0.5)' }
 	]);
 </script>

@@ -76,10 +76,6 @@
 		background: var(--color-warning);
 	}
 
-	.progress-fill.variant-health {
-		/* Uses gradientColor prop for dynamic color */
-	}
-
 	.progress-fill.variant-tier {
 		background: var(--stat-affection);
 	}
