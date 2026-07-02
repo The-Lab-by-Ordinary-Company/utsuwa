@@ -71,11 +71,11 @@
 		justify-content: space-between;
 		height: 3.5rem;
 		padding: 0 1.5rem;
-		background: var(--docs-bg);
-		border-bottom: 1px solid var(--docs-border);
+		background: var(--bg-page);
+		border-bottom: 1px solid var(--border-subtle);
 		position: sticky;
 		top: 0;
-		z-index: 10;
+		z-index: 50;
 	}
 
 	.header-left {
@@ -183,7 +183,7 @@
 
 	@media (max-width: 768px) {
 		.docs-header {
-			position: relative;
+			position: sticky;
 			padding: 0 0.75rem;
 		}
 

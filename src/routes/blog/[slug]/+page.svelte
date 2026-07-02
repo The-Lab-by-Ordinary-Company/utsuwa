@@ -100,134 +100,120 @@
 </svelte:head>
 
 <div class="blog-post-layout">
-	<div class="blog-post-main">
-		<a href="/blog" class="btn btn-secondary back-link">
-			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-			<span>Back to Blog</span>
-		</a>
+	<a href="/blog" class="btn btn-secondary back-link">
+		<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+		<span>Back to Blog</span>
+	</a>
 
-		{#if data.metadata?.image}
-			<div class="blog-banner">
-				<img src={data.metadata.image} alt="" />
-			</div>
+	<header class="blog-post-header">
+		<div class="post-meta">
+			{#if data.metadata?.date}
+				<time class="post-date" datetime={String(data.metadata.date)}>{formatDate(data.metadata.date)}</time>
+			{/if}
+			{#if data.metadata?.tag}
+				<span class="post-tag">{data.metadata.tag}</span>
+			{/if}
+			<span class="post-author">Charles J. (CJ) Dyas</span>
+		</div>
+
+		{#if data.metadata?.title}
+			<h1 class="post-title">{data.metadata.title}</h1>
+		{/if}
+
+		{#if data.metadata?.description}
+			<p class="post-subhead">{data.metadata.description}</p>
+		{/if}
+	</header>
+
+	{#if data.metadata?.image}
+		<div class="blog-banner">
+			<img src={data.metadata.image} alt="" />
+		</div>
+	{/if}
+
+	<div class="blog-post-body" class:no-toc={!toc.length}>
+		{#if toc.length}
+			<aside class="toc" aria-label="Table of contents">
+				<p class="toc-title">Table of contents</p>
+				<ul class="toc-list">
+					{#each toc as heading}
+						<li class:sub={heading.level === 3}>
+							<a
+								href={`#${heading.id}`}
+								class:active={activeId === heading.id}
+								onclick={(e) => scrollToHeading(e, heading.id)}
+							>
+								{heading.text}
+							</a>
+						</li>
+					{/each}
+				</ul>
+			</aside>
 		{/if}
 
 		<article class="blog-post prose" bind:this={articleEl}>
-			<div class="blog-post-meta">
-				{#if data.metadata?.date}
-					<time class="blog-post-date" datetime={String(data.metadata.date)}
-						>{formatDate(data.metadata.date)}</time
-					>
-				{/if}
-				<span class="blog-post-author">Charles J. (CJ) Dyas</span>
-			</div>
 			<data.content />
 		</article>
 	</div>
-
-	{#if toc.length}
-		<aside class="toc" aria-label="On this page">
-			<p class="toc-title">On this page</p>
-			<ul class="toc-list">
-				{#each toc as heading}
-					<li class:sub={heading.level === 3}>
-						<a
-							href={`#${heading.id}`}
-							class:active={activeId === heading.id}
-							onclick={(e) => scrollToHeading(e, heading.id)}
-						>
-							{heading.text}
-						</a>
-					</li>
-				{/each}
-			</ul>
-		</aside>
-	{/if}
 </div>
 
 <style>
 	.blog-post-layout {
-		display: flex;
-		gap: 3rem;
-		justify-content: center;
-		align-items: flex-start;
-	}
-
-	.blog-post-main {
 		width: 100%;
-		max-width: 46rem;
-		min-width: 0;
-	}
-
-	/* On-page table of contents */
-	.toc {
-		position: sticky;
-		top: 1.5rem;
-		width: 14rem;
-		flex-shrink: 0;
-		max-height: calc(100vh - 4rem);
-		overflow-y: auto;
-		padding-top: 0.25rem;
-	}
-
-	.toc-title {
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--docs-text-muted);
-		margin: 0 0 0.75rem;
-		padding-left: 0.85rem;
-	}
-
-	.toc-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		border-left: 1px solid var(--docs-border);
-	}
-
-	.toc-list li.sub a {
-		padding-left: 1.75rem;
-		font-size: 0.78rem;
-	}
-
-	.toc-list a {
-		display: block;
-		padding: 0.32rem 0.85rem;
-		margin-left: -1px;
-		border-left: 2px solid transparent;
-		font-size: 0.82rem;
-		line-height: 1.4;
-		color: var(--docs-text-muted);
-		text-decoration: none;
-		transition: color 0.15s ease, border-color 0.15s ease;
-	}
-
-	.toc-list a:hover {
-		color: var(--docs-text);
-	}
-
-	.toc-list a.active {
-		color: var(--docs-accent);
-		border-left-color: var(--docs-accent);
-		font-weight: 600;
-	}
-
-	@media (max-width: 1100px) {
-		.toc {
-			display: none;
-		}
 	}
 
 	.back-link {
-		margin-bottom: 1.5rem;
+		margin-bottom: 2rem;
 	}
 
+	/* Centered header: meta line, title, subhead */
+	.blog-post-header {
+		text-align: center;
+		max-width: 46rem;
+		margin: 0 auto 3.5rem;
+	}
+
+	.post-meta {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+		margin: 0 0 1.5rem;
+	}
+
+	/* Middot between whichever meta items are present */
+	.post-meta > * + *::before {
+		content: '·';
+		margin-right: 0.5rem;
+		color: var(--text-tertiary);
+	}
+
+	.post-title {
+		font-size: clamp(2.25rem, 5vw, 3.25rem);
+		font-weight: 700;
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		color: var(--text-primary);
+		margin: 0 0 1.25rem;
+	}
+
+	.post-subhead {
+		max-width: 34rem;
+		margin: 0 auto;
+		font-size: 1.125rem;
+		line-height: 1.55;
+		color: var(--text-secondary);
+	}
+
+	/* Full-width hero */
 	.blog-banner {
 		border-radius: var(--radius-xl);
 		overflow: hidden;
-		margin-bottom: 2rem;
+		margin: 0 0 3.5rem;
 		box-shadow: var(--shadow-md);
 	}
 
@@ -238,29 +224,88 @@
 		object-fit: cover;
 	}
 
-	.blog-post-meta {
+	/* Body: table of contents on the left, reading column on the right */
+	.blog-post-body {
+		display: grid;
+		grid-template-columns: 14rem minmax(0, 1fr);
+		gap: 3rem;
+		align-items: start;
+	}
+
+	.blog-post-body.no-toc {
+		grid-template-columns: 1fr;
+	}
+
+	.blog-post {
+		max-width: 46rem;
+		margin: 0 auto;
+		min-width: 0;
+	}
+
+	/* Title now lives in the header, so drop the duplicate from the body */
+	.blog-post :global(h1:first-child) {
+		display: none;
+	}
+
+	/* Table of contents */
+	.toc {
+		position: sticky;
+		top: 1.5rem;
+		align-self: start;
+		max-height: calc(100vh - 3rem);
+		overflow-y: auto;
+	}
+
+	.toc-title {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+		margin: 0 0 0.75rem;
+		padding-left: 0.75rem;
+	}
+
+	.toc-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
+		flex-direction: column;
+		gap: 0.125rem;
 	}
 
-	.blog-post-date {
+	.toc-list a {
+		display: block;
+		padding: 0.4rem 0.75rem;
+		border-radius: var(--radius-md);
 		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--docs-accent);
+		line-height: 1.4;
+		color: var(--text-secondary);
+		text-decoration: none;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
 
-	.blog-post-meta .blog-post-date::after {
-		content: '\00b7';
-		margin-left: 0.5rem;
-		color: var(--docs-text-muted);
-		opacity: 0.6;
+	.toc-list li.sub a {
+		padding-left: 1.5rem;
+		font-size: 0.78rem;
 	}
 
-	.blog-post-author {
-		font-size: 0.8125rem;
+	.toc-list a:hover {
+		color: var(--text-primary);
+	}
+
+	.toc-list a.active {
+		background: var(--bg-tertiary);
+		color: var(--text-primary);
 		font-weight: 500;
-		color: var(--docs-text-muted);
+	}
+
+	@media (max-width: 1100px) {
+		.blog-post-body {
+			grid-template-columns: 1fr;
+		}
+
+		.toc {
+			display: none;
+		}
 	}
 </style>

@@ -5,8 +5,10 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const featuredPost = $derived(data.posts[0]);
-	const restPosts = $derived(data.posts.slice(1));
+	// Lead story, then two stacked next to it, then everything else in the grid.
+	const featured = $derived(data.posts[0]);
+	const sidePosts = $derived(data.posts.slice(1, 3));
+	const gridPosts = $derived(data.posts.slice(3));
 </script>
 
 <svelte:head>
@@ -24,44 +26,55 @@
 </svelte:head>
 
 <div class="blog-index">
-	<h1 class="blog-title">Blog</h1>
-	<p class="blog-subtitle">Development updates and behind-the-scenes notes.</p>
+	<header class="blog-header">
+		<h1>Blog</h1>
+		<p>Development updates and behind-the-scenes notes.</p>
+	</header>
 
-	{#if featuredPost}
-		<a href="/blog/{featuredPost.slug}" class="featured-card">
-			<div class="featured-image-wrap">
-				<img src={featuredPost.image} alt={featuredPost.title} class="featured-image" />
-			</div>
-			<div class="featured-overlay"></div>
-			<div class="featured-content">
-				<div class="card-meta">
-					<time datetime={featuredPost.date}>{formatDate(featuredPost.date)}</time>
-					<span class="card-author">Charles J. (CJ) Dyas</span>
+	{#if featured}
+		<section class="featured-row">
+			<a href="/blog/{featured.slug}" class="post lead">
+				<div class="media media-featured">
+					<img src={featured.image} alt={featured.title} />
 				</div>
-				<h2>{featuredPost.title}</h2>
-				<p>{featuredPost.description}</p>
-			</div>
-		</a>
+				<h2 class="lead-title">{featured.title}</h2>
+				<div class="meta">
+					<time datetime={featured.date}>{formatDate(featured.date)}</time>
+				</div>
+			</a>
+
+			{#if sidePosts.length > 0}
+				<div class="side-column">
+					{#each sidePosts as post}
+						<a href="/blog/{post.slug}" class="post side">
+							<div class="media media-side">
+								<img src={post.image} alt={post.title} loading="lazy" />
+							</div>
+							<h3 class="post-title">{post.title}</h3>
+							<div class="meta">
+								<time datetime={post.date}>{formatDate(post.date)}</time>
+							</div>
+						</a>
+					{/each}
+				</div>
+			{/if}
+		</section>
 	{/if}
 
-	{#if restPosts.length > 0}
-		<div class="blog-grid">
-			{#each restPosts as post}
-				<a href="/blog/{post.slug}" class="blog-card">
-					<div class="card-image">
+	{#if gridPosts.length > 0}
+		<section class="post-grid">
+			{#each gridPosts as post}
+				<a href="/blog/{post.slug}" class="post">
+					<div class="media media-grid">
 						<img src={post.image} alt={post.title} loading="lazy" />
 					</div>
-					<div class="card-body">
-						<div class="card-meta">
-							<time datetime={post.date}>{formatDate(post.date)}</time>
-							<span class="card-author">CJ Dyas</span>
-						</div>
-						<h2>{post.title}</h2>
-						<p>{post.description}</p>
+					<h3 class="post-title">{post.title}</h3>
+					<div class="meta">
+						<time datetime={post.date}>{formatDate(post.date)}</time>
 					</div>
 				</a>
 			{/each}
-		</div>
+		</section>
 	{/if}
 </div>
 
@@ -71,124 +84,73 @@
 		margin: 0 auto;
 	}
 
-	.blog-title {
-		font-size: 2.5rem;
+	/* Header */
+	.blog-header {
+		margin-bottom: 3.5rem;
+	}
+
+	.blog-header h1 {
+		font-size: clamp(2.25rem, 5vw, 3rem);
 		font-weight: 600;
-		margin: 0 0 0.5rem 0;
 		letter-spacing: -0.03em;
-		font-family: var(--font-sans);
-		color: var(--docs-text);
+		color: var(--text-primary);
+		margin: 0;
 	}
 
-	.blog-subtitle {
-		font-size: 1rem;
-		color: var(--docs-text-muted);
-		margin: 0 0 2.5rem 0;
+	.blog-header p {
+		font-size: 1.0625rem;
+		color: var(--text-secondary);
+		margin: 0.75rem 0 0;
 	}
 
-	/* Featured hero card */
-	.featured-card {
-		position: relative;
+	/* Shared link + media (cardless: rounded image, text beneath) */
+	.post {
 		display: block;
-		height: 480px;
-		border-radius: var(--radius-xl);
-		overflow: hidden;
 		text-decoration: none;
-		margin-bottom: 2rem;
-		background: var(--bg-tertiary);
-		transition: box-shadow 0.3s ease, transform 0.3s ease;
-		box-shadow: var(--shadow-sm);
+		color: inherit;
 	}
 
-	.featured-card:hover {
-		transform: translateY(-4px);
-		box-shadow: var(--shadow-lg);
+	.media {
+		position: relative;
+		overflow: hidden;
+		border-radius: var(--radius-md);
+		background: var(--bg-secondary);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 8%, transparent);
 	}
 
-	.featured-image-wrap {
-		position: absolute;
-		inset: 0;
-	}
-
-	.featured-image {
+	.media img {
+		display: block;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 		transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.featured-card:hover .featured-image {
-		transform: scale(1.04);
+	.post:hover .media img {
+		transform: scale(1.03);
 	}
 
-	.featured-overlay {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			to top,
-			rgba(0, 0, 0, 0.75) 0%,
-			rgba(0, 0, 0, 0.3) 45%,
-			transparent 100%
-		);
-		z-index: 1;
+	.media-featured {
+		aspect-ratio: 16 / 9;
+		border-radius: var(--radius-lg);
 	}
 
-	.featured-content {
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		padding: 2.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		z-index: 3;
+	.media-side {
+		aspect-ratio: 3 / 2;
 	}
 
-	.card-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+	.media-grid {
+		aspect-ratio: 4 / 3;
 	}
 
-	.card-meta time::after {
-		content: '\00b7';
-		margin-left: 0.5rem;
-		opacity: 0.4;
-	}
-
-	.featured-content .card-author {
-		font-size: 0.8125rem;
+	/* Titles */
+	.lead-title,
+	.post-title {
+		color: var(--text-primary);
 		font-weight: 600;
-		color: rgba(255, 255, 255, 0.6);
-	}
-
-	.card-body .card-author {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--docs-text-muted);
-	}
-
-	.featured-content time {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--docs-accent-light);
-	}
-
-	.featured-content h2 {
-		font-size: 1.75rem;
-		font-weight: 700;
-		color: #fff;
+		letter-spacing: -0.02em;
 		margin: 0;
-		line-height: 1.3;
-	}
-
-	.featured-content p {
-		font-size: 0.9375rem;
-		color: rgba(255, 255, 255, 0.75);
-		line-height: 1.6;
-		margin: 0;
-		max-width: 640px;
+		transition: color 0.15s ease;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
@@ -196,111 +158,81 @@
 		overflow: hidden;
 	}
 
-	/* Grid for remaining posts */
-	.blog-grid {
+	.post:hover .lead-title,
+	.post:hover .post-title {
+		color: var(--accent);
+	}
+
+	.lead-title {
+		font-size: clamp(1.5rem, 3vw, 2rem);
+		line-height: 1.15;
+		margin-top: 1.25rem;
+	}
+
+	.post-title {
+		font-size: 1.1875rem;
+		line-height: 1.3;
+		margin-top: 1rem;
+	}
+
+	/* Meta (date only; no category field on posts) */
+	.meta {
+		margin-top: 0.625rem;
+		font-size: 0.875rem;
+		color: var(--text-secondary);
+	}
+
+	/* Featured row: lead ~2/3, two stacked ~1/3 */
+	.featured-row {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 1.5rem;
+		grid-template-columns: 2fr 1fr;
+		gap: 2.5rem;
+		margin-bottom: 4rem;
 	}
 
-	.blog-card {
+	.side-column {
 		display: flex;
 		flex-direction: column;
-		text-decoration: none;
-		border-radius: var(--radius-xl);
-		overflow: hidden;
-		background: var(--bg-tertiary);
-		box-shadow: var(--shadow-sm);
-		transition: box-shadow 0.3s ease, transform 0.3s ease;
-		position: relative;
+		gap: 2rem;
 	}
 
-	.blog-card:hover {
-		transform: translateY(-4px);
-		box-shadow: var(--shadow-lg);
+	/* Remaining posts */
+	.post-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		column-gap: 2rem;
+		row-gap: 3rem;
 	}
 
-	.card-image {
-		position: relative;
-		aspect-ratio: 16 / 9;
-		overflow: hidden;
-		background: var(--docs-code-bg);
-		margin: 0.5rem 0.5rem 0;
-		border-radius: 0.875rem;
-	}
-
-	.card-image img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		border-radius: 0.875rem;
-		transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	.blog-card:hover .card-image img {
-		transform: scale(1.05);
-	}
-
-	.card-body {
-		padding: 1rem 1.25rem 1.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
-		flex: 1;
-		position: relative;
-		z-index: 2;
-	}
-
-	.card-body time {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--docs-accent);
-	}
-
-	.card-body h2 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: var(--docs-text);
-		margin: 0;
-		transition: color 0.15s ease;
-		line-height: 1.4;
-	}
-
-	.blog-card:hover .card-body h2 {
-		color: var(--docs-accent);
-	}
-
-	.card-body p {
-		font-size: 0.8125rem;
-		color: var(--docs-text-muted);
-		line-height: 1.6;
-		margin: 0;
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
-	@media (max-width: 640px) {
-		.blog-title {
-			font-size: 2rem;
-		}
-
-		.featured-card {
-			height: 360px;
-		}
-
-		.featured-content {
-			padding: 1.5rem;
-		}
-
-		.featured-content h2 {
-			font-size: 1.375rem;
-		}
-
-		.blog-grid {
+	@media (max-width: 900px) {
+		.featured-row {
 			grid-template-columns: 1fr;
+			gap: 3rem;
+		}
+
+		.side-column {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 2rem;
+		}
+
+		.post-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.blog-header {
+			margin-bottom: 2.5rem;
+		}
+
+		.side-column {
+			grid-template-columns: 1fr;
+		}
+
+		.post-grid {
+			grid-template-columns: 1fr;
+			row-gap: 2.5rem;
 		}
 	}
 </style>

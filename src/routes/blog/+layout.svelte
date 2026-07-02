@@ -2,17 +2,59 @@
 	import { setupThemeWatcher } from '$lib/config/docs-theme';
 	import { cycleTheme, getIconName, getLabel } from '$lib/config/docs-theme-toggle.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { formatDate } from '$lib/utils/format-date';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { GITHUB_REPO } from '$lib/config/site';
 	import { sectionUrl, isSection } from '$lib/config/links';
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
 
-	let { children } = $props();
+	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 	let blogEl = $state<HTMLDivElement | null>(null);
 
 	const currentPath = $derived(page.url.pathname);
 	const themeIcon = $derived(getIconName());
 	const themeLabel = $derived(getLabel());
+
+	// Recent-posts dropdown on the Blog nav item.
+	let recentOpen = $state(false);
+	let blogItemEl = $state<HTMLDivElement | null>(null);
+	let recentBtnEl = $state<HTMLButtonElement | null>(null);
+
+	function onFocusOut(e: FocusEvent) {
+		const next = e.relatedTarget as Node | null;
+		if (!blogItemEl) return;
+		if (!next || !blogItemEl.contains(next)) recentOpen = false;
+	}
+
+	// Don't leave the panel hanging open after navigating to a post.
+	$effect(() => {
+		void currentPath;
+		recentOpen = false;
+	});
+
+	// Dismiss on outside click or Escape while open.
+	$effect(() => {
+		if (!recentOpen) return;
+
+		function onPointerDown(e: PointerEvent) {
+			if (blogItemEl && !blogItemEl.contains(e.target as Node)) recentOpen = false;
+		}
+		function onKeydown(e: KeyboardEvent) {
+			if (e.key === 'Escape') {
+				recentOpen = false;
+				recentBtnEl?.focus();
+			}
+		}
+
+		document.addEventListener('pointerdown', onPointerDown);
+		document.addEventListener('keydown', onKeydown);
+		return () => {
+			document.removeEventListener('pointerdown', onPointerDown);
+			document.removeEventListener('keydown', onKeydown);
+		};
+	});
 
 	// Sync with the shared colorMode/.dark toggle (same as the docs).
 	$effect(() => setupThemeWatcher(() => blogEl, browser));
@@ -27,7 +69,38 @@
 
 		<div class="nav-links">
 			<a href={sectionUrl('docs')} class="nav-link" class:active={isSection('docs')}>Docs</a>
-			<a href="/blog" class="nav-link" class:active={currentPath.startsWith('/blog')}>Blog</a>
+
+			<div class="nav-item" bind:this={blogItemEl} onfocusout={onFocusOut}>
+				<a href="/blog" class="nav-link" class:active={currentPath.startsWith('/blog')}>Blog</a>
+				<button
+					type="button"
+					class="recent-toggle"
+					class:open={recentOpen}
+					bind:this={recentBtnEl}
+					aria-haspopup="true"
+					aria-expanded={recentOpen}
+					aria-controls="blog-recent-menu"
+					aria-label="Recent posts"
+					onclick={() => (recentOpen = !recentOpen)}
+				>
+					<Icon name="chevron-down" size={12} />
+				</button>
+
+				{#if recentOpen && data.recentPosts?.length}
+					<div class="recent-panel" id="blog-recent-menu">
+						{#each data.recentPosts as post (post.slug)}
+							<a href="/blog/{post.slug}" class="recent-row">
+								<img class="recent-thumb" src={post.image} alt="" loading="lazy" />
+								<span class="recent-text">
+									<span class="recent-post-title">{post.title}</span>
+									<time class="recent-post-date" datetime={post.date}>{formatDate(post.date)}</time>
+								</span>
+							</a>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
 			<a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" class="nav-link">GitHub</a>
 		</div>
 
@@ -90,12 +163,17 @@
 
 	/* Nav */
 	.blog-nav {
+		position: sticky;
+		top: 0;
+		z-index: 50;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		max-width: 80rem;
 		margin: 0 auto;
 		padding: 1.25rem 1.5rem;
+		background: var(--bg-page);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.nav-logo-link {
@@ -130,6 +208,100 @@
 
 	.nav-link.active {
 		color: var(--docs-accent);
+	}
+
+	/* Blog nav item with recent-posts dropdown */
+	.nav-item {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.125rem;
+	}
+
+	.recent-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.125rem;
+		border: none;
+		background: transparent;
+		color: var(--docs-text-muted);
+		cursor: pointer;
+		border-radius: 0.25rem;
+		line-height: 0;
+		transition: color 0.15s ease, transform 0.2s ease;
+	}
+
+	.recent-toggle:hover {
+		color: var(--docs-text);
+	}
+
+	.recent-toggle.open {
+		color: var(--docs-text);
+		transform: rotate(180deg);
+	}
+
+	.recent-panel {
+		position: absolute;
+		top: calc(100% + 0.75rem);
+		left: 0;
+		z-index: 60;
+		width: 20rem;
+		max-width: calc(100vw - 2rem);
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		padding: 0.375rem;
+		background: var(--bg-primary);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.recent-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.5rem;
+		border-radius: var(--radius-md);
+		text-decoration: none;
+		transition: background 0.15s ease;
+	}
+
+	.recent-row:hover {
+		background: var(--bg-secondary);
+	}
+
+	.recent-thumb {
+		width: 3rem;
+		height: 3rem;
+		flex-shrink: 0;
+		object-fit: cover;
+		border-radius: var(--radius-md);
+		background: var(--bg-tertiary);
+	}
+
+	.recent-text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		min-width: 0;
+	}
+
+	.recent-post-title {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--text-primary);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.recent-post-date {
+		font-size: 0.75rem;
+		color: var(--text-secondary);
 	}
 
 	.nav-right {
