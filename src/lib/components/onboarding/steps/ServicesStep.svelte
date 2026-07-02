@@ -450,11 +450,11 @@
 	</div>
 
 	<div class="ob-actions ob-actions--split">
-		<button class="ob-btn ob-btn-ghost" onclick={onBack}>
+		<button class="btn btn-secondary" onclick={onBack}>
 			<Icon name="chevron-left" size={16} />
 			Back
 		</button>
-		<button class="ob-btn ob-btn-primary" onclick={handleNext} disabled={!isLLMConfigured}>
+		<button class="btn btn-primary" onclick={handleNext} disabled={!isLLMConfigured}>
 			Next
 			<Icon name="chevron-right" size={16} />
 		</button>

@@ -28,7 +28,7 @@
 		<p class="ob-subtitle">Your companion is ready — say hello whenever you like.</p>
 	</div>
 
-	<button class="ob-btn ob-btn-primary ob-btn-lg ob-btn-block" onclick={onComplete}>
+	<button class="btn btn-primary btn-lg btn-block" onclick={onComplete}>
 		Start chatting
 		<Icon name="arrow-right" size={16} />
 	</button>

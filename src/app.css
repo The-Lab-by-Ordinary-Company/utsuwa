@@ -488,3 +488,122 @@ h1, h2, h3, h4, h5, h6 {
 		transform: translateY(0);
 	}
 }
+
+/* Buttons: the one canonical button vocabulary, used across the app and the site.
+   Compose a base .btn with a variant (.btn-primary / -secondary / -ghost / -danger /
+   -on-card / -on-media) and optional size (.btn-sm / -lg / -block). */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.6rem 1.25rem;
+	border: 1px solid transparent;
+	border-radius: var(--radius-full);
+	font-family: inherit;
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1;
+	cursor: pointer;
+	outline: none;
+	text-decoration: none;
+	white-space: nowrap;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease,
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		transform 0.1s ease;
+}
+
+.btn:focus-visible {
+	box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.btn:active:not(:disabled) {
+	transform: scale(0.97);
+}
+
+.btn-sm {
+	padding: 0.4rem 0.85rem;
+	font-size: 0.8rem;
+}
+
+.btn-lg {
+	padding: 0.8rem 1.75rem;
+	font-size: 1rem;
+}
+
+.btn-block {
+	width: 100%;
+}
+
+/* Primary: solid accent */
+.btn-primary {
+	background: var(--accent);
+	color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+	background: var(--accent-hover);
+	box-shadow: var(--shadow-glow);
+}
+
+/* Secondary: gray fill, no stroke */
+.btn-secondary {
+	background: var(--bg-tertiary);
+	color: var(--text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+}
+
+/* Ghost: transparent, fills gray on hover */
+.btn-ghost {
+	background: transparent;
+	color: var(--text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+	background: var(--bg-tertiary);
+	color: var(--text-primary);
+}
+
+/* Danger: solid error */
+.btn-danger {
+	background: var(--color-error);
+	color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+	filter: brightness(0.94);
+}
+
+/* On-card: neutral surface pill on a filled gray card (e.g. blog cards) */
+.btn-on-card {
+	background: var(--bg-primary);
+	color: var(--text-primary);
+}
+
+.btn-on-card:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--bg-primary), var(--text-primary) 6%);
+}
+
+/* On-media: translucent, sits over hero video / imagery */
+.btn-on-media {
+	background: rgba(255, 255, 255, 0.14);
+	color: #fff;
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+}
+
+.btn-on-media:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.24);
+}

@@ -260,7 +260,7 @@
 				</button>
 				<a
 					href={sectionUrl('app')}
-					class="btn-primary text-xs font-semibold px-4 py-2 rounded-full"
+					class="btn btn-primary text-xs font-semibold px-4 py-2 rounded-full"
 				>
 					Try Live
 				</a>
@@ -288,20 +288,20 @@
 
 			<!-- CTA buttons -->
 			<div use:reveal={240} class="reveal flex flex-wrap items-center justify-center gap-3">
-				<a href={sectionUrl('app')} class="btn-primary text-sm font-bold px-6 py-3 rounded-full">
+				<a href={sectionUrl('app')} class="btn btn-primary text-sm font-bold px-6 py-3 rounded-full">
 					Try it live
 				</a>
 				<a
 					href={GITHUB_RELEASES}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="btn-on-media text-sm font-bold px-6 py-3 rounded-full"
+					class="btn btn-on-media text-sm font-bold px-6 py-3 rounded-full"
 				>
 					Download
 				</a>
 				<a
 					href={sectionUrl('docs')}
-					class="btn-on-media text-sm font-medium px-6 py-3 rounded-full"
+					class="btn btn-on-media text-sm font-medium px-6 py-3 rounded-full"
 				>
 					Docs
 				</a>
@@ -403,7 +403,7 @@
 					>
 						Guides, deep dives, and release notes from the project.
 					</p>
-					<a use:reveal={120} href="/blog" class="reveal channel-pill mt-8">
+					<a use:reveal={120} href="/blog" class="reveal btn btn-secondary mt-8">
 						View all posts
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -430,7 +430,7 @@
 							<div class="channel-body">
 								<time datetime={post.date} class="channel-date">{formatDate(post.date)}</time>
 								<h3 class="channel-title">{post.title}</h3>
-								<span class="channel-cta">Read article →</span>
+								<span class="channel-cta btn btn-on-card btn-block">Read article →</span>
 							</div>
 						</a>
 					{/each}
@@ -483,14 +483,14 @@
 				Try it right in your browser, or download the desktop app. Free and open source.
 			</p>
 			<div use:reveal={160} class="reveal flex flex-wrap items-center justify-center gap-3">
-				<a href={sectionUrl('app')} class="btn-primary text-sm font-bold px-6 py-3 rounded-full">
+				<a href={sectionUrl('app')} class="btn btn-primary text-sm font-bold px-6 py-3 rounded-full">
 					Try it live
 				</a>
 				<a
 					href={GITHUB_RELEASES}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="btn-soft text-sm font-bold px-6 py-3 rounded-full"
+					class="btn btn-secondary text-sm font-bold px-6 py-3 rounded-full"
 				>
 					Download
 				</a>
@@ -877,77 +877,6 @@
 		transform: none;
 	}
 
-	/* Primary CTA — solid accent pill */
-	.btn-primary {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		color: #fff;
-		background: var(--accent);
-		border: 1px solid transparent;
-		box-shadow: var(--shadow-sm);
-		transition:
-			background 0.2s ease,
-			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			box-shadow 0.2s ease;
-	}
-
-	.btn-primary:hover {
-		background: var(--accent-hover);
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
-	}
-
-	.btn-primary:active {
-		transform: translateY(0) scale(0.98);
-	}
-
-	/* Ghost CTA over the hero video (flat, translucent white) */
-	.btn-on-media {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		color: #fff;
-		background: rgba(255, 255, 255, 0.08);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		border: 1px solid rgba(255, 255, 255, 0.4);
-		transition:
-			background 0.2s ease,
-			border-color 0.2s ease,
-			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	.btn-on-media:hover {
-		background: rgba(255, 255, 255, 0.16);
-		border-color: rgba(255, 255, 255, 0.6);
-		transform: translateY(-1px);
-	}
-
-	.btn-on-media:active {
-		transform: translateY(0) scale(0.98);
-	}
-
-	/* Soft secondary CTA on light sections */
-	.btn-soft {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--text-primary);
-		background: var(--bg-tertiary);
-		border: 1px solid transparent;
-		transition: background 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	.btn-soft:hover {
-		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
-		transform: translateY(-1px);
-	}
-
-	.btn-soft:active {
-		transform: translateY(0) scale(0.98);
-	}
-
 	/* FAQ — cardless accordion */
 	.faq-item {
 		border-top: 1px solid var(--border-subtle);
@@ -1001,25 +930,6 @@
 	}
 
 	/* Blog cards (flat) */
-	.channel-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.6rem 1.1rem;
-		border-radius: var(--radius-full);
-		background: var(--bg-tertiary);
-		border: none;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		text-decoration: none;
-		transition: background 0.15s ease;
-	}
-
-	.channel-pill:hover {
-		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
-	}
-
 	.channel-card {
 		display: flex;
 		flex-direction: column;
@@ -1080,22 +990,7 @@
 	}
 
 	.channel-cta {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.4rem;
 		margin-top: auto;
-		padding: 0.7rem 1rem;
-		border-radius: var(--radius-full);
-		background: var(--bg-primary);
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		transition: background 0.15s ease;
-	}
-
-	.channel-card:hover .channel-cta {
-		background: color-mix(in srgb, var(--bg-primary), var(--text-primary) 6%);
 	}
 
 	/* Dark mode only needs asset treatments — the surfaces, text, borders and

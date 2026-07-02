@@ -120,7 +120,7 @@
 
 		<article class="docs-content prose" bind:this={articleEl}>
 			<div class="page-toolbar">
-				<button type="button" class="copy-page-btn" onclick={copyPage} title="Copy page content">
+				<button type="button" class="btn btn-secondary" onclick={copyPage} title="Copy page content">
 					<Icon name={copied ? 'check' : 'copy'} size={14} />
 					<span>{copied ? 'Copied' : 'Copy page'}</span>
 				</button>
@@ -211,30 +211,6 @@
 		display: flex;
 		justify-content: flex-end;
 		margin-bottom: 0.5rem;
-	}
-
-	.copy-page-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.45rem 0.85rem;
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--text-secondary);
-		background: var(--bg-tertiary);
-		border: none;
-		border-radius: var(--radius-full);
-		cursor: pointer;
-		transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
-	}
-
-	.copy-page-btn:hover {
-		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
-		color: var(--text-primary);
-	}
-
-	.copy-page-btn:active {
-		transform: scale(0.98);
 	}
 
 	/* On-page table of contents */

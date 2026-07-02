@@ -56,11 +56,11 @@
 				<Icon name={iconName} size={18} />
 			</button>
 		{/if}
-		<a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" class="download-btn">
+		<a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm download-btn">
 			<Icon name="download" size={14} />
 			Download
 		</a>
-		<a href={sectionUrl('app')} class="try-live-btn">Try Live</a>
+		<a href={sectionUrl('app')} class="btn btn-primary btn-sm try-live-btn">Try Live</a>
 	</div>
 </header>
 
@@ -159,51 +159,6 @@
 		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
-	.download-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.875rem;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		background: var(--bg-tertiary);
-		border: none;
-		border-radius: 0.5rem;
-		text-decoration: none;
-		transition: color 0.15s ease, background 0.15s ease;
-	}
-
-	.download-btn:hover {
-		color: var(--text-primary);
-		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
-	}
-
-	.try-live-btn {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.375rem 0.875rem;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: #fff;
-		background: var(--accent);
-		border: 1px solid transparent;
-		border-radius: 0.5rem;
-		text-decoration: none;
-		transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-		box-shadow: var(--shadow-sm);
-	}
-
-	.try-live-btn:hover {
-		background: var(--accent-hover);
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
-	}
-
-	.try-live-btn:active {
-		transform: translateY(0);
-	}
-
 	.hamburger {
 		display: none;
 		align-items: center;
@@ -256,8 +211,6 @@
 
 		.download-btn,
 		.try-live-btn {
-			padding: 0.4rem 0.75rem;
-			font-size: 0.6875rem;
 			min-height: 2.25rem;
 		}
 

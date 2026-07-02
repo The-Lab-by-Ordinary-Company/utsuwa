@@ -53,15 +53,15 @@
 
 		{#if status === 'available'}
 			<div class="banner-actions">
-				<button class="btn ghost" onclick={() => updaterStore.dismiss()}>Later</button>
-				<button class="btn primary" onclick={() => updaterStore.install()}>
+				<button class="btn btn-ghost" onclick={() => updaterStore.dismiss()}>Later</button>
+				<button class="btn btn-primary" onclick={() => updaterStore.install()}>
 					<span>Install &amp; Restart</span>
 				</button>
 			</div>
 		{:else if status === 'error'}
 			<div class="banner-actions">
-				<button class="btn ghost" onclick={() => updaterStore.dismiss()}>Dismiss</button>
-				<button class="btn primary" onclick={() => updaterStore.install()}>
+				<button class="btn btn-ghost" onclick={() => updaterStore.dismiss()}>Dismiss</button>
+				<button class="btn btn-primary" onclick={() => updaterStore.install()}>
 					<span>Retry</span>
 				</button>
 			</div>
@@ -156,38 +156,6 @@
 		align-items: center;
 		gap: 0.5rem;
 		flex-shrink: 0;
-	}
-
-	.btn {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		border-radius: var(--radius-full);
-		padding: 0.5rem 0.9rem;
-		cursor: pointer;
-		transition: background 0.15s ease-out, color 0.15s ease-out, box-shadow 0.15s ease-out, transform 0.15s ease-out;
-		white-space: nowrap;
-	}
-
-	.btn.ghost {
-		background: transparent;
-		color: var(--text-secondary);
-	}
-
-	.btn.ghost:hover {
-		color: var(--text-primary);
-		background: var(--bg-secondary);
-	}
-
-	.btn.primary {
-		color: #fff;
-		border: none;
-		background: var(--accent);
-	}
-
-	.btn.primary:hover {
-		background: var(--accent-hover);
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-glow);
 	}
 
 	@media (max-width: 520px) {

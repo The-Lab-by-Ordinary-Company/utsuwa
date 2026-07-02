@@ -43,7 +43,7 @@
 
 	<p class="ob-subtitle">A few gentle steps to bring your companion to life.</p>
 
-	<button class="ob-btn ob-btn-primary ob-btn-lg ob-btn-block" onclick={onNext}>
+	<button class="btn btn-primary btn-lg btn-block" onclick={onNext}>
 		Get started
 	</button>
 </div>

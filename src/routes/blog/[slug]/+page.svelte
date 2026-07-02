@@ -101,7 +101,7 @@
 
 <div class="blog-post-layout">
 	<div class="blog-post-main">
-		<a href="/blog" class="back-link">
+		<a href="/blog" class="btn btn-secondary back-link">
 			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
 			<span>Back to Blog</span>
 		</a>
@@ -221,27 +221,7 @@
 	}
 
 	.back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.85rem;
-		font-weight: 500;
-		color: var(--text-secondary);
-		text-decoration: none;
-		padding: 0.5rem 0.9rem;
-		border-radius: var(--radius-full);
-		background: var(--bg-tertiary);
-		transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 		margin-bottom: 1.5rem;
-	}
-
-	.back-link:hover {
-		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
-		color: var(--text-primary);
-	}
-
-	.back-link:active {
-		transform: scale(0.98);
 	}
 
 	.blog-banner {

@@ -41,7 +41,7 @@
 			>
 				<Icon name={themeIcon} size={16} />
 			</button>
-			<a href={sectionUrl('app')} class="nav-cta">Try Live</a>
+			<a href={sectionUrl('app')} class="btn btn-primary btn-sm">Try Live</a>
 		</div>
 	</nav>
 
@@ -159,23 +159,6 @@
 
 	.nav-theme-btn:active {
 		transform: scale(0.96);
-	}
-
-	.nav-cta {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: #fff;
-		text-decoration: none;
-		padding: 0.5rem 1rem;
-		border-radius: 9999px;
-		background: var(--docs-accent);
-		box-shadow: var(--docs-btn-shadow);
-		transition: background 0.2s ease, box-shadow 0.2s ease;
-	}
-
-	.nav-cta:hover {
-		background: var(--docs-accent-hover);
-		box-shadow: var(--docs-btn-shadow-hover);
 	}
 
 	/* Main content */
