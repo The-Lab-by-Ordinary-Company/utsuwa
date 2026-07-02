@@ -5,7 +5,11 @@
 	import { SITE_URL, GITHUB_REPO, GITHUB_RELEASES } from '$lib/config/site';
 	import { sectionUrl } from '$lib/config/links';
 
-	const REPO = 'The-Lab-by-Ordinary-Company/utsuwa';
+	let { data } = $props();
+
+	// Release asset URLs resolved at build time (see +page.ts). Falls back to the
+	// releases page below if the API was unavailable during the build.
+	const assets = $derived(data.assets ?? {});
 
 	// Best-guess the visitor's OS so the primary button points at their build.
 	let os = $state<'macOS' | 'Windows' | 'Linux'>('macOS');
@@ -14,32 +18,6 @@
 		if (/Windows/i.test(ua)) os = 'Windows';
 		else if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = 'Linux';
 		else os = 'macOS';
-	});
-
-	// Resolve the latest release's real asset URLs so the buttons download the
-	// actual files (GitHub serves them as attachments). Falls back to the
-	// releases page if the API is unavailable.
-	let assets = $state<Record<string, string>>({});
-	$effect(() => {
-		let cancelled = false;
-		fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
-			.then((r) => (r.ok ? r.json() : null))
-			.then((rel) => {
-				if (cancelled || !rel?.assets) return;
-				const url = (re: RegExp) =>
-					rel.assets.find(
-						(a: { name: string }) => re.test(a.name) && !a.name.endsWith('.sig')
-					)?.browser_download_url ?? '';
-				assets = {
-					macOS: url(/\.dmg$/i),
-					Windows: url(/\.exe$/i),
-					Linux: url(/\.AppImage$/i)
-				};
-			})
-			.catch(() => {});
-		return () => {
-			cancelled = true;
-		};
 	});
 
 	const downloadFor = (key: string) => assets[key] || GITHUB_RELEASES;
@@ -73,7 +51,9 @@
 	/>
 	<meta property="og:url" content={`${SITE_URL}/download`} />
 	<meta property="og:site_name" content="Utsuwa" />
+	<meta property="og:image" content={`${SITE_URL}/brand-assets/og-image.png`} />
 	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:image" content={`${SITE_URL}/brand-assets/og-image.png`} />
 	{@html `<script type="application/ld+json">${JSON.stringify({
 		'@context': 'https://schema.org',
 		'@type': 'SoftwareApplication',
@@ -109,13 +89,13 @@
 		<div class="hero-shot">
 			<img
 				class="shot shot--light"
-				src="/marketing/companion-light.png"
+				src="/marketing/companion-light.webp"
 				alt="The Utsuwa desktop app with a 3D VRM companion"
 				loading="eager"
 			/>
 			<img
 				class="shot shot--dark"
-				src="/marketing/companion-dark.png"
+				src="/marketing/companion-dark.webp"
 				alt="The Utsuwa desktop app with a 3D VRM companion"
 				loading="eager"
 			/>

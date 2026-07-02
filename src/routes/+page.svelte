@@ -271,13 +271,13 @@
 						<div class="feature-media">
 							<img
 								class="feature-img feature-img--light"
-								src={`/marketing/${f.shot}-light.png`}
+								src={`/marketing/${f.shot}-light.webp`}
 								alt={f.alt}
 								loading="lazy"
 							/>
 							<img
 								class="feature-img feature-img--dark"
-								src={`/marketing/${f.shot}-dark.png`}
+								src={`/marketing/${f.shot}-dark.webp`}
 								alt={f.alt}
 								loading="lazy"
 							/>
