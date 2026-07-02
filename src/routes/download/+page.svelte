@@ -91,15 +91,9 @@
 
 		<div class="hero-shot">
 			<img
-				class="shot shot--light"
-				src="/marketing/companion-light.webp"
-				alt="The Utsuwa desktop app with a 3D VRM companion"
-				loading="eager"
-			/>
-			<img
-				class="shot shot--dark"
-				src="/marketing/companion-dark.webp"
-				alt="The Utsuwa desktop app with a 3D VRM companion"
+				class="shot"
+				src="/marketing/desktop-app.webp"
+				alt="The Utsuwa desktop overlay: a VRM companion floating on a macOS desktop"
 				loading="eager"
 			/>
 		</div>
@@ -223,26 +217,13 @@
 		transform: translateX(3px);
 	}
 
-	/* Real full-app screenshot, so it renders directly with just rounded corners
-	   and a soft shadow (no extra panel). */
+	/* Overlay-mode photo: works in both themes, so no light/dark swap needed */
 	.shot {
 		display: block;
 		width: 100%;
 		height: auto;
 		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-lg);
-	}
-
-	.shot--dark {
-		display: none;
-	}
-
-	:global(.dark) .shot--light {
-		display: none;
-	}
-
-	:global(.dark) .shot--dark {
-		display: block;
 	}
 
 	@media (min-width: 860px) {
