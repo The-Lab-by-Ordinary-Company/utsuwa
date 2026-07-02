@@ -4,14 +4,10 @@
 	import { SITE_URL, GITHUB_REPO, GITHUB_RELEASES } from '$lib/config/site';
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import ProviderIcons from '$lib/components/icons/ProviderIcons.svelte';
-	import { cycleTheme, getIconName, getLabel } from '$lib/config/docs-theme-toggle.svelte';
+	import SiteNav from '$lib/components/marketing/SiteNav.svelte';
 	import { sectionUrl } from '$lib/config/links';
 
 	let { data }: { data: PageData } = $props();
-
-	// Theme toggle (shares the app/docs colorMode + .dark mechanism).
-	const themeIcon = $derived(getIconName());
-	const themeLabel = $derived(getLabel());
 
 	// Hero video. Starts off so SSR/first paint shows the lightweight poster
 	// (keeps LCP fast), then swaps to the looping clip on the client once we
@@ -197,40 +193,12 @@
 
 <div class="page-root overflow-x-clip">
 <main>
-	<!-- Hero -->
-	<!-- Sticky marketing nav -->
-	<nav class="site-nav">
-		<div class="site-nav-inner">
-			<a href="/" class="flex items-center">
-				<img src="/brand-assets/logo.svg" alt="Utsuwa" class="nav-logo" />
-			</a>
-
-			<div class="hidden md:flex items-center gap-7">
-				<a href="#features" class="site-nav-link">Features</a>
-				<a href={sectionUrl('docs')} class="site-nav-link">Docs</a>
-				<a href="/blog" class="site-nav-link">Blog</a>
-				<a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" class="site-nav-link">GitHub</a>
-			</div>
-
-			<div class="flex items-center gap-2">
-				<button
-					type="button"
-					onclick={cycleTheme}
-					class="nav-theme-btn"
-					aria-label={`Theme: ${themeLabel}`}
-					title={themeLabel}
-				>
-					<Icon name={themeIcon} size={16} />
-				</button>
-				<a href={sectionUrl('app')} class="btn btn-primary btn-sm">Try Live</a>
-			</div>
-		</div>
-	</nav>
+	<SiteNav />
 
 	<!-- Hero: centered text with a contained video below -->
 	<section class="hero">
 		<div class="hero-copy">
-			<p use:reveal class="reveal hero-eyebrow">Open source &middot; MIT &middot; Self-hosted</p>
+			<img use:reveal src="/brand-assets/logo.svg" alt="Utsuwa" class="reveal hero-logo" />
 
 			<h1 use:reveal={80} class="reveal hero-title text-balance">
 				An open-source AI companion you can see and talk to
@@ -556,71 +524,6 @@
 		color: var(--text-primary);
 	}
 
-	/* Sticky marketing nav, sits on the solid page */
-	.site-nav {
-		position: sticky;
-		top: 0;
-		z-index: 50;
-		background: var(--bg-page);
-		border-bottom: 1px solid var(--border-subtle);
-	}
-
-	.site-nav-inner {
-		max-width: 80rem;
-		margin: 0 auto;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.9rem 1.5rem;
-	}
-
-	.site-nav-link {
-		font-size: 0.875rem;
-		color: var(--text-secondary);
-		text-decoration: none;
-		transition: color 0.15s ease;
-	}
-
-	.site-nav-link:hover {
-		color: var(--text-primary);
-	}
-
-	/* Logo reads black in light, natural (white) in dark */
-	.nav-logo {
-		height: 1.125rem;
-		width: auto;
-		filter: brightness(0);
-		opacity: 0.85;
-	}
-
-	:global(.dark) .nav-logo {
-		filter: none;
-	}
-
-	/* Theme toggle (flat gray fill) */
-	.nav-theme-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: var(--radius-full);
-		color: var(--text-secondary);
-		background: var(--bg-tertiary);
-		border: none;
-		cursor: pointer;
-		transition: color 0.2s ease, background 0.2s ease, transform 0.1s ease;
-	}
-
-	.nav-theme-btn:hover {
-		color: var(--text-primary);
-		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
-	}
-
-	.nav-theme-btn:active {
-		transform: scale(0.96);
-	}
-
 	/* Hero: centered text over a contained video */
 	.hero {
 		max-width: 78rem;
@@ -634,12 +537,17 @@
 		text-align: center;
 	}
 
-	.hero-eyebrow {
-		margin: 0 0 1.25rem;
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		color: var(--text-tertiary);
+	.hero-logo {
+		display: block;
+		height: 1.75rem;
+		width: auto;
+		margin: 0 auto 1.5rem;
+		filter: brightness(0);
+		opacity: 0.9;
+	}
+
+	:global(.dark) .hero-logo {
+		filter: none;
 	}
 
 	.hero-title {
