@@ -198,9 +198,56 @@
 <div class="page-root overflow-x-clip">
 <main>
 	<!-- Hero -->
-	<section class="hero relative min-h-screen flex flex-col bg-[var(--bg-primary)]">
-		<!-- Hybrid hero video: full-bleed up top, masked so it dissolves into the page below -->
-		<div class="hero-video-wrap pointer-events-none" aria-hidden="true">
+	<!-- Sticky marketing nav -->
+	<nav class="site-nav">
+		<div class="site-nav-inner">
+			<a href="/" class="flex items-center">
+				<img src="/brand-assets/logo.svg" alt="Utsuwa" class="nav-logo" />
+			</a>
+
+			<div class="hidden md:flex items-center gap-7">
+				<a href="#features" class="site-nav-link">Features</a>
+				<a href={sectionUrl('docs')} class="site-nav-link">Docs</a>
+				<a href="/blog" class="site-nav-link">Blog</a>
+				<a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" class="site-nav-link">GitHub</a>
+			</div>
+
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					onclick={cycleTheme}
+					class="nav-theme-btn"
+					aria-label={`Theme: ${themeLabel}`}
+					title={themeLabel}
+				>
+					<Icon name={themeIcon} size={16} />
+				</button>
+				<a href={sectionUrl('app')} class="btn btn-primary btn-sm">Try Live</a>
+			</div>
+		</div>
+	</nav>
+
+	<!-- Hero: centered text with a contained video below -->
+	<section class="hero">
+		<div class="hero-copy">
+			<p use:reveal class="reveal hero-eyebrow">Open source &middot; MIT &middot; Self-hosted</p>
+
+			<h1 use:reveal={80} class="reveal hero-title text-balance">
+				An open-source AI companion you can see and talk to
+			</h1>
+
+			<p use:reveal={160} class="reveal hero-sub text-pretty">
+				Load a VRM avatar, connect any LLM, and talk by voice with a character that speaks,
+				listens, and remembers, all on your own machine.
+			</p>
+
+			<div use:reveal={240} class="reveal hero-actions">
+				<a href={sectionUrl('app')} class="btn btn-primary btn-lg">Try it live</a>
+				<a href={sectionUrl('docs')} class="hero-textlink">Read the docs &rarr;</a>
+			</div>
+		</div>
+
+		<div use:reveal={320} class="reveal hero-media" aria-hidden="true">
 			{#if allowVideo}
 				<video
 					class="hero-video"
@@ -225,89 +272,7 @@
 					height="996"
 				/>
 			{/if}
-			<div class="hero-video-scrim"></div>
 		</div>
-
-		<!-- Nav -->
-		<nav class="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
-			<a href="/" class="flex items-center">
-				<img src="/brand-assets/logo.svg" alt="Utsuwa" class="nav-logo" />
-			</a>
-
-			<div class="hidden md:flex items-center gap-6 text-sm text-white/80">
-				<a href="#features" class="hover:text-white transition-colors">Features</a>
-				<a href={sectionUrl('docs')} class="hover:text-white transition-colors">Docs</a>
-				<a href="/blog" class="hover:text-white transition-colors">Blog</a>
-				<a
-					href={GITHUB_REPO}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="hover:text-white transition-colors"
-				>
-					GitHub
-				</a>
-			</div>
-
-			<div class="flex items-center gap-2">
-				<button
-					type="button"
-					onclick={cycleTheme}
-					class="nav-theme-btn"
-					aria-label={`Theme: ${themeLabel}`}
-					title={themeLabel}
-				>
-					<Icon name={themeIcon} size={16} />
-				</button>
-				<a
-					href={sectionUrl('app')}
-					class="btn btn-primary text-xs font-semibold px-4 py-2 rounded-full"
-				>
-					Try Live
-				</a>
-			</div>
-		</nav>
-
-		<!-- Hero content -->
-		<div class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
-			<!-- Eyebrow pill -->
-			<div use:reveal class="reveal hero-pill mb-6">
-				<span class="hero-pill-dot"></span>
-				Open source &middot; MIT &middot; Self-hosted
-			</div>
-
-			<!-- SEO headline -->
-			<h1 use:reveal={80} class="reveal hero-title text-pretty mb-5">
-				Your open-source AI companion with a 3D avatar
-			</h1>
-
-			<!-- Subtitle -->
-			<p use:reveal={160} class="reveal hero-sub text-pretty mb-8">
-				Utsuwa is a self-hosted AI companion app — load a VRM avatar, connect any LLM, and talk by
-				voice with a character that speaks, listens, and remembers, all on your own machine.
-			</p>
-
-			<!-- CTA buttons -->
-			<div use:reveal={240} class="reveal flex flex-wrap items-center justify-center gap-3">
-				<a href={sectionUrl('app')} class="btn btn-primary text-sm font-bold px-6 py-3 rounded-full">
-					Try it live
-				</a>
-				<a
-					href={GITHUB_RELEASES}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="btn btn-on-media text-sm font-bold px-6 py-3 rounded-full"
-				>
-					Download
-				</a>
-				<a
-					href={sectionUrl('docs')}
-					class="btn btn-on-media text-sm font-medium px-6 py-3 rounded-full"
-				>
-					Docs
-				</a>
-			</div>
-		</div>
-
 	</section>
 
 	<!-- Provider strip -->
@@ -591,14 +556,48 @@
 		color: var(--text-primary);
 	}
 
-	/* Nav logo — inverted to white so it reads over the hero video */
+	/* Sticky marketing nav, sits on the solid page */
+	.site-nav {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		background: var(--bg-page);
+		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	.site-nav-inner {
+		max-width: 80rem;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.9rem 1.5rem;
+	}
+
+	.site-nav-link {
+		font-size: 0.875rem;
+		color: var(--text-secondary);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.site-nav-link:hover {
+		color: var(--text-primary);
+	}
+
+	/* Logo reads black in light, natural (white) in dark */
 	.nav-logo {
 		height: 1.125rem;
 		width: auto;
-		filter: brightness(0) invert(1);
+		filter: brightness(0);
+		opacity: 0.85;
 	}
 
-	/* Theme toggle in the hero nav (flat, translucent — sits on the video) */
+	:global(.dark) .nav-logo {
+		filter: none;
+	}
+
+	/* Theme toggle (flat gray fill) */
 	.nav-theme-btn {
 		display: inline-flex;
 		align-items: center;
@@ -606,114 +605,104 @@
 		width: 2rem;
 		height: 2rem;
 		border-radius: var(--radius-full);
-		color: #fff;
-		background: rgba(255, 255, 255, 0.12);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		border: 1px solid rgba(255, 255, 255, 0.28);
+		color: var(--text-secondary);
+		background: var(--bg-tertiary);
+		border: none;
 		cursor: pointer;
-		transition:
-			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			background 0.2s ease,
-			border-color 0.2s ease;
+		transition: color 0.2s ease, background 0.2s ease, transform 0.1s ease;
 	}
 
 	.nav-theme-btn:hover {
-		background: rgba(255, 255, 255, 0.2);
-		border-color: rgba(255, 255, 255, 0.45);
-		transform: translateY(-1px);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
 	.nav-theme-btn:active {
-		transform: translateY(0) scale(0.96);
+		transform: scale(0.96);
 	}
 
-	/* SEO headline over the video */
-	.hero-title {
-		max-width: 20ch;
-		color: #fff;
+	/* Hero: centered text over a contained video */
+	.hero {
+		max-width: 78rem;
+		margin: 0 auto;
+		padding: clamp(3rem, 8vw, 6rem) 1.5rem clamp(2rem, 5vw, 3.5rem);
+	}
+
+	.hero-copy {
+		max-width: 46rem;
+		margin: 0 auto;
+		text-align: center;
+	}
+
+	.hero-eyebrow {
+		margin: 0 0 1.25rem;
+		font-size: 0.8rem;
 		font-weight: 600;
-		font-size: clamp(2.25rem, 6vw, 4.5rem);
-		line-height: 1.05;
+		letter-spacing: 0.02em;
+		color: var(--text-tertiary);
+	}
+
+	.hero-title {
+		margin: 0 auto 1.35rem;
+		max-width: 20ch;
+		color: var(--text-primary);
+		font-weight: 600;
+		font-size: clamp(2.25rem, 5.5vw, 4rem);
+		line-height: 1.06;
 		letter-spacing: -0.03em;
-		text-shadow: 0 2px 22px rgba(0, 0, 0, 0.35);
 	}
 
 	.hero-sub {
-		max-width: 42rem;
-		color: rgba(255, 255, 255, 0.9);
-		font-size: clamp(1rem, 2.2vw, 1.2rem);
+		margin: 0 auto;
+		max-width: 40rem;
+		color: var(--text-secondary);
+		font-size: clamp(1.05rem, 1.6vw, 1.2rem);
 		line-height: 1.6;
-		text-shadow: 0 1px 12px rgba(0, 0, 0, 0.28);
 	}
 
-	/* Full-bleed hero video: fills the whole hero, below the content. */
-	.hero-video-wrap {
-		position: absolute;
-		inset: 0;
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: 1.25rem;
+		margin-top: 2rem;
+	}
+
+	.hero-textlink {
+		font-size: 0.95rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.hero-textlink:hover {
+		color: var(--accent);
+	}
+
+	/* Contained hero video panel */
+	.hero-media {
+		max-width: 72rem;
+		margin: clamp(2.5rem, 6vw, 4.5rem) auto 0;
+		border-radius: var(--radius-xl);
 		overflow: hidden;
+		box-shadow: var(--shadow-xl);
+		background: var(--bg-secondary);
+		aspect-ratio: 16 / 9;
 	}
 
 	.hero-video {
-		position: absolute;
-		inset: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		object-position: center 32%;
+		display: block;
 		opacity: 0;
-		transform: scale(1.04);
-		transition: opacity 1.1s ease, transform 18s ease-out;
-		will-change: opacity, transform;
+		transition: opacity 1s ease;
 	}
 
 	.hero-video.is-ready {
 		opacity: 1;
-		transform: scale(1);
-	}
-
-	/* Legibility scrim — darkens enough for the white headline to read over any
-	   video frame, without heavily tinting it. */
-	.hero-video-scrim {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			180deg,
-			rgba(0, 0, 0, 0.5) 0%,
-			rgba(0, 0, 0, 0.28) 34%,
-			rgba(0, 0, 0, 0.32) 66%,
-			rgba(0, 0, 0, 0.42) 100%
-		);
-	}
-
-	/* Eyebrow pill on the hero video (flat, translucent) */
-	.hero-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.4rem 0.9rem;
-		border-radius: var(--radius-full);
-		font-size: 0.75rem;
-		font-weight: 600;
-		letter-spacing: 0.01em;
-		color: #fff;
-		background: rgba(255, 255, 255, 0.12);
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.28);
-	}
-
-	.hero-pill-dot {
-		width: 0.5rem;
-		height: 0.5rem;
-		border-radius: 50%;
-		background: #fff;
-		animation: pulseDot 2.4s ease-in-out infinite;
-	}
-
-	@keyframes pulseDot {
-		0%, 100% { opacity: 1; transform: scale(1); }
-		50% { opacity: 0.5; transform: scale(0.8); }
 	}
 
 	/* Section eyebrow (editorial label) */
@@ -1008,13 +997,8 @@
 			transition: none;
 		}
 
-		.hero-pill-dot {
-			animation: none;
-		}
-
 		.hero-video {
 			transition: none;
-			transform: none;
 		}
 
 		.provider-marquee-track {
