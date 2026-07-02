@@ -2,11 +2,7 @@
 > Utsuwa and The Lab by Ordinary Company have not minted, launched, endorsed, or authorized any cryptocurrency, token, coin, NFT, or blockchain project. We never will. If you see crypto associated with Utsuwa or The Lab, it is a scam. This repository is the only authentic Utsuwa project repository.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/banner-dark.avif">
-    <source media="(prefers-color-scheme: light)" srcset="static/brand-assets/banner-light.avif">
-    <img alt="Utsuwa, an open-source AI companion you can see and talk to" src="static/brand-assets/banner-light.avif" width="100%">
-  </picture>
+  <img alt="Utsuwa, an open-source AI companion you can see and talk to" src="static/brand-assets/banner-light.avif" width="100%">
 </p>
 
 <p align="center">
@@ -30,22 +26,13 @@
 
 <p align="center">
   <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/download-buttons/macos-dark.avif">
-      <img alt="Download for macOS" src="static/brand-assets/download-buttons/macos-light.avif" width="31%">
-    </picture>
+    <img alt="Download for macOS" src="static/brand-assets/download-buttons/macos-light.avif" width="31%">
   </a>
   <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/download-buttons/windows-dark.avif">
-      <img alt="Download for Windows" src="static/brand-assets/download-buttons/windows-light.avif" width="31%">
-    </picture>
+    <img alt="Download for Windows" src="static/brand-assets/download-buttons/windows-light.avif" width="31%">
   </a>
   <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/download-buttons/linux-dark.avif">
-      <img alt="Download for Linux" src="static/brand-assets/download-buttons/linux-light.avif" width="31%">
-    </picture>
+    <img alt="Download for Linux" src="static/brand-assets/download-buttons/linux-light.avif" width="31%">
   </a>
 </p>
 
@@ -60,11 +47,7 @@
 "Utsuwa" means "vessel" in Japanese. A container for AI to inhabit visually.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="static/marketing/companion-dark.webp">
-    <source media="(prefers-color-scheme: light)" srcset="static/marketing/companion-light.webp">
-    <img alt="The Utsuwa app: a 3D VRM companion with chat, mood, and voice" src="static/marketing/companion-light.webp" width="100%">
-  </picture>
+  <img alt="The Utsuwa app: a 3D VRM companion with chat, mood, and voice" src="static/marketing/companion-light.webp" width="100%">
 </p>
 
 ## Features
