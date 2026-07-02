@@ -223,48 +223,32 @@
 	.back-link {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--docs-text-muted);
+		gap: 0.4rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--text-secondary);
 		text-decoration: none;
-		padding: 0.5rem 1rem;
-		border-radius: 0.625rem;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		margin-bottom: 1.25rem;
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
-		box-shadow:
-			inset 0 1px 0 var(--docs-inner-highlight),
-			0 2px 4px rgba(0, 0, 0, 0.06);
+		padding: 0.5rem 0.9rem;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+		margin-bottom: 1.5rem;
 	}
 
 	.back-link:hover {
-		color: var(--docs-accent);
-		border-color: var(--docs-accent);
-		background: var(--docs-surface-solid);
-		box-shadow:
-			inset 0 1px 0 var(--docs-inner-highlight),
-			0 0 12px var(--docs-glow),
-			0 2px 8px rgba(0, 0, 0, 0.08);
-		transform: translateY(-1px);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+		color: var(--text-primary);
 	}
 
 	.back-link:active {
-		transform: translateY(0);
-		box-shadow:
-			inset 0 2px 4px var(--docs-inner-shadow),
-			0 0 8px var(--docs-glow);
+		transform: scale(0.98);
 	}
 
 	.blog-banner {
-		border-radius: 1rem;
+		border-radius: var(--radius-xl);
 		overflow: hidden;
 		margin-bottom: 2rem;
-		border: 1px solid var(--docs-glass-border);
-		box-shadow:
-			inset 0 1px 0 var(--docs-inner-highlight),
-			0 4px 16px rgba(0, 0, 0, 0.12);
+		box-shadow: var(--shadow-md);
 	}
 
 	.blog-banner img {

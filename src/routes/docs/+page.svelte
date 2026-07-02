@@ -141,17 +141,19 @@
 	}
 
 	.section-panel {
-		border: 1px solid var(--docs-border);
-		border-radius: 1rem;
+		border: none;
+		border-radius: var(--radius-xl);
 		padding: 1.5rem;
-		background: var(--docs-surface);
-		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		background: var(--bg-tertiary);
+		transition:
+			transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+			box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 		box-shadow: var(--shadow-sm);
 	}
 
 	.section-panel:hover {
-		border-color: var(--docs-accent);
-		box-shadow: var(--shadow-md);
+		transform: translateY(-3px);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.panel-head {
@@ -168,8 +170,8 @@
 		width: 2.25rem;
 		height: 2.25rem;
 		border-radius: 0.625rem;
-		background: var(--docs-accent);
-		color: #fff;
+		background: var(--accent-subtle);
+		color: var(--accent);
 		flex-shrink: 0;
 	}
 
@@ -197,13 +199,11 @@
 		padding: 0.6rem 0.7rem;
 		border-radius: 0.6rem;
 		text-decoration: none;
-		border: 1px solid transparent;
-		transition: background 0.18s ease, border-color 0.18s ease;
+		transition: background 0.18s ease;
 	}
 
 	.panel-link:hover {
 		background: var(--accent-subtle);
-		border-color: var(--docs-border);
 	}
 
 	.link-title {

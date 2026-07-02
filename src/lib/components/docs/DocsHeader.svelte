@@ -119,20 +119,20 @@
 	.nav-link {
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		text-decoration: none;
 		padding: 0.375rem 0.625rem;
 		border-radius: 0.375rem;
-		transition: all 0.15s ease;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
 
 	.nav-link:hover {
-		color: var(--docs-text);
-		background: var(--docs-surface);
+		color: var(--text-primary);
+		background: var(--bg-tertiary);
 	}
 
 	.nav-link.active {
-		color: var(--docs-accent);
+		color: var(--accent);
 	}
 
 	.header-right {
@@ -145,19 +145,18 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
+		background: var(--bg-tertiary);
+		border: none;
 		padding: 0.5rem;
 		border-radius: 0.5rem;
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		cursor: pointer;
-		transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
 
 	.header-btn:hover {
-		color: var(--docs-accent);
-		background: var(--docs-surface-solid);
-		border-color: var(--docs-accent);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
 	.download-btn {
@@ -167,18 +166,17 @@
 		padding: 0.375rem 0.875rem;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--docs-text);
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
+		color: var(--text-primary);
+		background: var(--bg-tertiary);
+		border: none;
 		border-radius: 0.5rem;
 		text-decoration: none;
-		transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
 
 	.download-btn:hover {
-		color: var(--docs-accent);
-		border-color: var(--docs-accent);
-		background: var(--docs-surface-solid);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
 	.try-live-btn {
@@ -187,19 +185,19 @@
 		padding: 0.375rem 0.875rem;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: white;
-		background: var(--docs-btn-gradient);
+		color: #fff;
+		background: var(--accent);
 		border: 1px solid transparent;
 		border-radius: 0.5rem;
 		text-decoration: none;
 		transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-		box-shadow: var(--docs-btn-shadow);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.try-live-btn:hover {
-		background: var(--docs-btn-gradient-hover);
+		background: var(--accent-hover);
 		transform: translateY(-1px);
-		box-shadow: var(--docs-btn-shadow-hover);
+		box-shadow: var(--shadow-md);
 	}
 
 	.try-live-btn:active {
@@ -210,19 +208,18 @@
 		display: none;
 		align-items: center;
 		justify-content: center;
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
+		background: var(--bg-tertiary);
+		border: none;
 		padding: 0.5rem;
 		border-radius: 0.5rem;
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		cursor: pointer;
-		transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
 
 	.hamburger:hover {
-		color: var(--docs-accent);
-		background: var(--docs-surface-solid);
-		border-color: var(--docs-accent);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
 	.mobile-logo {

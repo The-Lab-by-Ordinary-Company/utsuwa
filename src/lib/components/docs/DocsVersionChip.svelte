@@ -15,25 +15,16 @@
 		padding: 0.375rem 1rem;
 		font-size: 0.75rem;
 		font-weight: 600;
-		border-radius: 9999px;
-		border: 1px solid var(--docs-glass-border);
-		background: var(--docs-glass-bg);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		color: var(--docs-accent);
+		border-radius: var(--radius-full);
+		border: none;
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
 		text-decoration: none;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 2px 4px rgba(0, 0, 0, 0.05);
+		transition: background 0.15s ease, color 0.15s ease;
 	}
 
 	.version-chip:hover {
-		border-color: var(--docs-accent);
-		transform: translateY(-1px);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 0 12px var(--docs-glow),
-			0 4px 8px rgba(0, 0, 0, 0.1);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+		color: var(--text-primary);
 	}
 </style>

@@ -184,22 +184,22 @@
 		gap: 0.4rem;
 		font-size: 0.78rem;
 		font-weight: 500;
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		margin-bottom: 1.25rem;
 	}
 
 	.breadcrumb a {
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		text-decoration: none;
 		transition: color 0.15s ease;
 	}
 
 	.breadcrumb a:hover {
-		color: var(--docs-accent);
+		color: var(--text-primary);
 	}
 
 	.crumb-current {
-		color: var(--docs-text);
+		color: var(--text-primary);
 		font-weight: 600;
 	}
 
@@ -216,37 +216,25 @@
 	.copy-page-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.4rem 0.75rem;
+		gap: 0.4rem;
+		padding: 0.45rem 0.85rem;
 		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--docs-text-muted);
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
-		border-radius: 0.5rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+		background: var(--bg-tertiary);
+		border: none;
+		border-radius: var(--radius-full);
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 2px 4px rgba(0, 0, 0, 0.06);
+		transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 	}
 
 	.copy-page-btn:hover {
-		color: var(--docs-accent);
-		background: var(--docs-surface-solid);
-		border-color: var(--docs-accent);
-		transform: translateY(-1px);
-		box-shadow:
-			0 1px 0 var(--docs-inner-highlight) inset,
-			0 0 12px var(--docs-glow),
-			0 4px 8px rgba(0, 0, 0, 0.1);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+		color: var(--text-primary);
 	}
 
 	.copy-page-btn:active {
-		transform: translateY(0);
-		box-shadow:
-			0 1px 2px var(--docs-inner-shadow) inset,
-			0 0 6px var(--docs-glow);
+		transform: scale(0.98);
 	}
 
 	/* On-page table of contents */
@@ -265,7 +253,7 @@
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		margin: 0 0 0.75rem;
 		padding-left: 0.85rem;
 	}
@@ -274,7 +262,7 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		border-left: 1px solid var(--docs-border);
+		border-left: 1px solid var(--border-subtle);
 	}
 
 	.toc-list li.sub a {
@@ -289,18 +277,18 @@
 		border-left: 2px solid transparent;
 		font-size: 0.82rem;
 		line-height: 1.4;
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		text-decoration: none;
 		transition: color 0.15s ease, border-color 0.15s ease;
 	}
 
 	.toc-list a:hover {
-		color: var(--docs-text);
+		color: var(--text-primary);
 	}
 
 	.toc-list a.active {
-		color: var(--docs-accent);
-		border-left-color: var(--docs-accent);
+		color: var(--accent);
+		border-left-color: var(--accent);
 		font-weight: 600;
 	}
 

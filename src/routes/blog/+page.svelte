@@ -91,18 +91,16 @@
 		position: relative;
 		display: block;
 		height: 480px;
-		border-radius: 1.5rem;
+		border-radius: var(--radius-xl);
 		overflow: hidden;
 		text-decoration: none;
 		margin-bottom: 2rem;
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
-		transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+		background: var(--bg-tertiary);
+		transition: box-shadow 0.3s ease, transform 0.3s ease;
 		box-shadow: var(--shadow-sm);
 	}
 
 	.featured-card:hover {
-		border-color: var(--docs-accent);
 		transform: translateY(-4px);
 		box-shadow: var(--shadow-lg);
 	}
@@ -209,19 +207,17 @@
 		display: flex;
 		flex-direction: column;
 		text-decoration: none;
-		border-radius: 1.25rem;
+		border-radius: var(--radius-xl);
 		overflow: hidden;
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
+		background: var(--bg-tertiary);
 		box-shadow: var(--shadow-sm);
-		transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+		transition: box-shadow 0.3s ease, transform 0.3s ease;
 		position: relative;
 	}
 
 	.blog-card:hover {
-		border-color: var(--docs-accent);
 		transform: translateY(-4px);
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.card-image {

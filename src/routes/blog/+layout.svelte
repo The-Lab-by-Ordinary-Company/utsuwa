@@ -83,9 +83,13 @@
 <style>
 	.blog-site {
 		min-height: 100vh;
-		background: var(--docs-bg);
+		background: #fff;
 		color: var(--docs-text);
 		font-family: var(--font-sans);
+	}
+
+	:global(.dark) .blog-site {
+		background: #000;
 	}
 
 	/* Nav */
@@ -145,17 +149,16 @@
 		width: 2rem;
 		height: 2rem;
 		border-radius: 9999px;
-		color: var(--docs-text-muted);
-		background: var(--docs-surface);
-		border: 1px solid var(--docs-border);
+		color: var(--text-secondary);
+		background: var(--bg-tertiary);
+		border: none;
 		cursor: pointer;
-		transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+		transition: color 0.2s ease, background 0.2s ease;
 	}
 
 	.nav-theme-btn:hover {
-		color: var(--docs-accent);
-		background: var(--docs-surface-solid);
-		border-color: var(--docs-accent);
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
 	.nav-theme-btn:active {
@@ -189,7 +192,6 @@
 	/* Footer */
 	.blog-footer {
 		border-top: 1px solid var(--docs-border);
-		background: var(--docs-bg-solid);
 	}
 
 	.footer-inner {

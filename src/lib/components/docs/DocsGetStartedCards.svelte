@@ -49,21 +49,22 @@
 	}
 
 	.card {
-		border: 1px solid var(--docs-border);
-		border-radius: 1rem;
+		border: none;
+		border-radius: var(--radius-xl);
 		padding: 1.75rem;
-		background: var(--docs-surface);
+		background: var(--bg-tertiary);
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+		transition:
+			transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+			box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.card:hover {
-		border-color: var(--docs-accent);
-		transform: translateY(-2px);
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+		transform: translateY(-3px);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.card-icon {
@@ -73,8 +74,8 @@
 		width: 3.5rem;
 		height: 3.5rem;
 		border-radius: 0.875rem;
-		background: var(--docs-btn-gradient);
-		color: white;
+		background: var(--accent-subtle);
+		color: var(--accent);
 		margin-bottom: 0.25rem;
 	}
 
@@ -105,37 +106,43 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.625rem 1.25rem;
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 		font-size: 0.8125rem;
 		font-weight: 600;
 		text-decoration: none;
-		transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+		transition:
+			background 0.2s ease,
+			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+			box-shadow 0.2s ease;
 	}
 
 	.card-btn.primary {
-		background: var(--docs-btn-gradient);
-		color: white;
-		box-shadow: var(--docs-btn-shadow);
+		background: var(--accent);
+		color: #fff;
+		border: 1px solid transparent;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.card-btn.primary:hover {
-		background: var(--docs-btn-gradient-hover);
+		background: var(--accent-hover);
 		transform: translateY(-1px);
-		box-shadow: var(--docs-btn-shadow-hover);
+		box-shadow: var(--shadow-md);
+	}
+
+	.card-btn.primary:active {
+		transform: translateY(0) scale(0.98);
 	}
 
 	.card-link {
 		font-size: 0.8125rem;
-		color: var(--docs-text-muted);
+		color: var(--text-secondary);
 		text-decoration: none;
-		transition: all 0.15s;
+		transition: color 0.15s ease;
 		padding: 0.25rem 0;
-		border-bottom: 1px solid transparent;
 	}
 
 	.card-link:hover {
-		color: var(--docs-accent);
-		border-bottom-color: var(--docs-accent);
+		color: var(--text-primary);
 	}
 
 	@media (max-width: 640px) {

@@ -63,21 +63,19 @@
 		font-size: 0.8125rem;
 		color: var(--docs-text-muted);
 		text-decoration: none;
-		border-radius: 0.5rem;
+		border-radius: var(--radius-md);
 		transition: color 0.15s ease, background 0.15s ease;
-		border: 1px solid transparent;
 	}
 
 	.section-link:hover {
 		color: var(--docs-text);
-		background: var(--docs-surface);
-		border-color: var(--docs-border);
+		background: var(--bg-secondary);
 	}
 
 	.section-link.active {
-		color: white;
-		background: var(--docs-btn-gradient);
-		font-weight: 500;
+		color: var(--accent);
+		background: var(--accent-muted);
+		font-weight: 600;
 	}
 
 	@media (max-width: 768px) {

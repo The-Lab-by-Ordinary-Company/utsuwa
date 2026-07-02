@@ -55,25 +55,6 @@
 		return { destroy: () => obs.disconnect() };
 	}
 
-	// Pinned feature showcase: the visual column stays put while the copy
-	// scrolls; each step flips the active screenshot as it crosses the middle
-	// of the viewport.
-	let activeFeature = $state(0);
-
-	function trackStep(node: HTMLElement, index: number) {
-		if (typeof IntersectionObserver === 'undefined') return;
-		const obs = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					if (entry.isIntersecting) activeFeature = index;
-				}
-			},
-			// Collapse the observer root to a line through the viewport's middle.
-			{ rootMargin: '-50% 0px -50% 0px', threshold: 0 }
-		);
-		obs.observe(node);
-		return { destroy: () => obs.disconnect() };
-	}
 
 	const features = [
 		{
@@ -105,16 +86,6 @@
 		}
 	];
 
-	// Bento layout: a flagship hero tile, a few wide tiles, and small tiles for
-	// rhythm. Index-aligned with `bento` below.
-	const bentoLayout = ['hero', 'wide', '', '', 'wide', 'wide'];
-	function bentoGridClass(i: number) {
-		const size = bentoLayout[i];
-		if (size === 'hero') return 'md:col-span-2 lg:col-span-2 lg:row-span-2';
-		if (size === 'wide') return 'md:col-span-2 lg:col-span-2';
-		return '';
-	}
-
 	// Every provider we actually support today — keep this honest.
 	// `icon` maps to the keys in ProviderIcons' PROVIDER_ICONS map; `wm` is a
 	// wide wordmark (light = for light mode, dark = for dark mode). Providers
@@ -136,36 +107,30 @@
 		{ name: 'ElevenLabs', icon: 'elevenlabs', wm: null }
 	];
 
-	const bento = [
+	const faqs = [
 		{
-			icon: 'monitor',
-			title: 'Desktop overlay',
-			body: 'Pin your companion on top of everything with a transparent background, draggable anywhere, summoned by a global hotkey.'
+			q: 'Is Utsuwa really free?',
+			a: 'Yes. Utsuwa is open source under the MIT license — free to use, self-host, and modify, with no accounts or subscriptions.'
 		},
 		{
-			icon: 'mic',
-			title: 'Talk, out loud',
-			body: 'Speak with Groq Whisper or the Web Speech API and hear replies back through ElevenLabs or OpenAI voices.'
+			q: 'Do I need an API key?',
+			a: 'You bring your own model. Connect a key from OpenAI, Anthropic, Google, Groq and others, or run a local model with Ollama and no key at all.'
 		},
 		{
-			icon: 'lock',
-			title: 'Stays on your machine',
-			body: 'Everything lives in IndexedDB on your device. No account, no cloud sync, no telemetry. Export and import whenever you want.'
+			q: 'Does my data stay private?',
+			a: 'Everything lives on your device in local storage. There is no cloud sync or telemetry, and your character and conversations never leave your machine unless you choose a cloud model.'
 		},
 		{
-			icon: 'sparkles',
-			title: 'Alive, not idle',
-			body: 'Idle motion, automatic blinking, mood-driven expressions and lip-sync that actually tracks what she is saying.'
+			q: 'What is a VRM avatar?',
+			a: 'VRM is an open 3D avatar format. Load any .vrm model and your companion appears in 3D with idle motion, blinking, expressions, and lip-sync.'
 		},
 		{
-			icon: 'code',
-			title: 'Yours to fork',
-			body: 'MIT licensed and built on SvelteKit, Three.js and Tauri. Self-host it, rip it apart, send a PR.'
+			q: 'Which platforms are supported?',
+			a: 'A native desktop app and a web build that runs in any modern browser — both from the same open-source project.'
 		},
 		{
-			icon: 'layers',
-			title: 'Desktop and web',
-			body: 'A native macOS app for the full experience, plus a web build that runs in any modern browser. Same companion, same save file.'
+			q: 'Can it speak and listen?',
+			a: 'Yes. Talk to it with Whisper or the Web Speech API and hear replies back through ElevenLabs or OpenAI voices.'
 		}
 	];
 </script>
@@ -217,6 +182,16 @@
 			name: 'Ordinary Company Group LLC',
 			url: SITE_URL
 		}
+	})}</script>`}
+
+	{@html `<script type="application/ld+json">${JSON.stringify({
+		'@context': 'https://schema.org',
+		'@type': 'FAQPage',
+		mainEntity: faqs.map((f) => ({
+			'@type': 'Question',
+			name: f.q,
+			acceptedAnswer: { '@type': 'Answer', text: f.a }
+		}))
 	})}</script>`}
 </svelte:head>
 
@@ -293,33 +268,28 @@
 		</nav>
 
 		<!-- Hero content -->
-		<div class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16">
-			<h1 class="sr-only">Utsuwa — Open-Source AI Companion with 3D VRM Avatars</h1>
-
+		<div class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
 			<!-- Eyebrow pill -->
-			<div use:reveal class="reveal hero-pill mb-7" >
+			<div use:reveal class="reveal hero-pill mb-6">
 				<span class="hero-pill-dot"></span>
 				Open source &middot; MIT &middot; Self-hosted
 			</div>
 
-			<!-- Logo -->
-			<img
-				use:reveal={80}
-				src="/brand-assets/logo.svg"
-				alt="Utsuwa — AI companion app"
-				class="reveal hero-logo mb-6"
-			/>
+			<!-- SEO headline -->
+			<h1 use:reveal={80} class="reveal hero-title text-pretty mb-5">
+				Your open-source AI companion with a 3D avatar
+			</h1>
 
 			<!-- Subtitle -->
-			<p use:reveal={160} class="reveal text-lg md:text-xl text-white/85 text-center text-pretty max-w-2xl mb-8">
-				A vessel for AI to live in. Load a 3D avatar, give it a brain, and talk to a companion that
-				speaks, listens, and remembers — entirely on your own machine.
+			<p use:reveal={160} class="reveal hero-sub text-pretty mb-8">
+				Utsuwa is a self-hosted AI companion app — load a VRM avatar, connect any LLM, and talk by
+				voice with a character that speaks, listens, and remembers, all on your own machine.
 			</p>
 
 			<!-- CTA buttons -->
-			<div use:reveal={240} class="reveal flex flex-wrap items-center justify-center gap-3 mb-12">
+			<div use:reveal={240} class="reveal flex flex-wrap items-center justify-center gap-3">
 				<a href={sectionUrl('app')} class="btn-primary text-sm font-bold px-6 py-3 rounded-full">
-					Try Live
+					Try it live
 				</a>
 				<a
 					href={GITHUB_RELEASES}
@@ -336,16 +306,13 @@
 					Docs
 				</a>
 			</div>
-
 		</div>
 
-		<!-- Bottom fade: video dissolves cleanly into the page background (light + dark) -->
-		<div class="hero-fade" aria-hidden="true"></div>
 	</section>
 
 	<!-- Provider strip -->
 	<section
-		class="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] py-20 md:py-28 overflow-hidden"
+		class="py-20 md:py-28 overflow-hidden"
 	>
 		<div class="max-w-5xl mx-auto px-6 text-center mb-12 md:mb-14">
 			<p use:reveal class="reveal eyebrow justify-center mb-5">Bring your own brain</p>
@@ -390,97 +357,26 @@
 		</div>
 	</section>
 
-	<!-- Features: pinned visual, scrolling copy -->
-	<section id="features" class="bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)]">
-		<div class="max-w-7xl mx-auto px-6 py-24 md:py-32">
-			<div class="grid lg:grid-cols-2 gap-12 lg:gap-20">
-				<!-- Pinned visual (lg+): screenshots cross-fade as you scroll the copy -->
-				<div class="hidden lg:block">
-					<div class="feature-sticky">
-						<div class="surface-card rounded-2xl p-4 overflow-hidden">
-							<div class="feature-visual">
-								{#each features as f, i}
-									<img
-										src={f.img}
-										alt={f.alt}
-										loading="lazy"
-										class="img-outline rounded-lg"
-										class:is-active={activeFeature === i}
-									/>
-								{/each}
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Scrolling steps -->
-				<div>
-					{#each features as f, i}
-						<div class="feature-step" class:is-active={activeFeature === i} use:trackStep={i}>
-							<!-- Inline visual on small screens (no sticky) -->
-							<div
-								class="lg:hidden w-full surface-card rounded-2xl p-4 mb-7 aspect-[16/10] flex items-center justify-center overflow-hidden"
-							>
-								<img
-									src={f.img}
-									alt={f.alt}
-									loading="lazy"
-									class="img-outline w-full h-full object-contain rounded-lg"
-								/>
-							</div>
-
-							<p class="eyebrow mb-5"><span class="eyebrow-num">{f.num}</span> {f.eyebrow}</p>
-							<h2
-								class="text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] mb-4 tracking-tight text-balance"
-								style="font-family: var(--font-sans);"
-							>
-								{f.title}
-							</h2>
-							<p class="text-lg text-[var(--text-secondary)] leading-relaxed text-pretty mb-6 max-w-lg">
-								{f.body}
-							</p>
-							<div class="flex flex-wrap gap-2">
-								{#each f.chips as chip}
-									<span class="feature-chip">{chip}</span>
-								{/each}
-							</div>
-						</div>
-					{/each}
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<!-- Everything in the vessel — bento -->
-	<section class="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] py-24 md:py-32">
-		<div class="max-w-7xl mx-auto px-6">
-			<div class="text-center mb-16 md:mb-20">
-				<p use:reveal class="reveal eyebrow justify-center mb-5">The whole kit</p>
-				<h2
-					use:reveal={60}
-					class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
-					style="font-family: var(--font-sans);"
-				>
-					Everything packed into the vessel.
-				</h2>
-			</div>
-
-			<div
-				class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 lg:auto-rows-[minmax(190px,1fr)]"
+	<!-- Features: alternating media rows -->
+	<section id="features" class="py-24 md:py-32">
+		<div class="max-w-6xl mx-auto px-6">
+			<h2
+				use:reveal
+				class="reveal text-center text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance mb-20 md:mb-28"
+				style="font-family: var(--font-sans);"
 			>
-				{#each bento as item, i}
-					<div
-						use:reveal={(i % 3) * 90}
-						class="reveal bento-tile {bentoGridClass(i)}"
-						class:bento-tile--hero={bentoLayout[i] === 'hero'}
-						class:bento-tile--wide={bentoLayout[i] === 'wide'}
-					>
-						<div class="bento-icon">
-							<Icon name={item.icon} size={bentoLayout[i] === 'hero' ? 26 : 22} class="text-white" />
+				The best way to bring an AI to life.
+			</h2>
+
+			<div class="flex flex-col gap-24 md:gap-36">
+				{#each features as f, i}
+					<div use:reveal class="reveal feature-row" class:feature-row--rev={i % 2 === 1}>
+						<div class="feature-media">
+							<img src={f.img} alt={f.alt} loading="lazy" class="feature-img" />
 						</div>
-						<div class="bento-text">
-							<h3 class="bento-title">{item.title}</h3>
-							<p class="bento-body">{item.body}</p>
+						<div class="feature-copy">
+							<h3 class="feature-h2" style="font-family: var(--font-sans);">{f.title}</h3>
+							<p class="feature-body">{f.body}</p>
 						</div>
 					</div>
 				{/each}
@@ -488,70 +384,26 @@
 		</div>
 	</section>
 
-	<!-- Latest Updates (Blog) -->
+
+	<!-- Latest from the blog (channel-card layout) -->
 	{#if data.posts.length > 0}
-		<section class="bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)] py-24 md:py-32">
-			<div class="max-w-7xl mx-auto px-6">
-				<div use:reveal class="reveal flex items-end justify-between mb-12 md:mb-16">
+		<section class="py-24 md:py-32">
+			<div class="max-w-6xl mx-auto px-6">
+				<div class="text-center mb-14 md:mb-16">
 					<h2
-						class="text-3xl md:text-4xl font-semibold text-[var(--text-primary)] tracking-tight"
+						use:reveal
+						class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
 						style="font-family: var(--font-sans);"
 					>
-						Latest updates
+						Fresh from the blog
 					</h2>
-					<a
-						href="/blog"
-						class="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors hidden sm:inline-flex items-center gap-1"
+					<p
+						use:reveal={60}
+						class="reveal text-lg text-[var(--text-secondary)] leading-relaxed text-pretty max-w-xl mx-auto mt-5"
 					>
-						View all
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="m9 18 6-6-6-6" />
-						</svg>
-					</a>
-				</div>
-
-				<div class="grid md:grid-cols-3 gap-6 lg:gap-8">
-					{#each data.posts as post, i}
-						<a use:reveal={(i % 3) * 90} href="/blog/{post.slug}" class="reveal blog-card group">
-							<div class="blog-card-image">
-								<img src={post.image} alt={post.title} loading="lazy" />
-							</div>
-							<div class="blog-card-body">
-								<div class="flex items-center gap-1.5 text-xs font-medium">
-									<time datetime={post.date} class="text-[var(--accent)]">
-										{formatDate(post.date)}
-									</time>
-									<span class="text-[var(--text-tertiary)]">&middot;</span>
-									<span class="text-[var(--text-secondary)]">CJ Dyas</span>
-								</div>
-								<h3
-									class="text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors tracking-tight"
-								>
-									{post.title}
-								</h3>
-								<p class="text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-2">
-									{post.description}
-								</p>
-							</div>
-						</a>
-					{/each}
-				</div>
-
-				<div class="mt-8 text-center sm:hidden">
-					<a
-						href="/blog"
-						class="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors inline-flex items-center gap-1"
-					>
+						Guides, deep dives, and release notes from the project.
+					</p>
+					<a use:reveal={120} href="/blog" class="reveal channel-pill mt-8">
 						View all posts
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -564,18 +416,92 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<path d="m9 18 6-6-6-6" />
+							<path d="M7 17 17 7M7 7h10v10" />
 						</svg>
 					</a>
+				</div>
+
+				<div class="grid md:grid-cols-3 gap-5 lg:gap-6">
+					{#each data.posts as post, i}
+						<a use:reveal={(i % 3) * 90} href="/blog/{post.slug}" class="reveal channel-card">
+							<div class="channel-media">
+								<img src={post.image} alt={post.title} loading="lazy" />
+							</div>
+							<div class="channel-body">
+								<time datetime={post.date} class="channel-date">{formatDate(post.date)}</time>
+								<h3 class="channel-title">{post.title}</h3>
+								<span class="channel-cta">Read article →</span>
+							</div>
+						</a>
+					{/each}
 				</div>
 			</div>
 		</section>
 	{/if}
 
+	<!-- FAQ -->
+	<section class="py-24 md:py-32">
+		<div class="max-w-3xl mx-auto px-6">
+			<div class="text-center mb-14 md:mb-16">
+				<p use:reveal class="reveal eyebrow justify-center mb-5">FAQ</p>
+				<h2
+					use:reveal={60}
+					class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+					style="font-family: var(--font-sans);"
+				>
+					Questions, answered.
+				</h2>
+			</div>
+			<div>
+				{#each faqs as f, i}
+					<details use:reveal={(i % 4) * 60} class="reveal faq-item">
+						<summary class="faq-q">
+							<span>{f.q}</span>
+							<span class="faq-chevron"><Icon name="chevron-down" size={18} /></span>
+						</summary>
+						<div class="faq-a">{f.a}</div>
+					</details>
+				{/each}
+			</div>
+		</div>
+	</section>
+
+	<!-- Closing CTA -->
+	<section class="py-24 md:py-32">
+		<div class="max-w-3xl mx-auto px-6 text-center">
+			<h2
+				use:reveal
+				class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+				style="font-family: var(--font-sans);"
+			>
+				Ready to meet your companion?
+			</h2>
+			<p
+				use:reveal={80}
+				class="reveal text-lg text-[var(--text-secondary)] leading-relaxed text-pretty max-w-xl mx-auto mt-5 mb-9"
+			>
+				Try it right in your browser, or download the desktop app. Free and open source.
+			</p>
+			<div use:reveal={160} class="reveal flex flex-wrap items-center justify-center gap-3">
+				<a href={sectionUrl('app')} class="btn-primary text-sm font-bold px-6 py-3 rounded-full">
+					Try it live
+				</a>
+				<a
+					href={GITHUB_RELEASES}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn-soft text-sm font-bold px-6 py-3 rounded-full"
+				>
+					Download
+				</a>
+			</div>
+		</div>
+	</section>
+
 	</main>
 
 	<!-- Footer -->
-	<footer class="bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)] pt-20 md:pt-24 overflow-hidden">
+	<footer class="border-t border-[var(--border-subtle)] pt-20 md:pt-24 overflow-hidden">
 		<div class="max-w-7xl mx-auto px-6 mb-24 md:mb-32">
 			<div
 				class="flex flex-col md:flex-row justify-between items-start gap-16 md:gap-12"
@@ -630,7 +556,7 @@
 		</div>
 
 		<!-- Bottom bar -->
-		<div class="w-full border-t border-[var(--border-subtle)] bg-[var(--bg-secondary)] relative z-10">
+		<div class="w-full border-t border-[var(--border-subtle)] relative z-10">
 			<div
 				class="max-w-7xl mx-auto px-6 py-8 md:py-10 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-0"
 			>
@@ -661,8 +587,12 @@
 
 <style>
 	.page-root {
-		background: var(--bg-primary);
+		background: #fff;
 		color: var(--text-primary);
+	}
+
+	:global(.dark) .page-root {
+		background: #000;
 	}
 
 	/* Nav logo — inverted to white so it reads over the hero video */
@@ -702,15 +632,26 @@
 		transform: translateY(0) scale(0.96);
 	}
 
-	.hero-logo {
-		width: min(80vw, 500px);
-		height: auto;
-		/* White over the video; a whisper of shadow keeps it legible on bright frames */
-		filter: brightness(0) invert(1) drop-shadow(0 1px 6px rgba(0, 0, 0, 0.18));
+	/* SEO headline over the video */
+	.hero-title {
+		max-width: 20ch;
+		color: #fff;
+		font-weight: 600;
+		font-size: clamp(2.25rem, 6vw, 4.5rem);
+		line-height: 1.05;
+		letter-spacing: -0.03em;
+		text-shadow: 0 2px 22px rgba(0, 0, 0, 0.35);
 	}
 
-	/* Full-bleed hero video: fills the whole hero, below the content. The
-	   bottom blend is handled by .hero-fade so it can stay theme-aware. */
+	.hero-sub {
+		max-width: 42rem;
+		color: rgba(255, 255, 255, 0.9);
+		font-size: clamp(1rem, 2.2vw, 1.2rem);
+		line-height: 1.6;
+		text-shadow: 0 1px 12px rgba(0, 0, 0, 0.28);
+	}
+
+	/* Full-bleed hero video: fills the whole hero, below the content. */
 	.hero-video-wrap {
 		position: absolute;
 		inset: 0;
@@ -735,34 +676,17 @@
 		transform: scale(1);
 	}
 
-	/* Neutral legibility scrim — keeps the white nav + copy readable without
-	   tinting the frame. */
+	/* Legibility scrim — darkens enough for the white headline to read over any
+	   video frame, without heavily tinting it. */
 	.hero-video-scrim {
 		position: absolute;
 		inset: 0;
 		background: linear-gradient(
 			180deg,
-			rgba(0, 0, 0, 0.34) 0%,
-			rgba(0, 0, 0, 0.08) 24%,
-			transparent 46%,
-			rgba(0, 0, 0, 0.12) 100%
-		);
-	}
-
-	/* Bottom fade: the video dissolves straight into the page background so it
-	   melts into the next section. Token-driven, so dark mode just works. */
-	.hero-fade {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: clamp(200px, 34vh, 440px);
-		pointer-events: none;
-		background: linear-gradient(
-			to top,
-			var(--bg-primary) 0%,
-			var(--bg-primary) 6%,
-			transparent 62%
+			rgba(0, 0, 0, 0.5) 0%,
+			rgba(0, 0, 0, 0.28) 34%,
+			rgba(0, 0, 0, 0.32) 66%,
+			rgba(0, 0, 0, 0.42) 100%
 		);
 	}
 
@@ -806,26 +730,6 @@
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		color: var(--accent);
-	}
-
-	.eyebrow-num {
-		font-family: var(--font-sans);
-		font-size: 0.72rem;
-		font-weight: 700;
-		color: var(--accent);
-		padding: 0.15rem 0.45rem;
-		border-radius: var(--radius-xs);
-		background: var(--accent-subtle);
-	}
-
-	/* Feature callout chips (flat, accent-tinted) */
-	.feature-chip {
-		font-size: 0.78rem;
-		font-weight: 600;
-		color: var(--accent);
-		padding: 0.35rem 0.75rem;
-		border-radius: var(--radius-full);
-		background: var(--accent-subtle);
 	}
 
 	/* Provider logo marquee */
@@ -898,153 +802,66 @@
 	}
 
 	/* Pinned feature showcase: visual sticks, copy scrolls, active step lights up */
-	.feature-sticky {
-		position: sticky;
-		top: 6rem;
-	}
-
-	.feature-visual {
-		position: relative;
-		width: 100%;
-		aspect-ratio: 16 / 10;
-	}
-
-	.feature-visual img {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		opacity: 0;
-		transform: scale(0.98);
-		transition:
-			opacity 0.6s ease,
-			transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	.feature-visual img.is-active {
-		opacity: 1;
-		transform: scale(1);
-	}
-
-	.feature-step {
+	.feature-row {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
+		gap: 2rem;
 	}
 
-	/* Space the stacked callouts apart on mobile (desktop uses the pinned 76vh steps) */
-	.feature-step:not(:last-child) {
-		margin-bottom: 4.5rem;
-	}
-
-	@media (min-width: 1024px) {
-		.feature-step {
-			min-height: 76vh;
-			justify-content: center;
-			opacity: 0.32;
-			transition: opacity 0.45s ease;
-		}
-
-		.feature-step:not(:last-child) {
-			margin-bottom: 0;
-		}
-
-		.feature-step.is-active {
-			opacity: 1;
-		}
-	}
-
-	/* Flat surface card — the base for framed visuals */
-	.surface-card {
-		background: var(--bg-primary);
+	.feature-media {
+		border-radius: var(--radius-xl);
+		background: var(--gradient-aurora-cool);
+		padding: clamp(1.5rem, 4vw, 3.5rem);
 		box-shadow: var(--shadow-md);
 	}
 
-	/* Bento tiles (flat) */
-	.bento-tile {
-		position: relative;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		gap: 1.1rem;
-		padding: 1.6rem;
-		border-radius: var(--radius-xl);
-		background: var(--bg-primary);
-		box-shadow: var(--shadow-sm);
-		transition:
-			transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-			box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	.bento-tile:hover {
-		transform: translateY(-4px);
+	.feature-img {
+		display: block;
+		width: 100%;
+		height: auto;
+		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
 	}
 
-	.bento-title {
-		font-size: 1.05rem;
+	.feature-copy {
+		max-width: 24rem;
+	}
+
+	.feature-h2 {
+		margin: 0 0 0.9rem;
+		font-size: clamp(1.4rem, 2vw, 1.7rem);
 		font-weight: 600;
+		line-height: 1.2;
 		letter-spacing: -0.01em;
 		color: var(--text-primary);
-		margin-bottom: 0.4rem;
+		text-wrap: balance;
 	}
 
-	.bento-body {
-		font-size: 0.875rem;
+	.feature-body {
+		font-size: 0.95rem;
 		line-height: 1.6;
 		color: var(--text-secondary);
-		text-wrap: pretty;
 	}
 
-	/* Flagship tile: bigger, copy pinned to the bottom. */
-	.bento-tile--hero {
-		gap: 1.5rem;
-	}
+	@media (min-width: 900px) {
+		.feature-row {
+			flex-direction: row-reverse;
+			align-items: center;
+			gap: 4.5rem;
+		}
 
-	.bento-tile--hero .bento-text {
-		margin-top: auto;
-	}
+		.feature-row--rev {
+			flex-direction: row;
+		}
 
-	.bento-tile--hero .bento-title {
-		font-size: 1.5rem;
-		margin-bottom: 0.55rem;
-	}
+		.feature-media {
+			flex: 1.6;
+			min-width: 0;
+		}
 
-	.bento-tile--hero .bento-body {
-		font-size: 1rem;
-		max-width: 34ch;
-	}
-
-	.bento-tile--hero .bento-icon {
-		width: 3.5rem;
-		height: 3.5rem;
-		border-radius: var(--radius-lg);
-	}
-
-	/* Wide tile: icon and copy sit side by side to use the extra width. */
-	.bento-tile--wide {
-		flex-direction: row;
-		align-items: flex-start;
-		gap: 1.25rem;
-	}
-
-	/* Flat accent icon tile inside bento */
-	.bento-icon {
-		flex-shrink: 0;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 3rem;
-		height: 3rem;
-		border-radius: var(--radius-md);
-		background: var(--accent);
-	}
-
-	/* Subtle image outline for depth */
-	.img-outline {
-		outline: 1px solid var(--border-subtle);
-		outline-offset: -1px;
+		.feature-copy {
+			flex: 1;
+		}
 	}
 
 	/* Scroll-reveal */
@@ -1115,6 +932,71 @@
 		transform: translateY(0) scale(0.98);
 	}
 
+	/* Soft secondary CTA on light sections */
+	.btn-soft {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--text-primary);
+		background: var(--bg-tertiary);
+		border: 1px solid transparent;
+		transition: background 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.btn-soft:hover {
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+		transform: translateY(-1px);
+	}
+
+	.btn-soft:active {
+		transform: translateY(0) scale(0.98);
+	}
+
+	/* FAQ — cardless accordion */
+	.faq-item {
+		border-top: 1px solid var(--border-subtle);
+	}
+
+	.faq-item:last-child {
+		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	.faq-q {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1.25rem 0;
+		cursor: pointer;
+		list-style: none;
+		font-size: 1.02rem;
+		font-weight: 600;
+		color: var(--text-primary);
+	}
+
+	.faq-q::-webkit-details-marker {
+		display: none;
+	}
+
+	.faq-chevron {
+		display: flex;
+		flex-shrink: 0;
+		color: var(--text-tertiary);
+		transition: transform 0.2s ease;
+	}
+
+	.faq-item[open] .faq-chevron {
+		transform: rotate(180deg);
+	}
+
+	.faq-a {
+		padding: 0 0 1.4rem;
+		max-width: 60ch;
+		font-size: 0.95rem;
+		line-height: 1.65;
+		color: var(--text-secondary);
+	}
+
 	.footer-brand-logo-light {
 		height: 1.25rem;
 		width: auto;
@@ -1123,54 +1005,101 @@
 	}
 
 	/* Blog cards (flat) */
-	.blog-card {
+	.channel-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.6rem 1.1rem;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		border: none;
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--text-primary);
+		text-decoration: none;
+		transition: background 0.15s ease;
+	}
+
+	.channel-pill:hover {
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+	}
+
+	.channel-card {
 		display: flex;
 		flex-direction: column;
 		text-decoration: none;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		overflow: hidden;
-		background: var(--bg-primary);
+		background: var(--bg-tertiary);
 		box-shadow: var(--shadow-sm);
 		transition:
-			transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-			box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-		position: relative;
+			transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+			box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.blog-card:hover {
-		transform: translateY(-4px);
+	.channel-card:hover {
+		transform: translateY(-3px);
 		box-shadow: var(--shadow-lg);
 	}
 
-	.blog-card-image {
-		position: relative;
-		aspect-ratio: 16 / 9;
+	.channel-media {
+		aspect-ratio: 16 / 11;
 		overflow: hidden;
-		background: var(--bg-tertiary);
-		margin: 0.5rem 0.5rem 0;
-		border-radius: var(--radius-md);
+		background: var(--gradient-aurora-cool);
 	}
 
-	.blog-card-image img {
+	.channel-media img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		border-radius: var(--radius-md);
+		display: block;
 		transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.blog-card:hover .blog-card-image img {
-		transform: scale(1.05);
+	.channel-card:hover .channel-media img {
+		transform: scale(1.04);
 	}
 
-	.blog-card-body {
-		padding: 1rem 1.25rem 1.5rem;
+	.channel-body {
 		display: flex;
 		flex-direction: column;
-		gap: 0.375rem;
 		flex: 1;
-		position: relative;
-		z-index: 2;
+		gap: 0.5rem;
+		padding: 1.25rem;
+	}
+
+	.channel-date {
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: var(--text-tertiary);
+	}
+
+	.channel-title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 600;
+		line-height: 1.3;
+		color: var(--text-primary);
+		text-wrap: balance;
+	}
+
+	.channel-cta {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		margin-top: auto;
+		padding: 0.7rem 1rem;
+		border-radius: var(--radius-full);
+		background: var(--bg-primary);
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--text-primary);
+		transition: background 0.15s ease;
+	}
+
+	.channel-card:hover .channel-cta {
+		background: color-mix(in srgb, var(--bg-primary), var(--text-primary) 6%);
 	}
 
 	/* Dark mode only needs asset treatments — the surfaces, text, borders and
@@ -1197,22 +1126,13 @@
 			transform: none;
 		}
 
-		.feature-visual img {
-			transition: none;
-			transform: none;
-		}
-
-		.feature-step {
-			opacity: 1;
-			transition: none;
-		}
-
 		.provider-marquee-track {
 			animation: none;
 		}
 
-		.bento-tile:hover,
-		.blog-card:hover {
+		.channel-card:hover,
+		.feature-media,
+		.channel-media img {
 			transform: none;
 		}
 	}
