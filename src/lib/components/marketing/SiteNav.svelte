@@ -17,6 +17,24 @@
 	const pathname = $derived(page.url.pathname);
 	const onHome = $derived(pathname === '/');
 	const onBlog = $derived(pathname.startsWith('/blog'));
+
+	let menuOpen = $state(false);
+
+	// Close the mobile menu on navigation.
+	$effect(() => {
+		void pathname;
+		menuOpen = false;
+	});
+
+	// Escape closes the mobile menu while it is open.
+	$effect(() => {
+		if (!menuOpen) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') menuOpen = false;
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	});
 </script>
 
 <nav class="site-nav">
@@ -64,9 +82,39 @@
 			>
 				<Icon name={themeIcon} size={16} />
 			</button>
-			<a href={sectionUrl('app')} class="btn btn-primary btn-sm">Try Live</a>
+			<a href={sectionUrl('app')} class="btn btn-primary btn-sm site-nav-cta">Try Live</a>
+			<button
+				type="button"
+				class="site-nav-burger"
+				onclick={() => (menuOpen = !menuOpen)}
+				aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+				aria-expanded={menuOpen}
+				aria-controls="site-nav-mobile"
+			>
+				<Icon name={menuOpen ? 'xmark' : 'bars'} size={18} />
+			</button>
 		</div>
 	</div>
+
+	{#if menuOpen}
+		<div id="site-nav-mobile" class="site-nav-mobile">
+			<a href="/#features" class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Features</a>
+			<a href={sectionUrl('docs')} class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Docs</a>
+			<a href="/blog" class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Blog</a>
+			<a
+				href={GITHUB_REPO}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="site-nav-mobile-link"
+				onclick={() => (menuOpen = false)}>GitHub</a
+			>
+			<a
+				href={sectionUrl('app')}
+				class="btn btn-primary btn-block"
+				onclick={() => (menuOpen = false)}>Try Live</a
+			>
+		</div>
+	{/if}
 </nav>
 
 <style>
@@ -242,8 +290,67 @@
 		transform: scale(0.96);
 	}
 
+	/* Hamburger (mobile only) */
+	.site-nav-burger {
+		display: none;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: var(--radius-full);
+		color: var(--text-secondary);
+		background: var(--bg-tertiary);
+		border: none;
+		cursor: pointer;
+		transition: color 0.2s ease, background 0.2s ease;
+	}
+
+	.site-nav-burger:hover {
+		color: var(--text-primary);
+		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+	}
+
+	/* Mobile menu panel */
+	.site-nav-mobile {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		padding: 0.75rem 1.5rem 1.25rem;
+		border-top: 1px solid var(--border-subtle);
+	}
+
+	.site-nav-mobile-link {
+		padding: 0.65rem 0.25rem;
+		font-size: 0.95rem;
+		color: var(--text-secondary);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.site-nav-mobile-link:hover {
+		color: var(--text-primary);
+	}
+
+	.site-nav-mobile .btn {
+		margin-top: 0.5rem;
+	}
+
 	@media (max-width: 768px) {
 		.site-nav-links {
+			display: none;
+		}
+
+		.site-nav-cta {
+			display: none;
+		}
+
+		.site-nav-burger {
+			display: inline-flex;
+		}
+	}
+
+	@media (min-width: 769px) {
+		.site-nav-mobile {
 			display: none;
 		}
 	}
