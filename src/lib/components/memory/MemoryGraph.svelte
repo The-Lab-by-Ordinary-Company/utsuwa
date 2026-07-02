@@ -132,7 +132,7 @@
 				}
 				return 0.5;
 			})
-			.linkDirectionalParticleColor(() => isDarkMode ? '#01B2FF' : '#0099dd');
+			.linkDirectionalParticleColor(() => isDarkMode ? '#00b2ff' : '#0099dd');
 	}
 
 	function handleNodeClick(node: GraphNode) {
@@ -459,7 +459,7 @@
 		width: 32px;
 		height: 32px;
 		border: 3px solid var(--border-light);
-		border-top-color: #01b2ff;
+		border-top-color: #00b2ff;
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}

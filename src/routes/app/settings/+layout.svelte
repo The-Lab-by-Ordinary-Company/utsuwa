@@ -147,6 +147,9 @@
 		background: var(--accent-muted);
 		color: var(--accent);
 		font-weight: 600;
+		/* Shared-element morph: the active pill slides between nav items
+		   during the app's view transitions */
+		view-transition-name: settings-nav-active;
 	}
 
 	.nav-label {

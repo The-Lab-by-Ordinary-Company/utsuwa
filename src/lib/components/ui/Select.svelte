@@ -132,7 +132,11 @@
 		border-radius: var(--radius-lg);
 		padding: 0.375rem;
 		box-shadow: var(--shadow-lg);
-		animation: select-in 0.15s ease-out;
+		animation: select-in 0.16s var(--ease-brand);
+	}
+
+	:global(.select-content[data-state='closed']) {
+		animation: select-out 0.13s var(--ease-brand) forwards;
 	}
 
 	@keyframes select-in {
@@ -143,6 +147,13 @@
 		to {
 			opacity: 1;
 			transform: translateY(0);
+		}
+	}
+
+	@keyframes select-out {
+		to {
+			opacity: 0;
+			transform: translateY(-4px);
 		}
 	}
 

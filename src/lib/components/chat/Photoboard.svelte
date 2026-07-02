@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Icon } from '$lib/components/ui';
+	import { fadeFast } from '$lib/utils/motion';
 	import {
 		listKeepsakes,
 		getKeepsakeImageUrl,
@@ -128,6 +129,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
 	class="board-overlay"
+	out:fadeFast={{ duration: 160 }}
 	onclick={handleOverlayClick}
 	onkeydown={handleKeydown}
 	role="dialog"

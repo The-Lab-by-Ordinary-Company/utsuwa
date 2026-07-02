@@ -2,6 +2,7 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { Icon } from '$lib/components/ui';
 	import { localPath } from '$lib/config/links';
+	import { pop, fadeFast } from '$lib/utils/motion';
 
 	interface Props {
 		overlay?: boolean;
@@ -18,18 +19,17 @@
 
 	// Stats config with colors for the vertical bars
 	const datingStats = $derived([
-		{ key: 'affection', label: 'Love', icon: 'heart', value: affectionPercent, color: 'var(--stat-affection)', glowColor: 'rgba(255, 107, 157, 0.5)' },
-		{ key: 'trust', label: 'Trust', icon: 'shield', value: charState.trust, color: 'var(--stat-trust)', glowColor: 'rgba(77, 208, 255, 0.5)' },
-		{ key: 'intimacy', label: 'Intimacy', icon: 'sparkles', value: charState.intimacy, color: 'var(--stat-intimacy)', glowColor: 'rgba(192, 132, 252, 0.5)' },
-		{ key: 'comfort', label: 'Comfort', icon: 'home', value: charState.comfort, color: 'var(--stat-comfort)', glowColor: 'rgba(74, 222, 128, 0.5)' },
-		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)', glowColor: 'rgba(251, 191, 36, 0.5)' },
-		{ key: 'respect', label: 'Respect', icon: 'award', value: charState.respect, color: 'var(--stat-respect)', glowColor: 'rgba(96, 165, 250, 0.5)' }
+		{ key: 'affection', label: 'Love', icon: 'heart', value: affectionPercent, color: 'var(--stat-affection)' },
+		{ key: 'trust', label: 'Trust', icon: 'shield', value: charState.trust, color: 'var(--stat-trust)' },
+		{ key: 'intimacy', label: 'Intimacy', icon: 'sparkles', value: charState.intimacy, color: 'var(--stat-intimacy)' },
+		{ key: 'comfort', label: 'Comfort', icon: 'home', value: charState.comfort, color: 'var(--stat-comfort)' },
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)' },
+		{ key: 'respect', label: 'Respect', icon: 'award', value: charState.respect, color: 'var(--stat-respect)' }
 	]);
 
 	const companionStats = $derived([
-		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)', glowColor: 'rgba(77, 208, 255, 0.5)' },
-		// No dedicated stat token for chat count, so this keeps its own green
-		{ key: 'chats', label: 'Chats', icon: 'message-circle', value: Math.min(charState.totalInteractions, 100), color: '#4ade80', glowColor: 'rgba(74, 222, 128, 0.5)' }
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: 'var(--stat-energy)' },
+		{ key: 'chats', label: 'Chats', icon: 'message-circle', value: Math.min(charState.totalInteractions, 100), color: 'var(--color-success)' }
 	]);
 </script>
 
@@ -39,12 +39,13 @@
 		{#if isExpanded}
 			<div
 				class="overlay-expanded-panel"
+				transition:pop={{ base: 'translateX(-50%)', y: 10, duration: 220 }}
 				class:high-affection={!isCompanionMode && charState.affection > 500}
 			>
 				<div class="status-details">
 					<div class="stat-bars" class:companion-mode={isCompanionMode}>
 						{#each isCompanionMode ? companionStats : datingStats as stat, i}
-							<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}; --bar-glow: {stat.glowColor}">
+							<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}">
 								<div class="stat-bar-track">
 									<div class="stat-bar-fill" style="height: {stat.value}%"></div>
 								</div>
@@ -92,13 +93,15 @@
 			title={isExpanded ? 'Collapse status' : 'Show status'}
 			style="--mood-color: {moodInfo.color}"
 		>
-			<span class="icon-inner">
-				{#if isExpanded}
-					<Icon name="x" size={20} />
-				{:else}
-					<Icon name={moodInfo.icon} size={20} />
-				{/if}
-			</span>
+			{#key isExpanded}
+				<span class="icon-inner" in:fadeFast={{ duration: 150 }}>
+					{#if isExpanded}
+						<Icon name="x" size={20} />
+					{:else}
+						<Icon name={moodInfo.icon} size={20} />
+					{/if}
+				</span>
+			{/key}
 		</button>
 	</div>
 {:else}
@@ -109,10 +112,10 @@
 		class:high-affection={!isCompanionMode && charState.affection > 500}
 	>
 		{#if isExpanded}
-			<div class="status-details">
+			<div class="status-details" transition:pop={{ duration: 200, y: 8 }}>
 				<div class="stat-bars" class:companion-mode={isCompanionMode}>
 					{#each isCompanionMode ? companionStats : datingStats as stat, i}
-						<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}; --bar-glow: {stat.glowColor}">
+						<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}">
 							<div class="stat-bar-track">
 								<div class="stat-bar-fill" style="height: {stat.value}%"></div>
 							</div>
@@ -406,22 +409,10 @@
 		background: var(--bg-primary);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
-		animation: panelSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 		white-space: nowrap;
 	}
 
 	.overlay-expanded-panel.high-affection {
 		box-shadow: 0 0 0 1px var(--stat-affection), var(--shadow-lg);
-	}
-
-	@keyframes panelSlideUp {
-		from {
-			opacity: 0;
-			transform: translateX(-50%) translateY(8px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(-50%) translateY(0);
-		}
 	}
 </style>

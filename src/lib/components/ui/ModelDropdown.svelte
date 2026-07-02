@@ -194,7 +194,7 @@
 		border-radius: var(--radius-lg);
 		padding: 0.375rem;
 		box-shadow: var(--shadow-lg);
-		animation: modelSlideDown 0.15s ease-out;
+		animation: modelSlideDown 0.16s var(--ease-brand);
 	}
 
 	@keyframes modelSlideDown {
@@ -205,6 +205,17 @@
 		to {
 			opacity: 1;
 			transform: translateY(0);
+		}
+	}
+
+	:global(.model-dropdown-content[data-state='closed']) {
+		animation: modelSlideUp 0.13s var(--ease-brand) forwards;
+	}
+
+	@keyframes modelSlideUp {
+		to {
+			opacity: 0;
+			transform: translateY(-4px);
 		}
 	}
 

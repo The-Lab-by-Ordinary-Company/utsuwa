@@ -46,7 +46,11 @@
 		line-height: 1.4;
 		border-radius: var(--radius-md);
 		box-shadow: var(--shadow-lg);
-		animation: tooltip-in 0.12s ease-out;
+		animation: tooltip-in 0.16s var(--ease-brand);
+	}
+
+	:global(.tooltip-content[data-state='closed']) {
+		animation: tooltip-out 0.1s var(--ease-brand) forwards;
 	}
 
 	@keyframes tooltip-in {
@@ -57,6 +61,13 @@
 		to {
 			opacity: 1;
 			transform: scale(1);
+		}
+	}
+
+	@keyframes tooltip-out {
+		to {
+			opacity: 0;
+			transform: scale(0.96);
 		}
 	}
 </style>

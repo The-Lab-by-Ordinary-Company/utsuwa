@@ -160,7 +160,7 @@
 		border-radius: var(--radius-lg);
 		padding: 0.5rem;
 		box-shadow: var(--shadow-lg);
-		animation: slideDown 0.15s ease-out;
+		animation: slideDown 0.16s var(--ease-brand);
 	}
 
 	@keyframes slideDown {
@@ -171,6 +171,17 @@
 		to {
 			opacity: 1;
 			transform: translateY(0);
+		}
+	}
+
+	:global(.dropdown-content[data-state='closed']) {
+		animation: slideUp 0.13s var(--ease-brand) forwards;
+	}
+
+	@keyframes slideUp {
+		to {
+			opacity: 0;
+			transform: translateY(-4px);
 		}
 	}
 

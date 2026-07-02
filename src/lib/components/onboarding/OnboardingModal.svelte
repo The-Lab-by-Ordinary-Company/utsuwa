@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { characterStore } from '$lib/stores/character.svelte';
 	import type { AppMode } from '$lib/types/character';
+	import { pop, fadeFast } from '$lib/utils/motion';
 
 	import './onboarding.css';
 	import WelcomeStep from './steps/WelcomeStep.svelte';
@@ -62,9 +63,9 @@
 	}
 </script>
 
-<div class="modal-overlay" onclick={handleComplete} role="presentation">
+<div class="modal-overlay" out:fadeFast={{ duration: 200 }} onclick={handleComplete} role="presentation">
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="modal-container" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+	<div class="modal-container" out:pop={{ duration: 220, y: 12 }} onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 		<!-- Progress dots (hidden on complete step) -->
 		{#if currentStep !== 'complete'}
 			<div class="progress-dots">
@@ -78,8 +79,11 @@
 			</div>
 		{/if}
 
-		<!-- Step content -->
-		<div class="step-wrapper" class:slide-forward={direction === 'forward'} class:slide-back={direction === 'back'}>
+		<!-- Step content. Keyed so the slide animation replays on every step
+		     change, not just when the direction class flips. -->
+		<div class="step-wrapper">
+			{#key currentStep}
+			<div class="step-slide" class:slide-forward={direction === 'forward'} class:slide-back={direction === 'back'}>
 			{#if currentStep === 'welcome'}
 				<WelcomeStep onNext={goNext} />
 			{:else if currentStep === 'character'}
@@ -105,6 +109,8 @@
 			{:else if currentStep === 'complete'}
 				<CompleteStep characterName={characterName} onComplete={handleComplete} />
 			{/if}
+			</div>
+			{/key}
 		</div>
 	</div>
 </div>
@@ -184,11 +190,11 @@
 		max-height: calc(85vh - 3rem);
 	}
 
-	.step-wrapper.slide-forward {
+	.step-slide.slide-forward {
 		animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.step-wrapper.slide-back {
+	.step-slide.slide-back {
 		animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 

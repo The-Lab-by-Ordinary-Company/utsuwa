@@ -29,6 +29,7 @@
 	import type { StateUpdates } from '$lib/types/character';
 	import type { EventDefinition } from '$lib/types/events';
 	import { onMount } from 'svelte';
+	import { pop, fadeFast } from '$lib/utils/motion';
 
 	// V2 companion system imports
 	import { buildSystemPrompt, buildExtractionSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
@@ -164,7 +165,7 @@
 		let llmUpdates = parsed.stateUpdates;
 
 		if (import.meta.env.DEV) {
-			console.log('%c[LLM raw response]', 'color:#01B2FF;font-weight:bold', companionResponse);
+			console.log('%c[LLM raw response]', 'color:#00b2ff;font-weight:bold', companionResponse);
 			console.log('%c[LLM parsed]', 'color:#22c55e;font-weight:bold', {
 				stateUpdates: llmUpdates,
 				new_memory: llmUpdates?.newMemory ?? null
@@ -508,7 +509,7 @@
 		<!-- VRM Stage (Full Background) -->
 		<div class="stage-container">
 			{#if vrmStore.isLoading || !vrmStore.modelUrl}
-				<div class="loading-dots">
+				<div class="loading-dots" out:fadeFast={{ duration: 300 }}>
 					<span class="dot"></span>
 					<span class="dot"></span>
 					<span class="dot"></span>
@@ -518,6 +519,7 @@
 			{#if vrmStore.error}
 				<div
 					class="error-toast"
+					out:pop={{ base: 'translateX(-50%)' }}
 					role="button"
 					tabindex="0"
 					onclick={() => vrmStore.setError(null)}
@@ -528,7 +530,10 @@
 				</div>
 			{/if}
 
-			<VrmScene />
+			<!-- The avatar resolves into focus once the model is ready -->
+			<div class="vrm-stage" class:is-loading={vrmStore.isLoading || !vrmStore.modelUrl}>
+				<VrmScene />
+			</div>
 		</div>
 
 		<!-- Floating Stat Indicators -->
@@ -557,6 +562,7 @@
 		{#if chatStore.error}
 			<div
 				class="chat-error-toast"
+				out:pop={{ base: 'translateX(-50%)' }}
 				role="button"
 				tabindex="0"
 				onclick={() => chatStore.setError(null)}
@@ -608,6 +614,20 @@
 		position: absolute;
 		inset: 0;
 		z-index: 0;
+	}
+
+	/* The scene sits blurred and dimmed while the model loads, then resolves
+	   into focus. Base state carries no filter so nothing lingers after. */
+	.vrm-stage {
+		height: 100%;
+		transition:
+			opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+			filter 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.vrm-stage.is-loading {
+		opacity: 0;
+		filter: blur(14px);
 	}
 
 	.loading-dots {
@@ -680,7 +700,7 @@
 		background: rgba(255, 255, 255, 0.2);
 		border: none;
 		padding: 0.25rem;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		cursor: pointer;
 		color: white;
 		opacity: 0.9;

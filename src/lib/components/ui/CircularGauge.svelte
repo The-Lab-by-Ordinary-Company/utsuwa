@@ -18,7 +18,7 @@
 		max = 100,
 		size = 80,
 		strokeWidth = 8,
-		color = '#01B2FF',
+		color = '#00b2ff',
 		iconName,
 		label,
 		showPercentage = true,

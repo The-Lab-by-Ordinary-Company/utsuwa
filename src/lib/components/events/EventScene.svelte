@@ -3,6 +3,7 @@
 	import type { StateUpdates } from '$lib/types/character';
 	import { Icon } from '$lib/components/ui';
 	import ChoiceDialog from './ChoiceDialog.svelte';
+	import { pop, fadeFast } from '$lib/utils/motion';
 
 	interface Props {
 		scene: Scene;
@@ -83,9 +84,9 @@
 	}
 </script>
 
-<div class="scene-overlay" class:overlay onclick={advance} role="button" tabindex="0" onkeypress={(e) => e.key === 'Enter' && advance()}>
+<div class="scene-overlay" class:overlay transition:fadeFast={{ duration: 200 }} onclick={advance} role="button" tabindex="0" onkeypress={(e) => e.key === 'Enter' && advance()}>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<div class="scene-container" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && onClose()} role="dialog" aria-modal="true" tabindex="-1">
+	<div class="scene-container" transition:pop={{ duration: 240, y: 18 }} onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && onClose()} role="dialog" aria-modal="true" tabindex="-1">
 		<!-- Header with event title -->
 		{#if eventName}
 			<div class="scene-header">
@@ -104,6 +105,9 @@
 		{/if}
 
 		<div class="scene-content">
+			<!-- Each narrative phase fades in on its own beat -->
+			{#key phase}
+				<div class="phase-wrap" in:pop={{ duration: 260, y: 10 }}>
 			<!-- Intro phase -->
 			{#if phase === 'intro' && scene.intro}
 				<div class="scene-intro">
@@ -157,6 +161,8 @@
 			{#if phase !== 'choices'}
 				<div class="hint">Click anywhere to continue</div>
 			{/if}
+				</div>
+			{/key}
 		</div>
 	</div>
 </div>
@@ -172,18 +178,12 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 1000;
-		animation: fadeIn 0.3s ease-out;
 	}
 
 	.scene-overlay.overlay {
 		background: transparent;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
-	}
-
-	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
 	}
 
 	.scene-container {
@@ -194,19 +194,7 @@
 		width: 90%;
 		max-height: 80vh;
 		overflow: hidden;
-		animation: slideUp 0.3s ease-out;
 		box-shadow: var(--shadow-xl);
-	}
-
-	@keyframes slideUp {
-		from {
-			transform: translateY(20px) scale(0.98);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0) scale(1);
-			opacity: 1;
-		}
 	}
 
 	/* Header */

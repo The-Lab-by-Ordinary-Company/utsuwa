@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Icon } from '$lib/components/ui';
+	import { pop, fadeFast } from '$lib/utils/motion';
 	import { isTauri } from '$lib/services/platform/platform';
 	import { updaterStore } from '$lib/stores/updater.svelte';
 
@@ -22,33 +23,46 @@
 </script>
 
 {#if visible}
-	<div class="update-banner" role="status" aria-live="polite">
+	<div
+		class="update-banner"
+		transition:pop={{ base: 'translateX(-50%)', y: -14, duration: 260 }}
+		role="status"
+		aria-live="polite"
+	>
 		<div class="banner-icon">
-			{#if status === 'error'}
-				<Icon name="x" size={18} />
-			{:else if status === 'ready'}
-				<Icon name="check" size={18} />
-			{:else}
-				<Icon name="download" size={18} />
-			{/if}
+			{#key status}
+				<span class="banner-swap" in:fadeFast={{ duration: 200 }}>
+					{#if status === 'error'}
+						<Icon name="x" size={18} />
+					{:else if status === 'ready'}
+						<Icon name="check" size={18} />
+					{:else}
+						<Icon name="download" size={18} />
+					{/if}
+				</span>
+			{/key}
 		</div>
 
 		<div class="banner-body">
-			{#if status === 'available'}
-				<span class="banner-title">Update available</span>
-				<span class="banner-sub">Utsuwa {updaterStore.availableVersion} is ready to install</span>
-			{:else if status === 'downloading'}
-				<span class="banner-title">Downloading update…</span>
-				<div class="progress-track">
-					<div class="progress-fill" style="width: {updaterStore.progress}%"></div>
+			{#key status}
+				<div class="banner-body-inner" in:fadeFast={{ duration: 200 }}>
+					{#if status === 'available'}
+						<span class="banner-title">Update available</span>
+						<span class="banner-sub">Utsuwa {updaterStore.availableVersion} is ready to install</span>
+					{:else if status === 'downloading'}
+						<span class="banner-title">Downloading update…</span>
+						<div class="progress-track">
+							<div class="progress-fill" style="width: {updaterStore.progress}%"></div>
+						</div>
+					{:else if status === 'ready'}
+						<span class="banner-title">Update installed</span>
+						<span class="banner-sub">Restarting…</span>
+					{:else if status === 'error'}
+						<span class="banner-title">Update failed</span>
+						<span class="banner-sub">{updaterStore.errorMessage ?? 'Please try again later.'}</span>
+					{/if}
 				</div>
-			{:else if status === 'ready'}
-				<span class="banner-title">Update installed</span>
-				<span class="banner-sub">Restarting…</span>
-			{:else if status === 'error'}
-				<span class="banner-title">Update failed</span>
-				<span class="banner-sub">{updaterStore.errorMessage ?? 'Please try again later.'}</span>
-			{/if}
+			{/key}
 		</div>
 
 		{#if status === 'available'}
@@ -84,18 +98,19 @@
 		border-radius: var(--radius-lg);
 		background: var(--bg-primary);
 		box-shadow: var(--shadow-lg);
-		animation: bannerIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 	}
 
-	@keyframes bannerIn {
-		from {
-			opacity: 0;
-			transform: translate(-50%, -16px) scale(0.98);
-		}
-		to {
-			opacity: 1;
-			transform: translate(-50%, 0) scale(1);
-		}
+	.banner-swap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.banner-body-inner {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		min-width: 0;
 	}
 
 	.banner-icon {

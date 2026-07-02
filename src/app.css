@@ -91,6 +91,9 @@
 	--skeu-glow-blue: 0 0 20px rgba(0, 178, 255, 0.35);
 	--skeu-glow-blue-strong: 0 0 30px rgba(0, 178, 255, 0.5);
 
+	/* Motion */
+	--ease-brand: cubic-bezier(0.16, 1, 0.3, 1);
+
 	/* Radius */
 	--radius-xs: 4px;
 	--radius-sm: 8px;
@@ -299,6 +302,15 @@ html {
 	::view-transition-old(root),
 	::view-transition-new(root) {
 		animation: none;
+	}
+
+	/* Clamp all CSS motion app-wide; JS transitions check the same query */
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
 	}
 }
 

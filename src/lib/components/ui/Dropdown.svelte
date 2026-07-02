@@ -26,7 +26,7 @@
 
 	<DropdownMenu.Portal>
 		<DropdownMenu.Content
-			class="z-50 min-w-[12rem] bg-background border border-border rounded-popover p-1.5 shadow-popover outline-none animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2"
+			class="ui-dropdown-content z-50 min-w-[12rem] bg-background border border-border rounded-popover p-1.5 shadow-popover outline-none"
 			{align}
 			{side}
 			{sideOffset}
@@ -35,3 +35,31 @@
 		</DropdownMenu.Content>
 	</DropdownMenu.Portal>
 </DropdownMenu.Root>
+
+<style>
+	:global(.ui-dropdown-content) {
+		animation: ui-dropdown-in 0.16s var(--ease-brand);
+	}
+
+	:global(.ui-dropdown-content[data-state='closed']) {
+		animation: ui-dropdown-out 0.13s var(--ease-brand) forwards;
+	}
+
+	@keyframes ui-dropdown-in {
+		from {
+			opacity: 0;
+			transform: translateY(-4px) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes ui-dropdown-out {
+		to {
+			opacity: 0;
+			transform: translateY(-4px) scale(0.97);
+		}
+	}
+</style>

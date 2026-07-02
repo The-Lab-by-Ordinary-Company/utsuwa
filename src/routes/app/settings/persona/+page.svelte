@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pop, fadeFast, slideOpen } from '$lib/utils/motion';
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
@@ -489,7 +490,7 @@
 					<Icon name={personalityExpanded ? 'chevron-up' : 'chevron-down'} size={16} />
 				</button>
 				{#if personalityExpanded}
-					<div class="personality-content">
+					<div class="personality-content" transition:slideOpen>
 						<textarea
 							class="personality-textarea"
 							bind:value={formSystemPrompt}
@@ -510,7 +511,7 @@
 				</button>
 
 				{#if aiServicesExpanded}
-					<div class="services-content">
+					<div class="services-content" transition:slideOpen>
 						<!-- LLM Config -->
 						<div class="service-group">
 							<div class="service-header">
@@ -918,7 +919,7 @@
 					</button>
 
 					{#if eventsExpanded}
-						<div class="events-content">
+						<div class="events-content" transition:slideOpen>
 							{#if achievements.length > 0}
 								<div class="events-list">
 									{#each achievements as achievement, i}
@@ -963,13 +964,14 @@
 	{#if uploadModalOpen}
 		<div
 			class="upload-modal"
+			transition:fadeFast={{ duration: 180 }}
 			role="button"
 			tabindex="0"
 			onclick={() => uploadModalOpen = false}
 			onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); uploadModalOpen = false; } }}
 		>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="upload-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+			<div class="upload-content" transition:pop={{ duration: 220, y: 14 }} onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 				<div class="upload-header">
 					<h3>Upload Custom Model</h3>
 					<button class="close-btn" onclick={() => uploadModalOpen = false}>
@@ -985,13 +987,14 @@
 	{#if modeConfirmOpen}
 		<div
 			class="confirm-modal"
+			transition:fadeFast={{ duration: 180 }}
 			role="button"
 			tabindex="0"
 			onclick={cancelModeChange}
 			onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cancelModeChange(); } }}
 		>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="confirm-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+			<div class="confirm-content" transition:pop={{ duration: 220, y: 14 }} onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 				<div class="confirm-icon">
 					<Icon name="alert" size={32} />
 				</div>

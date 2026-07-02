@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
 	import MemoryGraph from './MemoryGraph.svelte';
+	import { fadeFast } from '$lib/utils/motion';
 
 	interface Props {
 		onClose: () => void;
@@ -17,7 +18,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="modal-overlay" role="dialog" aria-modal="true" aria-label="Memory Graph">
+<div class="modal-overlay" out:fadeFast={{ duration: 160 }} role="dialog" aria-modal="true" aria-label="Memory Graph">
 	<div class="modal-container">
 		<header class="modal-header">
 			<div class="header-info">

@@ -7,6 +7,7 @@
 	import { sttStore } from '$lib/stores/stt.svelte';
 	import { prepareImage, UnsupportedImageError, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import AudioVisualizer from './AudioVisualizer.svelte';
+	import { pop, fadeFast } from '$lib/utils/motion';
 
 	interface Props {
 		onSend: (content: string, images?: PreparedImage[]) => void;
@@ -282,6 +283,7 @@
 {#if sttError}
 	<div
 		class="stt-error"
+		out:pop={{ base: 'translateX(-50%)', y: -10, duration: 200 }}
 		onclick={() => sttStore.clearError()}
 		onkeydown={(e) => {
 			if (e.key === 'Enter' || e.key === ' ') {
@@ -301,14 +303,19 @@
 {/if}
 
 {#if hint}
-	<div class="vision-hint">
+	<div class="vision-hint" out:pop={{ base: 'translateX(-50%)', y: -10, duration: 200 }}>
 		<Icon name="camera" size={16} />
 		<span>{hint}</span>
 	</div>
 {/if}
 
 {#if showPrivacy}
-	<div class="privacy-notice" role="dialog" aria-label="Photo privacy">
+	<div
+		class="privacy-notice"
+		out:pop={{ base: 'translateX(-50%)', y: -10, duration: 200 }}
+		role="dialog"
+		aria-label="Photo privacy"
+	>
 		<Icon name="camera" size={16} />
 		<span>
 			{#if providerIsLocal}
@@ -331,13 +338,13 @@
 
 <div class="bottom-chat-bar" class:dragging={dragActive}>
 	{#if dragActive}
-		<div class="drop-zone">
+		<div class="drop-zone" out:fadeFast={{ duration: 120 }}>
 			<Icon name="camera" size={22} />
 			<span>Drop a photo to show her</span>
 		</div>
 	{/if}
 	{#if showStats && !overlay}
-		<div class="stats-tray">
+		<div class="stats-tray" out:pop={{ base: 'translateX(-50%)', y: 8, duration: 200 }}>
 			<div class="stat-list">
 				{#each stats as stat}
 					<div class="stat-row">
@@ -359,9 +366,9 @@
 		</div>
 	{/if}
 	{#if pending.length > 0}
-		<div class="pending-row">
+		<div class="pending-row" out:fadeFast={{ duration: 150 }}>
 			{#each pending as p (p.image.id)}
-				<div class="pending-chip">
+				<div class="pending-chip" in:pop={{ duration: 200, y: 6, scale: 0.9 }} out:fadeFast={{ duration: 120 }}>
 					<img src={p.url} alt="To show her" />
 					<button type="button" class="remove-chip" aria-label="Remove image" onclick={() => removePending(p.image.id)}>
 						<Icon name="x" size={12} />
@@ -383,7 +390,7 @@
 			>
 				<span class="mood-dot" style="color: {moodInfo.color}"><Icon name={moodInfo.icon} size={20} /></span>
 				{#if showStats}
-					<span class="mood-fab-label">{moodInfo.description}</span>
+					<span class="mood-fab-label" in:fadeFast={{ duration: 150 }}>{moodInfo.description}</span>
 				{/if}
 			</button>
 		{/if}
@@ -584,7 +591,7 @@
 		width: 19px;
 		height: 19px;
 		border: 2px solid var(--bg-primary);
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		background: var(--color-error);
 		color: #fff;
 		display: flex;
@@ -820,7 +827,7 @@
 		background: rgba(255, 255, 255, 0.2);
 		border: none;
 		padding: 0.25rem;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		cursor: pointer;
 		color: white;
 		opacity: 0.9;
@@ -908,7 +915,7 @@
 		width: 44px;
 		height: 44px;
 		border: none;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		cursor: pointer;
 		display: flex;
 		align-items: center;

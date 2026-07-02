@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { vrmStore } from '$lib/stores/vrm.svelte';
+	import { pop, fadeFast } from '$lib/utils/motion';
 
 	interface Props {
 		message: string;
@@ -49,21 +50,30 @@
 </script>
 
 {#if visible && (message || isTyping)}
-	<div class="speech-bubble-container" role="status" aria-live="polite" style={bubbleStyle()}>
+	<div
+		class="speech-bubble-container"
+		transition:pop={{ duration: 220, y: 6 }}
+		role="status"
+		aria-live="polite"
+		style={bubbleStyle()}
+	>
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="speech-bubble" onclick={handleClick}>
-			<div class="speech-bubble-content">
-				{#if isTyping}
-					<div class="typing-indicator">
-						<span></span>
-						<span></span>
-						<span></span>
-					</div>
-				{:else}
-					<p class="message">{message}</p>
-				{/if}
-			</div>
+			<!-- Keyed so consecutive replies fade in instead of hard-swapping text -->
+			{#key isTyping ? '::typing' : message}
+				<div class="speech-bubble-content" in:fadeFast={{ duration: 180 }}>
+					{#if isTyping}
+						<div class="typing-indicator">
+							<span></span>
+							<span></span>
+							<span></span>
+						</div>
+					{:else}
+						<p class="message">{message}</p>
+					{/if}
+				</div>
+			{/key}
 			<div class="bubble-tail"></div>
 		</div>
 	</div>
@@ -74,20 +84,8 @@
 		position: fixed;
 		z-index: 50;
 		pointer-events: none;
-		animation: fadeIn 0.25s ease-out;
 		/* Position set dynamically via style attribute */
 		transition: top 0.1s ease-out, left 0.1s ease-out;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateX(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
 	}
 
 	.speech-bubble {

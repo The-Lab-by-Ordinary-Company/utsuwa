@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { pop, slideOpen } from '$lib/utils/motion';
 	import {
 		exportSave,
 		importSave,
@@ -196,14 +197,14 @@
 			/>
 
 			{#if importError}
-				<div class="error-message">
+				<div class="error-message" transition:pop={{ duration: 200, y: 6 }}>
 					<Icon name="warning" size={16} />
 					{importError}
 				</div>
 			{/if}
 
 			{#if importSuccess}
-				<div class="success-message">
+				<div class="success-message" transition:pop={{ duration: 200, y: 6 }}>
 					<Icon name="check" size={16} />
 					Imported {importSuccess.imported} records
 					{#if importSuccess.skipped > 0}
@@ -214,7 +215,7 @@
 			{/if}
 
 			{#if importPreview && !importSuccess}
-				<div class="import-preview">
+				<div class="import-preview" transition:slideOpen>
 					<div class="preview-header">
 						<Icon name="file" size={16} />
 						<span>Save File Preview</span>
@@ -279,7 +280,7 @@
 			</p>
 
 			{#if showClearConfirm}
-				<div class="confirm-message">
+				<div class="confirm-message" transition:pop={{ duration: 200, y: 6 }}>
 					<Icon name="warning" size={16} />
 					Are you sure? This will delete all your data permanently.
 				</div>

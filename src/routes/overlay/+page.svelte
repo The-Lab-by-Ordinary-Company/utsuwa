@@ -1,5 +1,6 @@
 <script lang="ts">
 	import VrmScene from '$lib/components/vrm/VrmScene.svelte';
+	import { pop } from '$lib/utils/motion';
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import FloatingChatIcon from '$lib/components/overlay/FloatingChatIcon.svelte';
@@ -404,7 +405,7 @@
 
 	<!-- Expandable Chat Bar -->
 	{#if chatExpanded}
-		<div class="chat-bar-container">
+		<div class="chat-bar-container" out:pop={{ base: 'translateX(-50%)', y: 10, duration: 180 }}>
 			<BottomChatBar onSend={handleSend} disabled={chatStore.isLoading} overlay />
 		</div>
 	{/if}
@@ -413,14 +414,14 @@
 	{#if chatStore.error}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="error-toast" onclick={() => chatStore.setError(null)}>
+		<div class="error-toast" out:pop={{ base: 'translateX(-50%)', y: 8, duration: 180 }} onclick={() => chatStore.setError(null)}>
 			<span>{chatStore.error}</span>
 		</div>
 	{/if}
 	{#if sttStore.error}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="error-toast" onclick={() => sttStore.clearError()}>
+		<div class="error-toast error-toast--stt" out:pop={{ base: 'translateX(-50%)', y: 8, duration: 180 }} onclick={() => sttStore.clearError()}>
 			<span>{sttStore.error}</span>
 		</div>
 	{/if}
@@ -545,6 +546,11 @@
 		z-index: 50;
 		animation: slideUpShake 0.5s ease-out;
 		box-shadow: var(--shadow-lg);
+	}
+
+	/* STT errors stack above chat errors instead of sharing the same slot */
+	.error-toast--stt {
+		bottom: 8.5rem;
 	}
 
 	@keyframes slideUpShake {

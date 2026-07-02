@@ -40,7 +40,11 @@
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
 		outline: none;
-		animation: popover-in 0.15s ease-out;
+		animation: popover-in 0.16s var(--ease-brand);
+	}
+
+	:global(.popover-content[data-state='closed']) {
+		animation: popover-out 0.13s var(--ease-brand) forwards;
 	}
 
 	@keyframes popover-in {
@@ -51,6 +55,13 @@
 		to {
 			opacity: 1;
 			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes popover-out {
+		to {
+			opacity: 0;
+			transform: translateY(-4px) scale(0.98);
 		}
 	}
 </style>

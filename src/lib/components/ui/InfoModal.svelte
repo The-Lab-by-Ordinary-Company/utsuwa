@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
 	import { onMount } from 'svelte';
+	import { pop, fadeFast } from '$lib/utils/motion';
 	import { DOCS_URL } from '$lib/config/site';
 	import { isTauri } from '$lib/services/platform/platform';
 	import { updaterStore } from '$lib/stores/updater.svelte';
@@ -76,8 +77,8 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="modal-overlay" onclick={handleOverlayClick} onkeydown={handleKeydown} role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
-	<div class="modal-container">
+<div class="modal-overlay" transition:fadeFast={{ duration: 180 }} onclick={handleOverlayClick} onkeydown={handleKeydown} role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
+	<div class="modal-container" transition:pop={{ duration: 220, y: 14 }}>
 		<button class="close-btn" onclick={onClose} aria-label="Close">
 			<Icon name="x" size={16} />
 		</button>
@@ -171,12 +172,6 @@
 		justify-content: center;
 		z-index: 1000;
 		padding: 1.5rem;
-		animation: fadeIn 0.2s ease-out;
-	}
-
-	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
 	}
 
 	.modal-container {
@@ -187,12 +182,6 @@
 		width: 100%;
 		padding: 1.5rem;
 		box-shadow: var(--shadow-xl);
-		animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	@keyframes slideUp {
-		from { transform: translateY(16px) scale(0.98); opacity: 0; }
-		to { transform: translateY(0) scale(1); opacity: 1; }
 	}
 
 	.close-btn {
@@ -375,6 +364,7 @@
 		height: 7px;
 		border-radius: 50%;
 		background: var(--text-tertiary);
+		transition: background 0.25s ease;
 	}
 
 	.sys-val.ok .dot {
