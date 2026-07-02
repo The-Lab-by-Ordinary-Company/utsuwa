@@ -98,6 +98,9 @@
 	</div>
 
 	{#if menuOpen}
+		<!-- Blurs the page behind the open menu; tapping it closes -->
+		<button class="site-nav-backdrop" aria-label="Close menu" onclick={() => (menuOpen = false)}
+		></button>
 		<div id="site-nav-mobile" class="site-nav-mobile">
 			<a href="/#features" class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Features</a>
 			<a href={sectionUrl('docs')} class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Docs</a>
@@ -324,13 +327,59 @@
 		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
-	/* Mobile menu panel */
+	/* Mobile menu panel: overlays the page below the bar instead of pushing
+	   content down, and rides with the sticky nav on scroll */
 	.site-nav-mobile {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
 		padding: 0.75rem 1.5rem 1.25rem;
 		border-top: 1px solid var(--border-subtle);
+		border-bottom: 1px solid var(--border-subtle);
+		background: color-mix(in srgb, var(--bg-page) 92%, transparent);
+		-webkit-backdrop-filter: blur(14px) saturate(1.4);
+		backdrop-filter: blur(14px) saturate(1.4);
+		box-shadow: var(--shadow-lg);
+		animation: mobileMenuIn 0.2s var(--ease-brand);
+	}
+
+	@keyframes mobileMenuIn {
+		from {
+			opacity: 0;
+			transform: translateY(-6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Full-viewport scrim behind the open menu. Sits under the nav's own
+	   content via negative z inside the nav's stacking context. */
+	.site-nav-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: -1;
+		border: none;
+		padding: 0;
+		cursor: default;
+		background: color-mix(in srgb, var(--bg-page) 35%, transparent);
+		-webkit-backdrop-filter: blur(10px);
+		backdrop-filter: blur(10px);
+		animation: backdropIn 0.25s ease;
+	}
+
+	@keyframes backdropIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 
 	.site-nav-mobile-link {
