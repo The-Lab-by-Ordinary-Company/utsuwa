@@ -1,5 +1,3 @@
-# Utsuwa (器)
-
 > [!WARNING]
 > Utsuwa and The Lab by Ordinary Company have not minted, launched, endorsed, or authorized any cryptocurrency, token, coin, NFT, or blockchain project. We never will. If you see crypto associated with Utsuwa or The Lab, it is a scam. This repository is the only authentic Utsuwa project repository.
 
@@ -7,17 +5,67 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/banner-dark.avif">
     <source media="(prefers-color-scheme: light)" srcset="static/brand-assets/banner-light.avif">
-    <img alt="Utsuwa — a vessel for AI to live in" src="static/brand-assets/banner-light.avif" width="100%">
+    <img alt="Utsuwa, an open-source AI companion you can see and talk to" src="static/brand-assets/banner-light.avif" width="100%">
   </picture>
 </p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+<p align="center">
+  <a href="https://utsuwa.ai">Website</a>
+  ·
+  <a href="https://app.utsuwa.ai">Try it in your browser</a>
+  ·
+  <a href="https://docs.utsuwa.ai">Docs</a>
+  ·
+  <a href="https://utsuwa.ai/blog">Blog</a>
+  ·
+  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases">Releases</a>
+</p>
 
-**Utsuwa is an open-source AI companion with 3D VRM avatars.** A platform where you can have a virtual companion that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused — your data is stored locally and never leaves your device.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases"><img src="https://img.shields.io/github/v/release/The-Lab-by-Ordinary-Company/utsuwa?label=Release&color=00b2ff" alt="Latest release"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22+-green.svg" alt="Node.js 22+"></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome"></a>
+</p>
 
-"Utsuwa" means "vessel" in Japanese - a container for AI to inhabit visually.
+<p align="center">
+  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/download-buttons/macos-dark.avif">
+      <img alt="Download for macOS" src="static/brand-assets/download-buttons/macos-light.avif" width="31%">
+    </picture>
+  </a>
+  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/download-buttons/windows-dark.avif">
+      <img alt="Download for Windows" src="static/brand-assets/download-buttons/windows-light.avif" width="31%">
+    </picture>
+  </a>
+  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="static/brand-assets/download-buttons/linux-dark.avif">
+      <img alt="Download for Linux" src="static/brand-assets/download-buttons/linux-light.avif" width="31%">
+    </picture>
+  </a>
+</p>
+
+<p align="center">
+  <sub>Beta builds are unsigned, so your OS will warn on first launch (<a href="#download-the-desktop-app">install notes</a>). Prefer zero install? <a href="https://app.utsuwa.ai">Run it in your browser</a>.</sub>
+</p>
+
+---
+
+**Utsuwa is an open-source AI companion with 3D VRM avatars.** A platform where you can have a virtual companion that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused: your data is stored locally and never leaves your device.
+
+"Utsuwa" means "vessel" in Japanese. A container for AI to inhabit visually.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="static/marketing/companion-dark.webp">
+    <source media="(prefers-color-scheme: light)" srcset="static/marketing/companion-light.webp">
+    <img alt="The Utsuwa app: a 3D VRM companion with chat, mood, and voice" src="static/marketing/companion-light.webp" width="100%">
+  </picture>
+</p>
 
 ## Features
 
@@ -38,7 +86,7 @@
 - **Memory Graph**: Interactive visualization showing how memories connect semantically
 - **Data Export/Import**: Download your data as a save file, restore anytime
 - **Theming**: Light and dark mode support with system preference detection
-- **Desktop App** *(beta)*: Native desktop app for macOS, Windows, and Linux with transparent overlay mode — your companion floats on your desktop
+- **Desktop App** *(beta)*: Native desktop app for macOS, Windows, and Linux with transparent overlay mode, so your companion floats on your desktop
 
 ### Local-First Storage
 
@@ -60,7 +108,7 @@ Build a meaningful relationship with your AI companion through a dating sim-insp
 - **Natural Progression**: Hybrid system combining app heuristics + LLM suggestions for believable relationship growth
 - **Time-Aware**: Your companion notices when you've been away and reacts accordingly
 
-See the [Companion System Architecture](https://utsuwa.ai/docs/technology/companion-system) for full details.
+See the [Companion System Architecture](https://docs.utsuwa.ai/technology/companion-system) for full details.
 
 ### Desktop Application (Beta)
 
@@ -73,7 +121,7 @@ A native desktop app built with Tauri that includes all web features plus:
 - **Window Switching**: Seamlessly switch between the full app and overlay mode
 - **Global Hotkeys**: Push-to-talk, toggle overlay, and focus chat with keyboard shortcuts
 
-The desktop app uses the same codebase as the web version — your save files are compatible between both.
+The desktop app uses the same codebase as the web version, and your save files are compatible between both.
 
 ## Supported Providers
 
@@ -107,7 +155,7 @@ Voice input is accessed via the microphone button in the chat bar. Groq STT uses
 
 ### Try it Online
 
-Use Utsuwa directly at **[utsuwa.ai](https://utsuwa.ai)** — no installation required.
+Use Utsuwa directly at **[app.utsuwa.ai](https://app.utsuwa.ai)**. No installation required.
 
 ### Download the Desktop App
 
@@ -115,7 +163,7 @@ Native desktop builds (with transparent overlay mode) are available for all thre
 
 | Platform | Download |
 |----------|----------|
-| **macOS** | `.dmg` (universal — Apple Silicon + Intel) |
+| **macOS** | `.dmg` (universal: Apple Silicon + Intel) |
 | **Windows** | `.exe` installer |
 | **Linux** | `.AppImage`, `.deb`, or `.rpm` |
 
@@ -132,7 +180,7 @@ If you prefer to run Utsuwa locally or host your own instance:
 
 - Node.js 22+
 - pnpm (recommended) or npm
-- A modern browser (Chrome, Firefox, Safari, Edge) — for the web version
+- A modern browser (Chrome, Firefox, Safari, Edge) for the web version
 
 #### Installation
 
@@ -178,9 +226,8 @@ All API keys are stored locally on your device and are never sent to any server 
 
 #### Loading a VRM Model
 
-1. Go to **Settings > Avatar**
-2. Click **"Load VRM"** to select a local `.vrm` file
-3. Or enter a URL to load a VRM model from the web
+1. Go to **Settings > Character** and find the **Avatar** gallery
+2. Pick one of the bundled models, or click **Add Custom** to upload your own `.vrm` file
 
 #### Data Management
 
