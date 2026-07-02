@@ -2,7 +2,6 @@
 	import type { PageData } from './$types';
 	import { formatDate } from '$lib/utils/format-date';
 	import { SITE_URL, GITHUB_REPO, GITHUB_RELEASES } from '$lib/config/site';
-	import Icon from '$lib/components/ui/Icon.svelte';
 	import ProviderIcons from '$lib/components/icons/ProviderIcons.svelte';
 	import SiteNav from '$lib/components/marketing/SiteNav.svelte';
 	import { sectionUrl } from '$lib/config/links';
@@ -59,7 +58,7 @@
 			title: 'A real 3D body, not a chat box.',
 			body: "Drop in any VRM model and watch it come to life. Replies appear as 3D speech bubbles that follow your companion's head as it moves, breathes, and looks around.",
 			chips: ['Idle animation', 'Auto-blink', 'Speech lip-sync', 'Head-tracked bubbles'],
-			img: '/landing-page/utsuwa-thumbnail.png',
+			shot: 'companion',
 			alt: 'Utsuwa desktop app with a 3D VRM avatar companion and chat interface'
 		},
 		{
@@ -68,7 +67,7 @@
 			title: 'She actually remembers.',
 			body: 'Local AI embeddings weave your conversations into a web of memories she can recall by meaning, not keywords. Affection, trust, and mood shift over time across eight relationship stages — from Stranger to Soulmate.',
 			chips: ['Semantic recall', 'On-device embeddings', '8 relationship stages', 'Mood & trust'],
-			img: '/landing-page/memory-graph.png',
+			shot: 'memory',
 			alt: 'Semantic memory graph showing AI companion relationship and conversation history'
 		},
 		{
@@ -77,7 +76,7 @@
 			title: 'You own every part of it.',
 			body: 'Run a frontier model or keep it fully offline with Ollama and LM Studio. Mix and match your chat, voice input, and text-to-speech providers — all on your own API keys, with nothing routed through us.',
 			chips: ['Frontier or local', 'Your API keys', 'Swap voices', 'No middleman'],
-			img: '/landing-page/ai-services.png',
+			shot: 'settings',
 			alt: 'Settings panel showing LLM provider options including OpenAI, Anthropic, and Ollama'
 		}
 	];
@@ -103,32 +102,6 @@
 		{ name: 'ElevenLabs', icon: 'elevenlabs', wm: null }
 	];
 
-	const faqs = [
-		{
-			q: 'Is Utsuwa really free?',
-			a: 'Yes. Utsuwa is open source under the MIT license — free to use, self-host, and modify, with no accounts or subscriptions.'
-		},
-		{
-			q: 'Do I need an API key?',
-			a: 'You bring your own model. Connect a key from OpenAI, Anthropic, Google, Groq and others, or run a local model with Ollama and no key at all.'
-		},
-		{
-			q: 'Does my data stay private?',
-			a: 'Everything lives on your device in local storage. There is no cloud sync or telemetry, and your character and conversations never leave your machine unless you choose a cloud model.'
-		},
-		{
-			q: 'What is a VRM avatar?',
-			a: 'VRM is an open 3D avatar format. Load any .vrm model and your companion appears in 3D with idle motion, blinking, expressions, and lip-sync.'
-		},
-		{
-			q: 'Which platforms are supported?',
-			a: 'A native desktop app and a web build that runs in any modern browser — both from the same open-source project.'
-		},
-		{
-			q: 'Can it speak and listen?',
-			a: 'Yes. Talk to it with Whisper or the Web Speech API and hear replies back through ElevenLabs or OpenAI voices.'
-		}
-	];
 </script>
 
 <svelte:head>
@@ -179,16 +152,6 @@
 			url: SITE_URL
 		}
 	})}</script>`}
-
-	{@html `<script type="application/ld+json">${JSON.stringify({
-		'@context': 'https://schema.org',
-		'@type': 'FAQPage',
-		mainEntity: faqs.map((f) => ({
-			'@type': 'Question',
-			name: f.q,
-			acceptedAnswer: { '@type': 'Answer', text: f.a }
-		}))
-	})}</script>`}
 </svelte:head>
 
 <div class="page-root overflow-x-clip">
@@ -211,12 +174,7 @@
 
 			<div use:reveal={240} class="reveal hero-actions">
 				<a href={sectionUrl('app')} class="btn btn-primary btn-lg">Try it live</a>
-				<a
-					href={GITHUB_RELEASES}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="btn btn-secondary btn-lg">Download</a
-				>
+				<a href="/download" class="btn btn-secondary btn-lg">Download</a>
 				<a href={sectionUrl('docs')} class="hero-textlink">Read the docs &rarr;</a>
 			</div>
 		</div>
@@ -311,7 +269,18 @@
 				{#each features as f, i}
 					<div use:reveal class="reveal feature-row" class:feature-row--rev={i % 2 === 1}>
 						<div class="feature-media">
-							<img src={f.img} alt={f.alt} loading="lazy" class="feature-img" />
+							<img
+								class="feature-img feature-img--light"
+								src={`/marketing/${f.shot}-light.png`}
+								alt={f.alt}
+								loading="lazy"
+							/>
+							<img
+								class="feature-img feature-img--dark"
+								src={`/marketing/${f.shot}-dark.png`}
+								alt={f.alt}
+								loading="lazy"
+							/>
 						</div>
 						<div class="feature-copy">
 							<h3 class="feature-h2" style="font-family: var(--font-sans);">{f.title}</h3>
@@ -378,33 +347,6 @@
 		</section>
 	{/if}
 
-	<!-- FAQ -->
-	<section class="py-24 md:py-32">
-		<div class="max-w-3xl mx-auto px-6">
-			<div class="text-center mb-14 md:mb-16">
-				<p use:reveal class="reveal eyebrow justify-center mb-5">FAQ</p>
-				<h2
-					use:reveal={60}
-					class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
-					style="font-family: var(--font-sans);"
-				>
-					Questions, answered.
-				</h2>
-			</div>
-			<div>
-				{#each faqs as f, i}
-					<details use:reveal={(i % 4) * 60} class="reveal faq-item">
-						<summary class="faq-q">
-							<span>{f.q}</span>
-							<span class="faq-chevron"><Icon name="chevron-down" size={18} /></span>
-						</summary>
-						<div class="faq-a">{f.a}</div>
-					</details>
-				{/each}
-			</div>
-		</div>
-	</section>
-
 	<!-- Closing CTA -->
 	<section class="py-24 md:py-32">
 		<div class="max-w-3xl mx-auto px-6 text-center">
@@ -425,12 +367,7 @@
 				<a href={sectionUrl('app')} class="btn btn-primary text-sm font-bold px-6 py-3 rounded-full">
 					Try it live
 				</a>
-				<a
-					href={GITHUB_RELEASES}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="btn btn-secondary text-sm font-bold px-6 py-3 rounded-full"
-				>
+				<a href="/download" class="btn btn-secondary text-sm font-bold px-6 py-3 rounded-full">
 					Download
 				</a>
 			</div>
@@ -707,19 +644,26 @@
 		gap: 2rem;
 	}
 
-	.feature-media {
-		border-radius: var(--radius-xl);
-		background: var(--gradient-aurora-cool);
-		padding: clamp(1.5rem, 4vw, 3.5rem);
-		box-shadow: var(--shadow-md);
-	}
-
+	/* Real full-app screenshots, shown directly with rounded corners + a soft
+	   shadow (theme-aware, no gradient panel). */
 	.feature-img {
 		display: block;
 		width: 100%;
 		height: auto;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xl);
 		box-shadow: var(--shadow-lg);
+	}
+
+	.feature-img--dark {
+		display: none;
+	}
+
+	:global(.dark) .feature-img--light {
+		display: none;
+	}
+
+	:global(.dark) .feature-img--dark {
+		display: block;
 	}
 
 	.feature-copy {
@@ -778,51 +722,6 @@
 	.reveal:global(.revealed) {
 		opacity: 1;
 		transform: none;
-	}
-
-	/* FAQ — cardless accordion */
-	.faq-item {
-		border-top: 1px solid var(--border-subtle);
-	}
-
-	.faq-item:last-child {
-		border-bottom: 1px solid var(--border-subtle);
-	}
-
-	.faq-q {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1.25rem 0;
-		cursor: pointer;
-		list-style: none;
-		font-size: 1.02rem;
-		font-weight: 600;
-		color: var(--text-primary);
-	}
-
-	.faq-q::-webkit-details-marker {
-		display: none;
-	}
-
-	.faq-chevron {
-		display: flex;
-		flex-shrink: 0;
-		color: var(--text-tertiary);
-		transition: transform 0.2s ease;
-	}
-
-	.faq-item[open] .faq-chevron {
-		transform: rotate(180deg);
-	}
-
-	.faq-a {
-		padding: 0 0 1.4rem;
-		max-width: 60ch;
-		font-size: 0.95rem;
-		line-height: 1.65;
-		color: var(--text-secondary);
 	}
 
 	.footer-brand-logo-light {

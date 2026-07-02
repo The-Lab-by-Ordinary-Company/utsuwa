@@ -13,7 +13,10 @@
 
 	// Marketing/content routes that should never live inside the desktop app.
 	const isWebOnly = (path: string) =>
-		path === '/' || path.startsWith('/docs') || path.startsWith('/blog');
+		path === '/' ||
+		path.startsWith('/docs') ||
+		path.startsWith('/blog') ||
+		path.startsWith('/download');
 
 	// The desktop build must only ever show the app. The window now boots at
 	// "/app" (tauri.conf.json), but this also bounces any web-only route to the

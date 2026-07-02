@@ -31,3 +31,5 @@ vite.config.ts.timestamp-*
 # Claude
 .claude/
 .refs
+# Temporary marketing-capture harness (do NOT commit)
+src/routes/(shots)/
