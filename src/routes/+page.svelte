@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { formatDate } from '$lib/utils/format-date';
-	import { SITE_URL, GITHUB_REPO, GITHUB_RELEASES } from '$lib/config/site';
+	import { SITE_URL } from '$lib/config/site';
 	import ProviderIcons from '$lib/components/icons/ProviderIcons.svelte';
 	import SiteNav from '$lib/components/marketing/SiteNav.svelte';
+	import SiteFooter from '$lib/components/marketing/SiteFooter.svelte';
 	import { sectionUrl } from '$lib/config/links';
+	import { reveal } from '$lib/utils/reveal';
 
 	let { data }: { data: PageData } = $props();
 
@@ -22,60 +24,46 @@
 		return () => mq.removeEventListener('change', sync);
 	});
 
-	// Scroll-reveal action. Fires once when an element enters the viewport,
-	// staggered by an optional delay. Bails out to "always visible" when the
-	// user prefers reduced motion or IntersectionObserver isn't around.
-	function reveal(node: HTMLElement, delay = 0) {
-		if (typeof IntersectionObserver === 'undefined') {
-			node.classList.add('revealed');
-			return;
-		}
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			node.classList.add('revealed');
-			return;
-		}
-		node.style.setProperty('--reveal-delay', `${delay}ms`);
+	// Pause the hero loop while it's scrolled out of view; resume on return.
+	function pauseOffscreen(node: HTMLVideoElement) {
+		if (typeof IntersectionObserver === 'undefined') return;
 		const obs = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					if (entry.isIntersecting) {
-						node.classList.add('revealed');
-						obs.unobserve(node);
-					}
-				}
+			([entry]) => {
+				if (entry.isIntersecting) node.play().catch(() => {});
+				else node.pause();
 			},
-			{ threshold: 0.18, rootMargin: '0px 0px -8% 0px' }
+			{ threshold: 0.1 }
 		);
 		obs.observe(node);
 		return { destroy: () => obs.disconnect() };
 	}
 
+	// Hero headline, split so each word can blur-fade in on its own beat.
+	const heroWords = 'An open-source AI companion you can see and talk to'.split(' ');
+
+	// Statement line, same treatment but triggered on scroll. The second
+	// sentence renders muted.
+	const statementWords = [
+		...'Utsuwa means vessel.'.split(' ').map((w) => ({ w, muted: false })),
+		...'You decide what fills it.'.split(' ').map((w) => ({ w, muted: true }))
+	];
 
 	const features = [
 		{
-			num: '01',
-			eyebrow: 'Presence',
 			title: 'A real 3D body, not a chat box.',
 			body: "Drop in any VRM model and watch it come to life. Replies appear as 3D speech bubbles that follow your companion's head as it moves, breathes, and looks around.",
-			chips: ['Idle animation', 'Auto-blink', 'Speech lip-sync', 'Head-tracked bubbles'],
 			shot: 'companion',
 			alt: 'Utsuwa desktop app with a 3D VRM avatar companion and chat interface'
 		},
 		{
-			num: '02',
-			eyebrow: 'Memory',
 			title: 'She actually remembers.',
 			body: 'Local AI embeddings weave your conversations into a web of memories she can recall by meaning, not keywords. Affection, trust, and mood shift over time across eight relationship stages — from Stranger to Soulmate.',
-			chips: ['Semantic recall', 'On-device embeddings', '8 relationship stages', 'Mood & trust'],
 			shot: 'memory',
 			alt: 'Semantic memory graph showing AI companion relationship and conversation history'
 		},
 		{
-			num: '03',
-			eyebrow: 'Control',
 			title: 'You own every part of it.',
 			body: 'Run a frontier model or keep it fully offline with Ollama and LM Studio. Mix and match your chat, voice input, and text-to-speech providers — all on your own API keys, with nothing routed through us.',
-			chips: ['Frontier or local', 'Your API keys', 'Swap voices', 'No middleman'],
 			shot: 'settings',
 			alt: 'Settings panel showing LLM provider options including OpenAI, Anthropic, and Ollama'
 		}
@@ -154,37 +142,49 @@
 	})}</script>`}
 </svelte:head>
 
-<div class="page-root overflow-x-clip">
+<div class="page-root overflow-x-clip grain">
+<SiteNav />
 <main>
-	<SiteNav />
-
 	<!-- Hero: centered text with a contained video below -->
 	<section class="hero">
 		<div class="hero-copy">
-			<img use:reveal src="/brand-assets/logo.svg" alt="Utsuwa" class="reveal hero-logo" />
+			<img src="/brand-assets/logo.svg" alt="Utsuwa" class="hero-fade hero-logo" style="--wd: 0ms" />
 
-			<h1 use:reveal={80} class="reveal hero-title text-balance">
-				An open-source AI companion you can see and talk to
+			<h1 class="hero-title text-balance">
+				{#each heroWords as word, i}<span class="hero-word" style="--wd: {120 + i * 50}ms"
+						>{word}</span
+					>{#if i < heroWords.length - 1}{' '}{/if}{/each}
 			</h1>
 
-			<p use:reveal={160} class="reveal hero-sub text-pretty">
+			<p class="hero-fade hero-sub text-pretty" style="--wd: 650ms">
 				Load a VRM avatar, connect any LLM, and talk by voice with a character that speaks,
 				listens, and remembers, all on your own machine.
 			</p>
 
-			<div use:reveal={240} class="reveal hero-actions">
+			<div class="hero-fade hero-actions" style="--wd: 800ms">
 				<a href={sectionUrl('app')} class="btn btn-primary btn-lg">Try it live</a>
 				<a href="/download" class="btn btn-secondary btn-lg">Download</a>
-				<a href={sectionUrl('docs')} class="hero-textlink">Read the docs &rarr;</a>
+				<a href={sectionUrl('docs')} class="hero-textlink"
+					>Read the docs <span class="link-arrow">&rarr;</span></a
+				>
 			</div>
 		</div>
 
-		<div use:reveal={320} class="reveal hero-media" aria-hidden="true">
+		<!-- Poster renders immediately with a slow Ken Burns drift; the video
+		     fades in over it once it's actually playing. -->
+		<div class="hero-media hero-media-enter" aria-hidden="true">
+			<img
+				class="hero-poster"
+				src="/landing-page/hero-poster.jpg"
+				alt=""
+				width="1920"
+				height="996"
+			/>
 			{#if allowVideo}
 				<video
+					use:pauseOffscreen
 					class="hero-video"
 					class:is-ready={videoReady}
-					poster="/landing-page/hero-poster.jpg"
 					autoplay
 					muted
 					loop
@@ -195,14 +195,6 @@
 					<source src="/landing-page/hero-loop.webm" type="video/webm" />
 					<source src="/landing-page/hero-loop.mp4" type="video/mp4" />
 				</video>
-			{:else}
-				<img
-					class="hero-video is-ready"
-					src="/landing-page/hero-poster.jpg"
-					alt=""
-					width="1920"
-					height="996"
-				/>
 			{/if}
 		</div>
 	</section>
@@ -259,7 +251,7 @@
 		<div class="max-w-6xl mx-auto px-6">
 			<h2
 				use:reveal
-				class="reveal text-center text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance mb-20 md:mb-28"
+				class="reveal max-w-2xl text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance mb-16 md:mb-24"
 				style="font-family: var(--font-sans);"
 			>
 				The best way to bring an AI to life.
@@ -293,25 +285,40 @@
 	</section>
 
 
+	<!-- Statement: one oversized brand line, nothing else -->
+	<section class="statement">
+		<div class="max-w-4xl mx-auto px-6 text-center">
+			<p use:reveal class="statement-text text-balance">
+				{#each statementWords as s, i}<span
+						class="st-word"
+						class:statement-muted={s.muted}
+						style="--wd: {i * 70}ms">{s.w}</span
+					>{#if i < statementWords.length - 1}{' '}{/if}{/each}
+			</p>
+		</div>
+	</section>
+
 	<!-- Latest from the blog (channel-card layout) -->
 	{#if data.posts.length > 0}
 		<section class="py-24 md:py-32">
 			<div class="max-w-6xl mx-auto px-6">
-				<div class="text-center mb-14 md:mb-16">
-					<h2
-						use:reveal
-						class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
-						style="font-family: var(--font-sans);"
-					>
-						Fresh from the blog
-					</h2>
-					<p
-						use:reveal={60}
-						class="reveal text-lg text-[var(--text-secondary)] leading-relaxed text-pretty max-w-xl mx-auto mt-5"
-					>
-						Guides, deep dives, and release notes from the project.
-					</p>
-					<a use:reveal={120} href="/blog" class="reveal btn btn-secondary mt-8">
+				<div class="blog-head mb-12 md:mb-14">
+					<div>
+						<h2
+							use:reveal
+							class="reveal text-3xl md:text-4xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+							style="font-family: var(--font-sans);"
+						>
+							Fresh from the blog
+						</h2>
+						<p
+							use:reveal={60}
+							class="reveal text-lg text-[var(--text-secondary)] leading-relaxed text-pretty mt-3"
+						>
+							Guides, deep dives, and release notes from the project.
+						</p>
+					</div>
+					<a use:reveal={120} href="/blog" class="reveal btn btn-secondary shrink-0">
 						View all posts
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -348,11 +355,11 @@
 	{/if}
 
 	<!-- Closing CTA -->
-	<section class="py-24 md:py-32">
+	<section class="py-28 md:py-44">
 		<div class="max-w-3xl mx-auto px-6 text-center">
 			<h2
 				use:reveal
-				class="reveal text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+				class="reveal text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
 				style="font-family: var(--font-sans);"
 			>
 				Ready to meet your companion?
@@ -364,101 +371,15 @@
 				Try it right in your browser, or download the desktop app. Free and open source.
 			</p>
 			<div use:reveal={160} class="reveal flex flex-wrap items-center justify-center gap-3">
-				<a href={sectionUrl('app')} class="btn btn-primary text-sm font-bold px-6 py-3 rounded-full">
-					Try it live
-				</a>
-				<a href="/download" class="btn btn-secondary text-sm font-bold px-6 py-3 rounded-full">
-					Download
-				</a>
+				<a href={sectionUrl('app')} class="btn btn-primary btn-lg">Try it live</a>
+				<a href="/download" class="btn btn-secondary btn-lg">Download</a>
 			</div>
 		</div>
 	</section>
 
 	</main>
 
-	<!-- Footer -->
-	<footer class="border-t border-[var(--border-subtle)] pt-20 md:pt-24 overflow-hidden">
-		<div class="max-w-7xl mx-auto px-6 mb-24 md:mb-32">
-			<div
-				class="flex flex-col md:flex-row justify-between items-start gap-16 md:gap-12"
-			>
-				<!-- Logo -->
-				<div class="shrink-0">
-					<img src="/brand-assets/logo.svg" alt="Utsuwa" class="footer-brand-logo-light" />
-				</div>
-
-				<!-- Link columns -->
-				<div class="flex flex-wrap gap-12 sm:gap-24 lg:gap-32">
-					<div class="flex flex-col gap-4 min-w-[120px]">
-						<h3 class="text-xs font-semibold text-[var(--text-tertiary)] mb-1">Project</h3>
-						<a
-							href={GITHUB_REPO}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-							>GitHub</a
-						>
-						<a
-							href={GITHUB_RELEASES}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-							>Releases</a
-						>
-						<a
-							href={sectionUrl('docs')}
-							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-							>Docs</a
-						>
-						<a
-							href="/blog"
-							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-							>Blog</a
-						>
-					</div>
-
-					<div class="flex flex-col gap-4 min-w-[120px]">
-						<h3 class="text-xs font-semibold text-[var(--text-tertiary)] mb-1">Legal</h3>
-						<a
-							href={`${GITHUB_REPO}/blob/main/LICENSE`}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-							>MIT License</a
-						>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Bottom bar -->
-		<div class="w-full border-t border-[var(--border-subtle)] relative z-10">
-			<div
-				class="max-w-7xl mx-auto px-6 py-8 md:py-10 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-0"
-			>
-				<div
-					class="text-[11px] text-[var(--text-tertiary)] font-medium tracking-tight order-2 md:order-1"
-				>
-					&copy; 2026 Ordinary Company Group LLC. Open source under MIT.
-				</div>
-				<div class="flex items-center gap-5 order-1 md:order-2">
-					<a
-						href={GITHUB_REPO}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-						aria-label="GitHub"
-					>
-						<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"
-							><path
-								d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
-							/></svg
-						>
-					</a>
-				</div>
-			</div>
-		</div>
-	</footer>
+	<SiteFooter />
 </div>
 
 <style>
@@ -467,9 +388,15 @@
 		color: var(--text-primary);
 	}
 
-	/* Hero: centered text over a contained video */
+	/* Anchored sections land clear of the sticky nav */
+	section {
+		scroll-margin-top: 4.5rem;
+	}
+
+	/* Hero: centered text over a contained video. 72rem matches the max-w-6xl
+	   sections below so the media panel lines up with the feature shots. */
 	.hero {
-		max-width: 78rem;
+		max-width: 72rem;
 		margin: 0 auto;
 		padding: clamp(3rem, 8vw, 6rem) 1.5rem clamp(2rem, 5vw, 3.5rem);
 	}
@@ -498,9 +425,31 @@
 		max-width: 20ch;
 		color: var(--text-primary);
 		font-weight: 600;
-		font-size: clamp(2.25rem, 5.5vw, 4rem);
-		line-height: 1.06;
+		font-size: clamp(2.5rem, 6vw, 4.5rem);
+		line-height: 1.05;
 		letter-spacing: -0.03em;
+	}
+
+	/* Each word blur-fades in on load, staggered left to right. The rest of
+	   the hero (logo, sub, actions) uses the same curve via .hero-fade. */
+	.hero-word,
+	.hero-fade {
+		opacity: 0;
+		filter: blur(10px);
+		transform: translateY(6px);
+		animation: wordBlurIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) var(--wd, 0ms) forwards;
+	}
+
+	.hero-word {
+		display: inline-block;
+	}
+
+	@keyframes wordBlurIn {
+		to {
+			opacity: 1;
+			filter: blur(0);
+			transform: none;
+		}
 	}
 
 	.hero-sub {
@@ -516,11 +465,12 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
-		gap: 1.25rem;
+		gap: 0.75rem;
 		margin-top: 2rem;
 	}
 
 	.hero-textlink {
+		margin-left: 0.5rem;
 		font-size: 0.95rem;
 		font-weight: 500;
 		color: var(--text-secondary);
@@ -532,9 +482,18 @@
 		color: var(--accent);
 	}
 
+	.link-arrow {
+		display: inline-block;
+		transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.hero-textlink:hover .link-arrow {
+		transform: translateX(3px);
+	}
+
 	/* Contained hero video panel */
 	.hero-media {
-		max-width: 72rem;
+		position: relative;
 		margin: clamp(2.5rem, 6vw, 4.5rem) auto 0;
 		border-radius: var(--radius-xl);
 		overflow: hidden;
@@ -543,7 +502,44 @@
 		aspect-ratio: 16 / 9;
 	}
 
+	/* Slow push-in on the poster while the video loads */
+	.hero-poster {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transform-origin: 50% 40%;
+		animation: kenBurns 18s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+	}
+
+	@keyframes kenBurns {
+		from {
+			transform: scale(1);
+		}
+		to {
+			transform: scale(1.08);
+		}
+	}
+
+	/* Cinematic entrance after the headline settles */
+	.hero-media-enter {
+		animation: heroMediaIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+	}
+
+	@keyframes heroMediaIn {
+		from {
+			opacity: 0;
+			transform: translateY(44px) scale(0.965);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
 	.hero-video {
+		position: absolute;
+		inset: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
@@ -554,18 +550,6 @@
 
 	.hero-video.is-ready {
 		opacity: 1;
-	}
-
-	/* Section eyebrow (editorial label) */
-	.eyebrow {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6rem;
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--accent);
 	}
 
 	/* Provider logo marquee */
@@ -667,23 +651,41 @@
 	}
 
 	.feature-copy {
-		max-width: 24rem;
+		max-width: 26rem;
 	}
 
 	.feature-h2 {
-		margin: 0 0 0.9rem;
-		font-size: clamp(1.4rem, 2vw, 1.7rem);
+		margin: 0 0 1rem;
+		font-size: clamp(1.6rem, 2.6vw, 2.1rem);
 		font-weight: 600;
-		line-height: 1.2;
-		letter-spacing: -0.01em;
+		line-height: 1.15;
+		letter-spacing: -0.02em;
 		color: var(--text-primary);
 		text-wrap: balance;
 	}
 
 	.feature-body {
-		font-size: 0.95rem;
-		line-height: 1.6;
+		font-size: 1rem;
+		line-height: 1.65;
 		color: var(--text-secondary);
+	}
+
+	/* Screenshots drift gently against the scroll while their row is in view.
+	   Scroll-driven animation; browsers without support just skip it. */
+	@supports (animation-timeline: view()) {
+		.feature-media {
+			animation: featureDrift linear both;
+			animation-timeline: view();
+		}
+	}
+
+	@keyframes featureDrift {
+		from {
+			transform: translateY(26px);
+		}
+		to {
+			transform: translateY(-26px);
+		}
 	}
 
 	@media (min-width: 900px) {
@@ -705,15 +707,58 @@
 		.feature-copy {
 			flex: 1;
 		}
+
+		/* Rows enter from the side their screenshot sits on (media is on the
+		   right by default, left on --rev rows). Cleared by .revealed below. */
+		.feature-row.reveal {
+			transform: translate(36px, 20px);
+		}
+
+		.feature-row--rev.reveal {
+			transform: translate(-36px, 20px);
+		}
 	}
 
-	/* Scroll-reveal */
+	/* Statement */
+	.statement {
+		padding: clamp(5rem, 13vw, 10rem) 0;
+	}
+
+	.statement-text {
+		margin: 0;
+		font-size: clamp(2rem, 5vw, 3.5rem);
+		font-weight: 600;
+		line-height: 1.15;
+		letter-spacing: -0.03em;
+		color: var(--text-primary);
+	}
+
+	.statement-muted {
+		color: var(--text-tertiary);
+	}
+
+	/* Statement words hold blurred until the line scrolls into view, then
+	   resolve left to right on the hero's curve. */
+	.st-word {
+		display: inline-block;
+		opacity: 0;
+		filter: blur(10px);
+		transform: translateY(6px);
+	}
+
+	.statement-text:global(.revealed) .st-word {
+		animation: wordBlurIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--wd, 0ms) forwards;
+	}
+
+	/* Scroll-reveal: blur-fade-up, same language as the hero */
 	.reveal {
 		opacity: 0;
-		transform: translateY(26px);
+		transform: translateY(20px);
+		filter: blur(8px);
 		transition:
 			opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-			transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+			transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+			filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 		transition-delay: var(--reveal-delay, 0ms);
 	}
 
@@ -722,13 +767,16 @@
 	.reveal:global(.revealed) {
 		opacity: 1;
 		transform: none;
+		filter: blur(0);
 	}
 
-	.footer-brand-logo-light {
-		height: 1.25rem;
-		width: auto;
-		filter: brightness(0);
-		opacity: 0.6;
+	/* Blog section header: title left, action right */
+	.blog-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 1.5rem;
 	}
 
 	/* Blog cards (flat) */
@@ -795,18 +843,12 @@
 		margin-top: auto;
 	}
 
-	/* Dark mode only needs asset treatments — the surfaces, text, borders and
-	   shadows above are all token-driven and swap automatically under .dark. */
-	:global(.dark) .footer-brand-logo-light {
-		filter: brightness(0) invert(1);
-		opacity: 0.6;
-	}
-
 	/* Respect reduced motion across the whole page */
 	@media (prefers-reduced-motion: reduce) {
 		.reveal {
 			opacity: 1;
 			transform: none;
+			filter: none;
 			transition: none;
 		}
 
@@ -814,7 +856,25 @@
 			transition: none;
 		}
 
-		.provider-marquee-track {
+		.hero-poster {
+			animation: none;
+		}
+
+		.hero-word,
+		.hero-fade,
+		.st-word {
+			opacity: 1;
+			filter: none;
+			transform: none;
+			animation: none;
+		}
+
+		.hero-media-enter {
+			animation: none;
+		}
+
+		.provider-marquee-track,
+		.feature-media {
 			animation: none;
 		}
 

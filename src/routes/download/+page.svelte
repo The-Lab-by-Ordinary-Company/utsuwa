@@ -2,6 +2,7 @@
 	import SiteNav from '$lib/components/marketing/SiteNav.svelte';
 	import SiteFooter from '$lib/components/marketing/SiteFooter.svelte';
 	import Icon from '$lib/components/ui/Icon.svelte';
+	import { reveal } from '$lib/utils/reveal';
 	import { SITE_URL, GITHUB_REPO, GITHUB_RELEASES } from '$lib/config/site';
 	import { sectionUrl } from '$lib/config/links';
 
@@ -68,10 +69,10 @@
 
 <SiteNav />
 
-<main>
+<main class="grain">
 	<section class="hero">
 		<div class="hero-copy">
-			<p class="hero-kicker">Download</p>
+			<p class="eyebrow hero-kicker">Download</p>
 			<h1 class="hero-h1 text-balance">Get Utsuwa on your desktop.</h1>
 			<p class="hero-lead text-pretty">
 				The desktop app adds a transparent overlay you can pin over anything and a global hotkey to
@@ -82,7 +83,9 @@
 					<Icon name="download" size={15} />
 					Download for {os}
 				</a>
-				<a href={sectionUrl('app')} class="hero-textlink">or open the web app &rarr;</a>
+				<a href={sectionUrl('app')} class="hero-textlink"
+					>or open the web app <span class="link-arrow">&rarr;</span></a
+				>
 			</div>
 		</div>
 
@@ -103,10 +106,10 @@
 	</section>
 
 	<section class="platforms">
-		<h2 class="section-title">All platforms</h2>
+		<h2 use:reveal class="reveal section-title">All platforms</h2>
 		<ul class="platform-list">
-			{#each platforms as p}
-				<li class="platform-row">
+			{#each platforms as p, i}
+				<li use:reveal={i * 70} class="reveal platform-row">
 					<div class="platform-meta">
 						<span class="platform-name">{p.name}</span>
 						<span class="platform-note">{p.note}</span>
@@ -117,7 +120,7 @@
 				</li>
 			{/each}
 		</ul>
-		<p class="platform-foot">
+		<p use:reveal={220} class="reveal platform-foot">
 			Builds are published on
 			<a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" class="inline-link">GitHub Releases</a>.
 			Older versions and release notes live there too.
@@ -125,10 +128,10 @@
 	</section>
 
 	<section class="included">
-		<h2 class="section-title">What you get</h2>
+		<h2 use:reveal class="reveal section-title">What you get</h2>
 		<div class="included-grid">
-			{#each included as item}
-				<div class="included-item">
+			{#each included as item, i}
+				<div use:reveal={i * 80} class="reveal included-item">
 					<h3 class="included-title">{item.title}</h3>
 					<p class="included-body">{item.body}</p>
 				</div>
@@ -137,7 +140,7 @@
 	</section>
 
 	<section class="build">
-		<div class="build-inner">
+		<div use:reveal class="reveal build-inner">
 			<h2 class="section-title">Rather build it yourself?</h2>
 			<p class="build-body text-pretty">
 				Utsuwa is MIT licensed and built on SvelteKit, Three.js, and Tauri. Clone the repo, install
@@ -168,13 +171,9 @@
 		padding: clamp(3rem, 8vw, 5.5rem) 0 clamp(3rem, 7vw, 4.5rem);
 	}
 
+	/* Label styling comes from the shared .eyebrow class */
 	.hero-kicker {
 		margin: 0 0 1rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--accent);
 	}
 
 	.hero-h1 {
@@ -198,11 +197,12 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 1.25rem;
+		gap: 0.75rem;
 		margin-top: 2rem;
 	}
 
 	.hero-textlink {
+		margin-left: 0.5rem;
 		font-size: 0.95rem;
 		font-weight: 500;
 		color: var(--text-secondary);
@@ -212,6 +212,15 @@
 
 	.hero-textlink:hover {
 		color: var(--accent);
+	}
+
+	.link-arrow {
+		display: inline-block;
+		transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.hero-textlink:hover .link-arrow {
+		transform: translateX(3px);
 	}
 
 	/* Real full-app screenshot, so it renders directly with just rounded corners
@@ -250,6 +259,60 @@
 		.hero-shot {
 			flex: 1.15;
 			min-width: 0;
+		}
+	}
+
+	/* Staggered load-in */
+	.hero-copy {
+		animation: pageRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	.hero-shot {
+		animation: pageRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+	}
+
+	@keyframes pageRise {
+		from {
+			opacity: 0;
+			filter: blur(8px);
+			transform: translateY(26px);
+		}
+		to {
+			opacity: 1;
+			filter: blur(0);
+			transform: none;
+		}
+	}
+
+	/* Scroll-reveal: same blur-fade-up language as the landing page */
+	.reveal {
+		opacity: 0;
+		transform: translateY(20px);
+		filter: blur(8px);
+		transition:
+			opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+			filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+		transition-delay: var(--reveal-delay, 0ms);
+	}
+
+	.reveal:global(.revealed) {
+		opacity: 1;
+		transform: none;
+		filter: blur(0);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hero-copy,
+		.hero-shot {
+			animation: none;
+		}
+
+		.reveal {
+			opacity: 1;
+			transform: none;
+			filter: none;
+			transition: none;
 		}
 	}
 

@@ -103,6 +103,51 @@
 		margin: 0.75rem 0 0;
 	}
 
+	/* Staggered load-in: header first, then posts in reading order */
+	.blog-header {
+		animation: postRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	.post {
+		animation: postRise 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	.lead {
+		animation-delay: 80ms;
+	}
+
+	.side-column .post:nth-child(1) {
+		animation-delay: 160ms;
+	}
+
+	.side-column .post:nth-child(2) {
+		animation-delay: 240ms;
+	}
+
+	.post-grid .post {
+		animation-delay: 320ms;
+	}
+
+	@keyframes postRise {
+		from {
+			opacity: 0;
+			filter: blur(8px);
+			transform: translateY(22px);
+		}
+		to {
+			opacity: 1;
+			filter: blur(0);
+			transform: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.blog-header,
+		.post {
+			animation: none;
+		}
+	}
+
 	/* Shared link + media (cardless: rounded image, text beneath) */
 	.post {
 		display: block;

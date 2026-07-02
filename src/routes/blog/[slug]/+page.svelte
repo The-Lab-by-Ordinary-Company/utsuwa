@@ -247,12 +247,49 @@
 		display: none;
 	}
 
-	/* Table of contents */
+	/* One-shot load-in: header, banner, then body. The article itself never
+	   animates on scroll — reading stays static. */
+	.back-link,
+	.blog-post-header {
+		animation: postEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	.blog-banner {
+		animation: postEnter 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+	}
+
+	.blog-post-body {
+		animation: postEnter 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+	}
+
+	@keyframes postEnter {
+		from {
+			opacity: 0;
+			filter: blur(8px);
+			transform: translateY(18px);
+		}
+		to {
+			opacity: 1;
+			filter: none;
+			transform: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.back-link,
+		.blog-post-header,
+		.blog-banner,
+		.blog-post-body {
+			animation: none;
+		}
+	}
+
+	/* Table of contents. Sticky offset clears the site nav (~3.5rem tall). */
 	.toc {
 		position: sticky;
-		top: 1.5rem;
+		top: 5.5rem;
 		align-self: start;
-		max-height: calc(100vh - 3rem);
+		max-height: calc(100vh - 7rem);
 		overflow-y: auto;
 	}
 

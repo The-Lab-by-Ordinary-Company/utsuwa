@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Icon from '$lib/components/ui/Icon.svelte';
-	import { cycleTheme, getIconName, getLabel } from '$lib/config/docs-theme-toggle.svelte';
 	import { sectionUrl, isSection } from '$lib/config/links';
 	import { GITHUB_REPO } from '$lib/config/site';
 	import { getSortedPosts } from '$lib/utils/blog-posts';
@@ -11,14 +10,21 @@
 	// this resolves synchronously at build time and is safe to read during SSR.
 	const recentPosts = getSortedPosts().slice(0, 4);
 
-	const themeIcon = $derived(getIconName());
-	const themeLabel = $derived(getLabel());
-
 	const pathname = $derived(page.url.pathname);
 	const onHome = $derived(pathname === '/');
 	const onBlog = $derived(pathname.startsWith('/blog'));
 
 	let menuOpen = $state(false);
+	let scrolled = $state(false);
+
+	// The nav sits flush and borderless at the top of the page, then condenses
+	// into a glass bar once the page scrolls.
+	$effect(() => {
+		const onScroll = () => (scrolled = window.scrollY > 8);
+		onScroll();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => window.removeEventListener('scroll', onScroll);
+	});
 
 	// Close the mobile menu on navigation.
 	$effect(() => {
@@ -37,7 +43,7 @@
 	});
 </script>
 
-<nav class="site-nav">
+<nav class="site-nav" class:scrolled={scrolled || menuOpen}>
 	<div class="site-nav-inner">
 		<a href="/" class="site-nav-brand" aria-label="Utsuwa home">
 			<img src="/brand-assets/logo.svg" alt="Utsuwa" class="site-nav-logo" />
@@ -73,16 +79,11 @@
 		</div>
 
 		<div class="site-nav-right">
-			<button
-				type="button"
-				onclick={cycleTheme}
-				class="site-nav-theme-btn"
-				aria-label={`Theme: ${themeLabel}`}
-				title={themeLabel}
-			>
-				<Icon name={themeIcon} size={16} />
-			</button>
-			<a href={sectionUrl('app')} class="btn btn-primary btn-sm site-nav-cta">Try Live</a>
+			<a href="/download" class="btn btn-secondary btn-sm site-nav-cta">Download</a>
+			<a href={sectionUrl('app')} class="btn btn-primary btn-sm site-nav-cta">
+				<span class="live-dot" aria-hidden="true"></span>
+				Try Live
+			</a>
 			<button
 				type="button"
 				class="site-nav-burger"
@@ -109,10 +110,18 @@
 				onclick={() => (menuOpen = false)}>GitHub</a
 			>
 			<a
+				href="/download"
+				class="btn btn-secondary btn-block"
+				onclick={() => (menuOpen = false)}>Download</a
+			>
+			<a
 				href={sectionUrl('app')}
 				class="btn btn-primary btn-block"
-				onclick={() => (menuOpen = false)}>Try Live</a
+				onclick={() => (menuOpen = false)}
 			>
+				<span class="live-dot" aria-hidden="true"></span>
+				Try Live
+			</a>
 		</div>
 	{/if}
 </nav>
@@ -122,8 +131,16 @@
 		position: sticky;
 		top: 0;
 		z-index: 50;
-		background: var(--bg-page);
-		border-bottom: 1px solid var(--border-subtle);
+		background: transparent;
+		-webkit-backdrop-filter: blur(14px) saturate(1.4);
+		backdrop-filter: blur(14px) saturate(1.4);
+		border-bottom: 1px solid transparent;
+		transition: background 0.3s ease, border-color 0.3s ease;
+	}
+
+	.site-nav.scrolled {
+		background: color-mix(in srgb, var(--bg-page) 78%, transparent);
+		border-bottom-color: var(--border-subtle);
 	}
 
 	.site-nav-inner {
@@ -266,28 +283,25 @@
 		gap: 0.625rem;
 	}
 
-	/* Theme toggle (flat gray fill) */
-	.site-nav-theme-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
+	/* Live indicator dot inside the Try Live button */
+	.live-dot {
+		width: 6px;
+		height: 6px;
 		border-radius: var(--radius-full);
-		color: var(--text-secondary);
-		background: var(--bg-tertiary);
-		border: none;
-		cursor: pointer;
-		transition: color 0.2s ease, background 0.2s ease, transform 0.1s ease;
+		background: currentColor;
+		animation: livePulse 2.4s ease-out infinite;
 	}
 
-	.site-nav-theme-btn:hover {
-		color: var(--text-primary);
-		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
-	}
-
-	.site-nav-theme-btn:active {
-		transform: scale(0.96);
+	@keyframes livePulse {
+		0% {
+			box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+		}
+		70% {
+			box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+		}
 	}
 
 	/* Hamburger (mobile only) */
@@ -359,6 +373,10 @@
 		.nav-dropdown {
 			transform: none;
 			transition: opacity 0.18s ease, visibility 0.18s ease;
+		}
+
+		.live-dot {
+			animation: none;
 		}
 	}
 </style>
