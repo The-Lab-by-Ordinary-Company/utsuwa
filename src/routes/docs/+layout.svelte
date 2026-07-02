@@ -62,13 +62,9 @@
 <style>
 	.docs {
 		min-height: 100vh;
-		background: #fff;
+		background: var(--bg-page);
 		color: var(--docs-text);
 		font-family: var(--font-sans);
-	}
-
-	:global(.dark) .docs {
-		background: #000;
 	}
 
 	.docs-body {

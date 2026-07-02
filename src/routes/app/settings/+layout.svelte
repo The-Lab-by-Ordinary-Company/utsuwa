@@ -74,7 +74,7 @@
 		display: flex;
 		height: 100vh;
 		overflow: hidden;
-		background: var(--bg-primary);
+		background: var(--bg-page);
 	}
 
 	.sidebar {
@@ -161,6 +161,11 @@
 		flex-direction: column;
 		position: relative;
 		background: var(--bg-secondary);
+	}
+
+	/* Pure black in dark; stays a soft gray well in light so cards still read */
+	:global(.dark) .content {
+		background: var(--bg-page);
 	}
 
 	.page-bg-icon {

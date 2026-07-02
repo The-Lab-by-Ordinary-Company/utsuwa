@@ -51,11 +51,7 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		background: #fff;
-	}
-
-	:global(.dark) .sidebar {
-		background: #000;
+		background: var(--bg-page);
 	}
 
 	.sidebar-top {

@@ -28,6 +28,7 @@
 
 :root {
 	/* Backgrounds (white -> light gray -> gray ladder; grays used as fills) */
+	--bg-page: #ffffff;
 	--bg-primary: #ffffff;
 	--bg-secondary: #f2f4f7;
 	--bg-tertiary: #e8ecf1;
@@ -168,6 +169,7 @@
 
 .dark {
 	/* Backgrounds (slate from the #1c2b33 ink) */
+	--bg-page: #000000;
 	--bg-primary: #0c1116;
 	--bg-secondary: #141b21;
 	--bg-tertiary: #1d262e;
@@ -237,7 +239,7 @@
 	--scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
 
 	/* Scene colors */
-	--scene-bg: #0c1116;
+	--scene-bg: #000000;
 	--scene-placeholder: #a78bfa;
 
 	/* Primary color scale */
@@ -287,7 +289,7 @@ body {
 	padding: 0;
 	height: 100%;
 	font-family: var(--font-sans);
-	background-color: var(--bg-primary);
+	background-color: var(--bg-page);
 	color: var(--text-primary);
 	transition: background-color 0.2s, color 0.2s;
 	-webkit-font-smoothing: antialiased;

@@ -83,13 +83,9 @@
 <style>
 	.blog-site {
 		min-height: 100vh;
-		background: #fff;
+		background: var(--bg-page);
 		color: var(--docs-text);
 		font-family: var(--font-sans);
-	}
-
-	:global(.dark) .blog-site {
-		background: #000;
 	}
 
 	/* Nav */

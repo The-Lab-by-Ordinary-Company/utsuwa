@@ -587,12 +587,8 @@
 
 <style>
 	.page-root {
-		background: #fff;
+		background: var(--bg-page);
 		color: var(--text-primary);
-	}
-
-	:global(.dark) .page-root {
-		background: #000;
 	}
 
 	/* Nav logo — inverted to white so it reads over the hero video */
