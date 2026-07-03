@@ -14,7 +14,7 @@ export class ElevenLabsTTS implements ITTSProvider {
 	constructor(options: TTSOptions) {
 		this.apiKey = options.apiKey || '';
 		this.voiceId = options.voiceId || 'EXAVITQu4vr4xnSDxMaL';
-		this.model = 'eleven_turbo_v2_5';
+		this.model = options.model || 'eleven_turbo_v2_5';
 		this.speed = options.speed ?? 1;
 		this.baseUrl = ensureTrailingSlash(options.baseUrl || 'https://api.elevenlabs.io/v1/');
 	}
