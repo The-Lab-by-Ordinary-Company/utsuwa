@@ -59,6 +59,12 @@
 		hintTimer = setTimeout(() => (hint = null), 6000);
 	}
 
+	$effect(() => {
+		return () => {
+			if (hintTimer) clearTimeout(hintTimer);
+		};
+	});
+
 	function promptVision() {
 		showHint(
 			"This model can't see images. Pick a vision model (GPT-4o, Claude, Gemini, or a local one like llava) in Settings."

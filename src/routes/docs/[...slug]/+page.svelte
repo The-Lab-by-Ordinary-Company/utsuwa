@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/ui/Icon.svelte';
 	import DocsPrevNext from '$lib/components/docs/DocsPrevNext.svelte';
-	import { DOCS_URL } from '$lib/config/site';
+	import { DOCS_URL, SITE_URL } from '$lib/config/site';
 	import { docsNav } from '$lib/config/docs-nav';
 	import { localPath } from '$lib/config/links';
 	import { addCodeCopyButtons } from '$lib/utils/add-code-copy-buttons';
@@ -100,7 +100,7 @@
 		publisher: {
 			'@type': 'Organization',
 			name: 'Utsuwa',
-			url: '${SITE_URL}'
+			url: SITE_URL
 		}
 	})}</script>`}
 	{@html '<style>html { scroll-padding-top: 6rem; }</style>'}

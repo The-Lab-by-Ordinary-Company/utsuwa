@@ -168,6 +168,8 @@
 	--ctp-teal: #14b8a6;
 	--ctp-peach: #f97316;
 	--ctp-sky: #06b6d4;
+	--ctp-subtext0: var(--text-secondary);
+	--ctp-overlay0: var(--text-tertiary);
 }
 
 .dark {
@@ -280,6 +282,8 @@
 	--ctp-teal: #2dd4bf;
 	--ctp-peach: #fb923c;
 	--ctp-sky: #22d3ee;
+	--ctp-subtext0: var(--text-secondary);
+	--ctp-overlay0: var(--text-tertiary);
 }
 
 * {

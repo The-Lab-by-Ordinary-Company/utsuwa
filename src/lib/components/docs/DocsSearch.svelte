@@ -32,7 +32,12 @@
 		}
 	}
 
+	// Guards against a slow earlier search resolving after a faster later one
+	let searchToken = 0;
+
 	async function search(q: string) {
+		const token = ++searchToken;
+
 		if (!q.trim()) {
 			results = [];
 			return;
@@ -55,6 +60,7 @@
 				};
 			})
 		);
+		if (token !== searchToken) return;
 		results = items;
 		selectedIndex = 0;
 	}

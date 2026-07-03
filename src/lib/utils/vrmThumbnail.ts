@@ -10,6 +10,14 @@ import {
 	Vector3
 } from 'three';
 
+// dispose() alone keeps the WebGL context alive until GC; without forcing the
+// loss, generating thumbnails for many models can hit the browser's live
+// context cap and kill the main scene's context
+function disposeRenderer(renderer: WebGLRenderer) {
+	renderer.dispose();
+	renderer.forceContextLoss();
+}
+
 /**
  * Generate a thumbnail for a VRM model by rendering it to an offscreen canvas.
  */
@@ -88,19 +96,19 @@ export async function generateVrmThumbnail(url: string): Promise<string | null> 
 						}
 					});
 					scene.remove(vrm.scene);
-					renderer.dispose();
+					disposeRenderer(renderer);
 
 					resolve(dataUrl);
 				} catch (e) {
 					console.error('Error generating thumbnail:', e);
-					renderer.dispose();
+					disposeRenderer(renderer);
 					resolve(null);
 				}
 			},
 			undefined,
 			(error) => {
 				console.error('Error loading VRM for thumbnail:', error);
-				renderer.dispose();
+				disposeRenderer(renderer);
 				resolve(null);
 			}
 		);

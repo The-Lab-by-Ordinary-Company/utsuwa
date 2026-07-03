@@ -304,10 +304,19 @@ function createCharacterStore() {
 		return state?.completedEvents.includes(eventId) ?? false;
 	}
 
+	// Format a date as local YYYY-MM-DD (toISOString would use UTC day boundaries,
+	// which breaks streaks for anyone chatting across a UTC midnight)
+	function localDateKey(date: Date): string {
+		const y = date.getFullYear();
+		const m = String(date.getMonth() + 1).padStart(2, '0');
+		const d = String(date.getDate()).padStart(2, '0');
+		return `${y}-${m}-${d}`;
+	}
+
 	// Update streak (call on session start)
 	function updateStreak(): void {
-		const today = new Date().toISOString().split('T')[0];
-		const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+		const today = localDateKey(new Date());
+		const yesterday = localDateKey(new Date(Date.now() - 86400000));
 
 		let newStreak = state.currentStreak;
 		let newLongest = state.longestStreak;

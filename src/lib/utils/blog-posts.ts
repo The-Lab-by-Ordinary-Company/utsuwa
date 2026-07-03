@@ -11,7 +11,7 @@ export interface BlogPostMeta {
 
 function normalizeDate(raw: unknown): string {
 	if (raw instanceof Date) return raw.toISOString().split('T')[0];
-	return String(raw);
+	return raw == null ? '' : String(raw);
 }
 
 // All posts, newest first.

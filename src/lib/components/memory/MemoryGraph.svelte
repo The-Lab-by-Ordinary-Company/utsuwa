@@ -180,6 +180,10 @@
 			// Initialize force-graph
 			const ForceGraph = (await import('force-graph')).default;
 
+			// Component may have been destroyed while we awaited facts/module load;
+			// constructing the graph now would leave its rAF loop running forever
+			if (destroyed) return;
+
 			checkDarkMode();
 
 			graph = new ForceGraph(container)
@@ -222,11 +226,14 @@
 		}
 	}
 
+	let destroyed = false;
+
 	onMount(() => {
 		initGraph();
 	});
 
 	onDestroy(() => {
+		destroyed = true;
 		if (graph) {
 			graph._destructor?.();
 		}
