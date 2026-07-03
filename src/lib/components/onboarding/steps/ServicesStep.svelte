@@ -41,6 +41,10 @@
 
 	// TTS State
 	let ttsEnabled = $state(false);
+
+	// STT (voice input) is config-based, not a module. A configured local server
+	// wins, then Groq, then OpenAI, then the browser's Web Speech API.
+	let sttEnabled = $state(false);
 	const ttsSettings = $derived(modulesStore.getModuleSettings('speech'));
 	const ttsProvider = $derived(getTTSProvider(ttsSettings.activeProvider as string));
 	const staticTTSModels = $derived(ttsProvider?.models ?? []);
@@ -69,6 +73,11 @@
 		if (provider.isLocal) {
 			const activeModel = llmSettings.activeModel as string;
 			return !!activeModel && llmModels.some((model) => model.id === activeModel);
+		}
+		// Custom endpoints need a base URL and a hand-entered model to work.
+		if (provider.custom) {
+			const config = settingsStore.getProviderConfig(provider.id);
+			return !!config.baseUrl && !!(llmSettings.activeModel as string);
 		}
 		if (!provider.requiresApiKey) return true;
 		const config = settingsStore.getProviderConfig(provider.id);
@@ -197,6 +206,11 @@
 		if (provider && !provider.isLocal && provider.models?.length) {
 			modulesStore.setModuleSetting('consciousness', 'activeModel', provider.models[0].id);
 		}
+		// Custom endpoints have no preset models; clear any stale selection so the
+		// manual model field starts empty.
+		if (provider?.custom) {
+			modulesStore.setModuleSetting('consciousness', 'activeModel', '');
+		}
 		// Mark local providers as added immediately (they don't need API keys)
 		if (provider?.isLocal || !provider?.requiresApiKey) {
 			settingsStore.markProviderAdded(providerId);
@@ -298,7 +312,7 @@
 <div class="ob-step services-step">
 	<div class="ob-head">
 		<h2 class="ob-title">Configure AI services</h2>
-		<p class="ob-subtitle">Set up your LLM for chat (required) and TTS for speech (optional).</p>
+		<p class="ob-subtitle">Set up chat (required), plus speech and voice input (optional).</p>
 	</div>
 
 	<div class="security-note">
@@ -321,19 +335,54 @@
 			placeholder="Select LLM provider..."
 		/>
 
-		{#if llmProvider?.requiresApiKey}
+		{#if llmProvider?.requiresApiKey || llmProvider?.custom}
 			<input
 				type="password"
 				class="api-key-input"
 				class:error={llmFetchError}
-				placeholder="Enter API Key..."
+				placeholder={llmProvider?.custom ? 'API Key (optional)' : 'Enter API Key...'}
 				value={settingsStore.getProviderConfig(llmProvider.id).apiKey ?? ''}
 				oninput={(e) => handleLLMApiKeyChange(e.currentTarget.value)}
-				onblur={handleLLMApiKeyBlur}
+				onblur={llmProvider?.custom ? undefined : handleLLMApiKeyBlur}
 			/>
 		{/if}
 
-		{#if llmSettings.activeProvider}
+		<!-- Base URL for local providers and custom OpenAI-compatible endpoints -->
+		{#if llmProvider?.isLocal || llmProvider?.custom}
+			{#if llmProvider.isLocal && llmFetchError}
+				<p class="provider-note error">
+					<Icon name="alert-circle" size={14} />
+					{llmFetchError}
+				</p>
+			{/if}
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder={llmProvider.custom
+					? 'https://api.openai.com/v1/ or your endpoint'
+					: llmProvider.defaultBaseUrl || 'http://localhost:11434/v1/'}
+				value={settingsStore.getProviderConfig(llmProvider.id).baseUrl ?? ''}
+				oninput={(e) => handleLLMBaseUrlChange(e.currentTarget.value)}
+				onblur={llmProvider.custom ? undefined : fetchLLMModels}
+			/>
+			{#if llmProvider.isLocal}
+				<p class="provider-note">
+					<Icon name="check-circle" size={14} />
+					Local provider - no API key needed
+				</p>
+			{/if}
+		{/if}
+
+		<!-- Model: manual entry for custom endpoints, discovered dropdown otherwise -->
+		{#if llmProvider?.custom}
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Model (e.g. gpt-4o-mini, meta-llama/llama-3-70b)"
+				value={(llmSettings.activeModel as string) ?? ''}
+				oninput={(e) => handleLLMModelChange(e.currentTarget.value.trim())}
+			/>
+		{:else if llmSettings.activeProvider}
 			<ModelDropdown
 				models={llmModels}
 				value={llmSettings.activeModel as string}
@@ -344,28 +393,6 @@
 				disabled={!llmHasApiKey}
 				disabledMessage="Enter API key first"
 			/>
-		{/if}
-
-		{#if llmProvider?.isLocal && llmFetchError}
-			<p class="provider-note error">
-				<Icon name="alert-circle" size={14} />
-				{llmFetchError}
-			</p>
-		{/if}
-
-		{#if llmProvider?.isLocal}
-			<input
-				type="text"
-				class="api-key-input"
-				placeholder={llmProvider.defaultBaseUrl || 'http://localhost:11434/v1/'}
-				value={settingsStore.getProviderConfig(llmProvider.id).baseUrl ?? ''}
-				oninput={(e) => handleLLMBaseUrlChange(e.currentTarget.value)}
-				onblur={fetchLLMModels}
-			/>
-			<p class="provider-note">
-				<Icon name="check-circle" size={14} />
-				Local provider - no API key needed
-			</p>
 		{/if}
 	</div>
 
@@ -450,6 +477,69 @@
 			{/if}
 		{:else}
 			<p class="skip-note">Enable to add voice to your companion</p>
+		{/if}
+	</div>
+
+	<!-- STT Section -->
+	<div class="service-section">
+		<div class="service-header">
+			<Icon name="mic" size={16} />
+			<span class="service-title">Voice Input (STT)</span>
+			<span class="optional-badge">Optional</span>
+			<button class="toggle-btn" class:enabled={sttEnabled} onclick={() => sttEnabled = !sttEnabled} aria-label="Toggle voice input (STT)">
+				<span class="toggle-track">
+					<span class="toggle-thumb"></span>
+				</span>
+			</button>
+		</div>
+
+		{#if sttEnabled}
+			<p class="skip-note">Transcribe your voice with Whisper. A local server is used if set, then Groq, then OpenAI, otherwise your browser's built-in recognition.</p>
+
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Local server URL (http://localhost:8000/v1/)"
+				value={settingsStore.getProviderConfig('local-stt').baseUrl ?? ''}
+				oninput={(e) => {
+					const v = e.currentTarget.value.trim();
+					settingsStore.setProviderConfig('local-stt', { baseUrl: v });
+					if (v) settingsStore.markProviderAdded('local-stt');
+					else settingsStore.removeProvider('local-stt');
+				}}
+			/>
+
+			<input
+				type="text"
+				class="api-key-input"
+				placeholder="Local model (optional, e.g. Systran/faster-whisper-large-v3)"
+				value={settingsStore.getProviderConfig('local-stt').modelId ?? ''}
+				oninput={(e) => settingsStore.setProviderConfig('local-stt', { modelId: e.currentTarget.value.trim() })}
+			/>
+
+			<input
+				type="password"
+				class="api-key-input"
+				placeholder="Groq API Key (optional)"
+				value={settingsStore.getProviderConfig('groq-stt').apiKey ?? ''}
+				oninput={(e) => {
+					settingsStore.setProviderConfig('groq-stt', { apiKey: e.currentTarget.value });
+					settingsStore.markProviderAdded('groq-stt');
+				}}
+			/>
+
+			<input
+				type="password"
+				class="api-key-input"
+				placeholder="OpenAI API Key — Whisper (optional)"
+				value={settingsStore.getProviderConfig('openai-stt').apiKey ?? ''}
+				oninput={(e) => {
+					settingsStore.setProviderConfig('openai-stt', { apiKey: e.currentTarget.value });
+					settingsStore.markProviderAdded('openai-stt');
+				}}
+			/>
+		{:else}
+			<p class="skip-note">Enable to set up microphone voice input</p>
 		{/if}
 	</div>
 
