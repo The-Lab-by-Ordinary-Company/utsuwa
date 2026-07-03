@@ -192,6 +192,9 @@
 		loader.load(
 			idleUrl,
 			(gltf) => {
+				// Model was swapped or unmounted while this animation loaded
+				if (mixer !== targetMixer) return;
+
 				const vrmAnimations = gltf.userData.vrmAnimations;
 				if (!vrmAnimations || vrmAnimations.length === 0) {
 					console.error('No idle animation found');
@@ -248,6 +251,9 @@
 		loader.load(
 			idleUrl,
 			(gltf) => {
+				// Model was swapped or unmounted while this animation loaded
+				if (mixer !== targetMixer) return;
+
 				const vrmAnimations = gltf.userData.vrmAnimations;
 				if (!vrmAnimations || vrmAnimations.length === 0) return;
 
@@ -284,6 +290,9 @@
 		loader.load(
 			talkingUrl,
 			(gltf) => {
+				// Model was swapped or unmounted while this animation loaded
+				if (mixer !== targetMixer) return;
+
 				const vrmAnimations = gltf.userData.vrmAnimations;
 				if (!vrmAnimations || vrmAnimations.length === 0) {
 					console.error('No talking animation found');
@@ -451,6 +460,10 @@
 	$effect(() => {
 		if (!url) return;
 
+		// Invalidate this load if the URL changes or the component unmounts
+		// before the loader finishes, so a slow load can't clobber a newer one
+		let cancelled = false;
+
 		vrmStore.setLoading(true);
 		vrmStore.setError(null);
 
@@ -469,6 +482,11 @@
 			url,
 			(gltf) => {
 				const loadedVrm = gltf.userData.vrm as VRM;
+
+				if (cancelled) {
+					VRMUtils.deepDispose(loadedVrm.scene);
+					return;
+				}
 
 				// Optimize VRM
 				VRMUtils.removeUnnecessaryVertices(loadedVrm.scene);
@@ -553,6 +571,7 @@
 			},
 			() => {},
 			(error) => {
+				if (cancelled) return;
 				console.error('Error loading VRM:', error);
 				vrmStore.setError('Failed to load VRM model');
 			}
@@ -560,6 +579,11 @@
 
 		return () => {
 			// Cleanup on unmount or URL change
+			cancelled = true;
+			if (idleCycleTimeout) {
+				clearTimeout(idleCycleTimeout);
+				idleCycleTimeout = null;
+			}
 			if (mixer) {
 				mixer.stopAllAction();
 				mixer = null;
@@ -569,16 +593,8 @@
 				emoteAction = null;
 			}
 			if (vrm) {
-				vrm.scene.traverse((obj: THREE.Object3D) => {
-					if (obj instanceof THREE.Mesh) {
-						obj.geometry?.dispose();
-						if (Array.isArray(obj.material)) {
-							obj.material.forEach((m) => m.dispose());
-						} else if (obj.material) {
-							obj.material.dispose();
-						}
-					}
-				});
+				// Frees geometries, materials, and textures (manual traverse missed textures)
+				VRMUtils.deepDispose(vrm.scene);
 				vrmStore.setVrm(null);
 				vrm = null;
 				group = null;
