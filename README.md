@@ -56,11 +56,12 @@
 - **Model-Centric UI**: Full-screen 3D model with unobtrusive overlay controls
 - **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
 - **Chat Interface**: Bottom-centered input bar with streaming responses
-- **Voice Input**: Speech-to-text via Groq (Whisper) or Web Speech API with real-time audio visualization
+- **Voice Input**: Speech-to-text via a local Whisper server (Speaches, faster-whisper-server, whisper.cpp), Groq (Whisper), or the browser's Web Speech API, with real-time audio visualization
 - **Show Her Photos**: Show your companion an image via the camera button or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
 - **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, and LM Studio
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
 - **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech)
+- **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
 - **Character Customization**: Customize your companion's name, personality, and system prompt
@@ -122,14 +123,15 @@ The desktop app uses the same codebase as the web version, and your save files a
 | **Cloud** | ElevenLabs, OpenAI TTS |
 | **Local** | Local TTS (Kokoro-FastAPI, openedai-speech, any OpenAI-compatible server) |
 
-### STT Providers (2)
+### STT Providers (3)
 
 | Category | Providers |
 |----------|-----------|
+| **Local** | Local STT (Speaches, faster-whisper-server, whisper.cpp, any OpenAI-compatible `/v1/audio/transcriptions` server) |
 | **Cloud** | Groq (Whisper) |
 | **Browser** | Web Speech API (no API key required) |
 
-Voice input is accessed via the microphone button in the chat bar. Groq STT uses Whisper for accurate transcription on any platform (including desktop). Web Speech API works without an API key in Chrome, Edge, and Safari. If a Groq API key is configured, it takes priority automatically.
+Voice input is accessed via the microphone button in the chat bar. Selection is automatic by priority: a configured local Whisper server wins, then Groq, then the browser's Web Speech API. A local server or Groq works on any platform including desktop; Web Speech API works without an API key in Chrome, Edge, and Safari. See [Local STT Setup](https://docs.utsuwa.ai/docs/guides/local-stt-setup) to run a local Whisper server.
 
 ## Getting Started
 
@@ -284,7 +286,7 @@ pnpm tauri build  # Build desktop app installer
 - [x] Time-based mood and relationship decay/recovery
 - [x] Local-first IndexedDB storage with export/import
 - [x] Theme system with light/dark modes
-- [x] Voice input via Groq STT (Whisper) and Web Speech API
+- [x] Voice input via local Whisper server, Groq STT (Whisper), and Web Speech API
 - [x] Desktop application with transparent overlay mode (macOS, Windows, and Linux)
 - [x] Cross-platform desktop builds via CI (macOS, Windows, Linux)
 - [x] In-app auto-updates for the desktop app
@@ -293,7 +295,7 @@ pnpm tauri build  # Build desktop app installer
 
 - [ ] **File, Image, and Video Uploads** - Add support for attaching files, images, and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools
 - [ ] **OpenAI-Compatible Models** - Add a configurable option for OpenAI-compatible model endpoints beyond the currently listed providers
-- [ ] **Multi-provider STT** - Support for additional speech-to-text providers beyond Groq and Web Speech API
+- [ ] **More STT providers** - Additional dedicated speech-to-text integrations beyond local Whisper, Groq, and Web Speech API
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
 
 ## Contributing

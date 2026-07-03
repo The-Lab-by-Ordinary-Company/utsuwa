@@ -23,6 +23,7 @@ export const docsNav: DocsNavSection[] = [
 			{ title: 'Desktop Guide', slug: 'guides/desktop-guide' },
 			{ title: 'Local LLM Setup', slug: 'guides/local-llm-setup' },
 			{ title: 'Local TTS Setup', slug: 'guides/local-tts-setup' },
+			{ title: 'Local STT Setup', slug: 'guides/local-stt-setup' },
 			{ title: 'Troubleshooting', slug: 'guides/troubleshooting' }
 		]
 	},

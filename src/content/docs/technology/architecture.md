@@ -45,7 +45,7 @@ Utsuwa is a client-side application that combines 3D avatar rendering, LLM chat,
               │       External APIs           │
               │  LLM: OpenAI / Anthropic / etc│
               │  TTS: ElevenLabs / OpenAI TTS │
-              │  STT: Web Speech / Groq       │
+              │  STT: Web Speech / Groq / Local│
               └───────────────────────────────┘
 ```
 
@@ -160,6 +160,22 @@ Text-to-speech converts LLM responses to audio with lip-sync.
 3. Web Audio API plays the audio
 4. Audio analyzer extracts volume/frequency data
 5. VRM model maps audio data to mouth blend shapes in real-time
+
+### Speech-to-Text (STT)
+
+Voice input converts microphone audio to text through one of three providers, chosen automatically by priority.
+
+**Key files:**
+- `src/lib/services/stt/openai-stt.ts` — OpenAI-compatible transcription client (Groq and local Whisper servers via `/v1/audio/transcriptions`)
+- `src/lib/services/stt/web-speech.ts` — Browser Web Speech API provider
+- `src/lib/stores/stt.svelte.ts` — Active-provider selection and session state
+
+**Supported providers (priority order):**
+- **Local STT** — any OpenAI-compatible Whisper server (Speaches, faster-whisper-server, whisper.cpp). No key; defaults to `http://localhost:8000/v1`
+- **Groq (Whisper)** — cloud transcription, requires an API key
+- **Web Speech API** — browser built-in, no key, unavailable in the desktop webview
+
+Selection: a configured local server wins, then Groq, then Web Speech.
 
 ### Memory System
 

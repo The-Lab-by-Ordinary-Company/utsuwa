@@ -63,12 +63,15 @@ If TTS is enabled, the avatar will speak the response with lip-synced animation.
 
 ## Voice Input
 
-Click the microphone button in the chat bar to use speech-to-text. Two providers are available:
+Click the microphone button in the chat bar to use speech-to-text. Three options are available:
 
-- **Web Speech API** — Built into your browser (Chrome, Edge, Safari). No API key required. This is the default in the browser.
-- **Groq Whisper** — Higher quality transcription via Groq's Whisper API. Requires a Groq API key, which you can add in **Settings > Character** under the Voice Input (STT) section. When a Groq key is configured, it automatically becomes the active STT provider.
+- **Local Whisper server** — Self-hosted, OpenAI-compatible transcription (Speaches, faster-whisper-server, whisper.cpp) via the `/v1/audio/transcriptions` endpoint. Audio never leaves your machine. Configure it in **Settings > Character** under Voice Input (STT) with a base URL (default `http://localhost:8000/v1/`) and a model name.
+- **Groq Whisper** — Higher-quality cloud transcription via Groq's Whisper API. Requires a Groq API key, added in the same Voice Input (STT) section.
+- **Web Speech API** — Built into your browser (Chrome, Edge, Safari). No API key required. The default in the browser when nothing else is configured.
 
-On the desktop app, Web Speech API is not available — you'll need to configure a Groq API key for voice input.
+Selection is automatic by priority: a configured local server wins, then Groq, then Web Speech. On the desktop app the Web Speech API is unavailable, so configure either a local Whisper server or a Groq key for voice input.
+
+See [Local STT Setup](/docs/guides/local-stt-setup) for running a local Whisper server.
 
 ## Data Management
 

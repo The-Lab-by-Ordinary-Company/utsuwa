@@ -155,7 +155,7 @@ The camera is locked in overlay mode. If the character appears rotated, exit ove
 
 ### Voice input not working
 
-The desktop app uses Tauri's webview, which does not support the browser's Web Speech API. You need a Groq API key for voice input on desktop. Add it in **Settings > Character** under the Voice Input (STT) section.
+The desktop app uses Tauri's webview, which does not support the browser's Web Speech API. For voice input on desktop, configure either a local Whisper server or a Groq API key in **Settings > Character** under the Voice Input (STT) section.
 
 ### Can't interact with overlay UI
 
