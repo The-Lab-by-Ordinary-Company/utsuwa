@@ -249,6 +249,10 @@
 		if (provider?.models?.length) {
 			modulesStore.setModuleSetting('speech', 'activeModel', provider.models[0].id);
 		}
+		// Local providers ship a default voice so requests work before the user picks one
+		if (provider?.isLocal && provider.voices?.length) {
+			modulesStore.setModuleSetting('speech', 'activeVoiceId', provider.voices[0].id);
+		}
 		// Mark local providers as added immediately (they don't need API keys)
 		if (provider?.isLocal || !provider?.requiresApiKey) {
 			settingsStore.markProviderAdded(providerId);

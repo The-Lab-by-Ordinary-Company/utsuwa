@@ -99,9 +99,7 @@ export const memoryApi = {
 			importance: fact.importance ?? DEFAULT_FACT_IMPORTANCE,
 			confidence: fact.confidence ?? DEFAULT_FACT_CONFIDENCE
 		});
-		// Return the created fact
-		const facts = await memoryStorage.getFacts({ limit: 1 });
-		return facts.find((f) => f.id === id) || {
+		return {
 			id,
 			...fact,
 			importance: fact.importance ?? DEFAULT_FACT_IMPORTANCE,
@@ -252,19 +250,12 @@ function extractTriggerWords(message: string): string[] {
 	const triggers: string[] = [];
 	const lowerMessage = message.toLowerCase();
 
-	// Personal triggers
-	const personalPatterns = [
-		/\b(remember|recall|forgot|forget)\s+(?:when|that|about)\s+([^.!?]+)/gi,
-		/\b(last time|before|earlier|yesterday|ago)\b/gi,
-		/\b(you said|you mentioned|you told)\b/gi
-	];
-
-	for (const pattern of personalPatterns) {
-		let match;
-		while ((match = pattern.exec(lowerMessage)) !== null) {
-			if (match[2]) {
-				triggers.push(match[2].trim());
-			}
+	// Personal triggers ("remember when ...", "recall that ...")
+	const recallPattern = /\b(?:remember|recall|forgot|forget)\s+(?:when|that|about)\s+([^.!?]+)/gi;
+	let match;
+	while ((match = recallPattern.exec(lowerMessage)) !== null) {
+		if (match[1]) {
+			triggers.push(match[1].trim());
 		}
 	}
 
