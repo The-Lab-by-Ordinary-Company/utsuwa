@@ -37,7 +37,7 @@
 	import { mergeUpdates, checkAndApplyStageTransition } from '$lib/engine/state-updates';
 	import {
 		retrieveRelevantContext,
-		addTurnToWorkingMemory,
+		recordTurn,
 		hydrateWorkingMemory,
 		memoryApi,
 		determineFactCategory,
@@ -212,9 +212,9 @@
 			}
 		}
 
-		// Save to working memory
-		addTurnToWorkingMemory({ role: 'user', content: userMessage, createdAt: new Date() });
-		addTurnToWorkingMemory({ role: 'assistant', content: dialogue, createdAt: new Date() });
+		// Persist the exchange (and mirror into working memory) so it survives reloads
+		await recordTurn({ role: 'user', content: userMessage });
+		await recordTurn({ role: 'assistant', content: dialogue });
 
 		// Extract facts
 		const potentialFacts = extractPotentialFacts(dialogue, userMessage);

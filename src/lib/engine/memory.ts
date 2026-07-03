@@ -22,7 +22,7 @@ let workingMemory: WorkingMemory = {
 export function addTurnToWorkingMemory(turn: Omit<ConversationTurn, 'id'>): void {
 	workingMemory.turns.push({
 		...turn,
-		createdAt: new Date()
+		createdAt: turn.createdAt ?? new Date()
 	} as ConversationTurn);
 
 	// Trim to max size
@@ -31,6 +31,50 @@ export function addTurnToWorkingMemory(turn: Omit<ConversationTurn, 'id'>): void
 	}
 
 	workingMemory.messageCount++;
+}
+
+// How many turns have been persisted under the current session.
+let currentSessionTurnCount = 0;
+
+// Open a session for this run on first use, so persisted turns can be grouped
+// and "last time you talked" style context has something to read.
+async function ensureSession(): Promise<number | undefined> {
+	if (workingMemory.currentSessionId !== undefined) return workingMemory.currentSessionId;
+	try {
+		const session = await memoryApi.createSession();
+		workingMemory.currentSessionId = session.id;
+		workingMemory.sessionStartedAt = session.startedAt;
+		currentSessionTurnCount = 0;
+		return session.id;
+	} catch (e) {
+		console.debug('[Memory] Failed to create session:', e);
+		return undefined;
+	}
+}
+
+// Record a conversation turn: mirror it into working memory AND persist it to
+// IndexedDB so history survives reloads and exports aren't empty. Persistence
+// failures are non-fatal — the in-RAM copy still drives the current session.
+export async function recordTurn(
+	turn: Omit<ConversationTurn, 'id' | 'createdAt' | 'sessionId'>
+): Promise<void> {
+	const sessionId = await ensureSession();
+	const full: Omit<ConversationTurn, 'id'> = { ...turn, sessionId, createdAt: new Date() };
+
+	addTurnToWorkingMemory(full);
+
+	try {
+		await memoryStorage.saveConversationTurn(full);
+		if (sessionId !== undefined) {
+			currentSessionTurnCount++;
+			await memoryStorage.updateSession(sessionId, {
+				messageCount: currentSessionTurnCount,
+				endedAt: full.createdAt
+			});
+		}
+	} catch (e) {
+		console.debug('[Memory] Failed to persist conversation turn:', e);
+	}
 }
 
 // Get recent turns from working memory
