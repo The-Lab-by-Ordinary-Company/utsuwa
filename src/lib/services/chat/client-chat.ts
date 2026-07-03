@@ -134,26 +134,13 @@ export async function streamChatDirect(
 			buffer = lines.pop() || '';
 
 			for (const line of lines) {
-				const trimmed = line.trim();
-				if (!trimmed || trimmed === 'data: [DONE]') continue;
-				if (!trimmed.startsWith('data: ')) continue;
-
-				try {
-					const json = JSON.parse(trimmed.slice(6));
-
-					// OpenAI-compatible format
-					if (json.choices?.[0]?.delta?.content) {
-						onChunk(json.choices[0].delta.content);
-					}
-					// Anthropic format
-					else if (json.type === 'content_block_delta' && json.delta?.text) {
-						onChunk(json.delta.text);
-					}
-				} catch {
-					// Skip malformed JSON lines
-				}
+				processStreamLine(line, onChunk);
 			}
 		}
+
+		// Flush the decoder and any final line that arrived without a trailing newline
+		buffer += decoder.decode();
+		processStreamLine(buffer, onChunk);
 
 		onDone();
 	} catch (err) {
@@ -162,6 +149,27 @@ export async function streamChatDirect(
 			? getLocalProviderConnectionHint(provider, providerBaseURL, getCurrentSiteOrigin())
 			: rawMessage;
 		onError(msg);
+	}
+}
+
+function processStreamLine(line: string, onChunk: (text: string) => void): void {
+	const trimmed = line.trim();
+	if (!trimmed || trimmed === 'data: [DONE]') return;
+	if (!trimmed.startsWith('data: ')) return;
+
+	try {
+		const json = JSON.parse(trimmed.slice(6));
+
+		// OpenAI-compatible format
+		if (json.choices?.[0]?.delta?.content) {
+			onChunk(json.choices[0].delta.content);
+		}
+		// Anthropic format
+		else if (json.type === 'content_block_delta' && json.delta?.text) {
+			onChunk(json.delta.text);
+		}
+	} catch {
+		// Skip malformed JSON lines
 	}
 }
 
