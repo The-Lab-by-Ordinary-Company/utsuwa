@@ -1,7 +1,9 @@
 import { streamText } from '@xsai/stream-text';
+import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
 import { getChatBaseUrl } from '$lib/services/providers/local-endpoints';
+import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
 
 // Provider base URLs
 const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
@@ -62,6 +64,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		} else {
 			// Use default base URL for provider
 			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS[typedProvider];
+		}
+
+		// Block SSRF: the base URL is client-supplied and fetched server-side.
+		try {
+			assertSafeProviderUrl(providerBaseURL, env.ALLOW_LOCAL_PROVIDER_HOSTS === 'true');
+		} catch (e) {
+			return new Response(
+				JSON.stringify({ error: e instanceof Error ? e.message : 'Invalid provider URL' }),
+				{ status: 400, headers: { 'Content-Type': 'application/json' } }
+			);
 		}
 
 		// Add system message (use provided systemPrompt or default)
