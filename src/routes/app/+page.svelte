@@ -20,7 +20,8 @@
 	import { getLLMProvider, getTTSProvider, providerSupportsVision } from '$lib/services/providers/registry';
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
 	import { canShowImages } from '$lib/services/providers/vision';
-	import { streamChatDirect, extractStateUpdates } from '$lib/services/chat/client-chat';
+	import { streamChatDirect } from '$lib/services/chat/client-chat';
+	import { processCompanionTurn } from '$lib/services/chat/companion-turn';
 	import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { type ContentPart, toOpenAIContent } from '$lib/services/chat/content';
 	import { isTauri } from '$lib/services/platform';
@@ -31,24 +32,16 @@
 	import { pop, fadeFast } from '$lib/utils/motion';
 
 	// V2 companion system imports
-	import { buildSystemPrompt, buildExtractionSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
-	import { parseResponse, validateStateUpdates, extractPotentialFacts } from '$lib/ai/response-parser';
-	import { calculateBaselineUpdates, analyzeMessage } from '$lib/engine/heuristics';
-	import { mergeUpdates, checkAndApplyStageTransition } from '$lib/engine/state-updates';
+	import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
 	import {
 		retrieveRelevantContext,
-		recordTurn,
 		hydrateWorkingMemory,
-		memoryApi,
-		determineFactCategory,
-		calculateFactImportance,
 		backfillEmbeddings,
 		getEmbeddingBackfillStatus
 	} from '$lib/engine/memory';
 	import { initEmbeddingModel } from '$lib/services/embeddings';
-	import { checkAllEvents, eventsApi } from '$lib/engine/events';
+	import { eventsApi } from '$lib/engine/events';
 	import { completionMarkers } from '$lib/engine/event-completion';
-	import { allEvents } from '$lib/data/events';
 
 	let canvasRef: HTMLCanvasElement | null = null;
 
@@ -135,117 +128,6 @@
 		}
 	});
 
-	// Process companion response with v2 system
-	async function processCompanionResponse(
-		userMessage: string,
-		companionResponse: string,
-		llm: { provider: string; model: string; apiKey?: string; baseURL?: string; hasImages: boolean }
-	): Promise<string> {
-		const state = characterStore.state;
-
-		const baselineUpdates = calculateBaselineUpdates(userMessage, state);
-
-		const parsed = parseResponse(companionResponse);
-		const dialogue = parsed.dialogue;
-		let llmUpdates = parsed.stateUpdates;
-
-		if (import.meta.env.DEV) {
-			console.log('%c[LLM raw response]', 'color:#00b2ff;font-weight:bold', companionResponse);
-			console.log('%c[LLM parsed]', 'color:#22c55e;font-weight:bold', {
-				stateUpdates: llmUpdates,
-				new_memory: llmUpdates?.newMemory ?? null
-			});
-		}
-
-		// Decoupled fallback: the model skipped the inline JSON, so ask a dedicated
-		// forced-JSON call to extract mood + memory from the exchange.
-		if (!llmUpdates) {
-			const extracted = await extractStateUpdates({
-				provider: llm.provider as import('$lib/types').LLMProvider,
-				model: llm.model,
-				apiKey: llm.apiKey,
-				baseURL: llm.baseURL,
-				system: buildExtractionSystemPrompt(llm.hasImages),
-				userMessage,
-				reply: dialogue
-			});
-			if (extracted) {
-				// parseResponse handles both bare JSON (OpenAI json_object) and a
-				// model-added ```json fence (Anthropic). Don't re-wrap — double
-				// fencing makes the non-greedy fence regex capture an empty block.
-				llmUpdates = parseResponse(extracted).stateUpdates;
-				if (import.meta.env.DEV) {
-					console.log('%c[extraction fallback]', 'color:#f59e0b;font-weight:bold', extracted, '->', llmUpdates);
-				}
-			}
-		}
-
-		let validatedLLMUpdates = null;
-		if (llmUpdates) {
-			const validation = validateStateUpdates(llmUpdates);
-			validatedLLMUpdates = validation.sanitized;
-		}
-
-		const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {});
-		characterStore.applyUpdates(finalUpdates);
-		lastNewMemory = finalUpdates.newMemory || undefined;
-
-		// Save LLM memory observation
-		if (finalUpdates.newMemory) {
-			try {
-				await memoryApi.createFact({
-					content: finalUpdates.newMemory,
-					category: determineFactCategory(finalUpdates.newMemory),
-					importance: calculateFactImportance(finalUpdates.newMemory)
-				});
-			} catch (e) {
-				console.debug('[Memory] Failed to save LLM observation:', e);
-			}
-		}
-
-		// Check stage transitions (only in Dating Sim Mode)
-		if (characterStore.appMode === 'dating_sim') {
-			const completedEventIds = characterStore.state.completedEvents || [];
-			const transition = checkAndApplyStageTransition(characterStore.state, completedEventIds);
-			if (transition.transitioned && transition.toStage) {
-				characterStore.setRelationshipStage(transition.toStage);
-			}
-		}
-
-		// Persist the exchange (and mirror into working memory) so it survives reloads
-		await recordTurn({ role: 'user', content: userMessage });
-		await recordTurn({ role: 'assistant', content: dialogue });
-
-		// Extract facts
-		const potentialFacts = extractPotentialFacts(dialogue, userMessage);
-		for (const factContent of potentialFacts.slice(0, 2)) {
-			try {
-				const userAnalysis = analyzeMessage(userMessage);
-				await memoryApi.createFact({
-					content: factContent,
-					category: determineFactCategory(factContent),
-					importance: calculateFactImportance(factContent, userAnalysis.sentiment)
-				});
-			} catch (e) {
-				console.debug('Failed to save fact:', e);
-			}
-		}
-
-		// Check for events (only in Dating Sim Mode)
-		if (characterStore.appMode === 'dating_sim') {
-			try {
-				const completedEvents = await eventsApi.getCompletedEvents();
-				const triggeredEvents = checkAllEvents(allEvents, characterStore.state, completedEvents, userMessage);
-				if (triggeredEvents.length > 0) {
-					activeEvent = triggeredEvents[0];
-				}
-			} catch (e) {
-				console.debug('Event check failed:', e);
-			}
-		}
-
-		return dialogue;
-	}
 
 	// Build system prompt
 	async function buildCompanionSystemPrompt(userMessage: string, hasImages = false): Promise<string> {
@@ -402,13 +284,21 @@
 			}
 
 			isTyping = false;
-			const cleanedResponse = await processCompanionResponse(content, fullContent, {
-				provider,
-				model: selectedModel,
-				apiKey: apiKey || undefined,
-				baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
-				hasImages: images.length > 0
+			const turn = await processCompanionTurn({
+				userMessage: content,
+				companionResponse: fullContent,
+				llm: {
+					provider,
+					model: selectedModel,
+					apiKey: apiKey || undefined,
+					baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+					hasImages: images.length > 0
+				},
+				debug: import.meta.env.DEV
 			});
+			const cleanedResponse = turn.dialogue;
+			lastNewMemory = turn.newMemory;
+			if (turn.triggeredEvent) activeEvent = turn.triggeredEvent;
 
 			// She's seen it and responded; keep the shown images as local keepsakes
 			if (images.length > 0) {

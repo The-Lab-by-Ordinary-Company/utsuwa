@@ -22,24 +22,17 @@
 	import { isTauri, startDragging } from '$lib/services/platform';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import { streamChatDirect } from '$lib/services/chat/client-chat';
-	import { allEvents } from '$lib/data/events';
-	import { checkAllEvents, eventsApi } from '$lib/engine/events';
+	import { processCompanionTurn } from '$lib/services/chat/companion-turn';
+	import { eventsApi } from '$lib/engine/events';
 	import { completionMarkers } from '$lib/engine/event-completion';
 	import type { TTSProvider } from '$lib/types';
 	import type { EventDefinition } from '$lib/types/events';
 	import type { StateUpdates } from '$lib/types/character';
 
 	import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
-	import { parseResponse, validateStateUpdates, extractPotentialFacts } from '$lib/ai/response-parser';
-	import { calculateBaselineUpdates, analyzeMessage } from '$lib/engine/heuristics';
-	import { mergeUpdates, checkAndApplyStageTransition } from '$lib/engine/state-updates';
 	import {
 		retrieveRelevantContext,
-		recordTurn,
 		hydrateWorkingMemory,
-		memoryApi,
-		determineFactCategory,
-		calculateFactImportance,
 		backfillEmbeddings,
 		getEmbeddingBackfillStatus
 	} from '$lib/engine/memory';
@@ -117,75 +110,6 @@
 		}
 	}
 
-	async function processCompanionResponse(userMessage: string, companionResponse: string): Promise<string> {
-		const state = characterStore.state;
-		const baselineUpdates = calculateBaselineUpdates(userMessage, state);
-		const parsed = parseResponse(companionResponse);
-		const dialogue = parsed.dialogue;
-		const llmUpdates = parsed.stateUpdates;
-
-		let validatedLLMUpdates = null;
-		if (llmUpdates) {
-			const validation = validateStateUpdates(llmUpdates);
-			validatedLLMUpdates = validation.sanitized;
-		}
-
-		const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {});
-		characterStore.applyUpdates(finalUpdates);
-
-		if (finalUpdates.newMemory) {
-			try {
-				await memoryApi.createFact({
-					content: finalUpdates.newMemory,
-					category: determineFactCategory(finalUpdates.newMemory),
-					importance: calculateFactImportance(finalUpdates.newMemory)
-				});
-			} catch (e) {
-				console.debug('[Memory] Failed to save LLM observation:', e);
-			}
-		}
-
-		if (characterStore.appMode === 'dating_sim') {
-			const completedEventIds = characterStore.state.completedEvents || [];
-			const transition = checkAndApplyStageTransition(characterStore.state, completedEventIds);
-			if (transition.transitioned && transition.toStage) {
-				characterStore.setRelationshipStage(transition.toStage);
-			}
-		}
-
-		// Persist the exchange (and mirror into working memory) so it survives reloads
-		await recordTurn({ role: 'user', content: userMessage });
-		await recordTurn({ role: 'assistant', content: dialogue });
-
-		const potentialFacts = extractPotentialFacts(dialogue, userMessage);
-		for (const factContent of potentialFacts.slice(0, 2)) {
-			try {
-				const userAnalysis = analyzeMessage(userMessage);
-				await memoryApi.createFact({
-					content: factContent,
-					category: determineFactCategory(factContent),
-					importance: calculateFactImportance(factContent, userAnalysis.sentiment)
-				});
-			} catch (e) {
-				console.debug('Failed to save fact:', e);
-			}
-		}
-
-		// Check for events (dating sim mode only)
-		if (characterStore.appMode === 'dating_sim') {
-			try {
-				const completedEvents = await eventsApi.getCompletedEvents();
-				const triggeredEvents = checkAllEvents(allEvents, characterStore.state, completedEvents, userMessage);
-				if (triggeredEvents.length > 0) {
-					activeEvent = triggeredEvents[0];
-				}
-			} catch (e) {
-				console.debug('Event check failed:', e);
-			}
-		}
-
-		return dialogue;
-	}
 
 	async function buildCompanionSystemPrompt(userMessage: string): Promise<string> {
 		const state = characterStore.state;
@@ -314,7 +238,20 @@
 			}
 
 			isTyping = false;
-			const cleanedResponse = await processCompanionResponse(content, fullContent);
+			const turn = await processCompanionTurn({
+				userMessage: content,
+				companionResponse: fullContent,
+				llm: {
+					provider,
+					model: selectedModel,
+					apiKey: apiKey || undefined,
+					baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
+					hasImages: false
+				},
+				debug: import.meta.env.DEV
+			});
+			const cleanedResponse = turn.dialogue;
+			if (turn.triggeredEvent) activeEvent = turn.triggeredEvent;
 			chatStore.updateLastMessage(cleanedResponse);
 			latestResponse = cleanedResponse;
 
