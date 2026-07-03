@@ -99,6 +99,9 @@ export interface CharacterState {
 
 	// Temporal
 	lastInteraction: Date | null;
+	// Timestamp through which time-based decay has been applied, so a refresh or a
+	// second window doesn't re-apply the same absence's decay. Re-armed on interaction.
+	lastDecayAt?: Date | null;
 	firstMet: Date;
 	daysKnown: number;
 	totalInteractions: number;
@@ -178,6 +181,7 @@ export function createDefaultCharacterState(): Omit<CharacterState, 'id'> {
 		relationshipStage: 'stranger',
 		personality: createDefaultPersonality(),
 		lastInteraction: null,
+		lastDecayAt: null,
 		firstMet: now,
 		daysKnown: 0,
 		totalInteractions: 0,

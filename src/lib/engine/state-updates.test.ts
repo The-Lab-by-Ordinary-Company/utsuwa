@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { applyTimeDecay, mergeUpdates, checkAndApplyStageTransition } from './state-updates.ts';
+import {
+	applyTimeDecay,
+	mergeUpdates,
+	checkAndApplyStageTransition,
+	resolveTimeDecayOnLoad
+} from './state-updates.ts';
 import type { CharacterState, StateUpdates } from '$lib/types/character';
+
+const HOUR = 1000 * 60 * 60;
 
 function makeState(overrides: Partial<CharacterState> = {}): CharacterState {
 	return {
@@ -81,6 +88,75 @@ test('mood shifts to melancholy after 3 days away', () => {
 	const updates = applyTimeDecay(makeState(), 96);
 	assert.equal(updates.moodChange?.emotion, 'melancholy');
 	assert.ok((updates.moodChange?.intensityDelta ?? 0) <= 30);
+});
+
+// --- resolveTimeDecayOnLoad (once-per-absence guard) ---
+
+test('a 3-day absence decays affection once and marks lastDecayAt', () => {
+	const now = 1_000_000_000_000;
+	const state = makeState({
+		affection: 500,
+		trust: 90,
+		lastInteraction: new Date(now - 72 * HOUR),
+		lastDecayAt: null
+	});
+	const result = resolveTimeDecayOnLoad(state, now);
+	assert.equal(result.changed, true);
+	assert.equal(result.next.affection, 495); // -5 for a 3-day absence
+	assert.ok(result.next.lastDecayAt instanceof Date);
+});
+
+test('regression: reloading after decay does NOT re-deduct affection', () => {
+	const now = 1_000_000_000_000;
+	const lastInteraction = new Date(now - 72 * HOUR);
+	const first = resolveTimeDecayOnLoad(
+		makeState({ affection: 500, trust: 90, lastInteraction, lastDecayAt: null }),
+		now
+	);
+	// Second load: same absence, but lastDecayAt is now set from the first pass
+	const second = resolveTimeDecayOnLoad(
+		makeState({ affection: 495, trust: 90, lastInteraction, lastDecayAt: first.next.lastDecayAt }),
+		now + HOUR
+	);
+	assert.equal(second.next.affection, undefined, 'affection must not decay a second time');
+	assert.equal(second.changed, false);
+});
+
+test('interacting re-arms decay for the next absence', () => {
+	const now = 1_000_000_000_000;
+	// Decayed during a past absence, then chatted (lastInteraction advanced past lastDecayAt)
+	const state = makeState({
+		affection: 500,
+		trust: 90,
+		lastDecayAt: new Date(now - 100 * HOUR),
+		lastInteraction: new Date(now - 72 * HOUR)
+	});
+	const result = resolveTimeDecayOnLoad(state, now);
+	assert.equal(result.next.affection, 495, 'a new absence decays again');
+});
+
+test('energy still recovers on every load even when decay is locked out', () => {
+	const now = 1_000_000_000_000;
+	const lastInteraction = new Date(now - 72 * HOUR);
+	const state = makeState({
+		energy: 40,
+		affection: 500,
+		lastInteraction,
+		lastDecayAt: lastInteraction // already decayed this absence
+	});
+	const result = resolveTimeDecayOnLoad(state, now);
+	assert.equal(result.next.energy, 100); // energy is self-limiting, always recovers
+	assert.equal(result.next.affection, undefined); // decay stays locked out
+	assert.equal(result.changed, true);
+});
+
+test('no decay under the 30-minute floor', () => {
+	const now = 1_000_000_000_000;
+	const result = resolveTimeDecayOnLoad(
+		makeState({ lastInteraction: new Date(now - 10 * 60 * 1000) }),
+		now
+	);
+	assert.equal(result.changed, false);
 });
 
 // --- mergeUpdates ---

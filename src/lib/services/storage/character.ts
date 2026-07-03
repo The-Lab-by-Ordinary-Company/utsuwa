@@ -49,6 +49,7 @@ function serializeCharacterState(state: CharacterState): Omit<DBCharacterState, 
 	return {
 		...state,
 		lastInteraction: state.lastInteraction ? new Date(state.lastInteraction) : null,
+		lastDecayAt: state.lastDecayAt ? new Date(state.lastDecayAt) : null,
 		firstMet: new Date(state.firstMet),
 		createdAt: new Date(state.createdAt),
 		updatedAt: new Date()
@@ -60,6 +61,7 @@ function deserializeCharacterState(state: DBCharacterState): CharacterState {
 	return {
 		...state,
 		lastInteraction: state.lastInteraction ? new Date(state.lastInteraction) : null,
+		lastDecayAt: state.lastDecayAt ? new Date(state.lastDecayAt) : null,
 		firstMet: new Date(state.firstMet),
 		createdAt: new Date(state.createdAt),
 		updatedAt: new Date(state.updatedAt)

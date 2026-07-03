@@ -15,7 +15,7 @@ import {
 	deleteCharacterState
 } from '$lib/services/storage/character';
 import { statChangesStore } from './statChanges.svelte';
-import { applyTimeDecay } from '$lib/engine/state-updates';
+import { resolveTimeDecayOnLoad } from '$lib/engine/state-updates';
 import { calculateStage } from '$lib/engine/stages';
 
 // Single character state
@@ -61,54 +61,15 @@ function createCharacterStore() {
 			const loaded = await getCharacterState();
 			state = loaded;
 
-			// Apply time-based recovery/decay based on time since last interaction
-			if (state.lastInteraction) {
-				const hoursSince =
-					(Date.now() - new Date(state.lastInteraction).getTime()) / (1000 * 60 * 60);
-				if (hoursSince > 0.5) {
-					// Only apply if at least 30 minutes have passed
-					const timeUpdates = applyTimeDecay(state, hoursSince);
-					if (Object.keys(timeUpdates).length > 0) {
-						// Apply updates directly without emitting visual indicators (silent recovery)
-						if (timeUpdates.energyDelta !== undefined) {
-							state = {
-								...state,
-								energy: Math.max(0, Math.min(100, state.energy + timeUpdates.energyDelta))
-							};
-						}
-						if (timeUpdates.affectionDelta !== undefined) {
-							state = {
-								...state,
-								affection: Math.max(0, Math.min(1000, state.affection + timeUpdates.affectionDelta))
-							};
-						}
-						if (timeUpdates.trustDelta !== undefined) {
-							state = {
-								...state,
-								trust: Math.max(0, Math.min(100, state.trust + timeUpdates.trustDelta))
-							};
-						}
-						if (timeUpdates.moodChange) {
-							state = {
-								...state,
-								mood: {
-									...state.mood,
-									primary: timeUpdates.moodChange.emotion,
-									intensity: Math.max(
-										0,
-										Math.min(100, state.mood.intensity + (timeUpdates.moodChange.intensityDelta ?? 0))
-									),
-									causes: timeUpdates.moodChange.cause
-										? [...state.mood.causes.slice(-4), timeUpdates.moodChange.cause]
-										: state.mood.causes
-								}
-							};
-						}
-						// Save the recovered state (use $state.snapshot to strip Proxy)
-						const plainState = $state.snapshot(state);
-						await saveCharacterState({ ...plainState, updatedAt: new Date() });
-					}
-				}
+			// Apply time-based recovery/decay based on time since last interaction.
+			// Energy recovers every load; affection/trust/mood decay applies once per
+			// absence so a refresh or second window can't re-deduct it (see helper).
+			const decay = resolveTimeDecayOnLoad(state, Date.now());
+			if (decay.changed) {
+				state = { ...state, ...decay.next };
+				// Save the recovered state (use $state.snapshot to strip Proxy)
+				const plainState = $state.snapshot(state);
+				await saveCharacterState({ ...plainState, updatedAt: new Date() });
 			}
 
 			isReady = true;
