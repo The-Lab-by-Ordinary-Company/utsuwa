@@ -1,11 +1,7 @@
+import { DEFAULT_LOCAL_BASE_URLS as DEFAULT_BASE_URLS } from './provider-defaults.ts';
+
 const LOCAL_LLM_PROVIDERS = new Set(['ollama', 'lmstudio']);
 const LOCAL_TTS_PROVIDERS = new Set(['local-tts']);
-
-const DEFAULT_BASE_URLS: Record<string, string> = {
-	ollama: 'http://localhost:11434',
-	lmstudio: 'http://localhost:1234/v1',
-	'local-tts': 'http://localhost:8880/v1'
-};
 
 const OLLAMA_ORIGINS_DOC_URL =
 	'https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama';

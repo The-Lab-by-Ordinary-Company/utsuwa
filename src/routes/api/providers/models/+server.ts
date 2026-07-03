@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
 import { getModelsBaseUrl } from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
+import { DEFAULT_MODELS_BASE_URLS } from '$lib/services/providers/provider-defaults';
 
 interface ModelInfo {
 	id: string;
@@ -14,20 +15,6 @@ interface FetchModelsResponse {
 	error?: string;
 }
 
-// Default base URLs per provider (LLM and TTS)
-const DEFAULT_BASE_URLS: Record<string, string> = {
-	// LLM providers
-	openai: 'https://api.openai.com/v1',
-	anthropic: 'https://api.anthropic.com/v1',
-	ollama: 'http://localhost:11434',
-	lmstudio: 'http://localhost:1234/v1',
-	deepseek: 'https://api.deepseek.com',
-	xai: 'https://api.x.ai/v1',
-	google: 'https://generativelanguage.googleapis.com/v1beta',
-	// TTS providers
-	elevenlabs: 'https://api.elevenlabs.io/v1',
-	'openai-tts': 'https://api.openai.com/v1'
-};
 
 // Model filter patterns - only keep chat-compatible models
 // Note: Google IDs have 'models/' prefix stripped before filtering
@@ -197,7 +184,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const effectiveBaseUrl =
-			baseUrl || DEFAULT_BASE_URLS[providerId as LLMProvider] || '';
+			baseUrl || DEFAULT_MODELS_BASE_URLS[providerId as LLMProvider] || '';
 
 		// Remove trailing slash for consistency
 		const cleanBaseUrl =

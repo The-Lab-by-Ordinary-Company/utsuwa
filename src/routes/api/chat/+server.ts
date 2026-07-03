@@ -4,19 +4,7 @@ import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
 import { getChatBaseUrl } from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
-
-// Provider base URLs
-const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
-	// Cloud
-	openai: 'https://api.openai.com/v1/',
-	anthropic: 'https://api.anthropic.com/v1/',
-	google: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-	deepseek: 'https://api.deepseek.com/',
-	xai: 'https://api.x.ai/v1/',
-	// Local
-	ollama: 'http://localhost:11434/v1/',
-	lmstudio: 'http://localhost:1234/v1/',
-};
+import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-defaults';
 
 // Providers that don't require API keys
 const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
@@ -57,13 +45,13 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Handle special provider configurations
 		if (typedProvider === 'anthropic') {
-			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS.anthropic;
+			providerBaseURL = providerBaseURL || DEFAULT_CHAT_BASE_URLS.anthropic;
 			headers['anthropic-dangerous-direct-browser-access'] = 'true';
 		} else if (isLocalProvider) {
 			providerBaseURL = getChatBaseUrl(typedProvider, providerBaseURL);
 		} else {
 			// Use default base URL for provider
-			providerBaseURL = providerBaseURL || PROVIDER_BASE_URLS[typedProvider];
+			providerBaseURL = providerBaseURL || DEFAULT_CHAT_BASE_URLS[typedProvider];
 		}
 
 		// Block SSRF: the base URL is client-supplied and fetched server-side.

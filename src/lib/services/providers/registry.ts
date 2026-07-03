@@ -1,4 +1,5 @@
 // Provider Registry - All LLM and TTS providers
+import { DEFAULT_CHAT_BASE_URLS } from './provider-defaults.ts';
 
 export interface ProviderMetadata {
 	id: string;
@@ -32,7 +33,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '🤖',
 		requiresApiKey: true,
 		supportsVision: true,
-		defaultBaseUrl: 'https://api.openai.com/v1/'
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.openai
 	},
 	{
 		id: 'anthropic',
@@ -42,7 +43,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '🧠',
 		requiresApiKey: true,
 		supportsVision: true,
-		defaultBaseUrl: 'https://api.anthropic.com/v1/'
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.anthropic
 	},
 	{
 		id: 'google',
@@ -53,7 +54,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		iconColor: '#4285F4',
 		requiresApiKey: true,
 		supportsVision: true,
-		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.google
 	},
 	{
 		id: 'deepseek',
@@ -62,7 +63,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		category: 'llm',
 		icon: '🔍',
 		requiresApiKey: true,
-		defaultBaseUrl: 'https://api.deepseek.com/'
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.deepseek
 	},
 	{
 		id: 'xai',
@@ -72,7 +73,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '𝕏',
 		requiresApiKey: true,
 		supportsVision: true,
-		defaultBaseUrl: 'https://api.x.ai/v1/'
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.xai
 	},
 	// Local LLMs discover installed models from the user's running local server.
 	{
@@ -83,7 +84,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '🦙',
 		requiresApiKey: false,
 		isLocal: true,
-		defaultBaseUrl: 'http://localhost:11434',
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.ollama,
 		models: []
 	},
 	{
@@ -94,7 +95,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '🖥️',
 		requiresApiKey: false,
 		isLocal: true,
-		defaultBaseUrl: 'http://localhost:1234/v1/',
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.lmstudio,
 		models: []
 	},
 ];

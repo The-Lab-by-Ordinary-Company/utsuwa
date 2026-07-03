@@ -4,6 +4,7 @@ import {
 	getLocalProviderConnectionHint,
 	isLocalLLMProvider
 } from '$lib/services/providers/local-endpoints';
+import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-defaults';
 import { type MessageContent, toOpenAIContent, toAnthropicContent } from './content';
 
 interface ChatMessage {
@@ -19,17 +20,6 @@ interface ChatOptions {
 	baseURL?: string;
 	systemPrompt: string;
 }
-
-// Provider base URLs (mirrors server route)
-const PROVIDER_BASE_URLS: Partial<Record<LLMProvider, string>> = {
-	openai: 'https://api.openai.com/v1/',
-	anthropic: 'https://api.anthropic.com/v1/',
-	google: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-	deepseek: 'https://api.deepseek.com/',
-	xai: 'https://api.x.ai/v1/',
-	ollama: 'http://localhost:11434/v1/',
-	lmstudio: 'http://localhost:1234/v1/'
-};
 
 function getCurrentSiteOrigin(): string | undefined {
 	return typeof window !== 'undefined' ? window.location.origin : undefined;
@@ -55,7 +45,7 @@ export async function streamChatDirect(
 
 	const providerBaseURL = isLocal
 		? getChatBaseUrl(provider, baseURL)
-		: baseURL || PROVIDER_BASE_URLS[provider];
+		: baseURL || DEFAULT_CHAT_BASE_URLS[provider];
 	if (!providerBaseURL) {
 		onError(`Unknown provider: ${provider}`);
 		return;
@@ -194,7 +184,7 @@ export async function extractStateUpdates(options: ExtractOptions): Promise<stri
 	const isLocal = isLocalLLMProvider(provider);
 	if (!apiKey && !isLocal) return null;
 
-	const base = isLocal ? getChatBaseUrl(provider, baseURL) : baseURL || PROVIDER_BASE_URLS[provider];
+	const base = isLocal ? getChatBaseUrl(provider, baseURL) : baseURL || DEFAULT_CHAT_BASE_URLS[provider];
 	if (!base) return null;
 
 	const trimmedBase = base.replace(/\/+$/, '');

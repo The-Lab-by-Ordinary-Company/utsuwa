@@ -4,23 +4,12 @@ import {
 	getModelsBaseUrl,
 	isLocalLLMProvider
 } from './local-endpoints';
+import { DEFAULT_MODELS_BASE_URLS } from './provider-defaults.ts';
 
 interface ModelInfo {
 	id: string;
 	name: string;
 }
-
-const DEFAULT_BASE_URLS: Record<string, string> = {
-	openai: 'https://api.openai.com/v1',
-	anthropic: 'https://api.anthropic.com/v1',
-	ollama: 'http://localhost:11434',
-	lmstudio: 'http://localhost:1234/v1',
-	deepseek: 'https://api.deepseek.com',
-	xai: 'https://api.x.ai/v1',
-	google: 'https://generativelanguage.googleapis.com/v1beta',
-	elevenlabs: 'https://api.elevenlabs.io/v1',
-	'openai-tts': 'https://api.openai.com/v1'
-};
 
 const MODEL_FILTERS: Record<string, RegExp> = {
 	openai: /^(gpt-|o1-|o3-|chatgpt-4o-)/,
@@ -64,7 +53,7 @@ export async function fetchModelsDirect(
 	const cleanBaseUrl =
 		providerId === 'ollama' || providerId === 'lmstudio'
 			? getModelsBaseUrl(providerId, baseUrl)
-			: (baseUrl || DEFAULT_BASE_URLS[providerId] || '').replace(/\/+$/, '');
+			: (baseUrl || DEFAULT_MODELS_BASE_URLS[providerId] || '').replace(/\/+$/, '');
 
 	try {
 		let models: ModelInfo[] = [];
