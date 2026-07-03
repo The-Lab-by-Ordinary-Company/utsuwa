@@ -1,6 +1,6 @@
 import type { CharacterState, StateUpdates, Emotion } from '$lib/types/character';
 import type { MessageAnalysis, TopicDepth } from '$lib/types/memory';
-import { calculateMessageImpact } from './state-updates';
+import { calculateMessageImpact } from './state-updates.ts';
 
 // Sentiment keywords for analysis
 const POSITIVE_KEYWORDS = [

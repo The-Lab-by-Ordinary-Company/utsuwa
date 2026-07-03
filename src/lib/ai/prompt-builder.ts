@@ -1,7 +1,8 @@
 import type { CharacterState } from '$lib/types/character';
 import type { Fact, SessionSummary, RelevantContext } from '$lib/types/memory';
 import type { PersonaCard } from '$lib/stores/persona.svelte';
-import { STAGE_BEHAVIORS, STAGE_INSTRUCTIONS } from '$lib/engine/stages';
+// Relative import keeps this module runnable under the node test runner
+import { STAGE_BEHAVIORS, STAGE_INSTRUCTIONS } from '../engine/stages.ts';
 
 // Prompt context for building
 export interface PromptContext {

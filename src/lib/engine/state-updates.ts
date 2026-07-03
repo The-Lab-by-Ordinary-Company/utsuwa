@@ -1,5 +1,5 @@
 import type { CharacterState, StateUpdates, Emotion, RelationshipStage } from '$lib/types/character';
-import { calculateStage } from './stages';
+import { calculateStage } from './stages.ts';
 
 // Clamp a value between min and max
 function clamp(value: number, min: number, max: number): number {
