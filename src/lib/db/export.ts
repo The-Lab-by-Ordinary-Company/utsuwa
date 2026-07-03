@@ -1,5 +1,6 @@
 import { db } from '$lib/db';
 import { characterStore } from '$lib/stores/character.svelte';
+import { partitionNewRecords, factKey, sessionKey, turnKey, eventKey } from './import-dedup';
 import type {
 	CharacterState,
 	MoodState,
@@ -100,71 +101,80 @@ export async function importSave(
 
 	const isV2 = saveFile.version.startsWith('2.');
 
-	if (mode === 'replace') {
-		// Clear all existing data
-		await Promise.all([
-			db.characterStates.clear(),
-			db.facts.clear(),
-			db.sessions.clear(),
-			db.conversationTurns.clear(),
-			db.completedEvents.clear()
-		]);
+	// Insert a collection with merge-mode dedup. In merge mode existing records
+	// are keyed first so re-importing the same save is a no-op; replace mode starts
+	// from empty (tables cleared) but still dedupes within the incoming file.
+	async function importCollection<T>(
+		table: {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			add: (r: T) => Promise<any>;
+			toArray: () => Promise<T[]>;
+		},
+		records: T[],
+		keyOf: (r: T) => string
+	): Promise<void> {
+		const existingKeys =
+			mode === 'merge' ? new Set((await table.toArray()).map(keyOf)) : new Set<string>();
+		const { toAdd, skipped: dupes } = partitionNewRecords(records, keyOf, existingKeys);
+		for (const record of toAdd) {
+			await table.add(record);
+		}
+		imported += toAdd.length;
+		skipped += dupes;
 	}
 
-	if (isV2) {
-		// V2 format - single character
-		const v2File = saveFile as SaveFile;
-
-		if (mode === 'replace') {
-			await db.characterStates.add(v2File.data.character);
-			imported++;
-		} else {
-			// Merge mode - skip character if one exists
-			const existing = await db.characterStates.toCollection().first();
-			if (!existing) {
-				await db.characterStates.add(v2File.data.character);
-				imported++;
-			} else {
-				skipped++;
+	// Wrap the whole import in one transaction so a mid-import failure rolls back
+	// instead of leaving cleared tables with partially-written data.
+	await db.transaction(
+		'rw',
+		[db.characterStates, db.facts, db.sessions, db.conversationTurns, db.completedEvents],
+		async () => {
+			if (mode === 'replace') {
+				// Clear all existing data
+				await Promise.all([
+					db.characterStates.clear(),
+					db.facts.clear(),
+					db.sessions.clear(),
+					db.conversationTurns.clear(),
+					db.completedEvents.clear()
+				]);
 			}
-		}
 
-		// Import facts
-		for (const fact of v2File.data.facts) {
-			await db.facts.add(fact);
-			imported++;
-		}
+			if (isV2) {
+				// V2 format - single character
+				const v2File = saveFile as SaveFile;
 
-		// Import sessions
-		for (const session of v2File.data.sessions) {
-			await db.sessions.add(session);
-			imported++;
-		}
+				if (mode === 'replace') {
+					await db.characterStates.add(v2File.data.character);
+					imported++;
+				} else {
+					// Merge mode - skip character if one exists
+					const existing = await db.characterStates.toCollection().first();
+					if (!existing) {
+						await db.characterStates.add(v2File.data.character);
+						imported++;
+					} else {
+						skipped++;
+					}
+				}
 
-		// Import conversation turns
-		for (const turn of v2File.data.conversationTurns) {
-			await db.conversationTurns.add(turn);
-			imported++;
-		}
+				await importCollection(db.facts, v2File.data.facts, factKey);
+				await importCollection(db.sessions, v2File.data.sessions, sessionKey);
+				await importCollection(db.conversationTurns, v2File.data.conversationTurns, turnKey);
+				await importCollection(db.completedEvents, v2File.data.completedEvents, eventKey);
+			} else {
+				// V1 format - migrate to single character
+				const v1File = saveFile as LegacySaveFile;
 
-		// Import completed events
-		for (const event of v2File.data.completedEvents) {
-			await db.completedEvents.add(event);
-			imported++;
-		}
-	} else {
-		// V1 format - migrate to single character
-		const v1File = saveFile as LegacySaveFile;
+				// Take the first character state and first persona, merge them
+				const firstCharState = v1File.data.characterStates?.[0];
+				const firstPersona = v1File.data.personas?.[0];
 
-		// Take the first character state and first persona, merge them
-		const firstCharState = v1File.data.characterStates?.[0];
-		const firstPersona = v1File.data.personas?.[0];
-
-		if (firstCharState || firstPersona) {
-			const existing = await db.characterStates.toCollection().first();
-			if (!existing || mode === 'replace') {
-				// Build merged character state
-				const mergedState = {
+				if (firstCharState || firstPersona) {
+					const existing = await db.characterStates.toCollection().first();
+					if (!existing || mode === 'replace') {
+						// Build merged character state
+						const mergedState = {
 					// Persona fields from persona or defaults
 					name: (firstPersona?.name as string) || 'Utsuwa',
 					systemPrompt:
@@ -213,30 +223,26 @@ export async function importSave(
 			}
 		}
 
-		// Import facts (cast from legacy format)
-		for (const fact of v1File.data.facts) {
-			await db.facts.add(fact as unknown as Fact);
-			imported++;
+				// Import facts/sessions/turns/events (cast from legacy format)
+				await importCollection(db.facts, v1File.data.facts as unknown as Fact[], factKey);
+				await importCollection(
+					db.sessions,
+					v1File.data.sessions as unknown as SessionSummary[],
+					sessionKey
+				);
+				await importCollection(
+					db.conversationTurns,
+					v1File.data.conversationTurns as unknown as ConversationTurn[],
+					turnKey
+				);
+				await importCollection(
+					db.completedEvents,
+					v1File.data.completedEvents as unknown as CompletedEventRecord[],
+					eventKey
+				);
+			}
 		}
-
-		// Import sessions (cast from legacy format)
-		for (const session of v1File.data.sessions) {
-			await db.sessions.add(session as unknown as SessionSummary);
-			imported++;
-		}
-
-		// Import conversation turns (cast from legacy format)
-		for (const turn of v1File.data.conversationTurns) {
-			await db.conversationTurns.add(turn as unknown as ConversationTurn);
-			imported++;
-		}
-
-		// Import completed events (cast from legacy format)
-		for (const event of v1File.data.completedEvents) {
-			await db.completedEvents.add(event as unknown as CompletedEventRecord);
-			imported++;
-		}
-	}
+	);
 
 	// Reload character store to pick up imported data
 	await characterStore.loadState();
