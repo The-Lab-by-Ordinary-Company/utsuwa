@@ -71,7 +71,18 @@ function createVrmStore() {
 		'/animations/idle_5.vrma'
 	];
 
-	const availableAnimations: { id: string; name: string; url: string }[] = [];
+	// Selectable one-shot emotes (played via the developer tools). These are the
+	// VRMA files shipped in static/animations/ that aren't part of the idle cycle
+	// or the talking loop.
+	const availableAnimations: { id: string; name: string; url: string }[] = [
+		{ id: 'vrma_01', name: 'Emote 1', url: '/animations/VRMA_01.vrma' },
+		{ id: 'vrma_02', name: 'Emote 2', url: '/animations/VRMA_02.vrma' },
+		{ id: 'vrma_03', name: 'Emote 3', url: '/animations/VRMA_03.vrma' },
+		{ id: 'vrma_04', name: 'Emote 4', url: '/animations/VRMA_04.vrma' },
+		{ id: 'vrma_05', name: 'Emote 5', url: '/animations/VRMA_05.vrma' },
+		{ id: 'vrma_06', name: 'Emote 6', url: '/animations/VRMA_06.vrma' },
+		{ id: 'vrma_07', name: 'Emote 7', url: '/animations/VRMA_07.vrma' }
+	];
 
 	// Guard against saveToStorage running before init completes
 	let storageReady = false;

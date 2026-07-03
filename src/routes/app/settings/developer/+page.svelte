@@ -282,8 +282,9 @@
 					value={vrmStore.currentAnimation || 'none'}
 					onchange={(e) => vrmStore.setCurrentAnimation(e.currentTarget.value === 'none' ? null : e.currentTarget.value)}
 				>
+					<option value="none">None (idle)</option>
 					{#each vrmStore.availableAnimations as anim}
-						<option value={anim.id}>{anim.name}</option>
+						<option value={anim.url}>{anim.name}</option>
 					{/each}
 				</select>
 			</div>
