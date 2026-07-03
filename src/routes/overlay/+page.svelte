@@ -24,6 +24,7 @@
 	import { streamChatDirect } from '$lib/services/chat/client-chat';
 	import { allEvents } from '$lib/data/events';
 	import { checkAllEvents, eventsApi } from '$lib/engine/events';
+	import { completionMarkers } from '$lib/engine/event-completion';
 	import type { TTSProvider } from '$lib/types';
 	import type { EventDefinition } from '$lib/types/events';
 	import type { StateUpdates } from '$lib/types/character';
@@ -364,7 +365,11 @@
 		eventsApi.recordCompletedEvent(
 			event, choiceIndex,
 			choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
-		).then(() => characterStore.markEventCompleted(event.id))
+		).then(() => {
+			for (const marker of completionMarkers(event, choiceIndex)) {
+				characterStore.markEventCompleted(marker);
+			}
+		})
 		.catch((e) => console.error('Failed to record event:', e));
 		activeEvent = null;
 	}

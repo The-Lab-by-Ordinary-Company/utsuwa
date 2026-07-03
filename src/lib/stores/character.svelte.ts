@@ -267,12 +267,21 @@ function createCharacterStore() {
 		save();
 	}
 
-	// Mark event as completed
+	// Mark event as completed. Also accepts synthetic choice-outcome markers
+	// (a choice's nextSceneId, e.g. 'confession_accepted') that gate later stages.
 	function markEventCompleted(eventId: string): void {
 		if (!state.completedEvents.includes(eventId)) {
+			const completedEvents = [...state.completedEvents, eventId];
+			// A gating event can unlock the next relationship stage right away.
+			// Companion mode has no dating-sim ladder, so leave its stage locked.
+			const relationshipStage =
+				state.appMode === 'companion'
+					? state.relationshipStage
+					: calculateStage(state, completedEvents);
 			state = {
 				...state,
-				completedEvents: [...state.completedEvents, eventId],
+				completedEvents,
+				relationshipStage,
 				updatedAt: new Date()
 			};
 			save();

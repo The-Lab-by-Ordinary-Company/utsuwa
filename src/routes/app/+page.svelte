@@ -47,6 +47,7 @@
 	} from '$lib/engine/memory';
 	import { initEmbeddingModel } from '$lib/services/embeddings';
 	import { checkAllEvents, eventsApi } from '$lib/engine/events';
+	import { completionMarkers } from '$lib/engine/event-completion';
 	import { allEvents } from '$lib/data/events';
 
 	let canvasRef: HTMLCanvasElement | null = null;
@@ -473,7 +474,11 @@
 			choiceIndex,
 			choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
 		).then(() => {
-			characterStore.markEventCompleted(event.id);
+			// Records the event id plus the chosen outcome marker (e.g.
+			// confession_accepted), which is what gates later relationship stages.
+			for (const marker of completionMarkers(event, choiceIndex)) {
+				characterStore.markEventCompleted(marker);
+			}
 		}).catch((e) => {
 			console.error('Failed to record event completion:', e);
 		});
