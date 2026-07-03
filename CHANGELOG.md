@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-07-03
+
+### Fixed
+- **Onboarding now configures OpenAI-compatible endpoints**: selecting the OpenAI-Compatible provider during setup showed no fields to fill in. It now offers an optional API key, a base URL, and a model, and won't let you continue until a base URL and model are set.
+
+### Added
+- **Voice input during onboarding**: a new optional Voice Input (STT) step lets you set up a local Whisper server, Groq, or OpenAI while getting started, matching what the settings page already offered.
+
 ## [0.7.0] - 2026-07-03
 
 ### Added
