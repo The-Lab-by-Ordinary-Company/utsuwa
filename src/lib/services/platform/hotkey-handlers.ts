@@ -68,10 +68,3 @@ export async function initializeHotkeys(config?: Partial<HotkeyConfig>): Promise
 		emitHotkeyEvent('chat:focus');
 	});
 }
-
-/**
- * Check if push-to-talk is currently active
- */
-export function isPushToTalkActive(): boolean {
-	return isPTTActive;
-}

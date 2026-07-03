@@ -340,27 +340,6 @@ function createVrmStore() {
 		await saveToStorage();
 	}
 
-	async function loadModelBlob(id: string): Promise<string | null> {
-		const model = models.find((m) => m.id === id);
-		if (!model) return null;
-
-		// Default models use static URLs
-		if (model.isDefault) {
-			return model.url;
-		}
-
-		// Custom models need to load blob from storage
-		try {
-			const blob = await vrmStorage?.getItem<Blob>(`model-blob-${id}`);
-			if (blob) {
-				return URL.createObjectURL(blob);
-			}
-		} catch (e) {
-			console.error('Failed to load model blob:', e);
-		}
-		return null;
-	}
-
 	function getActiveModel(): VrmModel | null {
 		return models.find((m) => m.id === activeModelId) || null;
 	}
@@ -438,7 +417,6 @@ function createVrmStore() {
 		stopTalking,
 		addModel,
 		removeModel,
-		loadModelBlob,
 		getActiveModel,
 		setModelPreview
 	};

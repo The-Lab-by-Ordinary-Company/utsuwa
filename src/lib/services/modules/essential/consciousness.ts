@@ -1,12 +1,4 @@
 import type { ModuleDefinition } from '$lib/types/module';
-import { LLM_PROVIDERS } from '$lib/services/providers/registry';
-
-// Get model options for a provider
-function getModelsForProvider(providerId: string): { value: string; label: string }[] {
-	const provider = LLM_PROVIDERS.find((p) => p.id === providerId);
-	if (!provider?.models) return [];
-	return provider.models.map((m) => ({ value: m.id, label: m.name }));
-}
 
 export const consciousnessModule: ModuleDefinition = {
 	metadata: {

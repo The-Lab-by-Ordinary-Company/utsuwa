@@ -1,12 +1,4 @@
 import type { ModuleDefinition } from '$lib/types/module';
-import { TTS_PROVIDERS } from '$lib/services/providers/registry';
-
-// Get voice options for a provider
-function getVoicesForProvider(providerId: string): { value: string; label: string }[] {
-	const provider = TTS_PROVIDERS.find((p) => p.id === providerId);
-	if (!provider?.voices) return [];
-	return provider.voices.map((v) => ({ value: v.id, label: v.name }));
-}
 
 export const speechModule: ModuleDefinition = {
 	metadata: {

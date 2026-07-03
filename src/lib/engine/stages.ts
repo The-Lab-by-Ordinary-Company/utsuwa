@@ -12,11 +12,6 @@ const STAGE_ORDER: RelationshipStage[] = [
 	'soulmate'
 ];
 
-// Get stage index
-export function getStageIndex(stage: RelationshipStage): number {
-	return STAGE_ORDER.indexOf(stage);
-}
-
 // Stage requirements for progression
 const STAGE_REQUIREMENTS: Record<RelationshipStage, {
 	minAffection: number;

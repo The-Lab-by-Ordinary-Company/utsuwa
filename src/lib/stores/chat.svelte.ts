@@ -16,7 +16,6 @@ function createChatStore() {
 	let messages = $state<Message[]>([]);
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
-	let streamingContent = $state('');
 	let errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	function addMessage(role: 'user' | 'assistant', content: string, images?: ShownImage[]) {
@@ -59,16 +58,6 @@ function createChatStore() {
 		}
 	}
 
-	function setStreamingContent(content: string) {
-		streamingContent = content;
-	}
-
-	function removeLastMessage() {
-		if (messages.length > 0) {
-			messages = messages.slice(0, -1);
-		}
-	}
-
 	function clearMessages() {
 		messages = [];
 	}
@@ -83,15 +72,10 @@ function createChatStore() {
 		get error() {
 			return error;
 		},
-		get streamingContent() {
-			return streamingContent;
-		},
 		addMessage,
 		updateLastMessage,
-		removeLastMessage,
 		setLoading,
 		setError,
-		setStreamingContent,
 		clearMessages
 	};
 }

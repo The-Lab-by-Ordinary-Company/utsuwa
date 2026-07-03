@@ -43,9 +43,6 @@
 			<DocsSearch bind:this={searchComponent} id="header-search" />
 		</div>
 	{/if}
-	<a href={localPath('docs')} class="logo mobile-logo">
-		<img src="/brand-assets/logo.svg" alt="Utsuwa" class="logo-img" />
-	</a>
 	<div class="header-right">
 		<nav class="header-nav">
 			<a href={localPath('docs')} class="nav-link" class:active={isSection('docs')}>Docs</a>
@@ -177,10 +174,6 @@
 		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 	}
 
-	.mobile-logo {
-		display: none;
-	}
-
 	@media (max-width: 768px) {
 		.docs-header {
 			position: sticky;
@@ -220,10 +213,6 @@
 
 		.header-right {
 			gap: 0.25rem;
-		}
-
-		.mobile-logo {
-			display: none;
 		}
 	}
 </style>

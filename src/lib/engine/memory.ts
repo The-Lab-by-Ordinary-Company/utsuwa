@@ -18,21 +18,6 @@ let workingMemory: WorkingMemory = {
 	messageCount: 0
 };
 
-// Initialize working memory
-export function initWorkingMemory(): WorkingMemory {
-	workingMemory = {
-		turns: [],
-		sessionStartedAt: new Date(),
-		messageCount: 0
-	};
-	return workingMemory;
-}
-
-// Get working memory
-export function getWorkingMemory(): WorkingMemory {
-	return workingMemory;
-}
-
 // Add a turn to working memory
 export function addTurnToWorkingMemory(turn: Omit<ConversationTurn, 'id'>): void {
 	workingMemory.turns.push({
@@ -51,15 +36,6 @@ export function addTurnToWorkingMemory(turn: Omit<ConversationTurn, 'id'>): void
 // Get recent turns from working memory
 export function getRecentTurns(limit: number = 10): ConversationTurn[] {
 	return workingMemory.turns.slice(-limit);
-}
-
-// Clear working memory (call on session end)
-export function clearWorkingMemory(): void {
-	workingMemory = {
-		turns: [],
-		sessionStartedAt: new Date(),
-		messageCount: 0
-	};
 }
 
 // Hydrate working memory from IndexedDB (call on page load)
@@ -267,51 +243,6 @@ function extractTriggerWords(message: string): string[] {
 	}
 
 	return triggers.filter((t) => t.length > 2);
-}
-
-// Extract potential facts from a conversation
-export function extractFactsFromConversation(
-	userMessage: string,
-	companionResponse: string
-): string[] {
-	const facts: string[] = [];
-
-	// User statements about themselves
-	const userSelfPatterns = [
-		/\bI(?:'m| am)\s+(a |an )?([^.!?,]+)/gi,
-		/\bmy (?:name|job|hobby|favorite|family) is\s+([^.!?,]+)/gi,
-		/\bI (?:work|live|study) (?:at|in|as)\s+([^.!?,]+)/gi,
-		/\bI (?:like|love|enjoy|hate|prefer)\s+([^.!?,]+)/gi
-	];
-
-	for (const pattern of userSelfPatterns) {
-		let match;
-		while ((match = pattern.exec(userMessage)) !== null) {
-			const fact = match[match.length - 1].trim();
-			if (fact.length > 3 && fact.length < 150) {
-				facts.push(`User: ${fact}`);
-			}
-		}
-	}
-
-	// Companion acknowledgments of facts
-	const acknowledgmentPatterns = [
-		/I(?:'ll)? remember\s+([^.!?]+)/gi,
-		/so you(?:'re| are)\s+([^.!?,]+)/gi,
-		/you (?:like|love|enjoy)\s+([^.!?,]+)/gi
-	];
-
-	for (const pattern of acknowledgmentPatterns) {
-		let match;
-		while ((match = pattern.exec(companionResponse)) !== null) {
-			const fact = match[1].trim();
-			if (fact.length > 3 && fact.length < 150 && !facts.some((f) => f.includes(fact))) {
-				facts.push(fact);
-			}
-		}
-	}
-
-	return facts;
 }
 
 // Determine fact category

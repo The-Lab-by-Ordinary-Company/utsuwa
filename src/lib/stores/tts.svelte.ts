@@ -67,14 +67,6 @@ function createTTSStore() {
 		currentSource = null;
 	}
 
-	function getAnalyserData(): Uint8Array | null {
-		if (!currentAnalyser) return null;
-
-		const dataArray = new Uint8Array(currentAnalyser.frequencyBinCount);
-		currentAnalyser.getByteFrequencyData(dataArray);
-		return dataArray;
-	}
-
 	return {
 		get isSpeaking() {
 			return isSpeaking;
@@ -83,8 +75,7 @@ function createTTSStore() {
 			return currentAnalyser;
 		},
 		speak,
-		stop,
-		getAnalyserData
+		stop
 	};
 }
 

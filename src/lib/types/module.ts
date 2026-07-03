@@ -89,25 +89,3 @@ export interface ModuleDefinition {
 export interface ModuleWithState extends ModuleMetadata {
 	state: ModuleState;
 }
-
-/**
- * Category labels for display
- */
-export const MODULE_CATEGORY_LABELS: Record<ModuleCategory, string> = {
-	essential: 'Essential',
-	messaging: 'Messaging',
-	gaming: 'Gaming',
-	creative: 'Creative',
-	utility: 'Utility'
-};
-
-/**
- * Category icons for display
- */
-export const MODULE_CATEGORY_ICONS: Record<ModuleCategory, string> = {
-	essential: 'cpu',
-	messaging: 'message-circle',
-	gaming: 'gamepad-2',
-	creative: 'palette',
-	utility: 'wrench'
-};

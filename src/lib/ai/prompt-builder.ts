@@ -1,5 +1,5 @@
 import type { CharacterState } from '$lib/types/character';
-import type { ConversationTurn, Fact, SessionSummary, RelevantContext } from '$lib/types/memory';
+import type { Fact, SessionSummary, RelevantContext } from '$lib/types/memory';
 import type { PersonaCard } from '$lib/stores/persona.svelte';
 import { STAGE_BEHAVIORS, STAGE_INSTRUCTIONS } from '$lib/engine/stages';
 
@@ -386,35 +386,3 @@ function formatTimeSince(lastInteraction: Date | null): string {
 	return `${Math.floor(days / 7)} weeks ago`;
 }
 
-// Build messages array for chat completion
-export function buildMessages(
-	context: PromptContext,
-	recentHistory: ConversationTurn[]
-): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
-	const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
-
-	// System prompt
-	messages.push({
-		role: 'system',
-		content: buildSystemPrompt(context)
-	});
-
-	// Recent conversation history
-	for (const turn of recentHistory.slice(-10)) {
-		messages.push({
-			role: turn.role === 'user' ? 'user' : 'assistant',
-			content: turn.content
-		});
-	}
-
-	// Current user message (if not already in history)
-	const lastMessage = recentHistory[recentHistory.length - 1];
-	if (!lastMessage || lastMessage.content !== context.userMessage) {
-		messages.push({
-			role: 'user',
-			content: context.userMessage
-		});
-	}
-
-	return messages;
-}

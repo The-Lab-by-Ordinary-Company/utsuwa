@@ -8,10 +8,6 @@ if (browser) {
 	_theme = (localStorage.getItem('colorMode') as Theme) || 'system';
 }
 
-export function getTheme(): Theme {
-	return _theme;
-}
-
 export function cycleTheme() {
 	const order: Theme[] = ['light', 'dark', 'system'];
 	const next = order[(order.indexOf(_theme) + 1) % order.length];

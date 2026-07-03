@@ -207,7 +207,6 @@ export function analyzeMessage(content: string): MessageAnalysis {
 		topicDepth,
 		detectedEmotion,
 		extractedFacts,
-		mentionedKeywords: words.filter((w) => w.length > 4),
 		isQuestion,
 		hasEmotionalContent
 	};

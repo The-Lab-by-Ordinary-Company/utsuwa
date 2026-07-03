@@ -28,7 +28,6 @@
 	import type { TTSProvider } from '$lib/types';
 	import type { StateUpdates } from '$lib/types/character';
 	import type { EventDefinition } from '$lib/types/events';
-	import { onMount } from 'svelte';
 	import { pop, fadeFast } from '$lib/utils/motion';
 
 	// V2 companion system imports
@@ -46,7 +45,7 @@
 		backfillEmbeddings,
 		getEmbeddingBackfillStatus
 	} from '$lib/engine/memory';
-	import { initEmbeddingModel, subscribeToEmbeddingState, type EmbeddingState } from '$lib/services/embeddings';
+	import { initEmbeddingModel } from '$lib/services/embeddings';
 	import { checkAllEvents, eventsApi } from '$lib/engine/events';
 	import { allEvents } from '$lib/data/events';
 
@@ -92,32 +91,19 @@
 		};
 	});
 
-	// Track memory hydration
-	let isMemoryReady = $state(false);
-
-	// Track embedding model state
-	let embeddingState = $state<EmbeddingState>({ isLoading: false, isReady: false, error: null });
-
 	// Hydrate working memory on start
 	$effect(() => {
-		isMemoryReady = false;
 		(async () => {
 			try {
 				await hydrateWorkingMemory();
-				isMemoryReady = true;
 			} catch (e) {
 				console.error('Failed to hydrate working memory:', e);
-				isMemoryReady = true; // Don't block the app
 			}
 		})();
 	});
 
 	// Initialize embedding model and backfill any facts without embeddings
 	$effect(() => {
-		const unsub = subscribeToEmbeddingState((state) => {
-			embeddingState = state;
-		});
-
 		initEmbeddingModel().then(async (ready) => {
 			if (ready) {
 				const status = await getEmbeddingBackfillStatus();
@@ -128,8 +114,6 @@
 		}).catch((e) => {
 			console.error('Failed to initialize embedding model:', e);
 		});
-
-		return unsub;
 	});
 
 	// Check for first-run (onboarding). ?onboarding=1 force-opens it for testing

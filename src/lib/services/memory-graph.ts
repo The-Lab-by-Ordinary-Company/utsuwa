@@ -109,24 +109,3 @@ export const categoryColors: Record<FactCategory, string> = {
 	relationship: '#ff477f',
 	shared_experience: '#34d399'
 };
-
-// Get node size based on importance (normalized to 4-20 range)
-export function getNodeSize(importance: number): number {
-	const min = 4;
-	const max = 20;
-	return min + (importance / 100) * (max - min);
-}
-
-// Get node opacity based on recency (last 30 days = full opacity)
-export function getNodeOpacity(lastAccessed?: Date, createdAt?: Date): number {
-	const date = lastAccessed || createdAt;
-	if (!date) return 0.5;
-
-	const now = Date.now();
-	const daysSince = (now - new Date(date).getTime()) / (1000 * 60 * 60 * 24);
-
-	if (daysSince <= 7) return 1;
-	if (daysSince <= 30) return 0.8;
-	if (daysSince <= 90) return 0.6;
-	return 0.4;
-}

@@ -89,16 +89,8 @@ export interface MessageAnalysis {
 	topicDepth: TopicDepth;
 	detectedEmotion?: string;
 	extractedFacts: string[];
-	mentionedKeywords: string[];
 	isQuestion: boolean;
 	hasEmotionalContent: boolean;
-}
-
-// Fact extraction hint (for extracting facts from conversation)
-export interface FactExtractionHint {
-	type: 'name' | 'preference' | 'experience' | 'relationship' | 'personal';
-	content: string;
-	confidence: number;
 }
 
 // Constants

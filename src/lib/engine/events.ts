@@ -7,7 +7,6 @@ import type {
 	TimeOfDay
 } from '$lib/types/events';
 import { getTimeOfDay, isEventOnCooldown, isStageAtLeast } from '$lib/types/events';
-import { getStageIndex } from './stages';
 import * as eventsStorage from '$lib/services/storage/events';
 
 // Check if a single condition is met
@@ -176,53 +175,3 @@ export const eventsApi = {
 	}
 };
 
-// Get events that are close to triggering (for UI hints)
-export function getNearTriggerEvents(
-	events: EventDefinition[],
-	state: CharacterState,
-	completedEvents: CompletedEventRecord[]
-): Array<{ event: EventDefinition; progress: number; missingConditions: EventCondition[] }> {
-	const nearTrigger: Array<{
-		event: EventDefinition;
-		progress: number;
-		missingConditions: EventCondition[];
-	}> = [];
-
-	const completedEventIds = completedEvents.map((e) => e.eventId);
-
-	for (const event of events) {
-		// Skip if already completed (one-time) or on cooldown
-		if (isEventOnCooldown(event, completedEvents)) continue;
-
-		const totalConditions = event.conditions.length;
-		let metConditions = 0;
-		const missingConditions: EventCondition[] = [];
-
-		for (const condition of event.conditions) {
-			// Skip random conditions for progress calc
-			if (condition.type === 'random_chance') {
-				metConditions += 0.5; // Count as half met
-				continue;
-			}
-
-			if (checkCondition(condition, state, completedEventIds)) {
-				metConditions++;
-			} else {
-				missingConditions.push(condition);
-			}
-		}
-
-		const progress = totalConditions > 0 ? (metConditions / totalConditions) * 100 : 0;
-
-		// Show events that are >50% ready
-		if (progress > 50 && progress < 100) {
-			nearTrigger.push({
-				event,
-				progress: Math.floor(progress),
-				missingConditions
-			});
-		}
-	}
-
-	return nearTrigger.sort((a, b) => b.progress - a.progress);
-}

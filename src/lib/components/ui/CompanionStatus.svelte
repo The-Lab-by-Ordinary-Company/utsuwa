@@ -13,7 +13,6 @@
 
 	const charState = $derived(characterStore.state);
 	const moodInfo = $derived(characterStore.moodInfo);
-	const stageInfo = $derived(characterStore.stageInfo);
 	const affectionPercent = $derived(characterStore.affectionPercent);
 	const isCompanionMode = $derived(characterStore.appMode === 'companion');
 

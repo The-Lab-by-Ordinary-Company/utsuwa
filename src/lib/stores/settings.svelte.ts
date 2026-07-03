@@ -222,22 +222,10 @@ function createSettingsStore() {
 		return config.cachedModels;
 	}
 
-	function clearCachedModels(providerId: string) {
-		if (providerConfigs[providerId]) {
-			delete providerConfigs[providerId].cachedModels;
-			delete providerConfigs[providerId].modelsFetchedAt;
-			save();
-		}
-	}
-
 	// Hotkey configuration
 	function setHotkey(action: keyof HotkeyConfig, shortcut: string) {
 		hotkeys[action] = shortcut;
 		save();
-	}
-
-	function getHotkey(action: keyof HotkeyConfig): string {
-		return hotkeys[action];
 	}
 
 	function resetHotkeys() {
@@ -287,14 +275,12 @@ function createSettingsStore() {
 		// Cached models
 		setCachedModels,
 		getCachedModels,
-		clearCachedModels,
 
 		// Hotkeys
 		get hotkeys() {
 			return hotkeys;
 		},
 		setHotkey,
-		getHotkey,
 		resetHotkeys
 	};
 }

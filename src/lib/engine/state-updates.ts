@@ -1,65 +1,9 @@
-import type { CharacterState, StateUpdates, MoodState, Emotion, RelationshipStage } from '$lib/types/character';
+import type { CharacterState, StateUpdates, Emotion, RelationshipStage } from '$lib/types/character';
 import { calculateStage } from './stages';
 
 // Clamp a value between min and max
 function clamp(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, value));
-}
-
-// Apply state updates to character state
-export function applyStateUpdates(state: CharacterState, updates: StateUpdates): CharacterState {
-	const newState = { ...state };
-
-	// Apply mood change
-	if (updates.moodChange) {
-		const newMood: MoodState = {
-			...newState.mood,
-			primary: updates.moodChange.emotion,
-			intensity: clamp(newState.mood.intensity + (updates.moodChange.intensityDelta ?? 0), 0, 100)
-		};
-
-		// Add cause to causes array (keep last 5)
-		if (updates.moodChange.cause) {
-			newMood.causes = [...newState.mood.causes.slice(-4), updates.moodChange.cause];
-		}
-
-		newState.mood = newMood;
-	}
-
-	// Apply energy delta
-	if (updates.energyDelta !== undefined) {
-		newState.energy = clamp(newState.energy + updates.energyDelta, 0, 100);
-	}
-
-	// Apply affection delta
-	if (updates.affectionDelta !== undefined) {
-		newState.affection = clamp(newState.affection + updates.affectionDelta, 0, 1000);
-	}
-
-	// Apply trust delta
-	if (updates.trustDelta !== undefined) {
-		newState.trust = clamp(newState.trust + updates.trustDelta, 0, 100);
-	}
-
-	// Apply intimacy delta
-	if (updates.intimacyDelta !== undefined) {
-		newState.intimacy = clamp(newState.intimacy + updates.intimacyDelta, 0, 100);
-	}
-
-	// Apply comfort delta
-	if (updates.comfortDelta !== undefined) {
-		newState.comfort = clamp(newState.comfort + updates.comfortDelta, 0, 100);
-	}
-
-	// Apply respect delta
-	if (updates.respectDelta !== undefined) {
-		newState.respect = clamp(newState.respect + updates.respectDelta, 0, 100);
-	}
-
-	// Update timestamp
-	newState.updatedAt = new Date();
-
-	return newState;
 }
 
 // Check and apply stage transition if needed

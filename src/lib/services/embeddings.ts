@@ -3,7 +3,6 @@ import type { Fact } from '$lib/types/memory';
 
 // Model config
 const MODEL_NAME = 'Xenova/all-MiniLM-L6-v2';
-const EMBEDDING_DIM = 384;
 
 // State
 let pipeline: unknown = null;
@@ -30,10 +29,6 @@ export function subscribeToEmbeddingState(fn: StateListener): () => void {
 	listeners.add(fn);
 	fn({ isLoading, isReady, error: loadError });
 	return () => listeners.delete(fn);
-}
-
-export function getEmbeddingState(): EmbeddingState {
-	return { isLoading, isReady, error: loadError };
 }
 
 export async function initEmbeddingModel(): Promise<boolean> {
@@ -77,14 +72,12 @@ export async function initEmbeddingModel(): Promise<boolean> {
 		isLoading = false;
 		isReady = false;
 		notifyListeners();
-		// console.error('[embeddings] Failed to load model:', err);
 		return false;
 	}
 }
 
 export async function embedText(text: string): Promise<number[] | null> {
 	if (!isReady || !pipeline) {
-		// console.warn('[embeddings] Model not ready, cannot embed text');
 		return null;
 	}
 
@@ -98,22 +91,14 @@ export async function embedText(text: string): Promise<number[] | null> {
 		// Convert tensor to array
 		const embedding = Array.from(output.data as Float32Array);
 
-		// if (embedding.length !== EMBEDDING_DIM) {
-		// 	console.warn(
-		// 		`[embeddings] Unexpected embedding dimension: ${embedding.length}, expected ${EMBEDDING_DIM}`
-		// 	);
-		// }
-
 		return embedding;
-	} catch (err) {
-		// console.error('[embeddings] Failed to embed text:', err);
+	} catch {
 		return null;
 	}
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
 	if (a.length !== b.length) {
-		// console.warn('[embeddings] Vector length mismatch in similarity calculation');
 		return 0;
 	}
 
@@ -174,27 +159,6 @@ export function findSimilarFacts(
 	results.sort((a, b) => b.score - a.score);
 
 	return results.slice(0, limit);
-}
-
-export async function embedFacts(
-	facts: Fact[],
-	onProgress?: (done: number, total: number) => void
-): Promise<Map<number, number[]>> {
-	const embeddings = new Map<number, number[]>();
-
-	for (let i = 0; i < facts.length; i++) {
-		const fact = facts[i];
-		if (fact.id === undefined) continue;
-
-		const embedding = await embedText(fact.content);
-		if (embedding) {
-			embeddings.set(fact.id, embedding);
-		}
-
-		onProgress?.(i + 1, facts.length);
-	}
-
-	return embeddings;
 }
 
 export function isEmbeddingReady(): boolean {

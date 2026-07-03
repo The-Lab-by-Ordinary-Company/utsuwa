@@ -4,4 +4,4 @@ export * from './memory';
 export * from './events';
 
 // Re-export database for direct access if needed
-export { db, isIndexedDBAvailable } from '$lib/db';
+export { db } from '$lib/db';

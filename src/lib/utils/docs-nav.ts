@@ -19,22 +19,6 @@ export function getFlatNav(): FlatNavItem[] {
 	return items;
 }
 
-export function getBreadcrumbs(slug: string): BreadcrumbItem[] {
-	const items: BreadcrumbItem[] = [{ title: 'Docs', href: '/docs' }];
-
-	for (const section of docsNav) {
-		for (const item of section.items) {
-			if (item.slug === slug) {
-				items.push({ title: section.title, href: null });
-				items.push({ title: item.title, href: `/docs/${item.slug}` });
-				return items;
-			}
-		}
-	}
-
-	return items;
-}
-
 export function getPrevNext(slug: string): { prev: FlatNavItem | null; next: FlatNavItem | null } {
 	const flat = getFlatNav();
 	const index = flat.findIndex((item) => item.slug === slug);

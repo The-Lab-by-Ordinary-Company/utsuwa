@@ -7,7 +7,7 @@
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 
-	import { Icon, Progress, Tooltip, ProviderDropdown, ModelDropdown } from '$lib/components/ui';
+	import { Icon, Tooltip, ProviderDropdown, ModelDropdown } from '$lib/components/ui';
 	import VrmUploader from '$lib/components/vrm/VrmUploader.svelte';
 	import { allEvents } from '$lib/data/events';
 	import { getCompletedEvents } from '$lib/services/storage/events';
@@ -550,7 +550,6 @@
 								{/if}
 
 								{#if consciousnessSettings.activeProvider}
-									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
 									<ModelDropdown
 										models={llmModels}
 										value={consciousnessSettings.activeModel as string}

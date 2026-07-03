@@ -93,22 +93,6 @@ export interface EventCheckResult {
 	failedConditions?: EventCondition[];
 }
 
-// Event execution result
-export interface EventExecutionResult {
-	eventId: string;
-	scenePresented: boolean;
-	choiceMade?: number;
-	stateChanges: Partial<StateUpdates>;
-	unlocks: string[];
-}
-
-// Event queue (for managing multiple triggered events)
-export interface EventQueue {
-	pending: EventDefinition[];
-	current: EventDefinition | null;
-	completed: string[];
-}
-
 // Helper function to get time of day
 export function getTimeOfDay(date: Date = new Date()): TimeOfDay {
 	const hour = date.getHours();

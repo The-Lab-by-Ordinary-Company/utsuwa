@@ -30,6 +30,5 @@ export {
 
 export {
 	initializeHotkeys,
-	onHotkeyEvent,
-	isPushToTalkActive
+	onHotkeyEvent
 } from './hotkey-handlers';
