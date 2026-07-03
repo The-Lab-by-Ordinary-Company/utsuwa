@@ -148,7 +148,7 @@ export async function keepImage(
 	if (!list.some((k) => k.id === id)) {
 		list.push({
 			id,
-			mimeType: meta?.mimeType ?? blob.type ?? 'image/jpeg',
+			mimeType: meta?.mimeType || blob.type || 'image/jpeg',
 			createdAt: Date.now(),
 			note: meta?.note,
 			thumb: await makeThumbnail(blob)
