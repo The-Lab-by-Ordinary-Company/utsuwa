@@ -22,6 +22,13 @@ const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
 export const POST: RequestHandler = async ({ request }) => {
 	const { messages, provider, model, apiKey, baseURL, systemPrompt } = await request.json();
 
+	if (!Array.isArray(messages)) {
+		return new Response(JSON.stringify({ error: 'messages must be an array' }), {
+			status: 400,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
+
 	const typedProvider = provider as LLMProvider;
 
 	// Local providers don't require API keys

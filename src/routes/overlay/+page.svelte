@@ -276,7 +276,7 @@
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						messages: chatStore.messages.map((m) => ({ role: m.role, content: m.content })),
+						messages: chatStore.messages.slice(0, -1).filter((m) => m.content).map((m) => ({ role: m.role, content: m.content })),
 						provider,
 						model: selectedModel,
 						apiKey: apiKey || 'not-needed',
@@ -291,22 +291,32 @@
 				const decoder = new TextDecoder();
 				if (!reader) throw new Error('No response body');
 
+				const processLine = (line: string) => {
+					if (line.startsWith('0:')) {
+						const text = JSON.parse(line.slice(2));
+						fullContent += text;
+						chatStore.updateLastMessage(fullContent);
+					} else if (line.startsWith('e:')) {
+						const { error } = JSON.parse(line.slice(2));
+						throw new Error(error);
+					}
+				};
+
+				// Buffer partial lines so a delta split across network chunks doesn't break JSON.parse
+				let streamBuffer = '';
 				while (true) {
 					const { done, value } = await reader.read();
 					if (done) break;
 
-					const chunk = decoder.decode(value, { stream: true });
-					for (const line of chunk.split('\n')) {
-						if (line.startsWith('0:')) {
-							const text = JSON.parse(line.slice(2));
-							fullContent += text;
-							chatStore.updateLastMessage(fullContent);
-						} else if (line.startsWith('e:')) {
-							const { error } = JSON.parse(line.slice(2));
-							throw new Error(error);
-						}
+					streamBuffer += decoder.decode(value, { stream: true });
+					const lines = streamBuffer.split('\n');
+					streamBuffer = lines.pop() || '';
+					for (const line of lines) {
+						processLine(line);
 					}
 				}
+				streamBuffer += decoder.decode();
+				if (streamBuffer) processLine(streamBuffer);
 			}
 
 			isTyping = false;
