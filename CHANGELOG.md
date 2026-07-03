@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-03
+
+### Added
+- **Custom OpenAI-compatible LLM endpoint**: point Utsuwa at any OpenAI-compatible API (OpenRouter, Together, Mistral, Perplexity, a local vLLM, LiteLLM, and more) with a base URL, an optional API key, and a model of your choice.
+- **Local speech-to-text**: run voice input entirely on your machine with any OpenAI-compatible Whisper server (Speaches, faster-whisper-server, whisper.cpp). Audio never leaves your device, and there's no API key or per-minute cost. Includes a new Local STT Setup guide.
+- **OpenAI (Whisper) speech-to-text**: OpenAI's cloud Whisper is now a voice-input option alongside Groq, a local server, and the browser's Web Speech API.
+- **Developer animation preview**: the animation dropdown in the developer panel now lists the bundled emote clips so you can trigger them directly.
+
+### Fixed
+- **Relationship progression no longer stalls at Romantic Interest**: accepting a milestone moment (such as the confession) now correctly advances the stage, so Dating, Committed, and Soulmate are reachable.
+- **Conversations are remembered**: chat turns and sessions now persist to local storage, so your companion's history and memory survive reloads.
+- **Time-away handling**: the once-per-absence mood and relationship decay no longer stacks up on load, so returning after a break feels natural rather than punishing.
+- **Save import is now atomic** and de-duplicates on merge, so importing a backup can no longer half-apply or create duplicate facts, sessions, or events.
+- **Cleaner replies and overlay parity**: fixed a case where truncated model output could leak raw JSON into dialogue, and the desktop overlay now uses the same response pipeline as the main app.
+- Onboarding starts from a friendly default persona, no longer closes when you click inside it, and restores your saved relationship stage without downgrading it.
+- A range of smaller fixes and dead-code cleanup from a full code audit (hotkey handling, TTS model and speed handling, response streaming, and several avatar and memory edge cases).
+
+### Security
+- **SSRF protection**: the hosted API blocks requests to private, loopback, and cloud-metadata addresses made through client-supplied provider URLs.
+- Release workflow actions are pinned to commit SHAs.
+
+### Changed
+- Consolidated provider default base URLs and the companion-turn pipeline into single shared sources to reduce drift.
+- Refreshed the README and documentation (STT options, provider list, roadmap, and acknowledgments) to match the current app.
+
 ## [0.4.0] - 2026-06-29
 
 ### Added
