@@ -290,10 +290,11 @@ pnpm tauri build  # Build desktop app installer
 - [x] Desktop application with transparent overlay mode (macOS, Windows, and Linux)
 - [x] Cross-platform desktop builds via CI (macOS, Windows, Linux)
 - [x] In-app auto-updates for the desktop app
+- [x] Show companion images (multimodal vision) with a keepsake photo board
 
 ### In Progress / Planned
 
-- [ ] **File, Image, and Video Uploads** - Add support for attaching files, images, and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools
+- [ ] **File and Video Uploads** - Add support for attaching files and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools (image support has shipped)
 - [ ] **OpenAI-Compatible Models** - Add a configurable option for OpenAI-compatible model endpoints beyond the currently listed providers
 - [ ] **More STT providers** - Additional dedicated speech-to-text integrations beyond local Whisper, Groq, and Web Speech API
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
@@ -319,7 +320,7 @@ Utsuwa is built on the shoulders of these excellent projects:
 ### Core Technologies
 
 - **[@pixiv/three-vrm](https://github.com/pixiv/three-vrm)** - VRM model loading and rendering for Three.js
-- **[xsAI](https://github.com/moeru-ai/xsai)** - Unified LLM and TTS provider integration
+- **[xsAI](https://github.com/moeru-ai/xsai)** - `@xsai/stream-text` streams cloud LLM responses on the hosted web deployment
 - **[Three.js](https://github.com/mrdoob/three.js)** - 3D graphics engine
 - **[Threlte](https://github.com/threlte/threlte)** - Svelte components for Three.js
 - **[SvelteKit](https://github.com/sveltejs/kit)** - Web application framework
