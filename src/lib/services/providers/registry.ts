@@ -194,6 +194,21 @@ export const STT_PROVIDERS: ProviderMetadata[] = [
 		icon: '🎤',
 		requiresApiKey: true,
 		defaultBaseUrl: 'https://api.groq.com/openai/v1/'
+	},
+	{
+		id: 'local-stt',
+		name: 'Local STT',
+		description: 'Run Whisper locally (Speaches, faster-whisper-server, whisper.cpp)',
+		category: 'stt',
+		icon: '🏠',
+		requiresApiKey: false,
+		isLocal: true,
+		defaultBaseUrl: 'http://localhost:8000/v1/',
+		models: [
+			{ id: 'Systran/faster-whisper-large-v3', name: 'faster-whisper large-v3' },
+			{ id: 'Systran/faster-whisper-medium', name: 'faster-whisper medium' },
+			{ id: 'whisper-1', name: 'whisper-1 (OpenAI-named)' }
+		]
 	}
 ];
 
@@ -204,6 +219,10 @@ export function getLLMProvider(id: string): ProviderMetadata | undefined {
 
 export function getTTSProvider(id: string): ProviderMetadata | undefined {
 	return TTS_PROVIDERS.find((p) => p.id === id);
+}
+
+export function getSTTProvider(id: string): ProviderMetadata | undefined {
+	return STT_PROVIDERS.find((p) => p.id === id);
 }
 
 /** Whether an LLM provider's models are broadly vision-capable (cloud providers). */

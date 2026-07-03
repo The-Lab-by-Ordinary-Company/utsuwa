@@ -2,6 +2,7 @@ import { DEFAULT_LOCAL_BASE_URLS as DEFAULT_BASE_URLS } from './provider-default
 
 const LOCAL_LLM_PROVIDERS = new Set(['ollama', 'lmstudio']);
 const LOCAL_TTS_PROVIDERS = new Set(['local-tts']);
+const LOCAL_STT_PROVIDERS = new Set(['local-stt']);
 
 const OLLAMA_ORIGINS_DOC_URL =
 	'https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama';
@@ -25,6 +26,26 @@ export function isLocalLLMProvider(providerId: string): boolean {
 
 export function isLocalTTSProvider(providerId: string): boolean {
 	return LOCAL_TTS_PROVIDERS.has(providerId);
+}
+
+export function isLocalSTTProvider(providerId: string): boolean {
+	return LOCAL_STT_PROVIDERS.has(providerId);
+}
+
+// OpenAI-compatible STT clients POST to "{base}/audio/transcriptions", so the
+// base must end with "/v1". Local Whisper servers (Speaches, faster-whisper-
+// server, whisper.cpp) mount there; users routinely paste the bare host.
+export function getSTTBaseUrl(providerId: string, baseUrl?: string): string {
+	const cleanUrl = trimTrailingSlashes(baseUrl || DEFAULT_BASE_URLS[providerId] || '');
+	return isLocalSTTProvider(providerId) ? ensureOpenAIPath(cleanUrl) : cleanUrl;
+}
+
+export function getLocalSTTConnectionHint(baseUrl?: string, siteOrigin?: string): string {
+	const sttBaseUrl = getSTTBaseUrl('local-stt', baseUrl);
+	const originHint = siteOrigin
+		? ` If the server blocks this site (${siteOrigin}), enable CORS for that origin.`
+		: ' If the server blocks this site, enable CORS for the app origin.';
+	return `Could not reach a local STT server at ${sttBaseUrl}. Make sure it is running and exposes the OpenAI /v1/audio/transcriptions endpoint (e.g. Speaches, faster-whisper-server, or whisper.cpp).${originHint}`;
 }
 
 // OpenAI-compatible TTS clients append "audio/speech" to the base URL, so the

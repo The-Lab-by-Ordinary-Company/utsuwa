@@ -698,7 +698,9 @@
 								<Icon name="mic" size={14} />
 								<span>Voice Input (STT)</span>
 							</div>
-							<p class="stt-hint">Higher quality voice input via Groq's Whisper API. Required on desktop, optional in browser (falls back to Web Speech API).</p>
+							<p class="stt-hint">Higher quality voice input via Whisper. A local server is used if configured, otherwise Groq, otherwise the browser's built-in recognition. Required on desktop (which has no built-in recognition).</p>
+
+							<span class="stt-sublabel">Groq API Key</span>
 							<div class="api-key-row">
 								<input
 									type="password"
@@ -708,6 +710,33 @@
 									oninput={(e) => {
 										settingsStore.setProviderConfig('groq-stt', { apiKey: e.currentTarget.value });
 										settingsStore.markProviderAdded('groq-stt');
+									}}
+								/>
+							</div>
+
+							<span class="stt-sublabel">Local server (Speaches, faster-whisper-server, whisper.cpp)</span>
+							<div class="api-key-row">
+								<input
+									type="text"
+									class="api-key-input"
+									placeholder="http://localhost:8000/v1/"
+									value={settingsStore.getProviderConfig('local-stt').baseUrl ?? ''}
+									oninput={(e) => {
+										const v = e.currentTarget.value.trim();
+										settingsStore.setProviderConfig('local-stt', { baseUrl: v });
+										if (v) settingsStore.markProviderAdded('local-stt');
+										else settingsStore.removeProvider('local-stt');
+									}}
+								/>
+							</div>
+							<div class="api-key-row">
+								<input
+									type="text"
+									class="api-key-input"
+									placeholder="Model (e.g. Systran/faster-whisper-large-v3)"
+									value={settingsStore.getProviderConfig('local-stt').modelId ?? ''}
+									oninput={(e) => {
+										settingsStore.setProviderConfig('local-stt', { modelId: e.currentTarget.value.trim() });
 									}}
 								/>
 							</div>
@@ -1908,6 +1937,14 @@
 		color: var(--text-tertiary);
 		margin: 0;
 		line-height: 1.4;
+	}
+
+	.stt-sublabel {
+		display: block;
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+		margin-top: 0.25rem;
 	}
 
 	.service-header {

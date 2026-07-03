@@ -8,8 +8,37 @@ import {
 	getLocalProviderConnectionHint,
 	isLocalTTSProvider,
 	getTTSBaseUrl,
-	getLocalTTSConnectionHint
+	getLocalTTSConnectionHint,
+	isLocalSTTProvider,
+	getSTTBaseUrl,
+	getLocalSTTConnectionHint
 } from './local-endpoints.ts';
+
+test('identifies local STT providers', () => {
+	assert.equal(isLocalSTTProvider('local-stt'), true);
+	assert.equal(isLocalSTTProvider('groq-stt'), false);
+});
+
+test('local STT base URL is normalized to end in /v1', () => {
+	assert.equal(getSTTBaseUrl('local-stt', 'http://localhost:8000'), 'http://localhost:8000/v1');
+	assert.equal(getSTTBaseUrl('local-stt', 'http://localhost:8000/'), 'http://localhost:8000/v1');
+	assert.equal(getSTTBaseUrl('local-stt', 'http://localhost:8000/v1'), 'http://localhost:8000/v1');
+	// Falls back to the default when no base URL is given
+	assert.equal(getSTTBaseUrl('local-stt'), 'http://localhost:8000/v1');
+});
+
+test('cloud STT base URL is only trimmed, not path-normalized', () => {
+	assert.equal(
+		getSTTBaseUrl('groq-stt', 'https://api.groq.com/openai/v1/'),
+		'https://api.groq.com/openai/v1'
+	);
+});
+
+test('local STT connection hint names the endpoint and origin', () => {
+	const hint = getLocalSTTConnectionHint('http://localhost:8000/v1', 'https://utsuwa.ai');
+	assert.match(hint, /audio\/transcriptions/);
+	assert.match(hint, /utsuwa\.ai/);
+});
 
 test('identifies local LLM providers', () => {
 	assert.equal(isLocalLLMProvider('ollama'), true);

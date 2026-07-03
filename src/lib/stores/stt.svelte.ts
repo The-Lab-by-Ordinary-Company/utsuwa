@@ -1,6 +1,8 @@
 import { browser } from '$app/environment';
 import { webSpeechService } from '$lib/services/stt/web-speech';
-import { groqSttService } from '$lib/services/stt/groq-stt';
+import { openAiSttService } from '$lib/services/stt/openai-stt';
+import { getSTTBaseUrl, getLocalSTTConnectionHint } from '$lib/services/providers/local-endpoints';
+import { getSTTProvider } from '$lib/services/providers/registry';
 import { isTauri } from '$lib/services/platform/platform';
 import { settingsStore } from '$lib/stores/settings.svelte';
 
@@ -13,8 +15,37 @@ function createSttStore() {
 	let audioLevel = $state(0);
 	let errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	// Use Groq if API key is configured (works on any platform), otherwise Web Speech
-	const useGroq = $derived(browser && !!settingsStore.getProviderConfig('groq-stt').apiKey);
+	// Which OpenAI-compatible STT provider to use, if any. A configured local
+	// server wins over Groq (mirrors how a Groq key wins over Web Speech), and
+	// both fall back to the browser's Web Speech API when neither is set up.
+	const activeOpenAiStt = $derived.by<string | null>(() => {
+		if (!browser) return null;
+		if (settingsStore.isProviderAdded('local-stt')) return 'local-stt';
+		if (settingsStore.getProviderConfig('groq-stt').apiKey) return 'groq-stt';
+		return null;
+	});
+	const useOpenAiStt = $derived(activeOpenAiStt !== null);
+
+	// Point the shared recorder at the active provider's endpoint before a session.
+	function configureOpenAiStt(providerId: string) {
+		const config = settingsStore.getProviderConfig(providerId);
+		const meta = getSTTProvider(providerId);
+		const baseUrl = getSTTBaseUrl(providerId, config.baseUrl || meta?.defaultBaseUrl);
+		const model =
+			config.modelId ||
+			meta?.models?.[0]?.id ||
+			(providerId === 'groq-stt' ? 'whisper-large-v3-turbo' : 'whisper-1');
+		const isLocal = providerId === 'local-stt';
+		openAiSttService.configure({
+			baseUrl,
+			model,
+			apiKey: config.apiKey || undefined,
+			label: isLocal ? 'the local STT server' : 'Groq',
+			connectionHint: isLocal
+				? getLocalSTTConnectionHint(baseUrl, browser ? window.location.origin : undefined)
+				: undefined
+		});
+	}
 
 	async function startListening(onComplete: (text: string) => void) {
 		if (!browser) return;
@@ -25,14 +56,11 @@ function createSttStore() {
 		interimTranscript = '';
 		audioLevel = 0.2;
 
-		if (useGroq) {
-			// Feed the latest API key to the service
-			const config = settingsStore.getProviderConfig('groq-stt');
-			if (config.apiKey) {
-				groqSttService.setApiKey(config.apiKey);
-			}
+		if (useOpenAiStt && activeOpenAiStt) {
+			// Point the recorder at the active provider (local server or Groq)
+			configureOpenAiStt(activeOpenAiStt);
 
-			const started = await groqSttService.startListening({
+			const started = await openAiSttService.startListening({
 				onResult: (text, isFinal) => {
 					if (isFinal) {
 						transcript = transcript ? transcript + ' ' + text : text;
@@ -108,18 +136,18 @@ function createSttStore() {
 	}
 
 	function stopListening() {
-		if (useGroq) {
-			// Groq: stop recording → triggers async transcription
+		if (useOpenAiStt) {
+			// Recorded audio is transcribed on stop
 			isTranscribing = true;
-			groqSttService.stopListening();
+			openAiSttService.stopListening();
 		} else {
 			webSpeechService.stopListening();
 		}
 	}
 
 	function cancel() {
-		if (useGroq) {
-			groqSttService.abort();
+		if (useOpenAiStt) {
+			openAiSttService.abort();
 		} else {
 			webSpeechService.abort();
 		}
@@ -132,9 +160,8 @@ function createSttStore() {
 
 	function isSupported() {
 		if (!browser) return false;
-		// Groq works if API key is configured and mic access available
-		const groqReady = groqSttService.isSupported() && !!settingsStore.getProviderConfig('groq-stt').apiKey;
-		if (groqReady) return true;
+		// A local or Groq server works on any platform if a mic is available
+		if (useOpenAiStt && openAiSttService.isSupported()) return true;
 		// Web Speech only works in browsers (not Tauri's webview)
 		if (!isTauri() && webSpeechService.isSupported()) return true;
 		return false;
@@ -142,9 +169,9 @@ function createSttStore() {
 
 	function showUnsupportedError() {
 		if (isTauri()) {
-			setError('Add your Groq API key in Settings → Persona for voice input on desktop.');
+			setError('Add a Groq key or a local STT server in Settings → Persona for voice input on desktop.');
 		} else {
-			setError('Voice input is not supported in this browser. Add a Groq API key in Settings → Persona, or try Chrome/Edge.');
+			setError('Voice input is not supported in this browser. Add a Groq key or a local STT server in Settings → Persona, or try Chrome/Edge.');
 		}
 	}
 

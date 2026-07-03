@@ -1,7 +1,45 @@
 import type { SpeechRecognitionCallbacks } from './web-speech';
 
-class GroqSttService {
-	private apiKey: string | null = null;
+export interface OpenAiSttConfig {
+	// Base URL ending in /v1 (or a full custom URL). Trailing slashes are trimmed.
+	baseUrl: string;
+	model: string;
+	// Omitted for local servers that don't require auth.
+	apiKey?: string;
+	// Shown in error messages, e.g. "Groq" or "the local STT server".
+	label: string;
+	// Optional richer message for a network failure (CORS/unreachable hints).
+	connectionHint?: string;
+}
+
+// The transcription request shape, split out so it can be unit tested without a
+// browser (MediaRecorder/getUserMedia). OpenAI-compatible servers — OpenAI,
+// Groq, Speaches, faster-whisper-server, whisper.cpp — all accept this.
+export function buildTranscriptionRequest(
+	config: OpenAiSttConfig,
+	audio: Blob,
+	filename: string
+): { url: string; headers: Record<string, string>; body: FormData } {
+	const base = config.baseUrl.replace(/\/+$/, '');
+	const form = new FormData();
+	form.append('file', audio, filename);
+	form.append('model', config.model);
+
+	const headers: Record<string, string> = {};
+	// Local servers usually need no key; only send auth when one is set.
+	if (config.apiKey) {
+		headers.Authorization = `Bearer ${config.apiKey}`;
+	}
+
+	return { url: `${base}/audio/transcriptions`, headers, body: form };
+}
+
+// Records mic audio and transcribes it via any OpenAI-compatible
+// /v1/audio/transcriptions endpoint. Groq and local servers (Speaches,
+// faster-whisper-server, whisper.cpp) share this exact client — only the base
+// URL, model, and whether an API key is sent differ.
+class OpenAiSttService {
+	private config: OpenAiSttConfig | null = null;
 	private mediaRecorder: MediaRecorder | null = null;
 	private audioChunks: Blob[] = [];
 	private stream: MediaStream | null = null;
@@ -13,8 +51,8 @@ class GroqSttService {
 	private listening = false;
 	private transcribing = false;
 
-	setApiKey(key: string) {
-		this.apiKey = key;
+	configure(config: OpenAiSttConfig) {
+		this.config = config;
 	}
 
 	isSupported(): boolean {
@@ -22,7 +60,7 @@ class GroqSttService {
 	}
 
 	isConfigured(): boolean {
-		return !!this.apiKey;
+		return !!this.config?.baseUrl && !!this.config?.model;
 	}
 
 	getIsListening(): boolean {
@@ -35,8 +73,8 @@ class GroqSttService {
 
 	async startListening(callbacks: SpeechRecognitionCallbacks): Promise<boolean> {
 		if (this.listening) return true;
-		if (!this.apiKey) {
-			callbacks.onError('Groq API key not configured. Go to Settings > Persona to add it.');
+		if (!this.config) {
+			callbacks.onError('Speech-to-text is not configured. Set it up in Settings > Persona.');
 			return false;
 		}
 
@@ -86,7 +124,7 @@ class GroqSttService {
 			this.mediaRecorder = mimeType
 				? new MediaRecorder(this.stream, { mimeType })
 				: new MediaRecorder(this.stream);
-		} catch (err) {
+		} catch {
 			callbacks.onError('Audio recording not supported on this platform');
 			this.releaseStream();
 			return false;
@@ -135,7 +173,6 @@ class GroqSttService {
 		const tick = () => {
 			if (!this.analyser || !this.listening) return;
 			this.analyser.getByteFrequencyData(dataArray);
-			// Average amplitude normalized to 0-1
 			let sum = 0;
 			for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
 			const level = sum / (dataArray.length * 255);
@@ -151,7 +188,7 @@ class GroqSttService {
 		this.releaseStream();
 
 		// abort() was called — don't transcribe or fire callbacks
-		if (!this.callbacks) return;
+		if (!this.callbacks || !this.config) return;
 
 		if (this.audioChunks.length === 0) {
 			this.callbacks?.onEnd();
@@ -169,14 +206,16 @@ class GroqSttService {
 		const timeoutId = setTimeout(() => this.abortController?.abort(), 30000);
 
 		try {
-			const formData = new FormData();
-			formData.append('file', audioBlob, `recording.${ext}`);
-			formData.append('model', 'whisper-large-v3-turbo');
+			const { url, headers, body } = buildTranscriptionRequest(
+				this.config,
+				audioBlob,
+				`recording.${ext}`
+			);
 
-			const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+			const response = await fetch(url, {
 				method: 'POST',
-				headers: { Authorization: `Bearer ${this.apiKey}` },
-				body: formData,
+				headers,
+				body,
 				signal: this.abortController.signal
 			});
 
@@ -184,7 +223,9 @@ class GroqSttService {
 
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({}));
-				const msg = (errorData as { error?: { message?: string } })?.error?.message || `Groq API error (${response.status})`;
+				const msg =
+					(errorData as { error?: { message?: string } })?.error?.message ||
+					`${this.config.label} error (${response.status})`;
 				this.callbacks?.onError(msg);
 				this.transcribing = false;
 				return;
@@ -206,7 +247,11 @@ class GroqSttService {
 				this.callbacks?.onEnd();
 				return;
 			}
-			const msg = err instanceof Error ? err.message : 'Failed to transcribe audio';
+			// A thrown fetch means the server was unreachable/blocked (vs. an HTTP
+			// error, handled above), so prefer the connection hint when we have one.
+			const msg =
+				this.config.connectionHint ||
+				(err instanceof Error ? err.message : `Failed to reach ${this.config.label}`);
 			this.callbacks?.onError(msg);
 		} finally {
 			this.abortController = null;
@@ -243,4 +288,6 @@ class GroqSttService {
 	}
 }
 
-export const groqSttService = new GroqSttService();
+// A single shared recorder. The store configures it for whichever OpenAI-compatible
+// STT provider (Groq or a local server) is active before each session.
+export const openAiSttService = new OpenAiSttService();
