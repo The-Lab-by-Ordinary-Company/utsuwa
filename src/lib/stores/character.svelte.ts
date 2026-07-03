@@ -16,7 +16,7 @@ import {
 } from '$lib/services/storage/character';
 import { statChangesStore } from './statChanges.svelte';
 import { resolveTimeDecayOnLoad } from '$lib/engine/state-updates';
-import { calculateStage } from '$lib/engine/stages';
+import { calculateStage, STAGE_ORDER } from '$lib/engine/stages';
 
 // Single character state
 let state = $state<CharacterState>(createDefaultCharacterState() as CharacterState);
@@ -215,12 +215,21 @@ function createCharacterStore() {
 				updatedAt: new Date()
 			};
 		} else {
-			// Restore to dating sim - calculate stage from current stats
+			// Restore to dating sim. Prefer the stage saved when Companion Mode was
+			// entered so time spent there (and any decay during it) can't silently
+			// downgrade a hard-won stage; still allow an upgrade if stats have since
+			// grown past it.
 			const calculatedStage = calculateStage(state, state.completedEvents || []);
+			const saved = state.savedDatingSimStage;
+			const restoredStage =
+				saved && STAGE_ORDER.indexOf(saved) > STAGE_ORDER.indexOf(calculatedStage)
+					? saved
+					: calculatedStage;
 			state = {
 				...state,
 				appMode: mode,
-				relationshipStage: calculatedStage,
+				relationshipStage: restoredStage,
+				savedDatingSimStage: undefined,
 				updatedAt: new Date()
 			};
 		}

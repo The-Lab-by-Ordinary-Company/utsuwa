@@ -177,3 +177,35 @@ test('parses an extraction payload whether fenced or bare', () => {
 	assert.equal(bare.stateUpdates?.moodChange?.emotion, 'happy');
 	assert.equal(bare.stateUpdates?.affectionDelta, 4);
 });
+
+test('a truncated unterminated ```json fence never leaks into dialogue', () => {
+	const raw = [
+		"Hmph. Well, that's... something. A dog, huh? Congratulations, I suppose.",
+		'',
+		'```json',
+		'{',
+		'  "mood_change": { "emotion": "neutral", "intensity_delta": 2 },',
+		'  "affection_delta": -1,'
+		// note: no closing brace, no closing fence (hit max_tokens mid-block)
+	].join('\n');
+	const { dialogue } = parseResponse(raw);
+	assert.ok(!dialogue.includes('```'), 'fence markers must be stripped');
+	assert.ok(!dialogue.toLowerCase().includes('mood_change'), 'raw JSON keys must be stripped');
+	assert.ok(dialogue.startsWith('Hmph. Well'));
+});
+
+test('a truncated bare state block (no fence) never leaks into dialogue', () => {
+	const raw =
+		'Oh, that sounds lovely!\n{ "mood_change": { "emotion": "content", "intensity_delta": 3 }, "affection_delta":';
+	const { dialogue } = parseResponse(raw);
+	assert.ok(!dialogue.includes('mood_change'));
+	assert.ok(!dialogue.includes('{'));
+	assert.equal(dialogue, 'Oh, that sounds lovely!');
+});
+
+test('prose with a stray brace but no state keys is left intact', () => {
+	const raw = 'I was thinking { maybe we could get coffee sometime?';
+	const { dialogue } = parseResponse(raw);
+	assert.ok(dialogue.includes('coffee'));
+	assert.ok(dialogue.includes('{'));
+});

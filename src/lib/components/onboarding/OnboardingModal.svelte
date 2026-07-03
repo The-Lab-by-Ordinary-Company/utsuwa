@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { characterStore } from '$lib/stores/character.svelte';
-	import type { AppMode } from '$lib/types/character';
+	import { DEFAULT_SYSTEM_PROMPT, type AppMode } from '$lib/types/character';
 	import { pop, fadeFast } from '$lib/utils/motion';
 
 	import './onboarding.css';
@@ -26,7 +26,7 @@
 
 	// Form state
 	let characterName = $state('Utsuwa');
-	let systemPrompt = $state('You are a helpful, but rage-baity assistant named Utsuwa. You speak like a snarky anime girl.');
+	let systemPrompt = $state(DEFAULT_SYSTEM_PROMPT);
 	let appMode = $state<AppMode>('dating_sim');
 
 	const currentStepIndex = $derived(steps.indexOf(currentStep));
@@ -63,9 +63,11 @@
 	}
 </script>
 
-<div class="modal-overlay" out:fadeFast={{ duration: 200 }} onclick={handleComplete} role="presentation">
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="modal-container" out:pop={{ duration: 220, y: 12 }} onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+<!-- First-run onboarding is not dismissible by backdrop click: an accidental
+     click there used to permanently complete onboarding and skip the persona
+     save. Completion happens only via the final step's button. -->
+<div class="modal-overlay" out:fadeFast={{ duration: 200 }}>
+	<div class="modal-container" out:pop={{ duration: 220, y: 12 }}>
 		<!-- Progress dots (hidden on complete step) -->
 		{#if currentStep !== 'complete'}
 			<div class="progress-dots">

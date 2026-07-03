@@ -1,7 +1,7 @@
 import type { RelationshipStage, CharacterState } from '$lib/types/character';
 
 // Stage order for comparison
-const STAGE_ORDER: RelationshipStage[] = [
+export const STAGE_ORDER: RelationshipStage[] = [
 	'stranger',
 	'acquaintance',
 	'friend',
