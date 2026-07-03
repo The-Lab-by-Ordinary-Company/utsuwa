@@ -32,9 +32,6 @@ importers:
       '@xenova/transformers':
         specifier: ^2.17.2
         version: 2.17.2
-      '@xsai/generate-text':
-        specifier: ^0.4.2
-        version: 0.4.2
       '@xsai/stream-text':
         specifier: ^0.4.2
         version: 0.4.2
@@ -62,12 +59,6 @@ importers:
       three:
         specifier: ^0.182.0
         version: 0.182.0
-      three-good-godrays:
-        specifier: ^0.8.1
-        version: 0.8.2(postprocessing@6.38.2(three@0.182.0))(three@0.182.0)
-      xsai:
-        specifier: ^0.4.2
-        version: 0.4.2
     devDependencies:
       '@sveltejs/adapter-auto':
         specifier: ^7.0.0
@@ -81,9 +72,6 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^6.2.1
         version: 6.2.4(svelte@5.48.2)(vite@7.3.1(@types/node@25.0.10)(jiti@2.6.1)(lightningcss@1.30.2))
-      '@tailwindcss/typography':
-        specifier: ^0.5.19
-        version: 0.5.19(tailwindcss@4.1.18)
       '@tailwindcss/vite':
         specifier: ^4.1.18
         version: 4.1.18(vite@7.3.1(@types/node@25.0.10)(jiti@2.6.1)(lightningcss@1.30.2))
@@ -756,11 +744,6 @@ packages:
     resolution: {integrity: sha512-EgCR5tTS5bUSKQgzeMClT6iCY3ToqE1y+ZB0AKldj809QXk1Y+3jB0upOYZrn9aGIzPtUsP7sX4QQ4XtjBB95A==}
     engines: {node: '>= 10'}
 
-  '@tailwindcss/typography@0.5.19':
-    resolution: {integrity: sha512-w31dd8HOx3k9vPtcQh5QHP9GwKcgbMp87j58qi6xgiBnFFtKEAgCWnDw4qUT8aHwkCp8bKvb/KGKWWHedP0AAg==}
-    peerDependencies:
-      tailwindcss: '>=3.0.0 || insiders || >=4.0.0-alpha.20 || >=4.0.0-beta.1'
-
   '@tailwindcss/vite@4.1.18':
     resolution: {integrity: sha512-jVA+/UpKL1vRLg6Hkao5jldawNmRo7mQYrZtNHMIVpLfLhDml5nMRUo/8MwoX2vNXvnaXNNMedrMfMugAVX1nA==}
     peerDependencies:
@@ -911,53 +894,14 @@ packages:
   '@xenova/transformers@2.17.2':
     resolution: {integrity: sha512-lZmHqzrVIkSvZdKZEx7IYY51TK0WDrC8eR0c5IMnBsO8di8are1zzw8BlLhyO2TklZKLN5UffNGs1IJwT6oOqQ==}
 
-  '@xsai/embed@0.4.2':
-    resolution: {integrity: sha512-r1TeHQnEomjxhp6rqYPAWZAI2KsXVlqI+NmERiBhXfZ7L9LLWwVYnxyC+VB5ytkd1MQevn9u52f1VK9iMqzKAg==}
-
-  '@xsai/generate-image@0.4.2':
-    resolution: {integrity: sha512-uli2qKixvb+A1TOwhJ3YLNLa2N37csn7+1ckJmvM3q8Q1Ajj0vxP/W0pEnr1zjd2cHsptqwpq8vunfY+2o1p2g==}
-
-  '@xsai/generate-object@0.4.2':
-    resolution: {integrity: sha512-uo9u1X6bPHuCxUcAar8AVnza2vpiCxt76Cm2/zKkTjdAGqDBa9puvBda7t6d69/oWKK4ngQG7l+gq5NsTyoTBA==}
-
-  '@xsai/generate-speech@0.4.2':
-    resolution: {integrity: sha512-38fHhAQj2yWwmUcMXTPQeewkbhvsh5nZo5uKfftAtR0BtIyC54LZo4X8OkQwZ1SF+xSAPoVf2eScx0ad1uIt3Q==}
-
-  '@xsai/generate-text@0.4.2':
-    resolution: {integrity: sha512-8VyRhyQOvG8YkEo1b93mPoaXDA6Schqs9sB37ll0I92WKVSMvxcKxfehGAXLApIuC3jMe6cORwI44jgzloBoaQ==}
-
-  '@xsai/generate-transcription@0.4.2':
-    resolution: {integrity: sha512-CkTmkXnJjsbkzmH5l6d0hxUV+BWOD/KrE8RQco6FyHsXn8Xm/ussZgiEYqGXdUg+c0mHILEr9hJrcCGYJsn3+g==}
-
-  '@xsai/model@0.4.2':
-    resolution: {integrity: sha512-f4Egr+a/v2GQ/eALUEWizMhPvpuHGBiRWOrU4jcqeRhZYPyb4cpyS2KHy/HHAXgVv9SoRmk5J3iyzwT/fh/0Jg==}
-
   '@xsai/shared-chat@0.4.2':
     resolution: {integrity: sha512-omRPgbdOO5wLuQuvjs4H18o5OmsZL22F3Ed6D5mXN1rN7uIH8dVVaRV7A0BT3xjJKFQS5edDbRmeka4D60HzuA==}
 
   '@xsai/shared@0.4.2':
     resolution: {integrity: sha512-K1rKoJ/Ge+IIvcazkph5oF6kRgfLNvLYHQ+Fcug0KbmViwTu3F/xekYN/XtX/KuvcmLoCdGMnVAkFeOMTjWBDw==}
 
-  '@xsai/stream-object@0.4.2':
-    resolution: {integrity: sha512-wP56JauDgx1Hsx13YwcLppEH++06+KfuDJ2ZJXrfF0J3JtiZyF3o/m/wpBj46sG7sIcaxGoBlGCmQuWJAdkcnw==}
-
   '@xsai/stream-text@0.4.2':
     resolution: {integrity: sha512-zOcZp3B6tPwthlR+BiNjO9Ax6r4CMkKrJa9FEIHrddMeeJGqXAWZH6sNLCBAS/Q7Vob5r4OM+4MELohzyXndGg==}
-
-  '@xsai/stream-transcription@0.4.2':
-    resolution: {integrity: sha512-sozj+chcFV/Ai79HX/sOT8gnRuQi1IKRn5Nl5JZrJVKG0usboJg58hzrQYCliMwrnECotZAm9KXlt6kIGjWAqg==}
-
-  '@xsai/tool@0.4.2':
-    resolution: {integrity: sha512-yE+3b6pBX4Cd7eKi+m59DswQJdlUV896vmat1hUN4CYgKbXE0ijzUyRDpa+HiFr0c2UPc/at2E2RWzUVfzkh+Q==}
-
-  '@xsai/utils-chat@0.4.2':
-    resolution: {integrity: sha512-505YKMT6xU8xVWpcGdC3qRe7jGnNViOjENUs4HwK+xGEXeaUTdfOxhg8KgiQ07YOZhzvHBSKsQIBFJrk7YkYdg==}
-
-  '@xsai/utils-reasoning@0.4.2':
-    resolution: {integrity: sha512-wv6LE7aUqkfevhyGAdpdNCC3/VMoyIlnxkQCm2z78zASrlXg+49VCgSSDc+Qt/SGxmJptE8K2Q31MFWaefLcsQ==}
-
-  '@xsai/utils-stream@0.4.2':
-    resolution: {integrity: sha512-+EbPM5QZo7aplfGaQkSMEec6e5qhB+zI3ITWpnBYmU4gK6FLLh1Ybx1xNZGbtfbJQ723b/wgwhZHdpcBqt/pxQ==}
 
   accessor-fn@1.5.3:
     resolution: {integrity: sha512-rkAofCwe/FvYFUlMB0v0gWmhqtfAtV1IUkdPbfhTUyYniu5LrC0A0UJkTH0Jv3S8SvwkmfuAlY+mQIJATdocMA==}
@@ -1085,11 +1029,6 @@ packages:
   cookie@0.6.0:
     resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
     engines: {node: '>= 0.6'}
-
-  cssesc@3.0.0:
-    resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
-    engines: {node: '>=4'}
-    hasBin: true
 
   d3-array@3.2.4:
     resolution: {integrity: sha512-tdQAmyA18i4J7wprpYq8ClcxZy3SC31QMeByyCFyRt7BVHdREQZ5lpzoe5mFEYZUWe+oq8HBvk9JjpibyEV4Jg==}
@@ -1526,10 +1465,6 @@ packages:
   platform@1.3.6:
     resolution: {integrity: sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==}
 
-  postcss-selector-parser@6.0.10:
-    resolution: {integrity: sha512-IQ7TZdoaqbT+LCpShg46jnZVlhWD2w6iQYAcYXfHARZ7X1t/UGhhceQDs5X0cGqKvYlHNOuv7Oa1xmb0oQuA3w==}
-    engines: {node: '>=4'}
-
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -1708,13 +1643,6 @@ packages:
   text-decoder@1.2.3:
     resolution: {integrity: sha512-3/o9z3X0X0fTupwsYvR03pJ/DjWuqqrfwBgTQzdWDiQSm9KitAyz/9WqsT2JQW7KV2m+bC2ol/zqpW37NHxLaA==}
 
-  three-good-godrays@0.8.2:
-    resolution: {integrity: sha512-xtW/NZOmIiVsgo9LxtC4naXdGUGkGCi4mgJCt05uepazZonyrB7QqpuSX2BBlVv4tKd9w7ll2iaYDsyXokGgaQ==}
-    engines: {node: '>= 0.13.2'}
-    peerDependencies:
-      postprocessing: ^6.33.4
-      three: '>= 0.125.0 <= 0.182.0'
-
   three@0.182.0:
     resolution: {integrity: sha512-GbHabT+Irv+ihI1/f5kIIsZ+Ef9Sl5A1Y7imvS5RQjWgtTPfPnZ43JmlYI7NtCRDK9zir20lQpfg8/9Yd02OvQ==}
 
@@ -1835,32 +1763,6 @@ packages:
 
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
-
-  xsai@0.4.2:
-    resolution: {integrity: sha512-c7c1hZGPC049F8pXCZb9+pAy+ATwbQQs9G5wewc6Mdrc98F6uPKvRabhzPPAWKZifa4mMSpJXDvCa/4XWuVgZg==}
-
-  xsschema@0.4.2:
-    resolution: {integrity: sha512-UzPpssR8EJfSKWCdN0nHTfR+zfk6ASCznkVOQwv14EU3hVDOaGijR3sDVkkyJd+QEX9weD0J7n/lYYqaBzAqwA==}
-    peerDependencies:
-      '@valibot/to-json-schema': ^1.0.0
-      arktype: ^2.1.20
-      effect: ^3.16.0
-      sury: ^10.0.0
-      zod: ^3.25.0 || ^4.0.0
-      zod-to-json-schema: ^3.25.0
-    peerDependenciesMeta:
-      '@valibot/to-json-schema':
-        optional: true
-      arktype:
-        optional: true
-      effect:
-        optional: true
-      sury:
-        optional: true
-      zod:
-        optional: true
-      zod-to-json-schema:
-        optional: true
 
   zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
@@ -2328,11 +2230,6 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.1.18
       '@tailwindcss/oxide-win32-x64-msvc': 4.1.18
 
-  '@tailwindcss/typography@0.5.19(tailwindcss@4.1.18)':
-    dependencies:
-      postcss-selector-parser: 6.0.10
-      tailwindcss: 4.1.18
-
   '@tailwindcss/vite@4.1.18(vite@7.3.1(@types/node@25.0.10)(jiti@2.6.1)(lightningcss@1.30.2))':
     dependencies:
       '@tailwindcss/node': 4.1.18
@@ -2469,90 +2366,16 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
-  '@xsai/embed@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-
-  '@xsai/generate-image@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-
-  '@xsai/generate-object@0.4.2':
-    dependencies:
-      '@xsai/generate-text': 0.4.2
-      xsschema: 0.4.2
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-
-  '@xsai/generate-speech@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-
-  '@xsai/generate-text@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-      '@xsai/shared-chat': 0.4.2
-
-  '@xsai/generate-transcription@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-
-  '@xsai/model@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-
   '@xsai/shared-chat@0.4.2':
     dependencies:
       '@xsai/shared': 0.4.2
 
   '@xsai/shared@0.4.2': {}
 
-  '@xsai/stream-object@0.4.2':
-    dependencies:
-      '@xsai/stream-text': 0.4.2
-      xsschema: 0.4.2
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-
   '@xsai/stream-text@0.4.2':
     dependencies:
       '@xsai/shared': 0.4.2
       '@xsai/shared-chat': 0.4.2
-
-  '@xsai/stream-transcription@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-
-  '@xsai/tool@0.4.2':
-    dependencies:
-      '@xsai/shared': 0.4.2
-      '@xsai/shared-chat': 0.4.2
-      xsschema: 0.4.2
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-
-  '@xsai/utils-chat@0.4.2':
-    dependencies:
-      '@xsai/shared-chat': 0.4.2
-
-  '@xsai/utils-reasoning@0.4.2': {}
-
-  '@xsai/utils-stream@0.4.2': {}
 
   accessor-fn@1.5.3: {}
 
@@ -2666,8 +2489,6 @@ snapshots:
   comma-separated-tokens@2.0.3: {}
 
   cookie@0.6.0: {}
-
-  cssesc@3.0.0: {}
 
   d3-array@3.2.4:
     dependencies:
@@ -3107,11 +2928,6 @@ snapshots:
 
   platform@1.3.6: {}
 
-  postcss-selector-parser@6.0.10:
-    dependencies:
-      cssesc: 3.0.0
-      util-deprecate: 1.0.2
-
   postcss@8.5.6:
     dependencies:
       nanoid: 3.3.11
@@ -3410,11 +3226,6 @@ snapshots:
     transitivePeerDependencies:
       - react-native-b4a
 
-  three-good-godrays@0.8.2(postprocessing@6.38.2(three@0.182.0))(three@0.182.0):
-    dependencies:
-      postprocessing: 6.38.2(three@0.182.0)
-      three: 0.182.0
-
   three@0.182.0: {}
 
   tinycolor2@1.6.0: {}
@@ -3514,34 +3325,6 @@ snapshots:
       vite: 7.3.1(@types/node@25.0.10)(jiti@2.6.1)(lightningcss@1.30.2)
 
   wrappy@1.0.2: {}
-
-  xsai@0.4.2:
-    dependencies:
-      '@xsai/embed': 0.4.2
-      '@xsai/generate-image': 0.4.2
-      '@xsai/generate-object': 0.4.2
-      '@xsai/generate-speech': 0.4.2
-      '@xsai/generate-text': 0.4.2
-      '@xsai/generate-transcription': 0.4.2
-      '@xsai/model': 0.4.2
-      '@xsai/shared': 0.4.2
-      '@xsai/shared-chat': 0.4.2
-      '@xsai/stream-object': 0.4.2
-      '@xsai/stream-text': 0.4.2
-      '@xsai/stream-transcription': 0.4.2
-      '@xsai/tool': 0.4.2
-      '@xsai/utils-chat': 0.4.2
-      '@xsai/utils-reasoning': 0.4.2
-      '@xsai/utils-stream': 0.4.2
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-
-  xsschema@0.4.2: {}
 
   zimmerframe@1.1.4: {}
 
