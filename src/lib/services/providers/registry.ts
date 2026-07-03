@@ -210,6 +210,20 @@ export const STT_PROVIDERS: ProviderMetadata[] = [
 		defaultBaseUrl: 'https://api.groq.com/openai/v1/'
 	},
 	{
+		id: 'openai-stt',
+		name: 'OpenAI',
+		description: 'Cloud speech-to-text via Whisper / gpt-4o-transcribe',
+		category: 'stt',
+		icon: '🎤',
+		requiresApiKey: true,
+		defaultBaseUrl: 'https://api.openai.com/v1/',
+		models: [
+			{ id: 'whisper-1', name: 'whisper-1' },
+			{ id: 'gpt-4o-transcribe', name: 'gpt-4o-transcribe' },
+			{ id: 'gpt-4o-mini-transcribe', name: 'gpt-4o-mini-transcribe' }
+		]
+	},
+	{
 		id: 'local-stt',
 		name: 'Local STT',
 		description: 'Run Whisper locally (Speaches, faster-whisper-server, whisper.cpp)',

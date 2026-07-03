@@ -715,7 +715,7 @@
 								<Icon name="mic" size={14} />
 								<span>Voice Input (STT)</span>
 							</div>
-							<p class="stt-hint">Higher quality voice input via Whisper. A local server is used if configured, otherwise Groq, otherwise the browser's built-in recognition. Required on desktop (which has no built-in recognition).</p>
+							<p class="stt-hint">Higher quality voice input via Whisper. A local server is used if configured, then Groq, then OpenAI, then the browser's built-in recognition. Required on desktop (which has no built-in recognition).</p>
 
 							<span class="stt-sublabel">Groq API Key</span>
 							<div class="api-key-row">
@@ -727,6 +727,20 @@
 									oninput={(e) => {
 										settingsStore.setProviderConfig('groq-stt', { apiKey: e.currentTarget.value });
 										settingsStore.markProviderAdded('groq-stt');
+									}}
+								/>
+							</div>
+
+							<span class="stt-sublabel">OpenAI API Key (Whisper)</span>
+							<div class="api-key-row">
+								<input
+									type="password"
+									class="api-key-input"
+									placeholder="OpenAI API Key"
+									value={settingsStore.getProviderConfig('openai-stt').apiKey ?? ''}
+									oninput={(e) => {
+										settingsStore.setProviderConfig('openai-stt', { apiKey: e.currentTarget.value });
+										settingsStore.markProviderAdded('openai-stt');
 									}}
 								/>
 							</div>

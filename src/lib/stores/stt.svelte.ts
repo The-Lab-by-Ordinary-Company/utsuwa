@@ -22,6 +22,7 @@ function createSttStore() {
 		if (!browser) return null;
 		if (settingsStore.isProviderAdded('local-stt')) return 'local-stt';
 		if (settingsStore.getProviderConfig('groq-stt').apiKey) return 'groq-stt';
+		if (settingsStore.getProviderConfig('openai-stt').apiKey) return 'openai-stt';
 		return null;
 	});
 	const useOpenAiStt = $derived(activeOpenAiStt !== null);
@@ -40,7 +41,7 @@ function createSttStore() {
 			baseUrl,
 			model,
 			apiKey: config.apiKey || undefined,
-			label: isLocal ? 'the local STT server' : 'Groq',
+			label: isLocal ? 'the local STT server' : (meta?.name ?? 'the STT server'),
 			connectionHint: isLocal
 				? getLocalSTTConnectionHint(baseUrl, browser ? window.location.origin : undefined)
 				: undefined

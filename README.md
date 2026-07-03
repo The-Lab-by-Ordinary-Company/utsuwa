@@ -123,15 +123,15 @@ The desktop app uses the same codebase as the web version, and your save files a
 | **Cloud** | ElevenLabs, OpenAI TTS |
 | **Local** | Local TTS (Kokoro-FastAPI, openedai-speech, any OpenAI-compatible server) |
 
-### STT Providers (3)
+### STT Providers (4)
 
 | Category | Providers |
 |----------|-----------|
 | **Local** | Local STT (Speaches, faster-whisper-server, whisper.cpp, any OpenAI-compatible `/v1/audio/transcriptions` server) |
-| **Cloud** | Groq (Whisper) |
+| **Cloud** | Groq (Whisper), OpenAI (Whisper) |
 | **Browser** | Web Speech API (no API key required) |
 
-Voice input is accessed via the microphone button in the chat bar. Selection is automatic by priority: a configured local Whisper server wins, then Groq, then the browser's Web Speech API. A local server or Groq works on any platform including desktop; Web Speech API works without an API key in Chrome, Edge, and Safari. See [Local STT Setup](https://docs.utsuwa.ai/docs/guides/local-stt-setup) to run a local Whisper server.
+Voice input is accessed via the microphone button in the chat bar. Selection is automatic by priority: a configured local Whisper server wins, then Groq, then OpenAI, then the browser's Web Speech API. A local server or a cloud key works on any platform including desktop; Web Speech API works without an API key in Chrome, Edge, and Safari. See [Local STT Setup](https://docs.utsuwa.ai/docs/guides/local-stt-setup) to run a local Whisper server.
 
 ## Getting Started
 
@@ -286,7 +286,7 @@ pnpm tauri build  # Build desktop app installer
 - [x] Time-based mood and relationship decay/recovery
 - [x] Local-first IndexedDB storage with export/import
 - [x] Theme system with light/dark modes
-- [x] Voice input via local Whisper server, Groq STT (Whisper), and Web Speech API
+- [x] Voice input via local Whisper server, Groq, OpenAI (Whisper), and Web Speech API
 - [x] Desktop application with transparent overlay mode (macOS, Windows, and Linux)
 - [x] Cross-platform desktop builds via CI (macOS, Windows, Linux)
 - [x] In-app auto-updates for the desktop app
@@ -296,7 +296,6 @@ pnpm tauri build  # Build desktop app installer
 ### In Progress / Planned
 
 - [ ] **File and Video Uploads** - Add support for attaching files and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools (image support has shipped)
-- [ ] **More STT providers** - Additional dedicated speech-to-text integrations beyond local Whisper, Groq, and Web Speech API
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
 
 ## Contributing
