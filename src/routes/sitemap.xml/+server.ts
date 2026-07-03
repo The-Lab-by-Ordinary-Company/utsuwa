@@ -28,7 +28,9 @@ export const GET: RequestHandler = () => {
 		{ url: SITE_URL, priority: '1.0' },
 		{ url: `${SITE_URL}/download`, priority: '0.8' },
 		{ url: `${SITE_URL}/docs/overview/introduction`, priority: '0.8' },
-		{ url: `${SITE_URL}/blog`, priority: '0.8' }
+		{ url: `${SITE_URL}/blog`, priority: '0.8' },
+		{ url: `${SITE_URL}/privacy`, priority: '0.3' },
+		{ url: `${SITE_URL}/terms`, priority: '0.3' }
 	];
 
 	const pages = [...staticPages, ...blogPosts, ...docPages];

@@ -41,6 +41,8 @@
 				</div>
 				<div class="site-footer-col">
 					<h3>Legal</h3>
+					<a href="/privacy">Privacy Policy</a>
+					<a href="/terms">Terms of Use</a>
 					<a href={`${GITHUB_REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">
 						MIT License
 					</a>
