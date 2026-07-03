@@ -38,7 +38,8 @@ export async function streamChatDirect(
 	const { messages, provider, model, apiKey, baseURL, systemPrompt } = options;
 
 	const isLocal = isLocalLLMProvider(provider);
-	if (!apiKey && !isLocal) {
+	// Custom OpenAI-compatible endpoints may or may not need a key, so don't force one.
+	if (!apiKey && !isLocal && provider !== 'openai-compatible') {
 		onError('API key required');
 		return;
 	}
@@ -182,7 +183,7 @@ interface ExtractOptions {
 export async function extractStateUpdates(options: ExtractOptions): Promise<string | null> {
 	const { provider, model, apiKey, baseURL, system, userMessage, reply } = options;
 	const isLocal = isLocalLLMProvider(provider);
-	if (!apiKey && !isLocal) return null;
+	if (!apiKey && !isLocal && provider !== 'openai-compatible') return null;
 
 	const base = isLocal ? getChatBaseUrl(provider, baseURL) : baseURL || DEFAULT_CHAT_BASE_URLS[provider];
 	if (!base) return null;

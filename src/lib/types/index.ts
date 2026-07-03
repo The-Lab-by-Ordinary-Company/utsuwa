@@ -11,7 +11,9 @@ export type LLMProvider =
 	| 'xai'
 	// Local
 	| 'ollama'
-	| 'lmstudio';
+	| 'lmstudio'
+	// User-configured OpenAI-compatible endpoint
+	| 'openai-compatible';
 
 // TTS Provider IDs
 export type TTSProvider = 'elevenlabs' | 'openai-tts' | 'local-tts';

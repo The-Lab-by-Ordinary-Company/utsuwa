@@ -11,6 +11,10 @@ export interface ProviderMetadata {
 	requiresApiKey: boolean;
 	defaultBaseUrl?: string;
 	isLocal?: boolean;
+	// A user-configured OpenAI-compatible endpoint (base URL + optional key +
+	// hand-entered model), rather than a fixed provider. The settings UI shows a
+	// base-URL field and a manual model input for these.
+	custom?: boolean;
 	// Whether this provider's models are broadly vision-capable. Coarse, cloud
 	// only. Local providers (Ollama/LM Studio) leave this unset and rely on a
 	// per-model heuristic, since vision depends on the installed model.
@@ -98,6 +102,16 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.lmstudio,
 		models: []
 	},
+	{
+		id: 'openai-compatible',
+		name: 'OpenAI-Compatible',
+		description: 'Any OpenAI-compatible endpoint (OpenRouter, Together, Mistral, vLLM, LiteLLM, ...)',
+		category: 'llm',
+		icon: '🔌',
+		requiresApiKey: false,
+		custom: true,
+		models: []
+	}
 ];
 
 // ============================================

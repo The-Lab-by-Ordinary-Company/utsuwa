@@ -293,6 +293,11 @@
 		if (provider && !provider.isLocal && provider.models?.length) {
 			modulesStore.setModuleSetting('consciousness', 'activeModel', provider.models[0].id);
 		}
+		// Custom endpoints have no preset models; clear any stale selection so the
+		// manual model field starts empty.
+		if (provider?.custom) {
+			modulesStore.setModuleSetting('consciousness', 'activeModel', '');
+		}
 		// Mark local providers as added immediately (they don't need API keys)
 		if (provider?.isLocal || !provider?.requiresApiKey) {
 			settingsStore.markProviderAdded(providerId);
@@ -534,37 +539,23 @@
 
 								{#if consciousnessSettings.activeProvider}
 									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
-									{#if provider?.requiresApiKey}
+
+									{#if provider?.requiresApiKey || provider?.custom}
 										<div class="api-key-row">
 											<input
 												type="password"
 												class="api-key-input"
 												class:error={llmFetchError}
-												placeholder="API Key"
+												placeholder={provider?.custom ? 'API Key (optional)' : 'API Key'}
 												value={settingsStore.getProviderConfig(provider.id).apiKey ?? ''}
 												oninput={(e) => handleApiKeyChange(provider.id, e.currentTarget.value, 'llm')}
-												onblur={handleLLMApiKeyBlur}
+												onblur={provider?.custom ? undefined : handleLLMApiKeyBlur}
 											/>
 										</div>
 									{/if}
-								{/if}
 
-								{#if consciousnessSettings.activeProvider}
-									<ModelDropdown
-										models={llmModels}
-										value={consciousnessSettings.activeModel as string}
-										onSelect={handleLLMModelChange}
-										placeholder="Select model..."
-										isLoading={llmIsLoading}
-										onRefresh={llmHasApiKey ? fetchLLMModels : undefined}
-										disabled={!llmHasApiKey}
-										disabledMessage="Enter API key first"
-									/>
-								{/if}
-
-								{#if consciousnessSettings.activeProvider}
-									{@const provider = getLLMProvider(consciousnessSettings.activeProvider as string)}
-									{#if provider?.isLocal}
+									<!-- Base URL for local providers and custom OpenAI-compatible endpoints -->
+									{#if provider?.isLocal || provider?.custom}
 										{#if llmFetchError}
 											<p class="provider-note error">
 												<Icon name="alert-circle" size={14} />
@@ -575,12 +566,38 @@
 											<input
 												type="text"
 												class="api-key-input"
-												placeholder={provider.defaultBaseUrl || 'http://localhost:11434/v1/'}
+												placeholder={provider.custom
+													? 'https://api.openai.com/v1/ or your endpoint'
+													: provider.defaultBaseUrl || 'http://localhost:11434/v1/'}
 												value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
 												oninput={(e) => handleLLMBaseUrlChange(provider.id, e.currentTarget.value)}
-												onblur={fetchLLMModels}
+												onblur={provider.custom ? undefined : fetchLLMModels}
 											/>
 										</div>
+									{/if}
+
+									<!-- Model: manual entry for custom endpoints, discovered dropdown otherwise -->
+									{#if provider?.custom}
+										<div class="api-key-row">
+											<input
+												type="text"
+												class="api-key-input"
+												placeholder="Model (e.g. gpt-4o-mini, meta-llama/llama-3-70b)"
+												value={(consciousnessSettings.activeModel as string) ?? ''}
+												oninput={(e) => handleLLMModelChange(e.currentTarget.value.trim())}
+											/>
+										</div>
+									{:else}
+										<ModelDropdown
+											models={llmModels}
+											value={consciousnessSettings.activeModel as string}
+											onSelect={handleLLMModelChange}
+											placeholder="Select model..."
+											isLoading={llmIsLoading}
+											onRefresh={llmHasApiKey ? fetchLLMModels : undefined}
+											disabled={!llmHasApiKey}
+											disabledMessage="Enter API key first"
+										/>
 									{/if}
 								{/if}
 							{/if}

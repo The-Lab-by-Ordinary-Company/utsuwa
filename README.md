@@ -291,11 +291,11 @@ pnpm tauri build  # Build desktop app installer
 - [x] Cross-platform desktop builds via CI (macOS, Windows, Linux)
 - [x] In-app auto-updates for the desktop app
 - [x] Show companion images (multimodal vision) with a keepsake photo board
+- [x] Custom OpenAI-compatible LLM endpoint (OpenRouter, Together, Mistral, vLLM, LiteLLM, ...)
 
 ### In Progress / Planned
 
 - [ ] **File and Video Uploads** - Add support for attaching files and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools (image support has shipped)
-- [ ] **OpenAI-Compatible Models** - Add a configurable option for OpenAI-compatible model endpoints beyond the currently listed providers
 - [ ] **More STT providers** - Additional dedicated speech-to-text integrations beyond local Whisper, Groq, and Web Speech API
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
 
