@@ -21,18 +21,13 @@
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { overlayStore } from '$lib/stores/overlay.svelte';
 	import { isTauri, startDragging } from '$lib/services/platform';
-	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
-	import { streamChatDirect } from '$lib/services/chat/client-chat';
-	import { processCompanionTurn } from '$lib/services/chat/companion-turn';
+	import { sendCompanionMessage } from '$lib/services/chat/companion-chat';
 	import { eventsApi } from '$lib/engine/events';
 	import { completionMarkers } from '$lib/engine/event-completion';
-	import type { TTSProvider } from '$lib/types';
 	import type { EventDefinition } from '$lib/types/events';
 	import type { StateUpdates } from '$lib/types/character';
 
-	import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
 	import {
-		retrieveRelevantContext,
 		hydrateWorkingMemory,
 		backfillEmbeddings,
 		getEmbeddingBackfillStatus
@@ -207,180 +202,15 @@
 	}
 
 
-	async function buildCompanionSystemPrompt(userMessage: string): Promise<string> {
-		const state = characterStore.state;
-		const persona = personaStore.activeCard;
-		const memories = await retrieveRelevantContext(userMessage);
-
-		const context: PromptContext = {
-			persona,
-			state,
-			memories,
-			userMessage,
-			systemTime: new Date()
-		};
-
-		return buildSystemPrompt(context);
-	}
-
+	// Send a message through the shared companion pipeline. The overlay collapses
+	// its chat on send and has no image path.
 	async function handleSend(content: string) {
-		if (!content.trim() || chatStore.isLoading) return;
-
-		if (!modulesStore.isModuleEnabled('consciousness')) {
-			chatStore.setError('Chat is disabled. Enable it in Settings > Character > AI Services.');
-			return;
-		}
-
-		chatStore.addMessage('user', content);
-		chatStore.setLoading(true);
-		chatStore.setError(null);
-		isTyping = true;
-		latestResponse = '';
-
-		// Collapse chat after sending
-		overlayStore.setChatExpanded(false);
-
-		characterStore.updateStreak();
-		characterStore.updateDaysKnown();
-
-		try {
-			const consciousnessSettings = modulesStore.getModuleSettings('consciousness');
-			const provider = consciousnessSettings.activeProvider as string;
-			const model = consciousnessSettings.activeModel as string;
-
-			if (!provider) {
-				throw new Error('Please configure a provider in Settings > Modules > Consciousness');
-			}
-
-			const systemPrompt = await buildCompanionSystemPrompt(content);
-			const providerConfig = settingsStore.getProviderConfig(provider);
-			const apiKey = providerConfig.apiKey;
-			const providerMeta = getLLMProvider(provider);
-
-			if (providerMeta?.requiresApiKey && !apiKey) {
-				throw new Error(`Please configure API key for ${providerMeta.name} in Settings > Providers`);
-			}
-
-			chatStore.addMessage('assistant', '');
-			let fullContent = '';
-			const selectedModel = model || providerMeta?.models?.[0]?.id || '';
-
-			const shouldUseDirectChat = isTauri() || !!providerMeta?.isLocal;
-
-			if (shouldUseDirectChat) {
-				// Tauri and local providers call provider APIs directly.
-				await new Promise<void>((resolve, reject) => {
-					streamChatDirect(
-						{
-							messages: chatStore.messages.slice(0, -1).map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-							provider: provider as import('$lib/types').LLMProvider,
-							model: selectedModel,
-							apiKey: apiKey || undefined,
-							baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
-							systemPrompt
-						},
-						(text) => { fullContent += text; chatStore.updateLastMessage(fullContent); },
-						(error) => reject(new Error(error)),
-						() => resolve()
-					);
-				});
-			} else {
-				// Cloud providers in web builds use the SvelteKit server route.
-				const response = await fetch('/api/chat', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						messages: chatStore.messages.slice(0, -1).filter((m) => m.content).map((m) => ({ role: m.role, content: m.content })),
-						provider,
-						model: selectedModel,
-						apiKey: apiKey || 'not-needed',
-						baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
-						systemPrompt
-					})
-				});
-
-				if (!response.ok) {
-					const errBody = await response.json().catch(() => null);
-					throw new Error(errBody?.error || 'Failed to get response');
-				}
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) throw new Error('No response body');
-
-				const processLine = (line: string) => {
-					if (line.startsWith('0:')) {
-						const text = JSON.parse(line.slice(2));
-						fullContent += text;
-						chatStore.updateLastMessage(fullContent);
-					} else if (line.startsWith('e:')) {
-						const { error } = JSON.parse(line.slice(2));
-						throw new Error(error);
-					}
-				};
-
-				// Buffer partial lines so a delta split across network chunks doesn't break JSON.parse
-				let streamBuffer = '';
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
-
-					streamBuffer += decoder.decode(value, { stream: true });
-					const lines = streamBuffer.split('\n');
-					streamBuffer = lines.pop() || '';
-					for (const line of lines) {
-						processLine(line);
-					}
-				}
-				streamBuffer += decoder.decode();
-				if (streamBuffer) processLine(streamBuffer);
-			}
-
-			isTyping = false;
-			const turn = await processCompanionTurn({
-				userMessage: content,
-				companionResponse: fullContent,
-				llm: {
-					provider,
-					model: selectedModel,
-					apiKey: apiKey || undefined,
-					baseURL: providerConfig.baseUrl || providerMeta?.defaultBaseUrl,
-					hasImages: false
-				},
-				debug: import.meta.env.DEV
-			});
-			const cleanedResponse = turn.dialogue;
-			if (turn.triggeredEvent) activeEvent = turn.triggeredEvent;
-			chatStore.updateLastMessage(cleanedResponse);
-			latestResponse = cleanedResponse;
-
-			if (cleanedResponse) {
-				vrmStore.startTalking(cleanedResponse);
-			}
-
-			// TTS
-			const speechState = modulesStore.getModuleState('speech');
-			const speechSettings = modulesStore.getModuleSettings('speech');
-			if (speechState?.enabled && cleanedResponse) {
-				const ttsProvider = speechSettings.activeProvider as TTSProvider;
-				const ttsConfig = settingsStore.getProviderConfig(ttsProvider);
-				const ttsMeta = getTTSProvider(ttsProvider);
-
-				ttsStore.speak(cleanedResponse, {
-					provider: ttsProvider,
-					apiKey: ttsConfig.apiKey,
-					voiceId: speechSettings.activeVoiceId as string || ttsConfig.voiceId,
-					model: speechSettings.activeModel as string || ttsConfig.modelId,
-					baseUrl: ttsConfig.baseUrl || ttsMeta?.defaultBaseUrl,
-					speed: speechSettings.speed as number ?? 1
-				});
-			}
-		} catch (err) {
-			chatStore.setError(err instanceof Error ? err.message : 'Unknown error');
-			isTyping = false;
-		} finally {
-			chatStore.setLoading(false);
-		}
+		await sendCompanionMessage(content, [], {
+			setTyping: (v) => (isTyping = v),
+			setLatestResponse: (v) => (latestResponse = v),
+			setActiveEvent: (e) => (activeEvent = e),
+			beforeStream: () => overlayStore.setChatExpanded(false)
+		});
 	}
 
 	function handleBubbleHide() {
