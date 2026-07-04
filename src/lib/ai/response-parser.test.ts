@@ -157,9 +157,27 @@ test('does not cut a legit reply that just contains a colon line', () => {
 	assert.ok(dialogue.includes('First we get coffee'));
 });
 
-test('strips a leading self-label without nuking the reply', () => {
-	const { dialogue } = parseResponse('Luna: Hey, good to see you.');
+test('strips a leading self-label (the companion name) without nuking the reply', () => {
+	const { dialogue } = parseResponse('Luna: Hey, good to see you.', 'Luna');
 	assert.equal(dialogue, 'Hey, good to see you.');
+});
+
+test('preserves legit "Word:" line prefixes that are not speaker labels', () => {
+	const note = parseResponse('Note: I will remember that for you.', 'Luna');
+	assert.equal(note.dialogue, 'Note: I will remember that for you.');
+	const reminder = parseResponse('Reminder: your interview is Thursday.', 'Luna');
+	assert.equal(reminder.dialogue, 'Reminder: your interview is Thursday.');
+});
+
+test('does not clip a reply that quotes someone on a new line', () => {
+	const raw = 'She told me something sweet:\n"You always make me smile."';
+	const { dialogue } = parseResponse(raw, 'Luna');
+	assert.ok(dialogue.includes('You always make me smile'), 'a quoted line by a non-speaker must survive');
+});
+
+test('still cuts the companion impersonating a later turn as itself', () => {
+	const { dialogue } = parseResponse('Sure thing!\nLuna: and then I said more', 'Luna');
+	assert.equal(dialogue, 'Sure thing!');
 });
 
 // The extraction fallback feeds parseResponse the raw model output directly.

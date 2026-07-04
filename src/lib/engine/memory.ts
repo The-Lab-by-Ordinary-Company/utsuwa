@@ -309,8 +309,10 @@ function extractTriggerWords(message: string): string[] {
 		}
 	}
 
-	// Name extraction (might trigger facts about the user)
-	const namePattern = /\b([A-Z][a-z]+)\b/g;
+	// Name extraction (might trigger facts about the user). Only capture a
+	// capitalized word that follows another word — skipping sentence-initial
+	// words like "Today"/"Thanks" that aren't names but were being treated as such.
+	const namePattern = /(?<=[a-z,]\s+)([A-Z][a-z]+)\b/g;
 	let nameMatch;
 	while ((nameMatch = namePattern.exec(message)) !== null) {
 		triggers.push(nameMatch[1]);

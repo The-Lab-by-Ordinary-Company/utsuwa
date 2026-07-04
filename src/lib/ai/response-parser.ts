@@ -83,17 +83,27 @@ function stripControlTokens(text: string): string {
 	return cut.replace(STRAY_TOKEN_RE, '');
 }
 
-// The model sometimes keeps writing past its own reply and starts a new
-// transcript turn as the user or a narrator (e.g. `CJ: "..."`, `They: ...`,
-// `User: ...`), often a third-person note it meant for the memory JSON. Cut at
-// the first such turn on a LATER line (anchored to \n, so the real reply on
-// line one is never the cut point). Names vary, so we key on a known transcript
-// label or any `Name: "` that opens a quoted line.
-const HALLUCINATED_TURN_RE =
-	/\n[ \t]*(?:(?:They|You|User|Human|Assistant|Narrator|System|AI)[ \t]*:[ \t]|[A-Z][\w'’.-]{0,19}[ \t]*:[ \t]*["“])/;
+function escapeRegExp(s: string): string {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-function cutHallucinatedTurn(text: string): string {
-	const m = text.match(HALLUCINATED_TURN_RE);
+// Transcript labels the model bleeds through when it keeps writing past its own
+// reply as the user or a narrator.
+const TRANSCRIPT_LABELS = ['They', 'You', 'User', 'Human', 'Assistant', 'Narrator', 'System', 'AI', 'Companion'];
+
+// Cut at the first transcript turn on a LATER line (anchored to \n, so the real
+// reply on line one is never the cut point). Two triggers: a known transcript
+// label or the companion's own name followed by a colon, OR any capitalized
+// name that opens a quoted line (the model leaking a third-person memory note as
+// a fake turn, e.g. `CJ: "They asked how my day is going."`).
+function cutHallucinatedTurn(text: string, companionName?: string): string {
+	const labels = [...TRANSCRIPT_LABELS];
+	if (companionName?.trim()) labels.push(companionName.trim());
+	const labelAlt = labels.map(escapeRegExp).join('|');
+	const re = new RegExp(
+		`\\n[ \\t]*(?:(?:${labelAlt})[ \\t]*:[ \\t]|[A-Z][\\w'’.-]{0,19}[ \\t]*:[ \\t]*["“])`
+	);
+	const m = text.match(re);
 	return m && m.index !== undefined ? text.slice(0, m.index) : text;
 }
 
@@ -170,7 +180,7 @@ function tryParseJson(text: string): LLMStateOutput | null {
 }
 
 // Parse LLM response to extract dialogue and state updates
-export function parseResponse(rawResponse: string): ParsedResponse {
+export function parseResponse(rawResponse: string, companionName?: string): ParsedResponse {
 	const raw = stripReasoning(rawResponse);
 	let dialogue = raw.trim();
 	let stateUpdates: Partial<StateUpdates> | null = null;
@@ -199,7 +209,7 @@ export function parseResponse(rawResponse: string): ParsedResponse {
 		}
 	}
 
-	dialogue = cleanDialogue(dialogue);
+	dialogue = cleanDialogue(dialogue, companionName);
 	return { dialogue, stateUpdates, parseError };
 }
 
@@ -291,12 +301,12 @@ function stripTruncatedStateBlock(text: string): string {
 	return text;
 }
 
-function cleanDialogue(text: string): string {
+function cleanDialogue(text: string, companionName?: string): string {
 	// Cut runaway output at a leaked stop token and drop stray template tokens.
 	let cleaned = stripControlTokens(text);
 
 	// Cut if the model kept going as the user / a narrator instead of replying.
-	cleaned = cutHallucinatedTurn(cleaned);
+	cleaned = cutHallucinatedTurn(cleaned, companionName);
 
 	// Drop a trailing UNterminated state block first (small models truncated
 	// mid-JSON): it has no closing ``` or `}`, so the closed-object cleaner below
@@ -312,8 +322,16 @@ function cleanDialogue(text: string): string {
 	// Remove stage directions in parentheses
 	cleaned = cleaned.replace(/\([^)]*(?:smiles|laughs|sighs|blushes|looks|nods)[^)]*\)/gi, '');
 
-	// Remove character name prefixes (e.g., "Character: ")
-	cleaned = cleaned.replace(/^[A-Za-z]+:\s*/gm, '');
+	// Remove leading transcript/name labels only (e.g. "Luna: ", "User: "), NOT
+	// arbitrary "Word:" prefixes — legit replies like "Note: ..." or
+	// "Reminder: ..." must survive. Keyed on known labels + the companion's name.
+	const labels = [...TRANSCRIPT_LABELS];
+	if (companionName?.trim()) labels.push(companionName.trim());
+	const labelRe = new RegExp(`^[ \\t]*(?:${labels.map(escapeRegExp).join('|')})[ \\t]*:[ \\t]*`, 'i');
+	cleaned = cleaned
+		.split('\n')
+		.map((line) => line.replace(labelRe, ''))
+		.join('\n');
 
 	// Clean up whitespace
 	cleaned = cleaned.replace(/\n{3,}/g, '\n\n');

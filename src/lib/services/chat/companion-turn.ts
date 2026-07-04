@@ -51,7 +51,7 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	const state = characterStore.state;
 	const baselineUpdates = calculateBaselineUpdates(userMessage, state);
 
-	const parsed = parseResponse(companionResponse);
+	const parsed = parseResponse(companionResponse, state.name);
 	const dialogue = parsed.dialogue;
 	let llmUpdates = parsed.stateUpdates;
 
