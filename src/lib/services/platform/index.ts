@@ -24,7 +24,6 @@ export {
 export {
 	initRaycast,
 	cleanupRaycast,
-	isMouseOverModel,
 	checkRaycast
 } from './raycast';
 

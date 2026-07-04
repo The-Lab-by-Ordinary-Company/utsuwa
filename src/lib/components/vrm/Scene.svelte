@@ -118,7 +118,8 @@
 	// Frames each model by its actual proportions: bottom of frame around the
 	// upper thigh, top of the head just under the top of the screen. User
 	// settings (fov/zoom/height) adjust on top of the fitted framing.
-	const camSettings = $derived(displayStore.camera);
+	// Overlay windows frame very differently, so they keep their own profile
+	const camSettings = $derived(overlay ? displayStore.overlayCamera : displayStore.camera);
 
 	function computeFit(vrm: VRM): { center: number; halfSpan: number } {
 		vrm.scene.updateWorldMatrix(true, true);
@@ -148,7 +149,7 @@
 		const cam = camera.current;
 		if (!(cam instanceof PerspectiveCamera)) return;
 
-		const s = displayStore.camera;
+		const s = overlay ? displayStore.overlayCamera : displayStore.camera;
 		cam.fov = s.fov;
 		cam.updateProjectionMatrix();
 

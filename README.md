@@ -101,8 +101,10 @@ A native desktop app built with Tauri that includes all web features plus:
 
 - **Overlay Mode**: Your companion floats on your desktop with a transparent background
 - **Always-on-Top**: The overlay stays visible over all other windows
-- **Draggable Positioning**: Click and drag the character to reposition anywhere on screen
-- **Floating Chat**: Expandable chat input that appears when you click the chat icon
+- **Draggable Positioning**: Click and drag the character to reposition anywhere on screen, or lock her in place
+- **Resizable Overlay**: Hover to reveal a soft frame and drag the corner tab to resize; your size is remembered
+- **Overlay Camera**: A separate camera profile (zoom, height, FOV) tuned independently from the main app
+- **Floating Chat**: Expandable chat input that appears when you click the chat icon, with replies in a readable docked bubble
 - **Window Switching**: Seamlessly switch between the full app and overlay mode
 - **Global Hotkeys**: Push-to-talk, toggle overlay, and focus chat with keyboard shortcuts
 

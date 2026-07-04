@@ -7,6 +7,7 @@
 	import FloatingMicButton from '$lib/components/overlay/FloatingMicButton.svelte';
 	import HotkeyHandler from '$lib/components/overlay/HotkeyHandler.svelte';
 	import CompanionStatus from '$lib/components/ui/CompanionStatus.svelte';
+	import CameraSettingsPanel from '$lib/components/ui/CameraSettingsPanel.svelte';
 	import FloatingStatIndicators from '$lib/components/ui/FloatingStatIndicators.svelte';
 	import { EventScene } from '$lib/components/events';
 	import { Icon } from '$lib/components/ui';
@@ -42,8 +43,81 @@
 	let latestResponse = $state('');
 	let isTyping = $state(false);
 	let activeEvent = $state<EventDefinition | null>(null);
+	let showCamera = $state(false);
+	let positionLocked = $state(false);
 
 	const chatExpanded = $derived(overlayStore.chatExpanded);
+
+	// --- Overlay window sizing & lock ---
+	const SIZE_KEY = 'utsuwa-overlay-size';
+	const LOCK_KEY = 'utsuwa-overlay-locked';
+
+	// Restore lock preference and last window size
+	$effect(() => {
+		positionLocked = localStorage.getItem(LOCK_KEY) === 'true';
+		if (!isTauri()) return;
+		const saved = localStorage.getItem(SIZE_KEY);
+		if (saved) {
+			(async () => {
+				try {
+					const { w, h } = JSON.parse(saved);
+					const { getCurrentWindow, LogicalSize } = await import('@tauri-apps/api/window');
+					await getCurrentWindow().setSize(new LogicalSize(w, h));
+				} catch (e) {
+					console.error('Failed to restore overlay size:', e);
+				}
+			})();
+		}
+	});
+
+	function toggleLock() {
+		positionLocked = !positionLocked;
+		localStorage.setItem(LOCK_KEY, String(positionLocked));
+	}
+
+	// Corner-tab drag resize. Pointer deltas are in logical px, same unit as
+	// Tauri's LogicalSize, so the math is direct.
+	let resizing = false;
+	let resizeStart = { x: 0, y: 0, w: 0, h: 0 };
+	let lastRequested = { w: 0, h: 0 };
+	let resizeRaf = 0;
+
+	function onResizeStart(e: PointerEvent) {
+		if (!isTauri()) return;
+		e.preventDefault();
+		e.stopPropagation();
+		resizing = true;
+		resizeStart = { x: e.screenX, y: e.screenY, w: window.innerWidth, h: window.innerHeight };
+		window.addEventListener('pointermove', onResizeMove);
+		window.addEventListener('pointerup', onResizeEnd, { once: true });
+	}
+
+	function onResizeMove(e: PointerEvent) {
+		if (!resizing) return;
+		lastRequested = {
+			w: Math.min(900, Math.max(280, resizeStart.w + (e.screenX - resizeStart.x))),
+			h: Math.min(1400, Math.max(380, resizeStart.h + (e.screenY - resizeStart.y)))
+		};
+		// Coalesce to one setSize per frame
+		if (resizeRaf) return;
+		resizeRaf = requestAnimationFrame(async () => {
+			resizeRaf = 0;
+			try {
+				const { getCurrentWindow, LogicalSize } = await import('@tauri-apps/api/window');
+				await getCurrentWindow().setSize(new LogicalSize(lastRequested.w, lastRequested.h));
+			} catch (e) {
+				console.error('Failed to resize overlay:', e);
+			}
+		});
+	}
+
+	function onResizeEnd() {
+		resizing = false;
+		window.removeEventListener('pointermove', onResizeMove);
+		if (lastRequested.w > 0) {
+			localStorage.setItem(SIZE_KEY, JSON.stringify(lastRequested));
+		}
+	}
 
 	// Hydrate working memory on start
 	$effect(() => {
@@ -80,7 +154,7 @@
 
 	// Handle drag for Tauri window
 	function handleDragStart(e: MouseEvent) {
-		if (isTauri()) {
+		if (isTauri() && !positionLocked && !resizing) {
 			startDragging();
 		}
 	}
@@ -327,16 +401,56 @@
 		<VrmScene overlay={true} locked={true} />
 	</div>
 
-	<!-- Exit button (return to main app) -->
-	<button class="exit-btn" onclick={exitToMain} aria-label="Exit to main app" title="Exit to main app">
-		<Icon name="x" size={16} />
-	</button>
+	<!-- Hover chrome: soft frame + corner resize tab -->
+	<div class="overlay-frame"></div>
+	{#if isTauri()}
+		<div
+			class="resize-tab"
+			onpointerdown={onResizeStart}
+			role="separator"
+			aria-label="Resize overlay"
+			title="Drag to resize"
+		></div>
+	{/if}
 
-	<!-- Speech Bubble -->
+	<!-- Control rail (revealed on hover) -->
+	<div class="overlay-rail">
+		<button class="rail-btn" onclick={exitToMain} aria-label="Exit to main app" title="Back to app">
+			<Icon name="x" size={15} />
+		</button>
+		<button
+			class="rail-btn"
+			class:rail-btn-active={showCamera}
+			onclick={() => (showCamera = !showCamera)}
+			aria-label="Camera settings"
+			title="Camera"
+		>
+			<Icon name="video" size={15} />
+		</button>
+		<button
+			class="rail-btn"
+			class:rail-btn-active={positionLocked}
+			onclick={toggleLock}
+			aria-label={positionLocked ? 'Unlock position' : 'Lock position'}
+			title={positionLocked ? 'Position locked' : 'Lock position'}
+		>
+			<Icon name={positionLocked ? 'lock' : 'lock-open'} size={15} />
+		</button>
+	</div>
+
+	{#if showCamera}
+		<div class="overlay-camera-anchor">
+			<CameraSettingsPanel profile="overlay" onclose={() => (showCamera = false)} />
+		</div>
+	{/if}
+
+	<!-- Speech Bubble: docked as a dialog box — the window moves around, so a
+	     head-tracking bubble is unreadable in overlay mode -->
 	<SpeechBubble
 		message={latestResponse}
 		isTyping={isTyping}
 		onHide={handleBubbleHide}
+		docked
 	/>
 
 	<!-- Floating stat change indicators -->
@@ -409,12 +523,77 @@
 		cursor: grabbing;
 	}
 
-	.exit-btn {
+	/* Soft boundary stroke so the invisible window edges are discoverable.
+	   Double stroke (light outer, dark inner) stays visible on any desktop. */
+	.overlay-frame {
 		position: fixed;
-		top: 0.75rem;
-		right: 0.75rem;
+		inset: 5px;
+		border-radius: 22px;
+		pointer-events: none;
+		z-index: 45;
+		box-shadow:
+			0 0 0 1.5px rgba(255, 255, 255, 0.3),
+			inset 0 0 0 1.5px rgba(0, 0, 0, 0.18);
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	.overlay-container:hover .overlay-frame {
+		opacity: 1;
+	}
+
+	/* Corner grab tab for resizing */
+	.resize-tab {
+		position: fixed;
+		right: 8px;
+		bottom: 8px;
+		width: 26px;
+		height: 26px;
+		z-index: 55;
+		cursor: nwse-resize;
+		border-radius: 8px 4px 16px 4px;
+		background: color-mix(in srgb, var(--bg-tertiary) 65%, transparent);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+		opacity: 0;
+		transition: opacity 0.2s ease, background 0.15s ease;
+	}
+
+	.resize-tab::before {
+		content: '';
+		position: absolute;
+		right: 6px;
+		bottom: 6px;
+		width: 10px;
+		height: 10px;
+		border-right: 2px solid var(--text-secondary);
+		border-bottom: 2px solid var(--text-secondary);
+		border-radius: 0 0 3px 0;
+	}
+
+	.overlay-container:hover .resize-tab {
+		opacity: 0.75;
+	}
+
+	.resize-tab:hover {
+		opacity: 1;
+		background: var(--bg-tertiary);
+	}
+
+	/* Control rail: exit / camera / lock, revealed on hover */
+	.overlay-rail {
+		position: fixed;
+		top: 0.875rem;
+		right: 0.875rem;
+		z-index: 50;
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+	}
+
+	.rail-btn {
 		width: 32px;
 		height: 32px;
+		border: none;
 		border-radius: var(--radius-full);
 		background: var(--bg-tertiary);
 		color: var(--text-secondary);
@@ -423,24 +602,38 @@
 		align-items: center;
 		justify-content: center;
 		box-shadow: var(--shadow-sm);
-		z-index: 50;
 		opacity: 0;
 		pointer-events: none;
 		transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease,
 			box-shadow 0.15s ease, transform 0.15s ease;
 	}
 
-	.overlay-container:hover .exit-btn {
+	.overlay-container:hover .rail-btn {
 		opacity: 0.6;
 		pointer-events: auto;
 	}
 
-	.exit-btn:hover {
+	.rail-btn:hover {
 		opacity: 1;
 		color: var(--text-primary);
 		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 		box-shadow: var(--shadow-md);
 		transform: scale(1.1);
+	}
+
+	/* Active states (camera panel open, position locked) stay visible */
+	.rail-btn-active,
+	.overlay-container:hover .rail-btn-active {
+		opacity: 1;
+		pointer-events: auto;
+		color: var(--accent);
+	}
+
+	.overlay-camera-anchor {
+		position: fixed;
+		top: 0.875rem;
+		right: 3.5rem;
+		z-index: 60;
 	}
 
 	.chat-controls {

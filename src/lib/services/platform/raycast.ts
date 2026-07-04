@@ -1,16 +1,18 @@
 import { browser } from '$app/environment';
 import * as THREE from 'three';
-import { isTauri } from './platform';
-import { setIgnoreCursorEvents } from './window';
 
 let raycaster: THREE.Raycaster | null = null;
-let mouse = new THREE.Vector2();
-let isOverModel = false;
+const mouse = new THREE.Vector2();
 let scene: THREE.Scene | null = null;
 let camera: THREE.Camera | null = null;
 
 /**
- * Initialize the raycast system for detecting mouse over VRM model
+ * Store scene references for on-demand raycasts (checkRaycast).
+ *
+ * Note: this deliberately does NOT raycast on mousemove. Recursive raycasts
+ * against a skinned VRM are expensive (CPU-side skinned vertex transforms) and
+ * mousemove fires at mouse polling rate, which tanked the overlay framerate on
+ * hover — with the result feeding a click-through toggle that's disabled anyway.
  */
 export function initRaycast(threeScene: THREE.Scene, threeCamera: THREE.Camera): void {
 	if (!browser) return;
@@ -18,75 +20,16 @@ export function initRaycast(threeScene: THREE.Scene, threeCamera: THREE.Camera):
 	scene = threeScene;
 	camera = threeCamera;
 	raycaster = new THREE.Raycaster();
-
-	// Add event listeners
-	window.addEventListener('mousemove', handleMouseMove);
-	window.addEventListener('mouseleave', handleMouseLeave);
 }
 
-/**
- * Cleanup raycast listeners
- */
 export function cleanupRaycast(): void {
-	window.removeEventListener('mousemove', handleMouseMove);
-	window.removeEventListener('mouseleave', handleMouseLeave);
 	raycaster = null;
 	scene = null;
 	camera = null;
 }
 
 /**
- * Handle mouse movement - perform raycast and update click-through state
- */
-function handleMouseMove(event: MouseEvent): void {
-	if (!raycaster || !scene || !camera) return;
-
-	// Convert mouse position to normalized device coordinates (-1 to +1)
-	mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-	mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-	// Update raycaster
-	raycaster.setFromCamera(mouse, camera);
-
-	// Find intersections with all objects in scene
-	const intersects = raycaster.intersectObjects(scene.children, true);
-
-	// Filter to only mesh objects (the VRM model)
-	const modelIntersects = intersects.filter(
-		(i) => i.object instanceof THREE.Mesh && i.object.visible
-	);
-
-	const wasOverModel = isOverModel;
-	isOverModel = modelIntersects.length > 0;
-
-	// Click-through disabled: setIgnoreCursorEvents blocks interaction with
-	// UI overlays (chat bar, buttons) because it can't distinguish model hits
-	// from UI element hits. Needs a proper hit-test that excludes HTML UI regions.
-	// if (wasOverModel !== isOverModel && isTauri()) {
-	// 	setIgnoreCursorEvents(!isOverModel);
-	// }
-}
-
-/**
- * Handle mouse leaving window
- */
-function handleMouseLeave(): void {
-	if (isOverModel) {
-		isOverModel = false;
-		// Click-through disabled (see handleMouseMove comment above)
-		// if (isTauri()) setIgnoreCursorEvents(true);
-	}
-}
-
-/**
- * Check if mouse is currently over the model
- */
-export function isMouseOverModel(): boolean {
-	return isOverModel;
-}
-
-/**
- * Manually trigger a raycast check (useful for touch events)
+ * Manually trigger a raycast check at a screen position
  */
 export function checkRaycast(x: number, y: number): boolean {
 	if (!raycaster || !scene || !camera) return false;

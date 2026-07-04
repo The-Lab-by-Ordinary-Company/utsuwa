@@ -11,6 +11,8 @@ export interface CameraSettings {
 	height: number;
 }
 
+export type CameraProfile = 'main' | 'overlay';
+
 export const CAMERA_DEFAULTS: CameraSettings = { fov: 35, zoom: 1, height: 0 };
 
 export const CAMERA_LIMITS = {
@@ -21,8 +23,23 @@ export const CAMERA_LIMITS = {
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
+function sanitize(raw: Partial<CameraSettings> | undefined): CameraSettings {
+	return {
+		fov: clamp(raw?.fov ?? CAMERA_DEFAULTS.fov, CAMERA_LIMITS.fov.min, CAMERA_LIMITS.fov.max),
+		zoom: clamp(raw?.zoom ?? CAMERA_DEFAULTS.zoom, CAMERA_LIMITS.zoom.min, CAMERA_LIMITS.zoom.max),
+		height: clamp(
+			raw?.height ?? CAMERA_DEFAULTS.height,
+			CAMERA_LIMITS.height.min,
+			CAMERA_LIMITS.height.max
+		)
+	};
+}
+
 function createDisplayStore() {
+	// The main scene and the desktop overlay window frame very differently,
+	// so each keeps its own camera profile
 	let camera = $state<CameraSettings>({ ...CAMERA_DEFAULTS });
+	let overlayCamera = $state<CameraSettings>({ ...CAMERA_DEFAULTS });
 
 	if (browser) {
 		const saved = localStorage.getItem(STORAGE_KEY);
@@ -30,18 +47,12 @@ function createDisplayStore() {
 			try {
 				const parsed = JSON.parse(saved);
 				if (parsed.camera) {
-					camera = {
-						fov: clamp(parsed.camera.fov ?? CAMERA_DEFAULTS.fov, CAMERA_LIMITS.fov.min, CAMERA_LIMITS.fov.max),
-						zoom: clamp(parsed.camera.zoom ?? CAMERA_DEFAULTS.zoom, CAMERA_LIMITS.zoom.min, CAMERA_LIMITS.zoom.max),
-						height: clamp(parsed.camera.height ?? CAMERA_DEFAULTS.height, CAMERA_LIMITS.height.min, CAMERA_LIMITS.height.max)
-					};
+					camera = sanitize(parsed.camera);
+					overlayCamera = sanitize(parsed.overlayCamera);
 				}
 				// Legacy setting predating auto-fit: old default distance was 2.0
 				else if (typeof parsed.cameraDistance === 'number') {
-					camera = {
-						...CAMERA_DEFAULTS,
-						zoom: clamp(2.0 / parsed.cameraDistance, CAMERA_LIMITS.zoom.min, CAMERA_LIMITS.zoom.max)
-					};
+					camera = sanitize({ zoom: 2.0 / parsed.cameraDistance });
 				}
 			} catch (e) {
 				console.error('Failed to load display settings:', e);
@@ -51,27 +62,42 @@ function createDisplayStore() {
 
 	function save() {
 		if (browser) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({ camera: $state.snapshot(camera) }));
+			localStorage.setItem(
+				STORAGE_KEY,
+				JSON.stringify({
+					camera: $state.snapshot(camera),
+					overlayCamera: $state.snapshot(overlayCamera)
+				})
+			);
 		}
 	}
 
-	function setCamera(update: Partial<CameraSettings>) {
-		camera = {
-			fov: clamp(update.fov ?? camera.fov, CAMERA_LIMITS.fov.min, CAMERA_LIMITS.fov.max),
-			zoom: clamp(update.zoom ?? camera.zoom, CAMERA_LIMITS.zoom.min, CAMERA_LIMITS.zoom.max),
-			height: clamp(update.height ?? camera.height, CAMERA_LIMITS.height.min, CAMERA_LIMITS.height.max)
-		};
+	function setCamera(update: Partial<CameraSettings>, profile: CameraProfile = 'main') {
+		const current = profile === 'overlay' ? overlayCamera : camera;
+		const next = sanitize({ ...current, ...update });
+		if (profile === 'overlay') {
+			overlayCamera = next;
+		} else {
+			camera = next;
+		}
 		save();
 	}
 
-	function resetCamera() {
-		camera = { ...CAMERA_DEFAULTS };
+	function resetCamera(profile: CameraProfile = 'main') {
+		if (profile === 'overlay') {
+			overlayCamera = { ...CAMERA_DEFAULTS };
+		} else {
+			camera = { ...CAMERA_DEFAULTS };
+		}
 		save();
 	}
 
 	return {
 		get camera() {
 			return camera;
+		},
+		get overlayCamera() {
+			return overlayCamera;
 		},
 		setCamera,
 		resetCamera

@@ -1,14 +1,20 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
-	import { displayStore, CAMERA_DEFAULTS, CAMERA_LIMITS } from '$lib/stores/display.svelte';
+	import {
+		displayStore,
+		CAMERA_DEFAULTS,
+		CAMERA_LIMITS,
+		type CameraProfile
+	} from '$lib/stores/display.svelte';
 
 	interface Props {
 		onclose: () => void;
+		profile?: CameraProfile;
 	}
 
-	let { onclose }: Props = $props();
+	let { onclose, profile = 'main' }: Props = $props();
 
-	const cam = $derived(displayStore.camera);
+	const cam = $derived(profile === 'overlay' ? displayStore.overlayCamera : displayStore.camera);
 	const isDefault = $derived(
 		cam.fov === CAMERA_DEFAULTS.fov &&
 			cam.zoom === CAMERA_DEFAULTS.zoom &&
@@ -35,7 +41,7 @@
 			max={CAMERA_LIMITS.zoom.max}
 			step="0.05"
 			value={cam.zoom}
-			oninput={(e) => displayStore.setCamera({ zoom: parseFloat(e.currentTarget.value) })}
+			oninput={(e) => displayStore.setCamera({ zoom: parseFloat(e.currentTarget.value) }, profile)}
 		/>
 	</label>
 
@@ -50,7 +56,7 @@
 			max={CAMERA_LIMITS.height.max}
 			step="0.01"
 			value={cam.height}
-			oninput={(e) => displayStore.setCamera({ height: parseFloat(e.currentTarget.value) })}
+			oninput={(e) => displayStore.setCamera({ height: parseFloat(e.currentTarget.value) }, profile)}
 		/>
 	</label>
 
@@ -65,11 +71,11 @@
 			max={CAMERA_LIMITS.fov.max}
 			step="1"
 			value={cam.fov}
-			oninput={(e) => displayStore.setCamera({ fov: parseFloat(e.currentTarget.value) })}
+			oninput={(e) => displayStore.setCamera({ fov: parseFloat(e.currentTarget.value) }, profile)}
 		/>
 	</label>
 
-	<button class="reset-btn" onclick={() => displayStore.resetCamera()} disabled={isDefault}>
+	<button class="reset-btn" onclick={() => displayStore.resetCamera(profile)} disabled={isDefault}>
 		Reset camera
 	</button>
 </div>

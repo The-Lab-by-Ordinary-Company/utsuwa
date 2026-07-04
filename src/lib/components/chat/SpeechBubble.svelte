@@ -6,9 +6,12 @@
 		message: string;
 		isTyping?: boolean;
 		onHide?: () => void;
+		/** Docked dialog mode: the window moves around in overlay mode, so the
+		 *  bubble anchors above the bottom controls instead of chasing the head */
+		docked?: boolean;
 	}
 
-	let { message, isTyping = false, onHide }: Props = $props();
+	let { message, isTyping = false, onHide, docked = false }: Props = $props();
 
 	// Get screen position from VRM store for 3D tracking
 	const screenPos = $derived(vrmStore.headScreenPosition);
@@ -16,6 +19,7 @@
 	// Calculate bubble position (offset to the right of head)
 	// Typing indicator appears closer to model, message bubble has more offset
 	const bubbleStyle = $derived(() => {
+		if (docked) return '';
 		if (!screenPos) {
 			// Fallback to fixed position if no tracking available
 			return isTyping ? 'top: 25%; right: 25%;' : 'top: 22%; right: 15%;';
@@ -52,7 +56,8 @@
 {#if visible && (message || isTyping)}
 	<div
 		class="speech-bubble-container"
-		transition:pop={{ duration: 220, y: 6 }}
+		class:docked
+		transition:pop={{ duration: 220, y: 6, base: docked ? 'translateX(-50%)' : '' }}
 		role="status"
 		aria-live="polite"
 		style={bubbleStyle()}
@@ -74,7 +79,7 @@
 					{/if}
 				</div>
 			{/key}
-			<div class="bubble-tail"></div>
+			<div class="bubble-tail" class:bubble-tail-down={docked}></div>
 		</div>
 	</div>
 {/if}
@@ -142,6 +147,38 @@
 		border-top: 8px solid transparent;
 		border-bottom: 8px solid transparent;
 		border-right: 10px solid var(--bg-secondary);
+	}
+
+	/* Docked dialog: centered above the overlay's bottom controls, tail down */
+	.speech-bubble-container.docked {
+		left: 50%;
+		right: auto;
+		top: auto;
+		bottom: 108px;
+		transform: translateX(-50%);
+		transition: none;
+		width: max-content;
+		max-width: min(86%, 340px);
+	}
+
+	.docked .speech-bubble {
+		max-width: 100%;
+		max-height: 150px;
+	}
+
+	.docked .speech-bubble-content {
+		max-height: 150px;
+	}
+
+	.bubble-tail-down {
+		left: 50%;
+		top: auto;
+		bottom: -8px;
+		transform: translateX(-50%);
+		border-top: 10px solid var(--bg-secondary);
+		border-left: 8px solid transparent;
+		border-right: 8px solid transparent;
+		border-bottom: none;
 	}
 
 	.message {
