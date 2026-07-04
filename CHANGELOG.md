@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-07-04
+
+### Added
+- **Camera that fits itself**: the camera now frames each model by its actual proportions on load (head near the top of the screen, crop around the thigh), so tall and short models both land well without any adjustment.
+- **Live camera settings**: zoom, height, and field-of-view sliders in a popover that adjusts the scene in real time, with a reset back to the fitted default. No more settings-page roundtrips. Settings persist, and your old camera-distance preference migrates automatically.
+- **Settings cluster**: the top-right button expands into a tidy column holding the settings pages, camera controls, the theme toggle (now a single cycling button: system, light, dark), and AR.
+- **AR mode (WebXR)**: on Android Chrome and headset browsers, place your companion on your real floor with camera passthrough: she auto-places via floor detection, one finger drags her around, two fingers pinch to resize, and the chat UI stays visible. On devices without WebXR (including iPhones), the AR button opens a guide instead.
+- **Overlay resize and lock**: hover the desktop overlay for a soft frame, drag the top-left corner tab to resize the window (your size is remembered), and lock her position so clicks can't drag the window.
+- **Overlay camera profile**: overlay mode keeps its own zoom/height/FOV settings, independent of the main app, adjustable from the new hover rail.
+
+### Changed
+- **Overlay speech is readable now**: replies appear in a docked dialog bubble above the bottom controls instead of chasing the head of a window that itself moves.
+- The Display settings page was removed; its two controls (theme and camera) moved into the settings cluster.
+
+### Fixed
+- **Overlay hover framerate drop**: hovering the overlay ran an expensive model raycast on every mouse movement for a feature that was disabled; it's gone, and hover no longer stutters (this was most noticeable on Windows).
+
 ## [0.7.2] - 2026-07-04
 
 ### Changed
