@@ -15,7 +15,28 @@ export interface FetchModelsResult {
 
 const FETCH_TIMEOUT_MS = 10000;
 
-export async function fetchProviderModels(
+// Collapse concurrent identical requests into one. Reactive effects and repeated
+// mounts (e.g. the settings and onboarding model pickers) can fire the same
+// fetch several times in a tick; without this each one hit the provider.
+const inFlight = new Map<string, Promise<FetchModelsResult>>();
+
+export function fetchProviderModels(
+	providerId: string,
+	apiKey: string,
+	baseUrl?: string
+): Promise<FetchModelsResult> {
+	const key = `${providerId}|${baseUrl ?? ''}|${apiKey}`;
+	const existing = inFlight.get(key);
+	if (existing) return existing;
+
+	const request = fetchProviderModelsUncached(providerId, apiKey, baseUrl).finally(() =>
+		inFlight.delete(key)
+	);
+	inFlight.set(key, request);
+	return request;
+}
+
+async function fetchProviderModelsUncached(
 	providerId: string,
 	apiKey: string,
 	baseUrl?: string

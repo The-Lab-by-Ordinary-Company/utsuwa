@@ -309,7 +309,12 @@
 {/if}
 
 {#if hint}
-	<div class="vision-hint" out:pop={{ base: 'translateX(-50%)', y: -10, duration: 200 }}>
+	<div
+		class="vision-hint"
+		role="status"
+		aria-live="polite"
+		out:pop={{ base: 'translateX(-50%)', y: -10, duration: 200 }}
+	>
 		<Icon name="camera" size={16} />
 		<span>{hint}</span>
 	</div>
@@ -518,6 +523,12 @@
 		animation: hintDrop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 	.privacy-notice :global(svg) { flex-shrink: 0; opacity: 0.65; }
+	@media (prefers-reduced-motion: reduce) {
+		.vision-hint,
+		.privacy-notice {
+			animation: none;
+		}
+	}
 	.privacy-ack {
 		flex-shrink: 0;
 		border: none;
