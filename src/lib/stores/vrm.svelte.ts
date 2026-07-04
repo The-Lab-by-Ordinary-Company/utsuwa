@@ -12,12 +12,29 @@ export interface VrmModel {
 	createdAt: number;
 }
 
-// Default models bundled with the app (first one is loaded by default)
+// Default models bundled with the app (first one is loaded by default).
+// See static/models/README.md for each model's license.
 const DEFAULT_MODELS: VrmModel[] = [
 	{
-		id: 'default-utsuwa',
-		name: 'Utsuwa',
-		url: '/models/utsuwa.vrm',
+		id: 'default-sample-b',
+		name: 'Sample B',
+		url: '/models/AvatarSample_B.vrm',
+		previewUrl: undefined,
+		isDefault: true,
+		createdAt: 0
+	},
+	{
+		id: 'default-vita',
+		name: 'Vita',
+		url: '/models/Vita.vrm',
+		previewUrl: undefined,
+		isDefault: true,
+		createdAt: 0
+	},
+	{
+		id: 'default-victoria',
+		name: 'Victoria',
+		url: '/models/Victoria_Rubin.vrm',
 		previewUrl: undefined,
 		isDefault: true,
 		createdAt: 0
