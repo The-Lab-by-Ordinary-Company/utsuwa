@@ -75,47 +75,69 @@
 		localStorage.setItem(LOCK_KEY, String(positionLocked));
 	}
 
-	// Corner-tab drag resize. Pointer deltas are in logical px, same unit as
-	// Tauri's LogicalSize, so the math is direct.
+	// Top-left corner-tab drag resize: the window stays anchored at its
+	// bottom-right, so growing means moving the origin up/left while the size
+	// increases. Pointer deltas are in logical px, same unit as Tauri's
+	// Logical* types, so the math is direct.
 	let resizing = false;
-	let resizeStart = { x: 0, y: 0, w: 0, h: 0 };
-	let lastRequested = { w: 0, h: 0 };
+	let resizeStart = { x: 0, y: 0, w: 0, h: 0, wx: 0, wy: 0 };
+	let lastRequested = { w: 0, h: 0, x: 0, y: 0 };
 	let resizeRaf = 0;
 
-	function onResizeStart(e: PointerEvent) {
+	async function onResizeStart(e: PointerEvent) {
 		if (!isTauri()) return;
 		e.preventDefault();
 		e.stopPropagation();
-		resizing = true;
-		resizeStart = { x: e.screenX, y: e.screenY, w: window.innerWidth, h: window.innerHeight };
-		window.addEventListener('pointermove', onResizeMove);
-		window.addEventListener('pointerup', onResizeEnd, { once: true });
+		// Capture so pointermove keeps firing when the cursor leaves the window
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+		resizeStart = { x: e.screenX, y: e.screenY, w: window.innerWidth, h: window.innerHeight, wx: 0, wy: 0 };
+		try {
+			const { getCurrentWindow } = await import('@tauri-apps/api/window');
+			const win = getCurrentWindow();
+			const pos = await win.outerPosition();
+			const scale = await win.scaleFactor();
+			resizeStart.wx = pos.x / scale;
+			resizeStart.wy = pos.y / scale;
+			resizing = true;
+		} catch (err) {
+			console.error('Failed to start overlay resize:', err);
+		}
 	}
 
 	function onResizeMove(e: PointerEvent) {
 		if (!resizing) return;
+		const w = Math.min(900, Math.max(280, resizeStart.w - (e.screenX - resizeStart.x)));
+		const h = Math.min(1400, Math.max(380, resizeStart.h - (e.screenY - resizeStart.y)));
+		// Re-derive the origin from the clamped size so the bottom-right corner
+		// never drifts, even at the size limits
 		lastRequested = {
-			w: Math.min(900, Math.max(280, resizeStart.w + (e.screenX - resizeStart.x))),
-			h: Math.min(1400, Math.max(380, resizeStart.h + (e.screenY - resizeStart.y)))
+			w,
+			h,
+			x: resizeStart.wx + (resizeStart.w - w),
+			y: resizeStart.wy + (resizeStart.h - h)
 		};
-		// Coalesce to one setSize per frame
+		// Coalesce to one window update per frame
 		if (resizeRaf) return;
 		resizeRaf = requestAnimationFrame(async () => {
 			resizeRaf = 0;
 			try {
-				const { getCurrentWindow, LogicalSize } = await import('@tauri-apps/api/window');
-				await getCurrentWindow().setSize(new LogicalSize(lastRequested.w, lastRequested.h));
-			} catch (e) {
-				console.error('Failed to resize overlay:', e);
+				const { getCurrentWindow, LogicalSize, LogicalPosition } = await import(
+					'@tauri-apps/api/window'
+				);
+				const win = getCurrentWindow();
+				await win.setSize(new LogicalSize(lastRequested.w, lastRequested.h));
+				await win.setPosition(new LogicalPosition(lastRequested.x, lastRequested.y));
+			} catch (err) {
+				console.error('Failed to resize overlay:', err);
 			}
 		});
 	}
 
 	function onResizeEnd() {
+		if (!resizing) return;
 		resizing = false;
-		window.removeEventListener('pointermove', onResizeMove);
 		if (lastRequested.w > 0) {
-			localStorage.setItem(SIZE_KEY, JSON.stringify(lastRequested));
+			localStorage.setItem(SIZE_KEY, JSON.stringify({ w: lastRequested.w, h: lastRequested.h }));
 		}
 	}
 
@@ -407,6 +429,9 @@
 		<div
 			class="resize-tab"
 			onpointerdown={onResizeStart}
+			onpointermove={onResizeMove}
+			onpointerup={onResizeEnd}
+			onpointercancel={onResizeEnd}
 			role="separator"
 			aria-label="Resize overlay"
 			title="Drag to resize"
@@ -542,16 +567,17 @@
 		opacity: 1;
 	}
 
-	/* Corner grab tab for resizing */
+	/* Corner grab tab for resizing (top-left; the rail owns the top-right) */
 	.resize-tab {
 		position: fixed;
-		right: 8px;
-		bottom: 8px;
+		left: 8px;
+		top: 8px;
 		width: 26px;
 		height: 26px;
 		z-index: 55;
 		cursor: nwse-resize;
-		border-radius: 8px 4px 16px 4px;
+		touch-action: none;
+		border-radius: 16px 4px 8px 4px;
 		background: color-mix(in srgb, var(--bg-tertiary) 65%, transparent);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
 		opacity: 0;
@@ -561,13 +587,13 @@
 	.resize-tab::before {
 		content: '';
 		position: absolute;
-		right: 6px;
-		bottom: 6px;
+		left: 6px;
+		top: 6px;
 		width: 10px;
 		height: 10px;
-		border-right: 2px solid var(--text-secondary);
-		border-bottom: 2px solid var(--text-secondary);
-		border-radius: 0 0 3px 0;
+		border-left: 2px solid var(--text-secondary);
+		border-top: 2px solid var(--text-secondary);
+		border-radius: 3px 0 0 0;
 	}
 
 	.overlay-container:hover .resize-tab {
