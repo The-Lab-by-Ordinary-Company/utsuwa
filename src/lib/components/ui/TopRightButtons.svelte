@@ -4,6 +4,7 @@
 	import CameraSettingsPanel from '$lib/components/ui/CameraSettingsPanel.svelte';
 	import { localPath } from '$lib/config/links';
 	import { isTauri } from '$lib/services/platform';
+	import { arStore } from '$lib/stores/ar.svelte';
 	import { getColorMode, cycleColorMode, type ColorMode } from '$lib/utils/color-mode';
 	import { onMount } from 'svelte';
 
@@ -112,6 +113,18 @@
 			>
 				<Icon name={themeIcon} size={20} />
 			</button>
+			{#if arStore.supported}
+				<button
+					class="icon-btn cluster-item"
+					class:active={arStore.active}
+					style="--i: 3"
+					onclick={() => (arStore.active ? arStore.exit() : arStore.enter())}
+					aria-label={arStore.active ? 'Exit AR' : 'Enter AR'}
+					title={arStore.active ? 'Exit AR' : 'View in AR'}
+				>
+					<Icon name="cube" size={20} />
+				</button>
+			{/if}
 		</div>
 
 		{#if showCamera}

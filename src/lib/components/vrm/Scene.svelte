@@ -2,9 +2,11 @@
 	// Minimal viewer scene: one white directional light, flat backdrop,
 	// grid + axes helpers, free orbit controls. No post-processing.
 	import { T, useThrelte, useTask } from '@threlte/core';
+	import { useXR } from '@threlte/xr';
 	import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-	import { ShaderMaterial, Color, Box3, Vector3, PerspectiveCamera } from 'three';
+	import { ShaderMaterial, Color, Box3, Vector3, PerspectiveCamera, Group } from 'three';
 	import type { VRM } from '@pixiv/three-vrm';
+	import ArPlacement from './ArPlacement.svelte';
 	import VrmModel from './VrmModel.svelte';
 	import OverlayRaycastHandler from '$lib/components/overlay/OverlayRaycastHandler.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
@@ -49,7 +51,9 @@
 	const modelUrl = $derived(vrmStore.modelUrl);
 
 	const { camera, renderer, scene } = useThrelte();
+	const { isPresenting } = useXR();
 	let controls: OrbitControls | null = null;
+	let modelRoot = $state<Group | undefined>();
 
 	// Dark mode detection
 	let isDarkMode = $state(false);
@@ -121,9 +125,13 @@
 		const box = new Box3().setFromObject(vrm.scene);
 		const headTop = box.max.y;
 
-		// Thigh line from the humanoid rig; fall back to a proportional guess
+		// Thigh line from the raw skeleton (world matrices are valid right after
+		// updateWorldMatrix, unlike the normalized rig at load time); fall back
+		// to a proportional guess
 		let thighY = headTop * 0.45;
-		const upperLeg = vrm.humanoid?.getNormalizedBoneNode('leftUpperLeg');
+		const upperLeg =
+			vrm.humanoid?.getRawBoneNode('leftUpperLeg') ??
+			vrm.humanoid?.getNormalizedBoneNode('leftUpperLeg');
 		if (upperLeg) {
 			const p = new Vector3();
 			upperLeg.getWorldPosition(p);
@@ -135,6 +143,8 @@
 	}
 
 	function applyCamera() {
+		// The XR session owns the camera while presenting
+		if (renderer?.xr.isPresenting) return;
 		const cam = camera.current;
 		if (!(cam instanceof PerspectiveCamera)) return;
 
@@ -180,8 +190,16 @@
 		}
 	});
 
+	// Orbit controls fight the XR camera; disable them while presenting and
+	// re-apply the fitted framing when the session ends
+	$effect(() => {
+		if (!controls) return;
+		controls.enabled = !$isPresenting;
+		if (!$isPresenting) applyCamera();
+	});
+
 	useTask(() => {
-		controls?.update();
+		if (controls?.enabled) controls.update();
 	});
 </script>
 
@@ -193,8 +211,8 @@
 	<OverlayRaycastHandler />
 {/if}
 
-<!-- Backdrop + floor (hidden in overlay mode for transparency) -->
-{#if !overlay}
+<!-- Backdrop + floor (hidden in overlay mode and AR passthrough) -->
+{#if !overlay && !$isPresenting}
 	<T.Color attach="background" args={[backgroundColor]} />
 	<T.Mesh rotation.x={-Math.PI / 2} position.y={0}>
 		<T.CircleGeometry args={[2.5, 64]} />
@@ -206,7 +224,13 @@
      intensity 1 the classic three-vrm viewers were tuned against. -->
 <T.DirectionalLight intensity={Math.PI} position={[1, 1, 1]} />
 
-<!-- VRM Model -->
-{#if modelUrl}
-	<VrmModel url={modelUrl} />
+<!-- VRM Model, wrapped so AR placement can move/scale it without remounting -->
+<T.Group bind:ref={modelRoot}>
+	{#if modelUrl}
+		<VrmModel url={modelUrl} />
+	{/if}
+</T.Group>
+
+{#if $isPresenting && modelRoot}
+	<ArPlacement root={modelRoot} />
 {/if}

@@ -29,6 +29,9 @@ importers:
       '@threlte/core':
         specifier: ^8.3.1
         version: 8.3.1(svelte@5.48.2)(three@0.182.0)
+      '@threlte/xr':
+        specifier: ^1.6.1
+        version: 1.6.1(svelte@5.48.2)(three@0.182.0)
       '@xenova/transformers':
         specifier: ^2.17.2
         version: 2.17.2
@@ -842,6 +845,12 @@ packages:
 
   '@threlte/core@8.3.1':
     resolution: {integrity: sha512-qKjjNCQ+40hyeBcfOMh/8ef5x/j5PG5Wmo/L9Ye0aDCcdD6fCewWxfp7tV/J3CxPzX1dEp1JGK7sjyc7ntZSrg==}
+    peerDependencies:
+      svelte: '>=5'
+      three: '>=0.160'
+
+  '@threlte/xr@1.6.1':
+    resolution: {integrity: sha512-24S0K/47rHtmhlOHNdUrMin6CeEKJYyOlhtvwtbI+ovi5bwX12dEpzVmnSlj/FA/L3mitgQT3KzOkvd5YqK8Hg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -2306,6 +2315,11 @@ snapshots:
   '@threlte/core@8.3.1(svelte@5.48.2)(three@0.182.0)':
     dependencies:
       mitt: 3.0.1
+      svelte: 5.48.2
+      three: 0.182.0
+
+  '@threlte/xr@1.6.1(svelte@5.48.2)(three@0.182.0)':
+    dependencies:
       svelte: 5.48.2
       three: 0.182.0
 

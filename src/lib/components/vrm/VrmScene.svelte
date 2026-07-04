@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { Canvas } from '@threlte/core';
+	import { XR } from '@threlte/xr';
 	import { WebGLRenderer, SRGBColorSpace, NoToneMapping } from 'three';
 	import { onMount } from 'svelte';
 	import Scene from './Scene.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
+	import { arStore } from '$lib/stores/ar.svelte';
 	import { preGenerateThumbnails } from '$lib/utils/vrmThumbnail';
 
 	interface Props {
@@ -58,6 +60,14 @@
 <div class="vrm-scene">
 	{#if mounted}
 		<Canvas {createRenderer} toneMapping={NoToneMapping}>
+			<!-- Session management only: XR renders children solely while presenting,
+			     so the scene lives beside it and stays mounted in both modes -->
+			<XR
+				offerSession={false}
+				enterGrantedSession={false}
+				onsessionstart={() => arStore.setActive(true)}
+				onsessionend={() => arStore.setActive(false)}
+			/>
 			<Scene {centered} {locked} {overlay} />
 		</Canvas>
 	{/if}
