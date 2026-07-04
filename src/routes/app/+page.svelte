@@ -362,19 +362,24 @@
 			characterStore.applyUpdates(event.stateChanges);
 		}
 
-		eventsApi.recordCompletedEvent(
-			event,
-			choiceIndex,
-			choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
-		).then(() => {
-			// Records the event id plus the chosen outcome marker (e.g.
-			// confession_accepted), which is what gates later relationship stages.
-			for (const marker of completionMarkers(event, choiceIndex)) {
-				characterStore.markEventCompleted(marker);
-			}
-		}).catch((e) => {
-			console.error('Failed to record event completion:', e);
-		});
+		// Apply the gating markers first and synchronously — the event id plus the
+		// chosen outcome marker (e.g. confession_accepted) drive stage progression
+		// and are persisted via the character store. Doing this before the DB write
+		// means a failed write can't silently strand a hard-won stage unlock.
+		for (const marker of completionMarkers(event, choiceIndex)) {
+			characterStore.markEventCompleted(marker);
+		}
+
+		// Then record the durable history entry (also carries cooldown timestamps).
+		eventsApi
+			.recordCompletedEvent(
+				event,
+				choiceIndex,
+				choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
+			)
+			.catch((e) => {
+				console.error('Failed to record event completion:', e);
+			});
 
 		activeEvent = null;
 	}

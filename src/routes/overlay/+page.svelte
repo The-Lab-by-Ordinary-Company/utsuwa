@@ -399,15 +399,18 @@
 		} else if (event.stateChanges) {
 			characterStore.applyUpdates(event.stateChanges);
 		}
-		eventsApi.recordCompletedEvent(
-			event, choiceIndex,
-			choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
-		).then(() => {
-			for (const marker of completionMarkers(event, choiceIndex)) {
-				characterStore.markEventCompleted(marker);
-			}
-		})
-		.catch((e) => console.error('Failed to record event:', e));
+		// Apply gating markers synchronously before the DB write so a failed write
+		// can't strand a stage unlock (see app/+page.svelte for the full rationale).
+		for (const marker of completionMarkers(event, choiceIndex)) {
+			characterStore.markEventCompleted(marker);
+		}
+		eventsApi
+			.recordCompletedEvent(
+				event,
+				choiceIndex,
+				choiceIndex !== undefined ? `Choice ${choiceIndex + 1}` : undefined
+			)
+			.catch((e) => console.error('Failed to record event:', e));
 		activeEvent = null;
 	}
 
