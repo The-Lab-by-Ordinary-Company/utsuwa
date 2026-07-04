@@ -3,6 +3,7 @@
 	// grid + axes helpers, free orbit controls. No post-processing.
 	import { T, useThrelte, useTask } from '@threlte/core';
 	import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+	import { ShaderMaterial, Color } from 'three';
 	import VrmModel from './VrmModel.svelte';
 	import OverlayRaycastHandler from '$lib/components/overlay/OverlayRaycastHandler.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
@@ -10,11 +11,31 @@
 	import { screenshotStore } from '$lib/stores/screenshot.svelte';
 	import { onMount } from 'svelte';
 
-	// Backdrop colors per theme (light matches the reference viewer sky blue)
+	// Backdrop colors per theme
 	const SCENE_COLORS = {
-		light: { background: '#e3f4ff' },
-		dark: { background: '#353535' }
+		light: { background: '#ffffff', floor: '#000000' },
+		dark: { background: '#0a0a0a', floor: '#ffffff' }
 	};
+
+	// Soft studio floor: a disc that fades out toward its edge
+	const floorVertexShader = `
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+		}
+	`;
+
+	const floorFragmentShader = `
+		uniform vec3 uColor;
+		uniform float uOpacity;
+		varying vec2 vUv;
+		void main() {
+			float dist = length(vUv - 0.5);
+			float alpha = uOpacity * smoothstep(0.5, 0.1, dist);
+			gl_FragColor = vec4(uColor, alpha);
+		}
+	`;
 
 	interface Props {
 		centered?: boolean;
@@ -74,6 +95,20 @@
 		isDarkMode ? SCENE_COLORS.dark.background : SCENE_COLORS.light.background
 	);
 
+	const floorMaterial = $derived.by(() => {
+		const theme = isDarkMode ? SCENE_COLORS.dark : SCENE_COLORS.light;
+		return new ShaderMaterial({
+			uniforms: {
+				uColor: { value: new Color(theme.floor) },
+				uOpacity: { value: 0.06 }
+			},
+			vertexShader: floorVertexShader,
+			fragmentShader: floorFragmentShader,
+			transparent: true,
+			depthWrite: false
+		});
+	});
+
 	const cameraDistance = $derived(displayStore.cameraDistance);
 
 	// Setup OrbitControls (skip when locked)
@@ -105,11 +140,13 @@
 	<OverlayRaycastHandler />
 {/if}
 
-<!-- Backdrop + helpers (hidden in overlay mode for transparency) -->
+<!-- Backdrop + floor (hidden in overlay mode for transparency) -->
 {#if !overlay}
 	<T.Color attach="background" args={[backgroundColor]} />
-	<T.GridHelper args={[10, 10]} />
-	<T.AxesHelper args={[0.5]} />
+	<T.Mesh rotation.x={-Math.PI / 2} position.y={0}>
+		<T.CircleGeometry args={[2.5, 64]} />
+		<T is={floorMaterial} />
+	</T.Mesh>
 {/if}
 
 <!-- Single white directional light. Math.PI matches the legacy-lighting
