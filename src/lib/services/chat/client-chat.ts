@@ -5,6 +5,11 @@ import {
 	isLocalLLMProvider
 } from '$lib/services/providers/local-endpoints';
 import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-defaults';
+import {
+	htmlEndpointError,
+	looksLikeHtml,
+	sanitizeProviderError
+} from '$lib/services/providers/provider-errors';
 import { type MessageContent, toOpenAIContent, toAnthropicContent } from './content';
 
 interface ChatMessage {
@@ -99,11 +104,26 @@ export async function streamChatDirect(
 		const response = await fetch(url, { method: 'POST', headers, body });
 
 		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}));
-			const msg =
-				(errorData as { error?: { message?: string } })?.error?.message ||
-				`Provider error (${response.status})`;
+			const bodyText = await response.text().catch(() => '');
+			let msg = `Provider error (${response.status})`;
+			if (looksLikeHtml(bodyText)) {
+				msg = htmlEndpointError(providerBaseURL);
+			} else {
+				try {
+					msg = JSON.parse(bodyText)?.error?.message || msg;
+				} catch {
+					// Not JSON — keep the status-based message
+				}
+			}
+			msg = sanitizeProviderError(msg, providerBaseURL);
 			onError(isLocal && response.status === 404 ? `${msg}. Pull or select an installed model.` : msg);
+			return;
+		}
+
+		// A 200 with an HTML content-type means the URL points at a website, not an API
+		const contentType = response.headers.get('content-type') || '';
+		if (contentType.includes('text/html')) {
+			onError(htmlEndpointError(providerBaseURL));
 			return;
 		}
 

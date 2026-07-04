@@ -4,6 +4,7 @@ import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
 import { getChatBaseUrl } from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
+import { sanitizeProviderError } from '$lib/services/providers/provider-errors';
 import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-defaults';
 
 // Providers that don't require API keys
@@ -86,7 +87,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			});
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to connect to provider';
-			return new Response(JSON.stringify({ error: msg }), {
+			return new Response(JSON.stringify({ error: sanitizeProviderError(msg, providerBaseURL) }), {
 				status: 502,
 				headers: { 'Content-Type': 'application/json' }
 			});
@@ -114,7 +115,9 @@ export const POST: RequestHandler = async ({ request }) => {
 					reader = textStream.getReader();
 				} catch (err) {
 					const msg = err instanceof Error ? err.message : 'Failed to start stream';
-					controller.enqueue(encoder.encode(`e:${JSON.stringify({ error: msg })}\n`));
+					controller.enqueue(
+						encoder.encode(`e:${JSON.stringify({ error: sanitizeProviderError(msg, providerBaseURL) })}\n`)
+					);
 					controller.close();
 					return;
 				}
@@ -130,7 +133,11 @@ export const POST: RequestHandler = async ({ request }) => {
 				} catch (error) {
 					console.error('Stream error:', error);
 					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-					controller.enqueue(encoder.encode(`e:${JSON.stringify({ error: errorMessage })}\n`));
+					controller.enqueue(
+						encoder.encode(
+							`e:${JSON.stringify({ error: sanitizeProviderError(errorMessage, providerBaseURL) })}\n`
+						)
+					);
 					controller.close();
 				} finally {
 					reader.releaseLock();
@@ -147,12 +154,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 	} catch (error) {
 		console.error('Chat API error:', error);
-		return new Response(
-			JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-			{
-				status: 500,
-				headers: { 'Content-Type': 'application/json' }
-			}
-		);
+		const msg = error instanceof Error ? error.message : 'Unknown error';
+		return new Response(JSON.stringify({ error: sanitizeProviderError(msg, baseURL) }), {
+			status: 500,
+			headers: { 'Content-Type': 'application/json' }
+		});
 	}
 };
