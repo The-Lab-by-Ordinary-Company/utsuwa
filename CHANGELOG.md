@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-07-04
+
+### Changed
+- **Viewer scene overhaul**: a clean, minimal stage for your companion — single white key light with tone mapping disabled so MToon models render with their authored colors, pure-white (light) / near-black (dark) backdrop with a soft studio floor, and free orbit controls with unrestricted pan and zoom.
+- **New default avatars**: Tsuki, Yuki, and Momo (VRoid Project sample models) replace the previous bundled model. Each model's license is documented in `static/models/README.md`.
+
+### Fixed
+- **Model thumbnails no longer flip between T-pose renders and portraits**: previews now consistently use the model's embedded thumbnail, and generation no longer races storage restore on startup.
+- **Readable error when an OpenAI-compatible base URL points at a website**: instead of a wall of raw HTML, chat now shows a short hint to double-check the base URL.
+
+### Added
+- **Privacy Policy and Terms of Use** pages on the website, linked from the footer.
+
 ## [0.7.1] - 2026-07-03
 
 ### Fixed
