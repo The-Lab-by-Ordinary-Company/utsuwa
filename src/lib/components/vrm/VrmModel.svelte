@@ -492,14 +492,9 @@
 				VRMUtils.removeUnnecessaryVertices(loadedVrm.scene);
 				VRMUtils.removeUnnecessaryJoints(loadedVrm.scene);
 
-				// Configure rendering settings for all meshes
+				// Skip frustum culling so animated meshes never pop out at the edges
 				loadedVrm.scene.traverse((obj) => {
 					obj.frustumCulled = false;
-					// Enable shadow casting for AO and god rays effects
-					if (obj instanceof THREE.Mesh) {
-						obj.castShadow = true;
-						obj.receiveShadow = true;
-					}
 				});
 
 				// Normalize model orientation and position

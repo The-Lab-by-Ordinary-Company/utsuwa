@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Canvas } from '@threlte/core';
-	import { WebGLRenderer, SRGBColorSpace, ACESFilmicToneMapping } from 'three';
+	import { WebGLRenderer, SRGBColorSpace, NoToneMapping } from 'three';
 	import { onMount } from 'svelte';
 	import Scene from './Scene.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
@@ -34,8 +34,7 @@
 		});
 
 		renderer.outputColorSpace = SRGBColorSpace;
-		renderer.toneMapping = ACESFilmicToneMapping;
-		renderer.toneMappingExposure = 1.0;
+		renderer.toneMapping = NoToneMapping;
 
 		return renderer;
 	}

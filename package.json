@@ -64,7 +64,6 @@
 		"force-graph": "^1.51.0",
 		"localforage": "^1.10.0",
 		"n8ao": "^1.10.1",
-		"postprocessing": "^6.38.2",
 		"simple-icons": "^16.6.0",
 		"three": "^0.182.0"
 	}
