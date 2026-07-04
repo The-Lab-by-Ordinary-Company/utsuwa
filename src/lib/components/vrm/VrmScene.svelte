@@ -42,13 +42,16 @@
 	onMount(() => {
 		mounted = true;
 
-		// Pre-generate thumbnails for models without previews on first load
-		const modelsNeedingThumbnails = vrmStore.models.filter((m) => !m.previewUrl);
-		if (modelsNeedingThumbnails.length > 0) {
-			preGenerateThumbnails(modelsNeedingThumbnails, (modelId, dataUrl) => {
-				vrmStore.setModelPreview(modelId, dataUrl);
-			});
-		}
+		// Pre-generate thumbnails for models without previews. Wait for storage
+		// init first, otherwise saved previews look missing and get regenerated.
+		vrmStore.whenReady().then(() => {
+			const modelsNeedingThumbnails = vrmStore.models.filter((m) => !m.previewUrl);
+			if (modelsNeedingThumbnails.length > 0) {
+				preGenerateThumbnails(modelsNeedingThumbnails, (modelId, dataUrl) => {
+					vrmStore.setModelPreview(modelId, dataUrl);
+				});
+			}
+		});
 	});
 </script>
 

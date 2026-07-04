@@ -17,7 +17,7 @@ export interface VrmModel {
 const DEFAULT_MODELS: VrmModel[] = [
 	{
 		id: 'default-sample-b',
-		name: 'Sample B',
+		name: 'Tsuki',
 		url: '/models/AvatarSample_B.vrm',
 		previewUrl: undefined,
 		isDefault: true,
@@ -25,7 +25,7 @@ const DEFAULT_MODELS: VrmModel[] = [
 	},
 	{
 		id: 'default-vita',
-		name: 'Vita',
+		name: 'Yuki',
 		url: '/models/Vita.vrm',
 		previewUrl: undefined,
 		isDefault: true,
@@ -33,13 +33,16 @@ const DEFAULT_MODELS: VrmModel[] = [
 	},
 	{
 		id: 'default-victoria',
-		name: 'Victoria',
+		name: 'Momo',
 		url: '/models/Victoria_Rubin.vrm',
 		previewUrl: undefined,
 		isDefault: true,
 		createdAt: 0
 	}
 ];
+
+// Bumped when thumbnail generation changes so stale previews regenerate
+const PREVIEW_KEY_PREFIX = 'model-preview-v2-';
 
 // Configure localforage for VRM storage
 const vrmStorage = browser
@@ -103,6 +106,11 @@ function createVrmStore() {
 
 	// Guard against saveToStorage running before init completes
 	let storageReady = false;
+	// Lets consumers wait for init so they don't act on pre-restore state
+	let readyResolve: (() => void) | null = null;
+	const ready = new Promise<void>((resolve) => {
+		readyResolve = resolve;
+	});
 	// Prevents re-emitting sync events when handling incoming ones
 	let isSyncing = false;
 
@@ -147,7 +155,7 @@ function createVrmStore() {
 
 			// Restore preview thumbnails for all models
 			for (let i = 0; i < models.length; i++) {
-				const savedPreview = await vrmStorage?.getItem<string>(`model-preview-${models[i].id}`);
+				const savedPreview = await vrmStorage?.getItem<string>(`${PREVIEW_KEY_PREFIX}${models[i].id}`);
 				if (savedPreview) {
 					models[i] = { ...models[i], previewUrl: savedPreview };
 				}
@@ -177,6 +185,7 @@ function createVrmStore() {
 			modelUrl = DEFAULT_MODELS[0].url;
 		}
 		storageReady = true;
+		readyResolve?.();
 		// Flush any saves that were blocked during init
 		await saveToStorage();
 	}
@@ -340,7 +349,7 @@ function createVrmStore() {
 
 		// Store preview if provided
 		if (previewDataUrl) {
-			await vrmStorage?.setItem(`model-preview-${id}`, previewDataUrl);
+			await vrmStorage?.setItem(`${PREVIEW_KEY_PREFIX}${id}`, previewDataUrl);
 		}
 	}
 
@@ -355,7 +364,7 @@ function createVrmStore() {
 
 		// Remove from storage
 		await vrmStorage?.removeItem(`model-blob-${id}`);
-		await vrmStorage?.removeItem(`model-preview-${id}`);
+		await vrmStorage?.removeItem(`${PREVIEW_KEY_PREFIX}${id}`);
 
 		// Remove from list
 		models = models.filter((m) => m.id !== id);
@@ -384,7 +393,7 @@ function createVrmStore() {
 		}
 
 		// Save to storage for all models (including defaults) so thumbnails persist
-		await vrmStorage?.setItem(`model-preview-${modelId}`, previewDataUrl);
+		await vrmStorage?.setItem(`${PREVIEW_KEY_PREFIX}${modelId}`, previewDataUrl);
 	}
 
 	return {
@@ -446,7 +455,8 @@ function createVrmStore() {
 		addModel,
 		removeModel,
 		getActiveModel,
-		setModelPreview
+		setModelPreview,
+		whenReady: () => ready
 	};
 }
 
