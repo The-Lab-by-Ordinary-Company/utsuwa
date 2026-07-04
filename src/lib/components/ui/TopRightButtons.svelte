@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { Icon } from '$lib/components/ui';
 	import CameraSettingsPanel from '$lib/components/ui/CameraSettingsPanel.svelte';
+	import ArUnsupportedModal from '$lib/components/ui/ArUnsupportedModal.svelte';
 	import { localPath } from '$lib/config/links';
 	import { isTauri } from '$lib/services/platform';
 	import { arStore } from '$lib/stores/ar.svelte';
@@ -18,6 +19,20 @@
 	let showCamera = $state(false);
 	let colorMode = $state<ColorMode>('system');
 	let rootEl = $state<HTMLDivElement | null>(null);
+	let showArModal = $state(false);
+
+	function handleArClick() {
+		if (!arStore.supported) {
+			showArModal = true;
+			clusterOpen = false;
+			return;
+		}
+		if (arStore.active) {
+			arStore.exit();
+		} else {
+			arStore.enter();
+		}
+	}
 
 	const themeIcon = $derived(
 		colorMode === 'system' ? 'monitor' : colorMode === 'light' ? 'sun' : 'moon'
@@ -113,18 +128,16 @@
 			>
 				<Icon name={themeIcon} size={20} />
 			</button>
-			{#if arStore.supported}
-				<button
-					class="icon-btn cluster-item"
-					class:active={arStore.active}
-					style="--i: 3"
-					onclick={() => (arStore.active ? arStore.exit() : arStore.enter())}
-					aria-label={arStore.active ? 'Exit AR' : 'Enter AR'}
-					title={arStore.active ? 'Exit AR' : 'View in AR'}
-				>
-					<Icon name="cube" size={20} />
-				</button>
-			{/if}
+			<button
+				class="icon-btn cluster-item"
+				class:active={arStore.active}
+				style="--i: 3"
+				onclick={handleArClick}
+				aria-label={arStore.active ? 'Exit AR' : 'Enter AR'}
+				title={arStore.active ? 'Exit AR' : 'View in AR'}
+			>
+				<Icon name="cube" size={20} />
+			</button>
 		</div>
 
 		{#if showCamera}
@@ -134,6 +147,10 @@
 		{/if}
 	{/if}
 </div>
+
+{#if showArModal}
+	<ArUnsupportedModal onclose={() => (showArModal = false)} />
+{/if}
 
 <style>
 	.top-right-buttons {
