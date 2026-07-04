@@ -219,8 +219,10 @@ function buildMemoryLayer(ctx: PromptContext): string {
 	if (mem.recentSessions.length > 0 && ctx.state.lastInteraction) {
 		const hoursSince = (ctx.systemTime.getTime() - new Date(ctx.state.lastInteraction).getTime()) / (1000 * 60 * 60);
 		if (hoursSince > 6) {
-			const lastSession = mem.recentSessions[0];
-			if (lastSession.summary) {
+			// The current run's session has an empty summary, so pick the most recent
+			// session that actually has one (the previous, summarized visit).
+			const lastSession = mem.recentSessions.find((s) => s.summary);
+			if (lastSession?.summary) {
 				sections.push(`Last time you talked: ${lastSession.summary}`);
 			}
 		}

@@ -10,6 +10,7 @@ import type {
 import { MAX_WORKING_MEMORY_TURNS, MAX_RELEVANT_FACTS, MAX_RECENT_SESSIONS, DEFAULT_FACT_IMPORTANCE, DEFAULT_FACT_CONFIDENCE } from '$lib/types/memory';
 import * as memoryStorage from '$lib/services/storage/memory';
 import { embedText, findSimilarFacts, isEmbeddingReady } from '$lib/services/embeddings';
+import { summarizeTurns } from './session-summary';
 
 // Working memory store (single instance for the session)
 let workingMemory: WorkingMemory = {
@@ -89,6 +90,34 @@ export async function hydrateWorkingMemory(): Promise<void> {
 	const recentTurns = await memoryStorage.getConversationTurns({ limit: 20 });
 	workingMemory.turns = recentTurns;
 	workingMemory.messageCount = recentTurns.length;
+
+	// Backfill summaries for past sessions that ended without one, so the
+	// "last time you talked" prompt context actually has something to read.
+	await finalizeStaleSessions();
+}
+
+// Generate summaries for any past session that has turns but no summary yet
+// (skipping the current run's session, which is still active). Runs on load so
+// summaries exist before the first message of a returning session builds its prompt.
+export async function finalizeStaleSessions(): Promise<void> {
+	try {
+		const sessions = await memoryStorage.getSessions();
+		for (const session of sessions) {
+			if (session.id === undefined) continue;
+			if (session.id === workingMemory.currentSessionId) continue;
+			if (session.summary && session.summary.length > 0) continue;
+
+			const turns = await memoryStorage.getConversationTurns({ sessionId: session.id });
+			if (turns.length === 0) continue;
+
+			const { summary, keyTopics, emotionalArc } = summarizeTurns(turns);
+			if (summary) {
+				await memoryStorage.updateSession(session.id, { summary, keyTopics, emotionalArc });
+			}
+		}
+	} catch (e) {
+		console.debug('[Memory] Failed to finalize stale sessions:', e);
+	}
 }
 
 // Memory API - uses IndexedDB storage directly
@@ -178,8 +207,9 @@ export async function retrieveRelevantContext(userMessage: string): Promise<Rele
 		if (isEmbeddingReady()) {
 			const queryEmbedding = await embedText(userMessage);
 			if (queryEmbedding) {
-				// Get all facts with embeddings for semantic search
-				const allFacts = await memoryStorage.getAllFactsWithEmbeddings();
+				// Bounded candidate pool (top-importance facts with embeddings) so
+				// scoring cost doesn't grow linearly with total memory count.
+				const allFacts = await memoryStorage.getFactsForSemanticSearch();
 				const semanticResults = findSimilarFacts(queryEmbedding, allFacts, MAX_RELEVANT_FACTS, {
 					similarityWeight: 0.7,
 					importanceWeight: 0.3,

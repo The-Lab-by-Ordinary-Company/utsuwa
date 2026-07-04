@@ -42,8 +42,30 @@ export async function getFacts(options: MemorySearchOptions = {}): Promise<Fact[
 	return filtered.map(deserializeFact);
 }
 
+// Normalize content for duplicate detection: trim, lowercase, collapse whitespace.
+function normalizeContent(content: string): string {
+	return content.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
 export async function saveFact(fact: NewFact): Promise<number> {
 	const now = new Date();
+	const normalized = normalizeContent(fact.content);
+
+	// Dedup: the runtime pipeline can persist the same observation every turn
+	// ("I'm tired", "I love you"), which grows the table unbounded and dilutes
+	// retrieval. If an equivalent fact already exists, bump its reference count
+	// and importance instead of adding a near-duplicate row.
+	const existing = (await db.facts.where('category').equals(fact.category).toArray()).find(
+		(f) => normalizeContent(f.content) === normalized
+	);
+	if (existing?.id !== undefined) {
+		await db.facts.update(existing.id, {
+			referenceCount: existing.referenceCount + 1,
+			importance: Math.min(100, Math.max(existing.importance, fact.importance ?? 50)),
+			lastAccessed: now
+		});
+		return existing.id;
+	}
 
 	// Generate embedding if model is ready
 	let embedding: number[] | undefined;
@@ -101,6 +123,19 @@ export async function getFactsWithoutEmbeddings(): Promise<Fact[]> {
 export async function getAllFactsWithEmbeddings(): Promise<Fact[]> {
 	const facts = await db.facts.toArray();
 	return facts.map(deserializeFact);
+}
+
+// Candidate pool for per-message semantic search. Bounded via the importance
+// index so cosine scoring stays O(cap) instead of scanning every fact on every
+// message — retrieval quality is unchanged for normal use, but a companion with
+// thousands of memories no longer pays a linearly growing cost per turn.
+const MAX_SEMANTIC_CANDIDATES = 500;
+
+export async function getFactsForSemanticSearch(
+	limit: number = MAX_SEMANTIC_CANDIDATES
+): Promise<Fact[]> {
+	const facts = await db.facts.orderBy('importance').reverse().limit(limit).toArray();
+	return facts.filter((f) => f.embedding && f.embedding.length > 0).map(deserializeFact);
 }
 
 // Sessions
