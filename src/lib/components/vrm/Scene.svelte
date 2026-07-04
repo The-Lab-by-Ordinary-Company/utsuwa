@@ -3,7 +3,8 @@
 	// grid + axes helpers, free orbit controls. No post-processing.
 	import { T, useThrelte, useTask } from '@threlte/core';
 	import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-	import { ShaderMaterial, Color } from 'three';
+	import { ShaderMaterial, Color, Box3, Vector3, PerspectiveCamera } from 'three';
+	import type { VRM } from '@pixiv/three-vrm';
 	import VrmModel from './VrmModel.svelte';
 	import OverlayRaycastHandler from '$lib/components/overlay/OverlayRaycastHandler.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
@@ -109,7 +110,60 @@
 		});
 	});
 
-	const cameraDistance = $derived(displayStore.cameraDistance);
+	// --- Camera auto-fit ---
+	// Frames each model by its actual proportions: bottom of frame around the
+	// upper thigh, top of the head just under the top of the screen. User
+	// settings (fov/zoom/height) adjust on top of the fitted framing.
+	const camSettings = $derived(displayStore.camera);
+
+	function computeFit(vrm: VRM): { center: number; halfSpan: number } {
+		vrm.scene.updateWorldMatrix(true, true);
+		const box = new Box3().setFromObject(vrm.scene);
+		const headTop = box.max.y;
+
+		// Thigh line from the humanoid rig; fall back to a proportional guess
+		let thighY = headTop * 0.45;
+		const upperLeg = vrm.humanoid?.getNormalizedBoneNode('leftUpperLeg');
+		if (upperLeg) {
+			const p = new Vector3();
+			upperLeg.getWorldPosition(p);
+			thighY = p.y * 0.92;
+		}
+
+		const top = headTop + (headTop - thighY) * 0.04;
+		return { center: (top + thighY) / 2, halfSpan: (top - thighY) / 2 };
+	}
+
+	function applyCamera() {
+		const cam = camera.current;
+		if (!(cam instanceof PerspectiveCamera)) return;
+
+		const s = displayStore.camera;
+		cam.fov = s.fov;
+		cam.updateProjectionMatrix();
+
+		const vrm = vrmStore.vrm;
+		const fit = vrm ? computeFit(vrm) : { center: 1.0, halfSpan: 0.55 };
+		const distance = fit.halfSpan / Math.tan((s.fov * Math.PI) / 360) / s.zoom;
+		const targetY = fit.center + s.height;
+
+		cam.position.set(0, targetY, distance);
+		if (controls) {
+			controls.target.set(0, targetY, 0);
+			controls.update();
+		} else {
+			cam.lookAt(0, targetY, 0);
+		}
+	}
+
+	// Re-frame when the model or the camera settings change
+	$effect(() => {
+		void vrmStore.vrm;
+		void camSettings.fov;
+		void camSettings.zoom;
+		void camSettings.height;
+		applyCamera();
+	});
 
 	// Setup OrbitControls (skip when locked)
 	$effect(() => {
@@ -117,9 +171,8 @@
 
 		if (camera.current && renderer) {
 			controls = new OrbitControls(camera.current, renderer.domElement);
-			controls.target.set(0, 0.85, 0);
 			controls.screenSpacePanning = true;
-			controls.update();
+			applyCamera();
 
 			return () => {
 				controls?.dispose();
@@ -132,8 +185,8 @@
 	});
 </script>
 
-<!-- Camera - distance from display settings -->
-<T.PerspectiveCamera makeDefault position={[0, 1.1, cameraDistance]} fov={35} near={0.1} far={1000} />
+<!-- Camera - auto-fitted to the model once it loads -->
+<T.PerspectiveCamera makeDefault position={[0, 1.1, 2]} fov={camSettings.fov} near={0.1} far={1000} />
 
 <!-- Overlay mode: enable raycast for click-through detection -->
 {#if overlay}
