@@ -24,7 +24,24 @@
     "process:allow-restart",
     {
       "identifier": "fs:allow-read-file",
-      "allow": [{ "path": "**" }]
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$PICTURE/**" },
+        { "path": "$RESOURCE/**" },
+        { "path": "$TEMP/**" },
+        { "path": "/Volumes/**" },
+        { "path": "/media/**" },
+        { "path": "/mnt/**" }
+      ],
+      "deny": [
+        { "path": "$HOME/.ssh/**" },
+        { "path": "$HOME/.aws/**" },
+        { "path": "$HOME/.gnupg/**" },
+        { "path": "$HOME/.config/**" }
+      ]
     }
   ]
 }

@@ -50,3 +50,31 @@ test('allowPrivate lets self-hosters reach local models', () => {
 	const url = assertSafeProviderUrl('http://localhost:11434/v1', true);
 	assert.equal(url.hostname, 'localhost');
 });
+
+test('loopback expressed in non-decimal IPv4 encodings is still blocked', () => {
+	// All of these resolve to 127.0.0.1 via inet_aton and used to bypass the guard.
+	for (const h of ['2130706433', '0x7f000001', '0x7f.0.0.1', '0177.0.0.1', '017700000001', '127.1', '127.0.1']) {
+		assert.equal(isPrivateHost(h), true, h);
+	}
+});
+
+test('cloud metadata in integer form is blocked', () => {
+	// 169.254.169.254 = 2852039166
+	assert.equal(isPrivateHost('2852039166'), true);
+});
+
+test('assertSafeProviderUrl rejects encoded loopback', () => {
+	assert.throws(() => assertSafeProviderUrl('http://2130706433:11434/v1'));
+	assert.throws(() => assertSafeProviderUrl('http://0x7f000001/v1'));
+});
+
+test('hostnames that merely start with fc/fd are not misclassified as IPv6', () => {
+	for (const h of ['fcbanking.com', 'fd-cdn.example.com', 'fcm.googleapis.com']) {
+		assert.equal(isPrivateHost(h), false, h);
+	}
+});
+
+test('public integer-form IPs are still allowed', () => {
+	// 8.8.8.8 = 134744072
+	assert.equal(isPrivateHost('134744072'), false);
+});
