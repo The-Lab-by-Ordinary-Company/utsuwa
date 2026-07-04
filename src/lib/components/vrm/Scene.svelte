@@ -112,8 +112,9 @@
 	<T.AxesHelper args={[0.5]} />
 {/if}
 
-<!-- Single white directional light -->
-<T.DirectionalLight intensity={1} position={[1, 1, 1]} />
+<!-- Single white directional light. Math.PI matches the legacy-lighting
+     intensity 1 the classic three-vrm viewers were tuned against. -->
+<T.DirectionalLight intensity={Math.PI} position={[1, 1, 1]} />
 
 <!-- VRM Model -->
 {#if modelUrl}

@@ -54,7 +54,7 @@
 
 <div class="vrm-scene">
 	{#if mounted}
-		<Canvas {createRenderer}>
+		<Canvas {createRenderer} toneMapping={NoToneMapping}>
 			<Scene {centered} {locked} {overlay} />
 		</Canvas>
 	{/if}
