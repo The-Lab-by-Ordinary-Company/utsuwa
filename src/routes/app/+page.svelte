@@ -18,6 +18,7 @@
 	import { getLLMProvider, providerSupportsVision } from '$lib/services/providers/registry';
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
 	import { canShowImages } from '$lib/services/providers/vision';
+	import { onDestroy } from 'svelte';
 	import { sendCompanionMessage } from '$lib/services/chat/companion-chat';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { isTauri } from '$lib/services/platform';
@@ -119,6 +120,16 @@
 		if (debugEvent) {
 			activeEvent = debugEvent;
 		}
+	});
+
+	// Shown-image previews are blob: URLs (shared between the chat history and the
+	// thinking overlay). Free them all when leaving the app so a long session's
+	// images don't linger in memory.
+	onDestroy(() => {
+		for (const m of chatStore.messages) {
+			for (const img of m.images ?? []) URL.revokeObjectURL(img.url);
+		}
+		for (const img of thinkingImages) URL.revokeObjectURL(img.url);
 	});
 
 

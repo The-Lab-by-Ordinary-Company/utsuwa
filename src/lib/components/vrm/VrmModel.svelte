@@ -89,7 +89,7 @@
 	const { renderer, camera } = useThrelte();
 
 	// Generate thumbnail from the current 3D render
-	function generateThumbnail() {
+	function generateThumbnail(modelId: string | null) {
 		if (!renderer) return;
 
 		const canvas = renderer.domElement;
@@ -109,7 +109,7 @@
 			ctx.drawImage(canvas, srcX, srcY, srcSize, srcSize, 0, 0, size, size);
 
 			const thumbnailDataUrl = thumbCanvas.toDataURL('image/png');
-			vrmStore.setModelPreview(vrmStore.activeModelId, thumbnailDataUrl);
+			vrmStore.setModelPreview(modelId, thumbnailDataUrl);
 		}
 	}
 
@@ -460,6 +460,10 @@
 	$effect(() => {
 		if (!url) return;
 
+		// Capture the model this load belongs to, so a fast switch can't save this
+		// render under a different model's id.
+		const loadModelId = vrmStore.activeModelId;
+
 		// Invalidate this load if the URL changes or the component unmounts
 		// before the loader finishes, so a slow load can't clobber a newer one
 		let cancelled = false;
@@ -552,15 +556,15 @@
 						if (ctx) {
 							ctx.drawImage(thumbnailImage as CanvasImageSource, 0, 0);
 							const thumbnailDataUrl = canvas.toDataURL('image/png');
-							vrmStore.setModelPreview(vrmStore.activeModelId, thumbnailDataUrl);
+							vrmStore.setModelPreview(loadModelId, thumbnailDataUrl);
 						}
 					} catch (e) {
 						console.error('Failed to extract thumbnail:', e);
-						setTimeout(() => generateThumbnail(), 500);
+						setTimeout(() => generateThumbnail(loadModelId), 500);
 					}
 				} else {
 					// No embedded thumbnail - generate one from the 3D render
-					setTimeout(() => generateThumbnail(), 500);
+					setTimeout(() => generateThumbnail(loadModelId), 500);
 				}
 
 			},
@@ -587,6 +591,14 @@
 				talkingClip = null;
 				emoteAction = null;
 			}
+			// If an emote was mid-play, its 'finished' handler (bound to the old
+			// mixer) never runs, so reset the flags it would have cleared —
+			// otherwise currentAnimation stays stale and the next model can
+			// immediately replay the leftover emote.
+			if (isEmotePlaying) {
+				isEmotePlaying = false;
+				vrmStore.setCurrentAnimation(null);
+			}
 			if (vrm) {
 				// Frees geometries, materials, and textures (manual traverse missed textures)
 				VRMUtils.deepDispose(vrm.scene);
@@ -596,6 +608,11 @@
 			}
 		};
 	});
+
+	// Scratch vectors reused every frame — allocating three Vector3s per frame
+	// (~180/sec) was needless GC pressure in the render loop.
+	const scratchWorld = new THREE.Vector3();
+	const scratchProjected = new THREE.Vector3();
 
 	// Update VRM each frame
 	useTask((delta) => {
@@ -610,16 +627,16 @@
 		// Track head position for 3D speech bubble
 		const headBone = vrm.humanoid.getNormalizedBoneNode('head');
 		if (headBone && camera.current) {
-			const worldPos = headBone.getWorldPosition(new THREE.Vector3());
+			headBone.getWorldPosition(scratchWorld);
 			// Offset above and slightly in front of head
-			const offsetPos = new THREE.Vector3(worldPos.x, worldPos.y + 0.25, worldPos.z + 0.1);
-			vrmStore.setHeadPosition([offsetPos.x, offsetPos.y, offsetPos.z]);
+			scratchProjected.set(scratchWorld.x, scratchWorld.y + 0.25, scratchWorld.z + 0.1);
+			vrmStore.setHeadPosition([scratchProjected.x, scratchProjected.y, scratchProjected.z]);
 
-			// Project to screen coordinates
-			const screenPos = offsetPos.clone().project(camera.current);
+			// Project to screen coordinates (in place)
+			scratchProjected.project(camera.current);
 			// Convert from NDC (-1 to 1) to screen percentage (0 to 100)
-			const x = (screenPos.x + 1) * 50;
-			const y = (-screenPos.y + 1) * 50;
+			const x = (scratchProjected.x + 1) * 50;
+			const y = (-scratchProjected.y + 1) * 50;
 			vrmStore.setHeadScreenPosition({ x, y });
 		}
 

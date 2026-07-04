@@ -270,11 +270,22 @@ function createVrmStore() {
 		}
 	}
 
+	// These run every frame from the render loop. Skip the reactive write when the
+	// value hasn't meaningfully moved, so a near-still model doesn't churn every
+	// $derived bound to head position 60×/sec.
 	function setHeadPosition(pos: [number, number, number]) {
+		const p = headPosition;
+		if (Math.abs(p[0] - pos[0]) < 0.001 && Math.abs(p[1] - pos[1]) < 0.001 && Math.abs(p[2] - pos[2]) < 0.001) {
+			return;
+		}
 		headPosition = pos;
 	}
 
 	function setHeadScreenPosition(pos: { x: number; y: number } | null) {
+		const p = headScreenPosition;
+		if (pos && p && Math.abs(p.x - pos.x) < 0.05 && Math.abs(p.y - pos.y) < 0.05) {
+			return;
+		}
 		headScreenPosition = pos;
 	}
 

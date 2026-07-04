@@ -100,19 +100,26 @@
 		isDarkMode ? SCENE_COLORS.dark.background : SCENE_COLORS.light.background
 	);
 
-	const floorMaterial = $derived.by(() => {
-		const theme = isDarkMode ? SCENE_COLORS.dark : SCENE_COLORS.light;
-		return new ShaderMaterial({
-			uniforms: {
-				uColor: { value: new Color(theme.floor) },
-				uOpacity: { value: 0.06 }
-			},
-			vertexShader: floorVertexShader,
-			fragmentShader: floorFragmentShader,
-			transparent: true,
-			depthWrite: false
-		});
+	// One material for the life of the scene; only its color uniform changes on
+	// theme toggle. Rebuilding it per toggle (the old $derived.by) orphaned a GPU
+	// shader program each time.
+	const floorMaterial = new ShaderMaterial({
+		uniforms: {
+			uColor: { value: new Color(SCENE_COLORS.light.floor) },
+			uOpacity: { value: 0.06 }
+		},
+		vertexShader: floorVertexShader,
+		fragmentShader: floorFragmentShader,
+		transparent: true,
+		depthWrite: false
 	});
+
+	$effect(() => {
+		const theme = isDarkMode ? SCENE_COLORS.dark : SCENE_COLORS.light;
+		(floorMaterial.uniforms.uColor.value as Color).set(theme.floor);
+	});
+
+	onMount(() => () => floorMaterial.dispose());
 
 	// --- Camera auto-fit ---
 	// Frames each model by its actual proportions: bottom of frame around the
