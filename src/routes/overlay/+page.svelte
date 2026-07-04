@@ -203,7 +203,10 @@
 					})
 				});
 
-				if (!response.ok) throw new Error('Failed to get response');
+				if (!response.ok) {
+					const errBody = await response.json().catch(() => null);
+					throw new Error(errBody?.error || 'Failed to get response');
+				}
 
 				const reader = response.body?.getReader();
 				const decoder = new TextDecoder();
