@@ -12,8 +12,7 @@ export const STAGE_ORDER: RelationshipStage[] = [
 	'soulmate'
 ];
 
-// Stage requirements for progression
-const STAGE_REQUIREMENTS: Record<RelationshipStage, {
+export interface StageRequirements {
 	minAffection: number;
 	minTrust: number;
 	minIntimacy?: number;
@@ -22,7 +21,10 @@ const STAGE_REQUIREMENTS: Record<RelationshipStage, {
 	requiredEvents?: string[];
 	minDaysKnown?: number;
 	minInteractions?: number;
-}> = {
+}
+
+// Stage requirements for progression
+const STAGE_REQUIREMENTS: Record<RelationshipStage, StageRequirements> = {
 	companion: { minAffection: 0, minTrust: 0 }, // Special locked stage for Companion Mode
 	stranger: { minAffection: 0, minTrust: 0 },
 	acquaintance: { minAffection: 50, minTrust: 20, minInteractions: 3 },
@@ -34,21 +36,22 @@ const STAGE_REQUIREMENTS: Record<RelationshipStage, {
 	soulmate: { minAffection: 950, minTrust: 100, minIntimacy: 90, minComfort: 95, minRespect: 90, minDaysKnown: 60, requiredEvents: ['deep_bond_moment'] }
 };
 
-// Check if state meets stage requirements
-function meetsStageRequirements(
+// Check if state meets a set of stage requirements. `scale` shrinks the numeric
+// stat floors (for the demotion hysteresis band); time/interaction counts and
+// event markers only ever grow, so they are checked unscaled.
+export function meetsStageRequirements(
 	state: CharacterState,
-	stage: RelationshipStage,
-	completedEvents: string[]
+	requirements: StageRequirements,
+	completedEvents: string[],
+	scale = 1
 ): boolean {
-	const requirements = STAGE_REQUIREMENTS[stage];
-
-	if (state.affection < requirements.minAffection) return false;
-	if (state.trust < requirements.minTrust) return false;
-	if (requirements.minIntimacy && state.intimacy < requirements.minIntimacy) return false;
-	if (requirements.minComfort && state.comfort < requirements.minComfort) return false;
-	if (requirements.minRespect && state.respect < requirements.minRespect) return false;
-	if (requirements.minDaysKnown && state.daysKnown < requirements.minDaysKnown) return false;
-	if (requirements.minInteractions && state.totalInteractions < requirements.minInteractions) return false;
+	if (state.affection < requirements.minAffection * scale) return false;
+	if (state.trust < requirements.minTrust * scale) return false;
+	if (requirements.minIntimacy !== undefined && state.intimacy < requirements.minIntimacy * scale) return false;
+	if (requirements.minComfort !== undefined && state.comfort < requirements.minComfort * scale) return false;
+	if (requirements.minRespect !== undefined && state.respect < requirements.minRespect * scale) return false;
+	if (requirements.minDaysKnown !== undefined && state.daysKnown < requirements.minDaysKnown) return false;
+	if (requirements.minInteractions !== undefined && state.totalInteractions < requirements.minInteractions) return false;
 
 	if (requirements.requiredEvents) {
 		for (const eventId of requirements.requiredEvents) {
@@ -63,11 +66,57 @@ function meetsStageRequirements(
 export function calculateStage(state: CharacterState, completedEvents: string[]): RelationshipStage {
 	for (let i = STAGE_ORDER.length - 1; i >= 0; i--) {
 		const stage = STAGE_ORDER[i];
-		if (meetsStageRequirements(state, stage, completedEvents)) {
+		if (meetsStageRequirements(state, STAGE_REQUIREMENTS[stage], completedEvents)) {
 			return stage;
 		}
 	}
 	return 'stranger';
+}
+
+// Demotion only happens once a stat falls below 85% of the current stage's
+// floor. Without the band, a single -1 turn at a threshold demotes and the
+// next +2 turn re-promotes, firing the transition celebration repeatedly.
+export const DEMOTION_HYSTERESIS = 0.85;
+
+export interface StageTransitionResolution {
+	stage: RelationshipStage;
+	changed: boolean;
+	direction?: 'promotion' | 'demotion';
+}
+
+// Decide the next stage relative to the one currently held. Promotion is
+// immediate; demotion is damped by the hysteresis band so boundary noise and
+// mild decay don't silently strip a stage. A real collapse still demotes to
+// whatever stage the stats actually support.
+export function resolveStageTransition(
+	state: CharacterState,
+	completedEvents: string[]
+): StageTransitionResolution {
+	const current = state.relationshipStage;
+	const calculated = calculateStage(state, completedEvents);
+
+	if (calculated === current) {
+		return { stage: current, changed: false };
+	}
+
+	const currentIndex = STAGE_ORDER.indexOf(current);
+	const calculatedIndex = STAGE_ORDER.indexOf(calculated);
+
+	// Current stage isn't on the dating-sim ladder (companion); adopt the
+	// calculated stage outright.
+	if (currentIndex === -1) {
+		return { stage: calculated, changed: true, direction: 'promotion' };
+	}
+
+	if (calculatedIndex > currentIndex) {
+		return { stage: calculated, changed: true, direction: 'promotion' };
+	}
+
+	if (meetsStageRequirements(state, STAGE_REQUIREMENTS[current], completedEvents, DEMOTION_HYSTERESIS)) {
+		return { stage: current, changed: false };
+	}
+
+	return { stage: calculated, changed: true, direction: 'demotion' };
 }
 
 // Stage behavior definition

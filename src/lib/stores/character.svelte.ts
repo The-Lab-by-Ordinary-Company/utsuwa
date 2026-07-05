@@ -18,6 +18,7 @@ import { statChangesStore } from './statChanges.svelte';
 import { resolveTimeDecayOnLoad } from '$lib/engine/state-updates';
 import { reconcileLegacyMarkers } from '$lib/engine/event-completion';
 import { calculateStage, STAGE_ORDER } from '$lib/engine/stages';
+import { computeStreakUpdate } from '$lib/engine/streak';
 
 // Single character state
 let state = $state<CharacterState>(createDefaultCharacterState() as CharacterState);
@@ -288,12 +289,18 @@ function createCharacterStore() {
 	function markEventCompleted(eventId: string): void {
 		if (!state.completedEvents.includes(eventId)) {
 			const completedEvents = [...state.completedEvents, eventId];
-			// A gating event can unlock the next relationship stage right away.
-			// Companion mode has no dating-sim ladder, so leave its stage locked.
-			const relationshipStage =
-				state.appMode === 'companion'
-					? state.relationshipStage
-					: calculateStage(state, completedEvents);
+			// A gating event can unlock the next relationship stage right away, but
+			// completing an event never demotes: demotion is handled by the per-turn
+			// hysteresis check so it can be acknowledged in dialogue, not sprung on
+			// the user as a side effect of finishing a scene. Companion mode has no
+			// dating-sim ladder, so leave its stage locked.
+			let relationshipStage = state.relationshipStage;
+			if (state.appMode !== 'companion') {
+				const calculated = calculateStage(state, completedEvents);
+				if (STAGE_ORDER.indexOf(calculated) > STAGE_ORDER.indexOf(relationshipStage)) {
+					relationshipStage = calculated;
+				}
+			}
 			state = {
 				...state,
 				completedEvents,
@@ -309,39 +316,29 @@ function createCharacterStore() {
 		return state?.completedEvents.includes(eventId) ?? false;
 	}
 
-	// Format a date as local YYYY-MM-DD (toISOString would use UTC day boundaries,
-	// which breaks streaks for anyone chatting across a UTC midnight)
-	function localDateKey(date: Date): string {
-		const y = date.getFullYear();
-		const m = String(date.getMonth() + 1).padStart(2, '0');
-		const d = String(date.getDate()).padStart(2, '0');
-		return `${y}-${m}-${d}`;
-	}
-
-	// Update streak (call on session start)
+	// Update streak (call on session start). Pure logic lives in engine/streak.ts;
+	// it handles DST days and clock-set-back protection.
 	function updateStreak(): void {
-		const today = localDateKey(new Date());
-		const yesterday = localDateKey(new Date(Date.now() - 86400000));
+		const next = computeStreakUpdate(
+			{
+				currentStreak: state.currentStreak,
+				longestStreak: state.longestStreak,
+				streakLastDate: state.streakLastDate
+			},
+			new Date()
+		);
 
-		let newStreak = state.currentStreak;
-		let newLongest = state.longestStreak;
-
-		if (state.streakLastDate === today) {
-			// Already visited today, no change
-		} else if (state.streakLastDate === yesterday) {
-			// Consecutive day
-			newStreak++;
-			newLongest = Math.max(newLongest, newStreak);
-		} else {
-			// Streak broken
-			newStreak = 1;
+		if (
+			next.currentStreak === state.currentStreak &&
+			next.longestStreak === state.longestStreak &&
+			next.streakLastDate === state.streakLastDate
+		) {
+			return;
 		}
 
 		state = {
 			...state,
-			currentStreak: newStreak,
-			longestStreak: newLongest,
-			streakLastDate: today,
+			...next,
 			updatedAt: new Date()
 		};
 		save();

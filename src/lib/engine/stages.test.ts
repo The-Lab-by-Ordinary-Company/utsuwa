@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { calculateStage } from './stages.ts';
+import {
+	calculateStage,
+	meetsStageRequirements,
+	resolveStageTransition,
+	DEMOTION_HYSTERESIS
+} from './stages.ts';
 import type { CharacterState } from '$lib/types/character';
 
 function makeState(overrides: Partial<CharacterState> = {}): CharacterState {
@@ -111,4 +116,67 @@ test('stage never regresses below stranger and ignores the companion stage', () 
 	// calculateStage only walks the dating-sim ladder; companion is a mode, not a rung
 	const state = makeState({ appMode: 'companion' });
 	assert.equal(calculateStage(state, []), 'stranger');
+});
+
+// --- meetsStageRequirements (explicit requirement objects) ---
+
+test('an explicit zero minimum is evaluated, not skipped', () => {
+	const requirements = { minAffection: 0, minTrust: 0, minIntimacy: 0 };
+	assert.equal(meetsStageRequirements(makeState(), requirements, []), true);
+	assert.equal(
+		meetsStageRequirements(makeState(), { ...requirements, minIntimacy: 1 }, []),
+		false
+	);
+});
+
+test('omitted optional minimums are skipped', () => {
+	const requirements = { minAffection: 10, minTrust: 5 };
+	assert.equal(meetsStageRequirements(makeState({ affection: 10, trust: 5 }), requirements, []), true);
+});
+
+// --- resolveStageTransition (hysteresis) ---
+
+const ROMANTIC_EVENTS = ['first_deep_conversation', 'shared_vulnerability'];
+const ROMANTIC_STATS = {
+	affection: 460,
+	trust: 75,
+	intimacy: 30,
+	comfort: 50,
+	respect: 10,
+	daysKnown: 10,
+	totalInteractions: 25,
+	relationshipStage: 'romantic_interest' as const
+};
+
+test('promotion happens as soon as requirements are met', () => {
+	const state = makeState({ ...ROMANTIC_STATS, relationshipStage: 'close_friend' });
+	const result = resolveStageTransition(state, ROMANTIC_EVENTS);
+	assert.equal(result.stage, 'romantic_interest');
+	assert.equal(result.direction, 'promotion');
+});
+
+test('a dip inside the hysteresis band holds the current stage', () => {
+	// romantic_interest needs 450 affection; the demotion floor is 450 * 0.85
+	const floor = 450 * DEMOTION_HYSTERESIS;
+	const state = makeState({ ...ROMANTIC_STATS, affection: Math.ceil(floor) });
+	const result = resolveStageTransition(state, ROMANTIC_EVENTS);
+	assert.equal(result.stage, 'romantic_interest');
+	assert.equal(result.changed, false);
+});
+
+test('a collapse below the band demotes to the earned stage and reports strain', () => {
+	const state = makeState({ ...ROMANTIC_STATS, affection: 300 });
+	const result = resolveStageTransition(state, ROMANTIC_EVENTS);
+	assert.equal(result.stage, 'close_friend');
+	assert.equal(result.direction, 'demotion');
+});
+
+test('hysteresis applies per stat, not just affection', () => {
+	// trust floor for romantic_interest is 75 * 0.85 = 63.75
+	const held = resolveStageTransition(makeState({ ...ROMANTIC_STATS, trust: 70 }), ROMANTIC_EVENTS);
+	assert.equal(held.changed, false);
+
+	const dropped = resolveStageTransition(makeState({ ...ROMANTIC_STATS, trust: 60 }), ROMANTIC_EVENTS);
+	assert.equal(dropped.direction, 'demotion');
+	assert.equal(dropped.stage, 'friend'); // trust 60 also fails close_friend's 70
 });

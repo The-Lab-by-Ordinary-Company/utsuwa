@@ -1,32 +1,42 @@
 import type { CharacterState, StateUpdates, Emotion, MoodState, RelationshipStage } from '$lib/types/character';
-import { calculateStage } from './stages.ts';
+import { resolveStageTransition } from './stages.ts';
 
 // Clamp a value between min and max
 function clamp(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, value));
 }
 
-// Check and apply stage transition if needed
+// Check and apply stage transition if needed. Promotion is immediate; demotion
+// is damped by the hysteresis band in resolveStageTransition and flagged as
+// `strained` so callers can acknowledge it in dialogue instead of letting the
+// relationship downgrade silently.
 export function checkAndApplyStageTransition(
 	state: CharacterState,
 	completedEvents: string[]
-): { newState: CharacterState; transitioned: boolean; fromStage?: RelationshipStage; toStage?: RelationshipStage } {
-	const calculatedStage = calculateStage(state, completedEvents);
+): {
+	newState: CharacterState;
+	transitioned: boolean;
+	strained: boolean;
+	fromStage?: RelationshipStage;
+	toStage?: RelationshipStage;
+} {
+	const resolution = resolveStageTransition(state, completedEvents);
 
-	if (calculatedStage !== state.relationshipStage) {
+	if (resolution.changed) {
 		return {
 			newState: {
 				...state,
-				relationshipStage: calculatedStage,
+				relationshipStage: resolution.stage,
 				updatedAt: new Date()
 			},
 			transitioned: true,
+			strained: resolution.direction === 'demotion',
 			fromStage: state.relationshipStage,
-			toStage: calculatedStage
+			toStage: resolution.stage
 		};
 	}
 
-	return { newState: state, transitioned: false };
+	return { newState: state, transitioned: false, strained: false };
 }
 
 // Apply time-based decay (call on session start)
@@ -45,27 +55,38 @@ export function applyTimeDecay(state: CharacterState, hoursSinceLastInteraction:
 		}
 	}
 
-	// Affection decay (only after 48 hours)
+	// Affection decay (only after 48 hours). A zero-value delta must not be set
+	// at all: resolveTimeDecayOnLoad treats any delta as "decay happened" and
+	// consumes the once-per-absence slot, so a -0 written at hour 49 would
+	// swallow the real decay owed at day 5.
 	if (hoursSinceLastInteraction > 48 && state.affection > 0) {
 		const daysAway = Math.floor(hoursSinceLastInteraction / 24) - 2; // Start after 2 days
 		const decayRate = Math.min(0.05, 0.01 * daysAway);
 		const decay = Math.floor(state.affection * decayRate);
-		updates.affectionDelta = -Math.min(decay, 50); // Cap at 50 per session
+		if (decay > 0) {
+			updates.affectionDelta = -Math.min(decay, 50); // Cap at 50 per session
+		}
 	}
 
 	// Trust decay (only after 7 days)
 	if (hoursSinceLastInteraction > 168 && state.trust > 0) {
 		const weeksAway = Math.floor(hoursSinceLastInteraction / 168);
-		updates.trustDelta = -Math.min(weeksAway * 2, 10); // Slow decay, max 10 per session
+		const decay = Math.min(weeksAway * 2, 10); // Slow decay, max 10 per session
+		if (decay > 0) {
+			updates.trustDelta = -decay;
+		}
 	}
 
 	// Mood shifts towards melancholy if away too long (3+ days)
 	if (hoursSinceLastInteraction > 72) {
-		updates.moodChange = {
-			emotion: 'melancholy',
-			intensityDelta: Math.min(30, Math.floor(hoursSinceLastInteraction / 24) * 5),
-			cause: 'missing you'
-		};
+		const intensityDelta = Math.min(30, Math.floor(hoursSinceLastInteraction / 24) * 5);
+		if (intensityDelta > 0) {
+			updates.moodChange = {
+				emotion: 'melancholy',
+				intensityDelta,
+				cause: 'missing you'
+			};
+		}
 	}
 
 	return updates;

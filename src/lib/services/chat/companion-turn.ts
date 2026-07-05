@@ -9,8 +9,8 @@ import {
 	determineFactCategory,
 	calculateFactImportance
 } from '$lib/engine/memory';
-import { checkAllEvents, eventsApi } from '$lib/engine/events';
-import { allEvents } from '$lib/data/events';
+import { checkAllEvents, checkEvent, eventsApi } from '$lib/engine/events';
+import { allEvents, relationshipStrainEvent } from '$lib/data/events';
 import { extractStateUpdates } from './client-chat';
 import type { LLMProvider } from '$lib/types';
 import type { EventDefinition } from '$lib/types/events';
@@ -107,11 +107,13 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	}
 
 	// Stage transitions (Dating Sim Mode only)
+	let stageStrained = false;
 	if (characterStore.appMode === 'dating_sim') {
 		const completedEventIds = characterStore.state.completedEvents || [];
 		const transition = checkAndApplyStageTransition(characterStore.state, completedEventIds);
 		if (transition.transitioned && transition.toStage) {
 			characterStore.setRelationshipStage(transition.toStage);
+			stageStrained = transition.strained;
 		}
 	}
 
@@ -139,9 +141,22 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	if (characterStore.appMode === 'dating_sim') {
 		try {
 			const completedEvents = await eventsApi.getCompletedEvents();
-			const triggeredEvents = checkAllEvents(allEvents, characterStore.state, completedEvents, userMessage);
-			if (triggeredEvents.length > 0) {
-				triggeredEvent = triggeredEvents[0];
+
+			// A demotion this turn takes over the event slot so the character can
+			// acknowledge the strain instead of it happening silently. checkEvent
+			// still applies the cooldown via the completion records.
+			if (stageStrained) {
+				const strain = checkEvent(relationshipStrainEvent, characterStore.state, completedEvents);
+				if (strain.triggered) {
+					triggeredEvent = relationshipStrainEvent;
+				}
+			}
+
+			if (!triggeredEvent) {
+				const triggeredEvents = checkAllEvents(allEvents, characterStore.state, completedEvents, userMessage);
+				if (triggeredEvents.length > 0) {
+					triggeredEvent = triggeredEvents[0];
+				}
 			}
 		} catch (e) {
 			console.debug('Event check failed:', e);

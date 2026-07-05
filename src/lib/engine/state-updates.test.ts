@@ -7,6 +7,7 @@ import {
 	checkAndApplyStageTransition,
 	resolveTimeDecayOnLoad
 } from './state-updates.ts';
+import { STAGE_ORDER } from './stages.ts';
 import type { CharacterState, StateUpdates } from '$lib/types/character';
 
 const HOUR = 1000 * 60 * 60;
@@ -159,6 +160,43 @@ test('no decay under the 30-minute floor', () => {
 	assert.equal(result.changed, false);
 });
 
+// --- zero-decay guard (48-72h dead zone) ---
+
+test('a 49h absence computes zero decay and sets no affection delta', () => {
+	const updates = applyTimeDecay(makeState({ affection: 500 }), 49);
+	assert.equal(updates.affectionDelta, undefined);
+});
+
+test('a rounding-to-zero decay sets no delta either', () => {
+	// affection 30 at 5 days away: floor(30 * 0.03) = 0
+	const updates = applyTimeDecay(makeState({ affection: 30 }), 120);
+	assert.equal(updates.affectionDelta, undefined);
+});
+
+test('regression: a zero-decay load does not consume the once-per-absence slot', () => {
+	const now = 1_000_000_000_000;
+	const lastInteraction = new Date(now - 49 * HOUR);
+
+	// Opening the app at hour 49 without interacting: energy recovers, but no
+	// decay happened, so the absence's decay slot must stay armed.
+	const first = resolveTimeDecayOnLoad(
+		makeState({ energy: 40, affection: 500, lastInteraction, lastDecayAt: null }),
+		now
+	);
+	assert.equal(first.next.energy, 100);
+	assert.equal(first.next.affection, undefined);
+	assert.equal(first.next.lastDecayAt, undefined, 'zero decay must not write lastDecayAt');
+	assert.equal(first.changed, true);
+
+	// Returning at hour 120 of the same absence: the real decay still applies.
+	const second = resolveTimeDecayOnLoad(
+		makeState({ affection: 500, lastInteraction, lastDecayAt: null }),
+		lastInteraction.getTime() + 120 * HOUR
+	);
+	assert.equal(second.next.affection, 485); // 3 days past grace at 1%/day
+	assert.ok(second.next.lastDecayAt instanceof Date);
+});
+
 // --- mergeUpdates ---
 
 test('LLM deltas are clamped relative to the baseline', () => {
@@ -215,4 +253,61 @@ test('no transition when the stage already matches', () => {
 	const result = checkAndApplyStageTransition(state, []);
 	assert.equal(result.transitioned, false);
 	assert.equal(result.newState, state);
+});
+
+test('acceptance: oscillating at a stage boundary yields one promotion and no demotions', () => {
+	const events = ['first_deep_conversation', 'shared_vulnerability'];
+	let state = makeState({
+		affection: 449,
+		trust: 75,
+		intimacy: 30,
+		comfort: 50,
+		daysKnown: 10,
+		totalInteractions: 25,
+		relationshipStage: 'close_friend'
+	});
+
+	let promotions = 0;
+	let demotions = 0;
+	for (let turn = 0; turn < 20; turn++) {
+		state = { ...state, affection: state.affection + (turn % 2 === 0 ? 1 : -1) };
+		const result = checkAndApplyStageTransition(state, events);
+		if (result.transitioned && result.fromStage && result.toStage) {
+			if (STAGE_ORDER.indexOf(result.toStage) > STAGE_ORDER.indexOf(result.fromStage)) {
+				promotions++;
+			} else {
+				demotions++;
+			}
+			state = result.newState;
+		}
+	}
+
+	assert.equal(promotions, 1);
+	assert.equal(demotions, 0);
+});
+
+test('a decay collapse demotes and flags the transition as strained', () => {
+	const state = makeState({
+		affection: 300,
+		trust: 75,
+		intimacy: 30,
+		comfort: 50,
+		daysKnown: 10,
+		totalInteractions: 25,
+		relationshipStage: 'romantic_interest'
+	});
+	const result = checkAndApplyStageTransition(state, [
+		'first_deep_conversation',
+		'shared_vulnerability'
+	]);
+	assert.equal(result.transitioned, true);
+	assert.equal(result.toStage, 'close_friend');
+	assert.equal(result.strained, true);
+});
+
+test('promotions are not flagged as strained', () => {
+	const state = makeState({ affection: 50, trust: 20, totalInteractions: 3 });
+	const result = checkAndApplyStageTransition(state, []);
+	assert.equal(result.transitioned, true);
+	assert.equal(result.strained, false);
 });

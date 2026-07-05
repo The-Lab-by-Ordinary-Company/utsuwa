@@ -1,0 +1,48 @@
+// Pure streak logic, split from the character store so it can be unit-tested.
+
+export interface StreakSnapshot {
+	currentStreak: number;
+	longestStreak: number;
+	streakLastDate: string | null;
+}
+
+// Format a date as local YYYY-MM-DD (toISOString would use UTC day boundaries,
+// which breaks streaks for anyone chatting across a UTC midnight)
+export function localDateKey(date: Date): string {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, '0');
+	const d = String(date.getDate()).padStart(2, '0');
+	return `${y}-${m}-${d}`;
+}
+
+export function computeStreakUpdate(streak: StreakSnapshot, now: Date): StreakSnapshot {
+	const today = localDateKey(now);
+
+	if (streak.streakLastDate === today) {
+		return { ...streak };
+	}
+
+	// A recorded date ahead of today means the clock was set backwards. Treat it
+	// as already visited rather than punishing the user with a reset.
+	if (streak.streakLastDate && streak.streakLastDate > today) {
+		return { ...streak };
+	}
+
+	// Calendar arithmetic, not now - 24h: DST days aren't 24 hours long.
+	const yesterday = localDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+
+	if (streak.streakLastDate === yesterday) {
+		const next = streak.currentStreak + 1;
+		return {
+			currentStreak: next,
+			longestStreak: Math.max(streak.longestStreak, next),
+			streakLastDate: today
+		};
+	}
+
+	return {
+		currentStreak: 1,
+		longestStreak: Math.max(streak.longestStreak, 1),
+		streakLastDate: today
+	};
+}
