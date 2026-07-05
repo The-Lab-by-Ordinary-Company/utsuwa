@@ -252,9 +252,17 @@ export function calculateMessageImpact(
 	};
 }
 
-// Merge baseline heuristics with LLM suggestions
-export function mergeUpdates(baseline: StateUpdates, llmSuggestion: Partial<StateUpdates>): StateUpdates {
+// Merge baseline heuristics with LLM suggestions. By default the baseline
+// bounds the LLM's deltas; with trustLLMDeltas (non-Latin input, where the
+// keyword baseline is meaningless) the LLM's values are taken as-is — the
+// response parser has already sanitized them to absolute ranges.
+export function mergeUpdates(
+	baseline: StateUpdates,
+	llmSuggestion: Partial<StateUpdates>,
+	options: { trustLLMDeltas?: boolean } = {}
+): StateUpdates {
 	const merged: StateUpdates = { ...baseline };
+	const trustLLM = options.trustLLMDeltas === true;
 
 	// LLM can override mood entirely
 	if (llmSuggestion.moodChange) {
@@ -263,28 +271,42 @@ export function mergeUpdates(baseline: StateUpdates, llmSuggestion: Partial<Stat
 
 	// LLM can adjust deltas, but baseline provides bounds
 	if (llmSuggestion.affectionDelta !== undefined) {
-		// Take LLM suggestion but cap it relative to baseline
-		const baseAffection = baseline.affectionDelta ?? 0;
-		const maxDelta = Math.max(Math.abs(baseAffection) * 2, 5);
-		merged.affectionDelta = clamp(llmSuggestion.affectionDelta, -maxDelta, maxDelta);
+		if (trustLLM) {
+			merged.affectionDelta = llmSuggestion.affectionDelta;
+		} else {
+			// Take LLM suggestion but cap it relative to baseline
+			const baseAffection = baseline.affectionDelta ?? 0;
+			const maxDelta = Math.max(Math.abs(baseAffection) * 2, 5);
+			merged.affectionDelta = clamp(llmSuggestion.affectionDelta, -maxDelta, maxDelta);
+		}
 	}
 
 	if (llmSuggestion.trustDelta !== undefined) {
-		const baseTrust = baseline.trustDelta ?? 0;
-		const maxDelta = Math.max(Math.abs(baseTrust) * 2, 3);
-		merged.trustDelta = clamp(llmSuggestion.trustDelta, -maxDelta, maxDelta);
+		if (trustLLM) {
+			merged.trustDelta = llmSuggestion.trustDelta;
+		} else {
+			const baseTrust = baseline.trustDelta ?? 0;
+			const maxDelta = Math.max(Math.abs(baseTrust) * 2, 3);
+			merged.trustDelta = clamp(llmSuggestion.trustDelta, -maxDelta, maxDelta);
+		}
 	}
 
 	if (llmSuggestion.intimacyDelta !== undefined) {
-		merged.intimacyDelta = clamp(llmSuggestion.intimacyDelta, -3, 5);
+		merged.intimacyDelta = trustLLM
+			? llmSuggestion.intimacyDelta
+			: clamp(llmSuggestion.intimacyDelta, -3, 5);
 	}
 
 	if (llmSuggestion.comfortDelta !== undefined) {
-		merged.comfortDelta = clamp(llmSuggestion.comfortDelta, -3, 5);
+		merged.comfortDelta = trustLLM
+			? llmSuggestion.comfortDelta
+			: clamp(llmSuggestion.comfortDelta, -3, 5);
 	}
 
 	if (llmSuggestion.respectDelta !== undefined) {
-		merged.respectDelta = clamp(llmSuggestion.respectDelta, -3, 5);
+		merged.respectDelta = trustLLM
+			? llmSuggestion.respectDelta
+			: clamp(llmSuggestion.respectDelta, -3, 5);
 	}
 
 	// Energy delta stays from baseline (app controls energy)

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { analyzeMessage, calculateBaselineUpdates } from './heuristics.ts';
+import { analyzeMessage, calculateBaselineUpdates, isNonLatinDominant } from './heuristics.ts';
 import type { CharacterState } from '$lib/types/character';
 
 function makeState(overrides: Partial<CharacterState> = {}): CharacterState {
@@ -98,4 +98,34 @@ test('strong sentiment sets a mood change', () => {
 test('extracted facts surface as a new memory', () => {
 	const updates = calculateBaselineUpdates("I'm Alex, nice to meet you", makeState());
 	assert.ok(updates.newMemory?.includes("I'm Alex"));
+});
+
+// --- non-Latin input (I18N) ---
+
+test('isNonLatinDominant classifies scripts correctly', () => {
+	assert.equal(isNonLatinDominant('今日は仕事で大変なことがあったんだ'), true);
+	assert.equal(isNonLatinDominant('오늘 정말 좋은 하루였어'), true);
+	assert.equal(isNonLatinDominant('Сегодня был хороший день'), true);
+	assert.equal(isNonLatinDominant('I had a really good day today'), false);
+	assert.equal(isNonLatinDominant('Watched 攻殻機動隊 again, still my favorite movie ever made'), false);
+	assert.equal(isNonLatinDominant('!!!???'), false);
+	assert.equal(isNonLatinDominant(''), false);
+});
+
+test('non-Latin input skips keyword sentiment instead of reading as flat negative', () => {
+	// "悲しい" (sad) would never match English keywords; sentiment must be
+	// neutral-zero with the nonLatinDominant flag set so the caller can lean on
+	// the LLM's own deltas instead.
+	const analysis = analyzeMessage('今日はちょっと悲しいことがあったんだ。でもあなたと話せてよかった。');
+	assert.equal(analysis.nonLatinDominant, true);
+	assert.equal(analysis.sentiment, 0);
+});
+
+test('a full-width question mark still reads as a question', () => {
+	assert.equal(analyzeMessage('明日は何をしますか？').isQuestion, true);
+});
+
+test('apologizing is not negative sentiment', () => {
+	const analysis = analyzeMessage("Sorry I was away yesterday, I missed talking to you");
+	assert.ok(analysis.sentiment >= 0, `sentiment was ${analysis.sentiment}`);
 });

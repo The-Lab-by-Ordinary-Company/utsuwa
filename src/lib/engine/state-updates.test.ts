@@ -311,3 +311,26 @@ test('promotions are not flagged as strained', () => {
 	assert.equal(result.transitioned, true);
 	assert.equal(result.strained, false);
 });
+
+// --- mergeUpdates: full-weight LLM deltas for non-Latin input ---
+
+test('trustLLMDeltas passes sanitized LLM deltas through instead of clamping to baseline', () => {
+	const baseline: StateUpdates = { affectionDelta: 1, trustDelta: 0 };
+	// Default mode: relative clamp caps affection at max(|1|*2, 5) = 5
+	const clamped = mergeUpdates(baseline, { affectionDelta: 15, trustDelta: 8 });
+	assert.equal(clamped.affectionDelta, 5);
+	assert.equal(clamped.trustDelta, 3);
+
+	// Full-weight mode: the parser already sanitized these, take them as-is
+	const trusted = mergeUpdates(baseline, { affectionDelta: 15, trustDelta: 8 }, { trustLLMDeltas: true });
+	assert.equal(trusted.affectionDelta, 15);
+	assert.equal(trusted.trustDelta, 8);
+});
+
+test('trustLLMDeltas keeps baseline values for fields the LLM omitted', () => {
+	const baseline: StateUpdates = { affectionDelta: 2, energyDelta: -3 };
+	const merged = mergeUpdates(baseline, { trustDelta: 4 }, { trustLLMDeltas: true });
+	assert.equal(merged.affectionDelta, 2);
+	assert.equal(merged.energyDelta, -3);
+	assert.equal(merged.trustDelta, 4);
+});

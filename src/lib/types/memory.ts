@@ -91,6 +91,9 @@ export interface MessageAnalysis {
 	extractedFacts: string[];
 	isQuestion: boolean;
 	hasEmotionalContent: boolean;
+	// Mostly non-Latin script: the English keyword heuristics didn't run, so
+	// downstream should weight the LLM's own deltas fully.
+	nonLatinDominant: boolean;
 }
 
 // Constants

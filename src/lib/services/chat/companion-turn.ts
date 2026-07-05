@@ -49,6 +49,7 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	const { userMessage, companionResponse, llm, debug = false } = input;
 
 	const state = characterStore.state;
+	const userAnalysis = analyzeMessage(userMessage);
 	const baselineUpdates = calculateBaselineUpdates(userMessage, state);
 
 	const parsed = parseResponse(companionResponse, state.name);
@@ -90,7 +91,13 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 		validatedLLMUpdates = validateStateUpdates(llmUpdates).sanitized;
 	}
 
-	const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {});
+	// For non-Latin input the keyword baseline is meaningless (English lists),
+	// so the LLM's sanitized deltas carry full weight instead of being clamped
+	// relative to it. Otherwise the game layer silently flatlines for users
+	// chatting in Japanese and other non-Latin languages.
+	const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {}, {
+		trustLLMDeltas: userAnalysis.nonLatinDominant
+	});
 	characterStore.applyUpdates(finalUpdates);
 
 	// Save the model's memory observation
@@ -129,7 +136,6 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	const maxHeuristicFacts = finalUpdates.newMemory ? 1 : 2;
 	for (const factContent of potentialFacts.slice(0, maxHeuristicFacts)) {
 		try {
-			const userAnalysis = analyzeMessage(userMessage);
 			await memoryApi.createFact({
 				content: factContent,
 				category: determineFactCategory(factContent),
