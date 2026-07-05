@@ -59,7 +59,7 @@
 - **Chat Interface**: Bottom-centered input bar with streaming responses
 - **Voice Input**: Speech-to-text via a local Whisper server (Speaches, faster-whisper-server, whisper.cpp), Groq (Whisper), or the browser's Web Speech API, with real-time audio visualization
 - **Show Her Photos**: Show your companion an image via the camera button or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
-- **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, and LM Studio
+- **LLM Integration**: Support for OpenAI, Anthropic, Google Gemini, DeepSeek, xAI (Grok), Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, LiteLLM, etc.)
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
 - **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech)
 - **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
@@ -112,12 +112,13 @@ The desktop app uses the same codebase as the web version, and your save files a
 
 ## Supported Providers
 
-### LLM Providers (7)
+### LLM Providers (8)
 
 | Category | Providers |
 |----------|-----------|
 | **Cloud** | OpenAI, Anthropic, Google Gemini, DeepSeek, xAI (Grok) |
 | **Local** | Ollama, LM Studio |
+| **OpenAI-Compatible** | OpenRouter, Together, vLLM, LiteLLM, Ollama, LM Studio, or any custom `/v1` endpoint |
 
 ### TTS Providers (3)
 
@@ -133,6 +134,15 @@ The desktop app uses the same codebase as the web version, and your save files a
 | **Local** | Local STT (Speaches, faster-whisper-server, whisper.cpp, any OpenAI-compatible `/v1/audio/transcriptions` server) |
 | **Cloud** | Groq (Whisper), OpenAI (Whisper) |
 | **Browser** | Web Speech API (no API key required) |
+
+**OpenAI-Compatible endpoint extras**
+
+Selecting **OpenAI-Compatible** under AI Services unlocks additional controls that are sent with each request:
+
+- **Model search / refresh**: discover models from the endpoint and filter the list with the search field
+- **Context Window**: limits how much conversation history and memory is injected into the prompt
+- **Advanced Parameters**: Temperature, Top P, Max Tokens, Presence Penalty, and Frequency Penalty
+- **Unfiltered Mode (NSFW)**: injects an uncensored-fiction preamble into the system prompt; use only with local or uncensored models
 
 Voice input is accessed via the microphone button in the chat bar. Selection is automatic by priority: a configured local Whisper server wins, then Groq, then OpenAI, then the browser's Web Speech API. A local server or a cloud key works on any platform including desktop; Web Speech API works without an API key in Chrome, Edge, and Safari. See [Local STT Setup](https://docs.utsuwa.ai/docs/guides/local-stt-setup) to run a local Whisper server.
 
