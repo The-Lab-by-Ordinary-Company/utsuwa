@@ -30,6 +30,14 @@ let error = $state<string | null>(null);
 // Debounce save timeout
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
+// Cross-window sync channel (main <-> overlay). Character state lives in
+// IndexedDB, so the 'storage' event settings relies on never fires for it;
+// BroadcastChannel reaches every same-origin context, which covers browser
+// tabs and both Tauri windows alike.
+let syncChannel: BroadcastChannel | null = null;
+// Prevents a sync-triggered rehydrate from broadcasting back and ping-ponging
+let isSyncing = false;
+
 // Create the store object
 function createCharacterStore() {
 	// Derived mood info
@@ -85,6 +93,7 @@ function createCharacterStore() {
 				// Save the patched state (use $state.snapshot to strip Proxy)
 				const plainState = $state.snapshot(state);
 				await saveCharacterState({ ...plainState, updatedAt: new Date() });
+				notifyOtherWindows();
 			}
 
 			isReady = true;
@@ -114,6 +123,7 @@ function createCharacterStore() {
 					...plainState,
 					updatedAt: new Date()
 				});
+				notifyOtherWindows();
 			} catch (e) {
 				console.error('Failed to save character state:', e);
 			}
@@ -124,6 +134,27 @@ function createCharacterStore() {
 		} else {
 			// Debounce by 1 second
 			saveTimeout = setTimeout(doSave, 1000);
+		}
+	}
+
+	// Tell other windows we persisted, so they rehydrate instead of sitting on
+	// a stale snapshot that their next save would push back over ours.
+	function notifyOtherWindows(): void {
+		if (isSyncing) return;
+		syncChannel?.postMessage('character-state-saved');
+	}
+
+	// Rehydrate from IndexedDB after another window saves. Deliberately not
+	// loadState(): decay/reconcile already ran at boot, and a sync must never
+	// trigger a save of its own or two windows would echo back and forth.
+	async function syncFromStorage(): Promise<void> {
+		isSyncing = true;
+		try {
+			state = await getCharacterState();
+		} catch (e) {
+			console.error('Failed to sync character state:', e);
+		} finally {
+			isSyncing = false;
 		}
 	}
 
@@ -357,6 +388,22 @@ function createCharacterStore() {
 
 	// Initialize on browser
 	if (browser) {
+		// Listen before the initial load so a boot-time patch save in another
+		// window is never missed.
+		if (typeof BroadcastChannel !== 'undefined') {
+			syncChannel = new BroadcastChannel('utsuwa-character-state');
+			syncChannel.onmessage = async () => {
+				// Still booting: loadState is about to read fresh data anyway
+				if (isLoading) return;
+				// Flush a pending local save first so its changes go through the
+				// storage merge instead of being dropped by the rehydrate.
+				if (saveTimeout) {
+					await save(true);
+				}
+				await syncFromStorage();
+			};
+		}
+
 		loadState();
 
 		// Flush pending saves before the page unloads to prevent data loss.
@@ -366,7 +413,7 @@ function createCharacterStore() {
 				clearTimeout(saveTimeout);
 				saveTimeout = null;
 				const plainState = $state.snapshot(state);
-				saveCharacterState({ ...plainState, updatedAt: new Date() });
+				saveCharacterState({ ...plainState, updatedAt: new Date() }).then(() => notifyOtherWindows());
 			}
 		});
 	}

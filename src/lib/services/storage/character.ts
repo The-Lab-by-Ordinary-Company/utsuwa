@@ -1,5 +1,6 @@
 import { db, type DBCharacterState } from '$lib/db';
 import { createDefaultCharacterState, type CharacterState } from '$lib/types/character';
+import { mergeCharacterStates } from './character-merge';
 
 /**
  * Get the single character state from IndexedDB.
@@ -17,24 +18,25 @@ export async function getCharacterState(): Promise<CharacterState> {
 }
 
 /**
- * Save the character state to IndexedDB.
- * Clears existing records and saves the new state (single record model).
+ * Save the character state to IndexedDB (single record model).
+ * Merges into the existing record rather than blindly overwriting it, so a
+ * window holding a stale snapshot can't erase progress another window already
+ * persisted. The rw transaction makes read-merge-write atomic across windows.
  */
 export async function saveCharacterState(state: CharacterState): Promise<number> {
-	const serialized = serializeCharacterState(state);
+	return db.transaction('rw', db.characterStates, async () => {
+		const existing = await db.characterStates.toCollection().first();
 
-	// Check if a record exists
-	const existing = await db.characterStates.toCollection().first();
+		if (existing && existing.id !== undefined) {
+			const merged = mergeCharacterStates(deserializeCharacterState(existing), state);
+			await db.characterStates.put({ ...serializeCharacterState(merged), id: existing.id });
+			return existing.id;
+		}
 
-	if (existing && existing.id !== undefined) {
-		// Update existing record
-		await db.characterStates.put({ ...serialized, id: existing.id });
-		return existing.id;
-	}
-
-	// Create new record
-	const id = await db.characterStates.add(serialized);
-	return id as number;
+		// Create new record
+		const id = await db.characterStates.add(serializeCharacterState(state));
+		return id as number;
+	});
 }
 
 /**
