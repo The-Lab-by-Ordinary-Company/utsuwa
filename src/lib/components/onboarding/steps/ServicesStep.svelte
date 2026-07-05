@@ -375,6 +375,7 @@
 
 		<!-- Model: manual entry for custom endpoints, discovered dropdown otherwise -->
 		{#if llmProvider?.custom}
+			{@const customConfig = settingsStore.getProviderConfig(llmProvider.id)}
 			<input
 				type="text"
 				class="api-key-input"
@@ -382,6 +383,19 @@
 				value={(llmSettings.activeModel as string) ?? ''}
 				oninput={(e) => handleLLMModelChange(e.currentTarget.value.trim())}
 			/>
+			{#if customConfig.baseUrl}
+				<ModelDropdown
+					models={llmModels}
+					value={llmSettings.activeModel as string}
+					onSelect={handleLLMModelChange}
+					placeholder="Pick a fetched model..."
+					isLoading={llmIsLoading}
+					onRefresh={fetchLLMModels}
+					disabled={false}
+				/>
+			{:else}
+				<p class="provider-note">Enter a base URL to fetch available models.</p>
+			{/if}
 		{:else if llmSettings.activeProvider}
 			<ModelDropdown
 				models={llmModels}

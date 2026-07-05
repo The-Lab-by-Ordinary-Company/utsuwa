@@ -53,6 +53,11 @@
 		searchQuery = '';
 		onSelect(modelId);
 	}
+
+	// Clear the search filter when the dropdown closes so reopening starts fresh.
+	$effect(() => {
+		if (!open) searchQuery = '';
+	});
 </script>
 
 <div class="model-dropdown-wrapper">
