@@ -31,10 +31,11 @@ function createChatStore() {
 	}
 
 	function updateLastMessage(content: string) {
-		if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
-			messages = messages.map((msg, i) =>
-				i === messages.length - 1 ? { ...msg, content } : msg
-			);
+		const last = messages[messages.length - 1];
+		if (last && last.role === 'assistant') {
+			// Runs per streamed chunk: replace only the last element instead of
+			// rebuilding the whole array on every token
+			messages = [...messages.slice(0, -1), { ...last, content }];
 		}
 	}
 

@@ -113,6 +113,9 @@ function createVrmStore() {
 	});
 	// Prevents re-emitting sync events when handling incoming ones
 	let isSyncing = false;
+	// Held so the handler can be released (HMR re-runs this module in dev;
+	// without it each run would stack another duplicate listener)
+	let modelChangedUnlisten: Promise<(() => void) | undefined> | null = null;
 
 	// Initialize from storage (may override defaults with saved values)
 	if (browser) {
@@ -120,12 +123,24 @@ function createVrmStore() {
 
 		// Sync model changes from other Tauri windows
 		if (isTauri()) {
-			import('@tauri-apps/api/event').then(({ listen }) => {
+			modelChangedUnlisten = import('@tauri-apps/api/event').then(({ listen }) =>
 				listen('vrm:model-changed', async () => {
+					// Drop events that arrive while a sync is already running
+					if (isSyncing) return;
 					isSyncing = true;
-					await syncActiveModel();
-					isSyncing = false;
-				});
+					try {
+						await syncActiveModel();
+					} finally {
+						isSyncing = false;
+					}
+				})
+			);
+		}
+
+		if (import.meta.hot) {
+			import.meta.hot.dispose(() => {
+				modelChangedUnlisten?.then((unlisten) => unlisten?.());
+				modelChangedUnlisten = null;
 			});
 		}
 	}
@@ -136,11 +151,16 @@ function createVrmStore() {
 			const savedModels = await vrmStorage?.getItem<VrmModel[]>('model-list');
 			if (savedModels && savedModels.length > 0) {
 				const customModels = savedModels.filter((m) => !m.isDefault);
-				const restored: VrmModel[] = [];
 
-				for (const model of customModels) {
+				// Load all blobs concurrently; users with several custom models were
+				// paying one storage round-trip per model at boot
+				const blobs = await Promise.all(
+					customModels.map((model) => vrmStorage?.getItem<Blob>(`model-blob-${model.id}`))
+				);
+				const restored: VrmModel[] = [];
+				customModels.forEach((model, i) => {
+					const blob = blobs[i];
 					// Regenerate blob URL from stored blob data
-					const blob = await vrmStorage?.getItem<Blob>(`model-blob-${model.id}`);
 					if (blob) {
 						restored.push({
 							...model,
@@ -148,20 +168,18 @@ function createVrmStore() {
 						});
 					}
 					// If blob is missing, skip this model (unrecoverable)
-				}
+				});
 
 				models = [...DEFAULT_MODELS, ...restored];
 			}
 
-			// Restore preview thumbnails for all models
-			for (let i = 0; i < models.length; i++) {
-				const savedPreview = await vrmStorage?.getItem<string>(`${PREVIEW_KEY_PREFIX}${models[i].id}`);
-				if (savedPreview) {
-					models[i] = { ...models[i], previewUrl: savedPreview };
-				}
-			}
-			// Trigger reactivity
-			models = [...models];
+			// Restore preview thumbnails for all models (also concurrent)
+			const previews = await Promise.all(
+				models.map((model) => vrmStorage?.getItem<string>(`${PREVIEW_KEY_PREFIX}${model.id}`))
+			);
+			models = models.map((model, i) =>
+				previews[i] ? { ...model, previewUrl: previews[i] } : model
+			);
 
 			// Load active model ID
 			const savedActiveId = await vrmStorage?.getItem<string>('active-model-id');
