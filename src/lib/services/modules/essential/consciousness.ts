@@ -38,8 +38,7 @@ export const consciousnessModule: ModuleDefinition = {
 				key: 'maxTokens',
 				type: 'number',
 				label: 'Max Tokens',
-				description: 'Maximum tokens in response',
-				defaultValue: 2048
+				description: 'Maximum tokens in response. Leave empty to use the provider default.'
 			},
 			{
 				key: 'nsfwMode',
