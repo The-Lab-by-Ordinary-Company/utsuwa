@@ -112,12 +112,19 @@ The desktop app uses the same codebase as the web version, and your save files a
 
 ## Supported Providers
 
-### LLM Providers (7)
+### LLM Providers (8)
+
+Utsuwa supports popular cloud and local LLMs. For endpoints that speak the OpenAI API (OpenRouter, Together, vLLM, LiteLLM, etc.), use the **OpenAI-Compatible** provider:
+- Set the **Base URL** to the endpoint root (e.g. `https://api.openai.com/v1/`).
+- **API Key** is optional; leave it empty for keyless local servers.
+- Enter a model manually or fetch available models after providing a base URL.
+- **Advanced Parameters** (temperature, top-p, max tokens, presence/frequency penalties) are passed to the endpoint when set.
 
 | Category | Providers |
 |----------|-----------|
 | **Cloud** | OpenAI, Anthropic, Google Gemini, DeepSeek, xAI (Grok) |
 | **Local** | Ollama, LM Studio |
+| **OpenAI-Compatible** | OpenRouter, Together, vLLM, LiteLLM, etc. |
 
 ### TTS Providers (3)
 
