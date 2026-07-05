@@ -68,6 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidated provider default base URLs and the companion-turn pipeline into single shared sources to reduce drift.
 - Refreshed the README and documentation (STT options, provider list, roadmap, and acknowledgments) to match the current app.
 
+> Versions 0.5.x and 0.6.x shipped without changelog entries during a rapid iteration stretch; everything from that window is summarized in the 0.7.0 notes above.
+
 ## [0.4.0] - 2026-06-29
 
 ### Added
