@@ -121,9 +121,13 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	await recordTurn({ role: 'user', content: userMessage });
 	await recordTurn({ role: 'assistant', content: dialogue });
 
-	// Extract and persist facts from the exchange
+	// Extract and persist facts from the exchange. When the model already
+	// produced a memory this turn, cap the heuristic extraction at one so a
+	// single exchange can't fill the facts table with three takes on the same
+	// information.
 	const potentialFacts = extractPotentialFacts(dialogue, userMessage);
-	for (const factContent of potentialFacts.slice(0, 2)) {
+	const maxHeuristicFacts = finalUpdates.newMemory ? 1 : 2;
+	for (const factContent of potentialFacts.slice(0, maxHeuristicFacts)) {
 		try {
 			const userAnalysis = analyzeMessage(userMessage);
 			await memoryApi.createFact({

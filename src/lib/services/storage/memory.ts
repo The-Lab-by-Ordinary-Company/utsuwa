@@ -1,6 +1,7 @@
 import { db, type DBFact, type DBSessionSummary, type DBConversationTurn } from '$lib/db';
 import type { Fact, SessionSummary, ConversationTurn, MemorySearchOptions, NewFact } from '$lib/types/memory';
 import { embedText, isEmbeddingReady } from '$lib/services/embeddings';
+import { findDuplicateFact } from '$lib/engine/fact-dedup';
 
 // Facts
 
@@ -42,22 +43,27 @@ export async function getFacts(options: MemorySearchOptions = {}): Promise<Fact[
 	return filtered.map(deserializeFact);
 }
 
-// Normalize content for duplicate detection: trim, lowercase, collapse whitespace.
-function normalizeContent(content: string): string {
-	return content.trim().toLowerCase().replace(/\s+/g, ' ');
-}
-
 export async function saveFact(fact: NewFact): Promise<number> {
 	const now = new Date();
-	const normalized = normalizeContent(fact.content);
+
+	// Generate the embedding up front (when the model is ready) so it can serve
+	// both duplicate detection and the eventual insert.
+	let embedding: number[] | undefined;
+	if (isEmbeddingReady()) {
+		const result = await embedText(fact.content);
+		if (result) {
+			embedding = result;
+		}
+	}
 
 	// Dedup: the runtime pipeline can persist the same observation every turn
 	// ("I'm tired", "I love you"), which grows the table unbounded and dilutes
-	// retrieval. If an equivalent fact already exists, bump its reference count
-	// and importance instead of adding a near-duplicate row.
-	const existing = (await db.facts.where('category').equals(fact.category).toArray()).find(
-		(f) => normalizeContent(f.content) === normalized
-	);
+	// retrieval. Exact normalized matches are caught always; with embeddings
+	// available, near-paraphrases of the same memory are merged too. On a match,
+	// bump the existing fact's reference count and importance instead of adding
+	// a near-duplicate row.
+	const candidates = await db.facts.where('category').equals(fact.category).toArray();
+	const existing = findDuplicateFact({ content: fact.content, embedding }, candidates);
 	if (existing?.id !== undefined) {
 		await db.facts.update(existing.id, {
 			referenceCount: existing.referenceCount + 1,
@@ -65,15 +71,6 @@ export async function saveFact(fact: NewFact): Promise<number> {
 			lastAccessed: now
 		});
 		return existing.id;
-	}
-
-	// Generate embedding if model is ready
-	let embedding: number[] | undefined;
-	if (isEmbeddingReady()) {
-		const result = await embedText(fact.content);
-		if (result) {
-			embedding = result;
-		}
 	}
 
 	const dbFact: Omit<DBFact, 'id'> = {
