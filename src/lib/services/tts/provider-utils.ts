@@ -1,0 +1,49 @@
+// Pure TTS provider helpers, dependency-free so they run under node --test.
+
+// Voice ids are provider-specific (a Kokoro voice id means nothing to
+// ElevenLabs), so provider switches reset the voice to the new provider's
+// first declared voice. Empty means "let the provider use its own default".
+export function defaultVoiceForProvider(
+	provider?: { voices?: Array<{ id: string }> } | null
+): string {
+	return provider?.voices?.[0]?.id ?? '';
+}
+
+const MAX_DETAIL_LENGTH = 160;
+
+// Builds a human-readable error out of a TTS API failure, keeping the API's
+// own explanation (e.g. ElevenLabs' "voice_not_found") instead of just the
+// status code, so the failure is self-diagnosing in the UI and the console.
+export function providerErrorMessage(provider: string, status: number, body?: unknown): string {
+	const detail = extractDetail(body);
+	return detail ? `${provider} error ${status}: ${detail}` : `${provider} error ${status}`;
+}
+
+function extractDetail(body: unknown): string {
+	if (!body) return '';
+	if (typeof body === 'string') return body.slice(0, MAX_DETAIL_LENGTH);
+	if (typeof body !== 'object') return '';
+
+	const record = body as Record<string, unknown>;
+
+	// ElevenLabs: { detail: { message, status, ... } }
+	const detail = record.detail;
+	if (detail && typeof detail === 'object') {
+		const message = (detail as Record<string, unknown>).message;
+		if (typeof message === 'string') return message.slice(0, MAX_DETAIL_LENGTH);
+		const statusText = (detail as Record<string, unknown>).status;
+		if (typeof statusText === 'string') return statusText.slice(0, MAX_DETAIL_LENGTH);
+	}
+
+	// OpenAI-style: { error: { message } }
+	const error = record.error;
+	if (error && typeof error === 'object') {
+		const message = (error as Record<string, unknown>).message;
+		if (typeof message === 'string') return message.slice(0, MAX_DETAIL_LENGTH);
+	}
+
+	// Generic: { message }
+	if (typeof record.message === 'string') return record.message.slice(0, MAX_DETAIL_LENGTH);
+
+	return '';
+}

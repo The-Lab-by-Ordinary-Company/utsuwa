@@ -5,6 +5,7 @@
 	import { browser } from '$app/environment';
 	import { isTauri } from '$lib/services/platform/platform';
 	import { sttStore } from '$lib/stores/stt.svelte';
+	import { ttsStore } from '$lib/stores/tts.svelte';
 	import { prepareImage, UnsupportedImageError, type PreparedImage } from '$lib/services/storage/keepsakes';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 	import { pop, fadeFast } from '$lib/utils/motion';
@@ -63,6 +64,13 @@
 		return () => {
 			if (hintTimer) clearTimeout(hintTimer);
 		};
+	});
+
+	// Surface voice playback failures; without this a TTS misconfiguration
+	// (like a stale voice id after switching providers) looks like she simply
+	// chose not to speak.
+	$effect(() => {
+		if (ttsStore.lastError) showHint(ttsStore.lastError);
 	});
 
 	function promptVision() {

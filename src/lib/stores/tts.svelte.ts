@@ -6,6 +6,17 @@ function createTTSStore() {
 	let currentAnalyser = $state<AnalyserNode | null>(null);
 	let currentSource = $state<AudioBufferSourceNode | null>(null);
 	let queue = $state<string[]>([]);
+	// Last playback failure, surfaced by the UI as a toast. Silent failures made
+	// misconfigurations (like a stale voice id from another provider) look like
+	// the companion just chose not to speak.
+	let lastError = $state<string | null>(null);
+	let errorTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function reportError(error: unknown) {
+		lastError = error instanceof Error ? error.message : 'Voice playback failed';
+		if (errorTimer) clearTimeout(errorTimer);
+		errorTimer = setTimeout(() => (lastError = null), 8000);
+	}
 
 	async function speak(text: string, options: TTSOptions) {
 		// Cloud providers need a key; local servers (e.g. Kokoro) don't.
@@ -47,6 +58,7 @@ function createTTSStore() {
 			});
 		} catch (error) {
 			console.error('TTS error:', error);
+			reportError(error);
 		}
 
 		// Process next in queue
@@ -73,6 +85,9 @@ function createTTSStore() {
 		},
 		get currentAnalyser() {
 			return currentAnalyser;
+		},
+		get lastError() {
+			return lastError;
 		},
 		speak,
 		stop

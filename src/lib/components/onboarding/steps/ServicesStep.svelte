@@ -3,6 +3,7 @@
 	import { modulesStore } from '$lib/stores/modules.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+	import { defaultVoiceForProvider } from '$lib/services/tts/provider-utils';
 	import {
 		fetchModels,
 		getCachedModelsForProvider,
@@ -263,10 +264,11 @@
 		if (provider?.models?.length) {
 			modulesStore.setModuleSetting('speech', 'activeModel', provider.models[0].id);
 		}
-		// Local providers ship a default voice so requests work before the user picks one
-		if (provider?.isLocal && provider.voices?.length) {
-			modulesStore.setModuleSetting('speech', 'activeVoiceId', provider.voices[0].id);
-		}
+		// Voice ids are provider-specific (a Kokoro voice id means nothing to
+		// ElevenLabs), so switching providers always resets the voice: the new
+		// provider's first declared voice, or empty so its own default applies.
+		// Carrying the old value over made the next provider 404 silently.
+		modulesStore.setModuleSetting('speech', 'activeVoiceId', defaultVoiceForProvider(provider));
 		// Mark local providers as added immediately (they don't need API keys)
 		if (provider?.isLocal || !provider?.requiresApiKey) {
 			settingsStore.markProviderAdded(providerId);

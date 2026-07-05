@@ -4,6 +4,7 @@ import {
 	getLocalTTSConnectionHint,
 	isLocalTTSProvider
 } from '$lib/services/providers/local-endpoints';
+import { providerErrorMessage } from './provider-utils';
 
 function ensureTrailingSlash(url: string): string {
 	return url.endsWith('/') ? url : url + '/';
@@ -74,7 +75,13 @@ export class OpenAITTS implements ITTSProvider {
 					`Local TTS server returned ${response.status} at ${this.baseUrl}. Check the model and voice are valid for this server.`
 				);
 			}
-			throw new Error(`OpenAI TTS API error: ${response.status}`);
+			let body: unknown;
+			try {
+				body = await response.json();
+			} catch {
+				// non-JSON error body
+			}
+			throw new Error(providerErrorMessage('OpenAI TTS', response.status, body));
 		}
 
 		const arrayBuffer = await response.arrayBuffer();

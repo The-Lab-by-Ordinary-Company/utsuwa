@@ -1,4 +1,5 @@
 import { getSharedAudioContext, type ITTSProvider, type TTSOptions, type TTSSpeakResult } from './index';
+import { providerErrorMessage } from './provider-utils';
 
 function ensureTrailingSlash(url: string): string {
 	return url.endsWith('/') ? url : url + '/';
@@ -44,7 +45,15 @@ export class ElevenLabsTTS implements ITTSProvider {
 		);
 
 		if (!response.ok) {
-			throw new Error(`ElevenLabs API error: ${response.status}`);
+			// Keep the API's own explanation (voice_not_found, quota_exceeded, ...)
+			// so the failure is self-diagnosing instead of a bare status code.
+			let body: unknown;
+			try {
+				body = await response.json();
+			} catch {
+				// non-JSON error body
+			}
+			throw new Error(providerErrorMessage('ElevenLabs', response.status, body));
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
