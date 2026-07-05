@@ -141,8 +141,13 @@ Selecting **OpenAI-Compatible** under AI Services unlocks additional controls th
 
 - **Model search / refresh**: discover models from the endpoint and filter the list with the search field
 - **Context Window**: limits how much conversation history and memory is injected into the prompt
-- **Advanced Parameters**: Temperature, Top P, Max Tokens, Presence Penalty, and Frequency Penalty
-- **Unfiltered Mode (NSFW)**: injects an uncensored-fiction preamble into the system prompt; use only with local or uncensored models
+- **Advanced Parameters**:
+  - **Temperature** — controls randomness: `0` is focused and repetitive, `2` is highly creative/unpredictable. Default `0.7`.
+  - **Top P** — nucleus sampling: only consider tokens whose cumulative probability reaches this value. `1` disables it. Default `1.0`.
+  - **Max Tokens** — hard limit for the number of tokens in the response. Leave empty to use the provider default.
+  - **Presence Penalty** — penalizes tokens that have already appeared in the text, reducing repetition. Default `0`.
+  - **Frequency Penalty** — stronger penalty for frequently repeated tokens. Default `0`.
+- **Unfiltered Mode (NSFW)** — injects an uncensored-fiction preamble into the system prompt. Use only with local or uncensored models.
 
 Voice input is accessed via the microphone button in the chat bar. Selection is automatic by priority: a configured local Whisper server wins, then Groq, then OpenAI, then the browser's Web Speech API. A local server or a cloud key works on any platform including desktop; Web Speech API works without an API key in Chrome, Edge, and Safari. See [Local STT Setup](https://docs.utsuwa.ai/docs/guides/local-stt-setup) to run a local Whisper server.
 
