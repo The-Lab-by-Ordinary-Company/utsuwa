@@ -30,7 +30,7 @@ const STAGE_REQUIREMENTS: Record<RelationshipStage, {
 	close_friend: { minAffection: 300, minTrust: 70, minComfort: 50, minDaysKnown: 7, minInteractions: 25 },
 	romantic_interest: { minAffection: 450, minTrust: 75, minIntimacy: 30, minDaysKnown: 10, requiredEvents: ['first_deep_conversation', 'shared_vulnerability'] },
 	dating: { minAffection: 600, minTrust: 85, minIntimacy: 50, minDaysKnown: 14, requiredEvents: ['confession_accepted'] },
-	committed: { minAffection: 800, minTrust: 95, minIntimacy: 75, minComfort: 80, minDaysKnown: 30, requiredEvents: ['commitment_discussion'] },
+	committed: { minAffection: 800, minTrust: 95, minIntimacy: 75, minComfort: 80, minDaysKnown: 30, requiredEvents: ['commitment_accepted'] },
 	soulmate: { minAffection: 950, minTrust: 100, minIntimacy: 90, minComfort: 95, minRespect: 90, minDaysKnown: 60, requiredEvents: ['deep_bond_moment'] }
 };
 

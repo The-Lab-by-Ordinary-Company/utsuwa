@@ -82,17 +82,28 @@ test('each later stage unlocks with its required event', () => {
 	const base = ['first_deep_conversation', 'shared_vulnerability'];
 	assert.equal(calculateStage(makeState(MAXED), [...base, 'confession_accepted']), 'dating');
 	assert.equal(
-		calculateStage(makeState(MAXED), [...base, 'confession_accepted', 'commitment_discussion']),
+		calculateStage(makeState(MAXED), [...base, 'confession_accepted', 'commitment_accepted']),
 		'committed'
 	);
 	assert.equal(
 		calculateStage(makeState(MAXED), [
 			...base,
 			'confession_accepted',
-			'commitment_discussion',
+			'commitment_accepted',
 			'deep_bond_moment'
 		]),
 		'soulmate'
+	);
+});
+
+test('committed gates on the commitment outcome, not the commitment_discussion event id', () => {
+	// Both choices of the talk grant the event id; only accepting grants the
+	// outcome marker. The bare id must no longer be enough.
+	const base = ['first_deep_conversation', 'shared_vulnerability', 'confession_accepted'];
+	assert.equal(calculateStage(makeState(MAXED), [...base, 'commitment_discussion']), 'dating');
+	assert.equal(
+		calculateStage(makeState(MAXED), [...base, 'commitment_discussion', 'commitment_accepted']),
+		'committed'
 	);
 });
 

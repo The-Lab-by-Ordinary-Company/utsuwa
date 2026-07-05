@@ -121,8 +121,10 @@ type RelationshipStage =
 | Close Friend | 300 | 70 | - | 50 | - | 7 | 25 | - |
 | Romantic Interest | 450 | 75 | 30 | - | - | 10 | - | first_deep_conversation, shared_vulnerability |
 | Dating | 600 | 85 | 50 | - | - | 14 | - | confession_accepted |
-| Committed | 800 | 95 | 75 | 80 | - | 30 | - | commitment_discussion |
+| Committed | 800 | 95 | 75 | 80 | - | 30 | - | commitment_accepted |
 | Soulmate | 950 | 100 | 90 | 95 | 90 | 60 | - | deep_bond_moment |
+
+`confession_accepted` and `commitment_accepted` are choice outcome markers, not event ids: only the accept choice of the confession or commitment talk grants them. Deferring either talk leaves the stage locked, and a repeatable follow-up event (`confession_revisit` / `commitment_revisit`) resurfaces the question later so the door stays open.
 
 ## Memory System
 

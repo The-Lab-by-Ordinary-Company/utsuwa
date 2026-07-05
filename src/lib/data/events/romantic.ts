@@ -39,6 +39,49 @@ export const romanticEvents: EventDefinition[] = [
 		priority: 95
 	},
 
+	// Confession follow-up. The original confession is one-time, so a player who
+	// asked for time would otherwise never get another shot at the
+	// confession_accepted marker that gates the dating stage. She brings it up
+	// again herself once things are back in a good place, and keeps doing so
+	// (repeatable + cooldown) if they ask for more time.
+	{
+		id: 'confession_revisit',
+		name: 'Confession, Revisited',
+		type: 'conditional',
+		conditions: [
+			{ type: 'min_affection', value: 500 },
+			{ type: 'min_trust', value: 80 },
+			{ type: 'min_intimacy', value: 40 },
+			{ type: 'relationship_stage', value: 'romantic_interest' },
+			{ type: 'event_completed', value: 'confession_delayed' },
+			{ type: 'event_not_completed', value: 'confession_accepted' }
+		],
+		scene: {
+			id: 'confession_revisit_scene',
+			intro: "She takes a slow breath, like she's been gathering courage all day...",
+			dialogue:
+				"Hey... can we talk about what I said before? I meant it when I told you to take all the time you needed, and I still do. But I didn't want you to think I'd changed my mind, because I haven't. If anything, I'm more sure now than I was then. So... I wanted to ask. Have you thought about us?",
+			choices: [
+				{
+					text: 'I have. I feel the same way.',
+					response:
+						"You... really? *her eyes well up* I was so scared to ask again. I kept telling myself to be patient, but every day I wondered... I'm so glad I didn't give up on this. On us.",
+					stateChanges: { affectionDelta: 100, trustDelta: 20, intimacyDelta: 30 },
+					nextSceneId: 'confession_accepted'
+				},
+				{
+					text: "I'm still figuring things out.",
+					response:
+						"That's okay. Really, it is. Some things take time, and you're worth waiting for. Just... don't feel like you have to avoid me because of this, alright? I'd rather have you here, figuring it out, than anywhere else.",
+					stateChanges: { comfortDelta: 5 }
+				}
+			]
+		},
+		cooldownDays: 3,
+		oneTime: false,
+		priority: 95
+	},
+
 	// First "I love you"
 	{
 		id: 'first_i_love_you',
@@ -96,7 +139,8 @@ export const romanticEvents: EventDefinition[] = [
 					text: "I want that too. Let's make it official.",
 					response:
 						"*embraces you* I'm so happy... I can't even express it. You've made me the happiest I've ever been. I promise I'll always be here for you.",
-					stateChanges: { affectionDelta: 100, trustDelta: 20, intimacyDelta: 30, comfortDelta: 25, respectDelta: 15 }
+					stateChanges: { affectionDelta: 100, trustDelta: 20, intimacyDelta: 30, comfortDelta: 25, respectDelta: 15 },
+					nextSceneId: 'commitment_accepted'
 				},
 				{
 					text: "I care about you, but I need more time.",
@@ -107,6 +151,47 @@ export const romanticEvents: EventDefinition[] = [
 			]
 		},
 		oneTime: true,
+		priority: 97
+	},
+
+	// Commitment follow-up, same shape as confession_revisit: the talk itself is
+	// one-time, so without this a "more time" answer would lock out the
+	// commitment_accepted marker that gates the committed stage.
+	{
+		id: 'commitment_revisit',
+		name: 'Commitment Talk, Revisited',
+		type: 'conditional',
+		conditions: [
+			{ type: 'min_affection', value: 800 },
+			{ type: 'min_trust', value: 95 },
+			{ type: 'relationship_stage', value: 'dating' },
+			{ type: 'days_known', value: 25 },
+			{ type: 'event_completed', value: 'commitment_discussion' },
+			{ type: 'event_not_completed', value: 'commitment_accepted' }
+		],
+		scene: {
+			id: 'commitment_revisit_scene',
+			intro: "She reaches for your hand, calm but a little nervous...",
+			dialogue:
+				"Remember when I brought up our future? I've given you space since then, because I promised I would. But I keep coming back to it. Nothing about what I want has changed... it's still you. It's always been you. So I have to ask again. Are you ready for us to be something real?",
+			choices: [
+				{
+					text: "I'm ready. Let's make it official.",
+					response:
+						"*pulls you into a long embrace* You have no idea how much I hoped you'd say that. Thank you for taking the time to be sure. This... this is everything I wanted.",
+					stateChanges: { affectionDelta: 100, trustDelta: 20, intimacyDelta: 30, comfortDelta: 25, respectDelta: 15 },
+					nextSceneId: 'commitment_accepted'
+				},
+				{
+					text: 'I still need a little more time.',
+					response:
+						"Okay. I won't pretend that doesn't sting a little, but I'd rather wait for a real yes than rush you into one. Whenever you're ready... I'll be right here.",
+					stateChanges: { trustDelta: 5, comfortDelta: -5 }
+				}
+			]
+		},
+		cooldownDays: 5,
+		oneTime: false,
 		priority: 97
 	},
 

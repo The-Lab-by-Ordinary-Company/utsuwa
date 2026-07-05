@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { checkAllEvents, checkEvent } from './event-matching.ts';
+import { romanticEvents } from '../data/events/romantic.ts';
 import type { EventDefinition, CompletedEventRecord } from '$lib/types/events';
 import type { CharacterState } from '$lib/types/character';
 
@@ -61,6 +62,93 @@ test('event_not_completed passes when the outcome marker is absent', () => {
 	const state = makeState({ completedEvents: [] });
 	const result = checkEvent(blockedEvent, state, []);
 	assert.equal(result.triggered, true);
+});
+
+// --- Confession revisit: the deadlock fix, exercised with the real event data ---
+
+const confession = romanticEvents.find((e) => e.id === 'confession_event') as EventDefinition;
+const revisit = romanticEvents.find((e) => e.id === 'confession_revisit') as EventDefinition;
+
+function daysAgo(days: number): Date {
+	return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
+// A player who deferred the confession: markers from the decline choice,
+// stats recovered back above the confession floor.
+function declinedState(overrides: Partial<CharacterState> = {}): CharacterState {
+	return makeState({
+		affection: 520,
+		trust: 82,
+		intimacy: 45,
+		relationshipStage: 'romantic_interest',
+		completedEvents: ['first_deep_conversation', 'confession_event', 'confession_delayed'],
+		...overrides
+	});
+}
+
+test('after declining, the one-time confession stays blocked but the revisit is eligible', () => {
+	const dbRecords = [
+		{ eventId: 'confession_event', completedAt: daysAgo(5) } as unknown as CompletedEventRecord
+	];
+	const state = declinedState();
+
+	// The original is oneTime and already recorded — permanently on cooldown.
+	assert.equal(checkEvent(confession, state, dbRecords).triggered, false);
+
+	// The revisit picks it up: this is what un-deadlocks the dating stage.
+	assert.equal(checkEvent(revisit, state, dbRecords).triggered, true);
+	const triggered = checkAllEvents(romanticEvents, state, dbRecords);
+	assert.deepEqual(
+		triggered.map((e) => e.id),
+		['confession_revisit']
+	);
+});
+
+test('the revisit does not fire before the player has ever deferred', () => {
+	const state = declinedState({
+		completedEvents: ['first_deep_conversation']
+	});
+	assert.equal(checkEvent(revisit, state, []).triggered, false);
+});
+
+test('the revisit retires once the confession is accepted', () => {
+	const state = declinedState({
+		completedEvents: [
+			'first_deep_conversation',
+			'confession_event',
+			'confession_delayed',
+			'confession_revisit',
+			'confession_accepted'
+		]
+	});
+	const dbRecords = [
+		{ eventId: 'confession_event', completedAt: daysAgo(9) } as unknown as CompletedEventRecord,
+		{ eventId: 'confession_revisit', completedAt: daysAgo(5) } as unknown as CompletedEventRecord
+	];
+	assert.equal(checkEvent(revisit, state, dbRecords).triggered, false);
+});
+
+test('deferring the revisit only puts it on cooldown, never locks it out', () => {
+	const state = declinedState({
+		completedEvents: [
+			'first_deep_conversation',
+			'confession_event',
+			'confession_delayed',
+			'confession_revisit'
+		]
+	});
+
+	// Deferred the revisit yesterday: within cooldownDays, so not yet
+	const recent = [
+		{ eventId: 'confession_revisit', completedAt: daysAgo(1) } as unknown as CompletedEventRecord
+	];
+	assert.equal(checkEvent(revisit, state, recent).triggered, false);
+
+	// Once the cooldown lapses she brings it up again
+	const lapsed = [
+		{ eventId: 'confession_revisit', completedAt: daysAgo(4) } as unknown as CompletedEventRecord
+	];
+	assert.equal(checkEvent(revisit, state, lapsed).triggered, true);
 });
 
 test('checkAllEvents unions state markers with DB record ids', () => {

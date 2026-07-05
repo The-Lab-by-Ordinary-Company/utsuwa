@@ -16,6 +16,7 @@ import {
 } from '$lib/services/storage/character';
 import { statChangesStore } from './statChanges.svelte';
 import { resolveTimeDecayOnLoad } from '$lib/engine/state-updates';
+import { reconcileLegacyMarkers } from '$lib/engine/event-completion';
 import { calculateStage, STAGE_ORDER } from '$lib/engine/stages';
 
 // Single character state
@@ -61,13 +62,27 @@ function createCharacterStore() {
 			const loaded = await getCharacterState();
 			state = loaded;
 
+			let needsSave = false;
+
+			// Older saves reached committed before it gated on the commitment-talk
+			// outcome marker; patch them so the stricter gate can't demote them.
+			const reconciled = reconcileLegacyMarkers(state);
+			if (reconciled) {
+				state = { ...state, completedEvents: reconciled };
+				needsSave = true;
+			}
+
 			// Apply time-based recovery/decay based on time since last interaction.
 			// Energy recovers every load; affection/trust/mood decay applies once per
 			// absence so a refresh or second window can't re-deduct it (see helper).
 			const decay = resolveTimeDecayOnLoad(state, Date.now());
 			if (decay.changed) {
 				state = { ...state, ...decay.next };
-				// Save the recovered state (use $state.snapshot to strip Proxy)
+				needsSave = true;
+			}
+
+			if (needsSave) {
+				// Save the patched state (use $state.snapshot to strip Proxy)
 				const plainState = $state.snapshot(state);
 				await saveCharacterState({ ...plainState, updatedAt: new Date() });
 			}
