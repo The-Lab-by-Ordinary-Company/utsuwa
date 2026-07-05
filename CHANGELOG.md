@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-07-05
+
+### Added
+- **She notices the distance now**: if the relationship weakens after a long absence, the stage no longer silently drops. Small dips hold steady, and a real drift is acknowledged in a new "Growing Apart" conversation where she tells you how it feels and you choose how to respond.
+- **Memory that speaks your language**: the on-device memory model is now multilingual, so companions remember and recall properly in Japanese, Korean, Russian, and more, not just English. Existing memories re-index themselves automatically (see note below).
+- **Chatting in other languages now counts**: messages written in non-Latin scripts previously barely moved the relationship because the mechanics only understood English. The model's own read of the conversation now carries full weight for those messages.
+
+### Fixed
+- Declining the confession no longer permanently blocks relationship progression, and the main and overlay windows no longer overwrite each other's progress.
+- Opening the app during the second day of an absence no longer swallows the reunion: time-away effects now apply when you actually return, not to a moment that didn't count.
+- Streaks survive daylight-saving transitions and device clock changes, and apologizing to your companion no longer reads as negativity.
+- Repeated observations merge into one memory instead of filling the memory book with near-duplicates, so recall stays sharp over long relationships.
+- Event popups fixed: no more dead click zone on dialogue and no crash when closing at the wrong moment.
+
+### Changed
+- Smoother streaming replies and faster startup for collections with several custom avatars.
+- The character settings page was rebuilt from one 2,300-line file into focused sections, with identical behavior.
+- Every change now runs the full test suite (197 tests) and type checks in CI before it can merge.
+
+### Note for existing users
+On your first launch after this update, Utsuwa downloads the new multilingual memory model (about 100 MB, one time, cached after that) and re-indexes your saved memories in the background. Everything keeps working during the re-index; memory recall briefly leans on keyword matching until it finishes.
+
 ## [0.8.0] - 2026-07-04
 
 ### Added
