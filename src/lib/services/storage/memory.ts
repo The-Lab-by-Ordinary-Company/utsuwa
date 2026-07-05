@@ -2,6 +2,7 @@ import { db, type DBFact, type DBSessionSummary, type DBConversationTurn } from 
 import type { Fact, SessionSummary, ConversationTurn, MemorySearchOptions, NewFact } from '$lib/types/memory';
 import { embedText, isEmbeddingReady } from '$lib/services/embeddings';
 import { findDuplicateFact } from '$lib/engine/fact-dedup';
+import { EMBEDDING_MODEL_ID, hasCurrentEmbedding, needsReembedding } from '$lib/engine/embedding-version';
 
 // Facts
 
@@ -61,8 +62,12 @@ export async function saveFact(fact: NewFact): Promise<number> {
 	// retrieval. Exact normalized matches are caught always; with embeddings
 	// available, near-paraphrases of the same memory are merged too. On a match,
 	// bump the existing fact's reference count and importance instead of adding
-	// a near-duplicate row.
-	const candidates = await db.facts.where('category').equals(fact.category).toArray();
+	// a near-duplicate row. Stale-model embeddings are hidden from the semantic
+	// comparison (different space, meaningless cosine); those facts can still
+	// match by content.
+	const candidates = (await db.facts.where('category').equals(fact.category).toArray()).map(
+		(f) => (hasCurrentEmbedding(f) ? f : { ...f, embedding: undefined })
+	);
 	const existing = findDuplicateFact({ content: fact.content, embedding }, candidates);
 	if (existing?.id !== undefined) {
 		await db.facts.update(existing.id, {
@@ -81,7 +86,8 @@ export async function saveFact(fact: NewFact): Promise<number> {
 		source: fact.source,
 		referenceCount: 0,
 		createdAt: now,
-		embedding
+		embedding,
+		embeddingModel: embedding ? EMBEDDING_MODEL_ID : undefined
 	};
 
 	const id = await db.facts.add(dbFact);
@@ -107,14 +113,14 @@ export async function deleteAllFacts(): Promise<void> {
 }
 
 export async function updateFactEmbedding(factId: number, embedding: number[]): Promise<void> {
-	await db.facts.update(factId, { embedding });
+	await db.facts.update(factId, { embedding, embeddingModel: EMBEDDING_MODEL_ID });
 }
 
+// Facts the backfill should (re-)embed: no vector at all, or a vector from an
+// older embedding model that can't be compared against current ones.
 export async function getFactsWithoutEmbeddings(): Promise<Fact[]> {
 	const facts = await db.facts.toArray();
-	return facts
-		.filter((f) => !f.embedding || f.embedding.length === 0)
-		.map(deserializeFact);
+	return facts.filter((f) => needsReembedding(f)).map(deserializeFact);
 }
 
 export async function getAllFactsWithEmbeddings(): Promise<Fact[]> {
@@ -132,7 +138,9 @@ export async function getFactsForSemanticSearch(
 	limit: number = MAX_SEMANTIC_CANDIDATES
 ): Promise<Fact[]> {
 	const facts = await db.facts.orderBy('importance').reverse().limit(limit).toArray();
-	return facts.filter((f) => f.embedding && f.embedding.length > 0).map(deserializeFact);
+	// Only current-model embeddings: stale vectors live in a different space
+	// and would score garbage similarities until the backfill re-embeds them.
+	return facts.filter((f) => hasCurrentEmbedding(f)).map(deserializeFact);
 }
 
 // Sessions

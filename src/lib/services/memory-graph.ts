@@ -1,5 +1,6 @@
 import { db } from '$lib/db';
 import { cosineSimilarity } from '$lib/services/embeddings';
+import { hasCurrentEmbedding } from '$lib/engine/embedding-version';
 import type { Fact, FactCategory } from '$lib/types/memory';
 
 export interface GraphNode {
@@ -30,10 +31,11 @@ export interface GraphFilters {
 	minSimilarity: number;
 }
 
-// Get all facts with embeddings from the database
+// Get all facts with current-model embeddings from the database. Stale-model
+// vectors are excluded: their similarities against current vectors are noise.
 export async function getFactsWithEmbeddings(): Promise<Fact[]> {
 	const allFacts = await db.facts.toArray();
-	return allFacts.filter((fact) => fact.embedding && fact.embedding.length > 0) as Fact[];
+	return allFacts.filter((fact) => hasCurrentEmbedding(fact)) as Fact[];
 }
 
 // Build graph data from facts

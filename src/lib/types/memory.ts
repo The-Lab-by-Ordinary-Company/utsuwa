@@ -13,6 +13,7 @@ export interface Fact {
 	createdAt: Date;
 	lastAccessed?: Date;
 	embedding?: number[]; // 384-dim vector for semantic search
+	embeddingModel?: string; // which model produced the vector; absent = legacy, needs re-embed
 }
 
 // Topic depth for conversation analysis

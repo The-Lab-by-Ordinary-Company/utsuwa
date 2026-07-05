@@ -1,8 +1,9 @@
 import { browser } from '$app/environment';
 import type { Fact } from '$lib/types/memory';
+import { EMBEDDING_MODEL_ID } from '$lib/engine/embedding-version';
 
-// Model config
-const MODEL_NAME = 'Xenova/all-MiniLM-L6-v2';
+// Model config (single source of truth in engine/embedding-version.ts)
+const MODEL_NAME = EMBEDDING_MODEL_ID;
 
 // State
 let pipeline: unknown = null;

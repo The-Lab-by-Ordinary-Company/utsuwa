@@ -10,6 +10,7 @@ import type {
 import { MAX_WORKING_MEMORY_TURNS, MAX_RELEVANT_FACTS, MAX_RECENT_SESSIONS, DEFAULT_FACT_IMPORTANCE, DEFAULT_FACT_CONFIDENCE } from '$lib/types/memory';
 import * as memoryStorage from '$lib/services/storage/memory';
 import { embedText, findSimilarFacts, isEmbeddingReady } from '$lib/services/embeddings';
+import { hasCurrentEmbedding } from './embedding-version';
 import { summarizeTurns } from './session-summary';
 
 // Working memory store (single instance for the session)
@@ -381,14 +382,16 @@ export async function backfillEmbeddings(
 	return { success, failed };
 }
 
-// Check if there are facts without embeddings
+// Check if there are facts without a current-model embedding. Facts embedded
+// by an older model count as "without": the boot-time backfill re-embeds them
+// so retrieval isn't comparing vectors across embedding spaces.
 export async function getEmbeddingBackfillStatus(): Promise<{
 	total: number;
 	withEmbeddings: number;
 	withoutEmbeddings: number;
 }> {
 	const allFacts = await memoryStorage.getAllFactsWithEmbeddings();
-	const withEmbeddings = allFacts.filter((f) => f.embedding && f.embedding.length > 0).length;
+	const withEmbeddings = allFacts.filter((f) => hasCurrentEmbedding(f)).length;
 	return {
 		total: allFacts.length,
 		withEmbeddings,
