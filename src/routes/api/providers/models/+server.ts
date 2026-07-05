@@ -1,7 +1,11 @@
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
-import { getModelsBaseUrl } from '$lib/services/providers/local-endpoints';
+import {
+	ensureOpenAIPath,
+	getModelsBaseUrl,
+	isLocalLLMProvider
+} from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
 import { DEFAULT_MODELS_BASE_URLS } from '$lib/services/providers/provider-defaults';
 
@@ -28,7 +32,7 @@ const MODEL_FILTERS: Record<string, RegExp> = {
 
 function filterModels(providerId: string, models: ModelInfo[]): ModelInfo[] {
 	const filter = MODEL_FILTERS[providerId];
-	if (!filter) return models; // No filter = keep all (Ollama, LM Studio)
+	if (!filter) return models; // No filter = keep all (Ollama, LM Studio, openai-compatible)
 	return models.filter((m) => filter.test(m.id));
 }
 
@@ -58,13 +62,25 @@ function normalizeModelName(id: string, providerId: string): string {
 	return name;
 }
 
-async function fetchOpenAIModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
-	const response = await fetch(`${baseUrl}/models`, {
-		headers: { Authorization: `Bearer ${apiKey}` }
-	});
+function looksLikeOllama(baseUrl: string): boolean {
+	try {
+		const url = new URL(baseUrl);
+		return (
+			(url.hostname === 'localhost' || url.hostname === '127.0.0.1') &&
+			url.port === '11434'
+		);
+	} catch {
+		return false;
+	}
+}
+
+async function fetchOpenAIModels(apiKey: string | undefined, baseUrl: string): Promise<ModelInfo[]> {
+	const headers: Record<string, string> = {};
+	if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+	const response = await fetch(`${baseUrl}/models`, { headers });
 	if (!response.ok) throw new Error(`Failed to fetch models: ${response.statusText}`);
 	const data = await response.json();
-	return data.data.map((m: { id: string }) => ({
+	return (data.data || []).map((m: { id: string }) => ({
 		id: m.id,
 		name: normalizeModelName(m.id, 'openai')
 	}));
@@ -212,6 +228,16 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!apiKey) throw new Error('API key required for OpenAI');
 				models = await fetchOpenAIModels(apiKey, cleanBaseUrl);
 				break;
+			case 'openai-compatible': {
+				// OpenAI-compatible endpoints may or may not require an API key.
+				if (looksLikeOllama(cleanBaseUrl)) {
+					models = await fetchOllamaModels(cleanBaseUrl);
+				} else {
+					const normalizedUrl = ensureOpenAIPath(cleanBaseUrl);
+					models = await fetchOpenAIModels(apiKey, normalizedUrl);
+				}
+				break;
+			}
 			case 'anthropic':
 				if (!apiKey) throw new Error('API key required for Anthropic');
 				models = await fetchAnthropicModels(apiKey, cleanBaseUrl);

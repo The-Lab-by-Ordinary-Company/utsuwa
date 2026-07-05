@@ -1,5 +1,6 @@
 import type { LLMProvider } from '$lib/types';
 import {
+	ensureOpenAIPath,
 	getLocalProviderConnectionHint,
 	getModelsBaseUrl,
 	isLocalLLMProvider
@@ -41,6 +42,18 @@ function normalizeModelName(id: string, providerId: string): string {
 	return name;
 }
 
+function looksLikeOllama(baseUrl: string): boolean {
+	try {
+		const url = new URL(baseUrl);
+		return (
+			(url.hostname === 'localhost' || url.hostname === '127.0.0.1') &&
+			url.port === '11434'
+		);
+	} catch {
+		return false;
+	}
+}
+
 /**
  * Fetch models directly from provider APIs.
  * Used in Tauri builds where SvelteKit server routes aren't available.
@@ -72,6 +85,34 @@ export async function fetchModelsDirect(
 					id: m.id,
 					name: normalizeModelName(m.id, providerId)
 				}));
+				break;
+			}
+			case 'openai-compatible': {
+				// OpenAI-compatible endpoints (OpenRouter, Together, vLLM, ...) may or
+				// may not require an API key. Keep all returned models as-is.
+				const headers: Record<string, string> = {};
+				if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+				// Ollama exposes an OpenAI-compatible chat endpoint but its model list
+				// lives at /api/tags rather than /v1/models.
+				if (looksLikeOllama(cleanBaseUrl)) {
+					const res = await fetch(`${cleanBaseUrl}/api/tags`, { headers });
+					if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+					const data = await res.json();
+					models = (data.models || []).map((m: { name: string }) => ({
+						id: m.name,
+						name: m.name
+					}));
+				} else {
+					const normalizedUrl = ensureOpenAIPath(cleanBaseUrl);
+					const res = await fetch(`${normalizedUrl}/models`, { headers });
+					if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+					const data = await res.json();
+					models = (data.data || []).map((m: { id: string }) => ({
+						id: m.id,
+						name: m.id
+					}));
+				}
 				break;
 			}
 			case 'anthropic': {

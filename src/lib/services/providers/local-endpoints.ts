@@ -15,7 +15,7 @@ function stripOpenAIPath(url: string): string {
 	return trimTrailingSlashes(url).replace(/\/v1$/, '');
 }
 
-function ensureOpenAIPath(url: string): string {
+export function ensureOpenAIPath(url: string): string {
 	const cleanUrl = trimTrailingSlashes(url);
 	return cleanUrl.endsWith('/v1') ? cleanUrl : `${cleanUrl}/v1`;
 }
