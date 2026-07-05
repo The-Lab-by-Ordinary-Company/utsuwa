@@ -33,3 +33,21 @@ vite.config.ts.timestamp-*
 .refs
 # Temporary marketing-capture harness (do NOT commit)
 src/routes/(shots)/
+
+# Local/private files
+Readme_dz.md
+AGENTS.md
+.agents/
+.aider.*
+.aider*/
+*.wav
+
+# Docker directory (local configs and examples; re-enable selectively later)
+/docker
+
+# Static assets that are user-specific or may have copyright issues
+static/animations/*
+!static/animations/VRMA_0*.vrma
+!static/animations/idle*.vrma
+!static/animations/talking.vrma
+static/models/custom-*
