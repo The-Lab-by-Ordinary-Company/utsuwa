@@ -24,6 +24,11 @@ interface ChatOptions {
 	apiKey?: string;
 	baseURL?: string;
 	systemPrompt: string;
+	temperature?: number;
+	maxTokens?: number;
+	topP?: number;
+	presencePenalty?: number;
+	frequencyPenalty?: number;
 }
 
 function getCurrentSiteOrigin(): string | undefined {
@@ -93,7 +98,12 @@ export async function streamChatDirect(
 						role: m.role,
 						content: toOpenAIContent(m.content)
 					})),
-					stream: true
+					stream: true,
+					...(options.temperature !== undefined && { temperature: options.temperature }),
+					...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
+					...(options.topP !== undefined && { top_p: options.topP }),
+					...(options.presencePenalty !== undefined && { presence_penalty: options.presencePenalty }),
+					...(options.frequencyPenalty !== undefined && { frequency_penalty: options.frequencyPenalty })
 				});
 
 	const url = provider === 'anthropic'

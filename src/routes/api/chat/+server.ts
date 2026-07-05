@@ -11,7 +11,7 @@ import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-default
 const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
 
 export const POST: RequestHandler = async ({ request }) => {
-	const { messages, provider, model, apiKey, baseURL, systemPrompt } = await request.json();
+	const { messages, provider, model, apiKey, baseURL, systemPrompt, temperature, maxTokens, topP, presencePenalty, frequencyPenalty } = await request.json();
 
 	if (!Array.isArray(messages)) {
 		return new Response(JSON.stringify({ error: 'messages must be an array' }), {
@@ -22,9 +22,10 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const typedProvider = provider as LLMProvider;
 
-	// Local providers don't require API keys
+	// Local providers and OpenAI-compatible endpoints don't require API keys.
 	const isLocalProvider = LOCAL_PROVIDERS.includes(typedProvider);
-	if (!apiKey && !isLocalProvider) {
+	const isKeylessProvider = isLocalProvider || typedProvider === 'openai-compatible';
+	if (!apiKey && !isKeylessProvider) {
 		return new Response(JSON.stringify({ error: 'API key required' }), {
 			status: 400,
 			headers: { 'Content-Type': 'application/json' }
@@ -83,7 +84,14 @@ export const POST: RequestHandler = async ({ request }) => {
 				baseURL: providerBaseURL,
 				model,
 				messages: messagesWithSystem,
-				headers
+				headers,
+				...(typedProvider === 'openai-compatible' && {
+					...(temperature !== undefined && { temperature }),
+					...(maxTokens !== undefined && { max_tokens: maxTokens }),
+					...(topP !== undefined && { top_p: topP }),
+					...(presencePenalty !== undefined && { presence_penalty: presencePenalty }),
+					...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty })
+				})
 			});
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to connect to provider';

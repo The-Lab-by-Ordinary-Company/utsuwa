@@ -174,6 +174,17 @@ export async function sendCompanionMessage(
 		const messages = buildMessages(images);
 		const onDelta = (full: string) => chatStore.updateLastMessage(full);
 
+		// Advanced parameters are only supported for OpenAI-compatible endpoints.
+		const advancedParams = providerMeta?.custom
+			? {
+					temperature: (consciousnessSettings.temperature as number) ?? 0.7,
+					topP: (consciousnessSettings.topP as number) ?? 1.0,
+					maxTokens: (consciousnessSettings.maxTokens as number) || undefined,
+					presencePenalty: (consciousnessSettings.presencePenalty as number) ?? 0,
+					frequencyPenalty: (consciousnessSettings.frequencyPenalty as number) ?? 0
+				}
+			: {};
+
 		let fullContent = '';
 		if (isTauri() || providerMeta?.isLocal) {
 			// Desktop and local providers call the provider API directly.
@@ -185,7 +196,8 @@ export async function sendCompanionMessage(
 						model: selectedModel,
 						apiKey: apiKey || undefined,
 						baseURL,
-						systemPrompt
+						systemPrompt,
+						...advancedParams
 					},
 					(text) => {
 						fullContent += text;
@@ -204,7 +216,8 @@ export async function sendCompanionMessage(
 					model: selectedModel,
 					apiKey: apiKey || 'not-needed',
 					baseURL,
-					systemPrompt
+					systemPrompt,
+					...advancedParams
 				},
 				onDelta
 			);

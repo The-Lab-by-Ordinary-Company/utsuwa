@@ -267,6 +267,11 @@ export function createPersonaPageState() {
 		}
 	}
 
+	function handleLLMNumberSetting(key: string, value: number | undefined) {
+		if (value !== undefined && Number.isNaN(value)) return;
+		modulesStore.setModuleSetting('consciousness', key, value);
+	}
+
 	function handleLLMModelChange(modelId: string) {
 		modulesStore.setModuleSetting('consciousness', 'activeModel', modelId);
 	}
@@ -501,6 +506,7 @@ export function createPersonaPageState() {
 		saveSystemPrompt,
 		handleLLMProviderChange,
 		handleLLMModelChange,
+		handleLLMNumberSetting,
 		handleLLMBaseUrlChange,
 		handleTTSProviderChange,
 		handleTTSModelChange,

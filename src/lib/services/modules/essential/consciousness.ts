@@ -35,11 +35,31 @@ export const consciousnessModule: ModuleDefinition = {
 				defaultValue: 0.7
 			},
 			{
+				key: 'topP',
+				type: 'number',
+				label: 'Top P',
+				description: 'Nucleus sampling threshold (0.0-1.0)',
+				defaultValue: 1.0
+			},
+			{
 				key: 'maxTokens',
 				type: 'number',
 				label: 'Max Tokens',
-				description: 'Maximum tokens in response',
-				defaultValue: 2048
+				description: 'Maximum tokens in response. Leave empty to use the provider default.'
+			},
+			{
+				key: 'presencePenalty',
+				type: 'number',
+				label: 'Presence Penalty',
+				description: 'Penalizes tokens that have already appeared (-2.0 to 2.0)',
+				defaultValue: 0
+			},
+			{
+				key: 'frequencyPenalty',
+				type: 'number',
+				label: 'Frequency Penalty',
+				description: 'Penalizes tokens based on how often they appeared (-2.0 to 2.0)',
+				defaultValue: 0
 			}
 		]
 	},
