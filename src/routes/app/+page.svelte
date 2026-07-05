@@ -272,9 +272,9 @@
 		<!-- Event Scene Overlay -->
 		{#if activeEvent?.scene}
 			<EventScene
-				scene={activeEvent.scene}
-				eventName={activeEvent.name}
-				eventType={activeEvent.type}
+				scene={activeEvent?.scene}
+				eventName={activeEvent?.name}
+				eventType={activeEvent?.type}
 				companionName={personaStore.activeCard.name}
 				onComplete={handleEventComplete}
 				onClose={handleEventClose}

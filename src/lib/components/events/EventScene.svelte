@@ -3,6 +3,7 @@
 	import type { StateUpdates } from '$lib/types/character';
 	import { Icon } from '$lib/components/ui';
 	import ChoiceDialog from './ChoiceDialog.svelte';
+	import { nextPhase, type ScenePhase } from './scene-flow';
 	import { pop, fadeFast } from '$lib/utils/motion';
 
 	interface Props {
@@ -29,46 +30,38 @@
 		}
 	});
 
-	let phase = $state<'intro' | 'dialogue' | 'choices' | 'response' | 'outro'>('intro');
+	let phase = $state<ScenePhase>('intro');
 	let selectedChoice = $state<SceneChoice | null>(null);
 	let selectedChoiceIndex = $state<number | null>(null);
 
 	// Skip intro if not present
 	$effect(() => {
-		if (phase === 'intro' && !scene.intro) {
+		if (phase === 'intro' && scene && !scene.intro) {
 			phase = 'dialogue';
 		}
 	});
 
 	function advance() {
-		switch (phase) {
-			case 'intro':
-				phase = 'dialogue';
-				break;
-			case 'dialogue':
-				if (scene.choices && scene.choices.length > 0) {
-					phase = 'choices';
-				} else if (scene.outro) {
-					phase = 'outro';
-				} else {
-					completeScene();
-				}
-				break;
-			case 'response':
-				if (scene.outro) {
-					phase = 'outro';
-				} else {
-					completeScene();
-				}
-				break;
-			case 'outro':
-				completeScene();
-				break;
+		const next = nextPhase(phase, scene);
+		if (next === null) return;
+		if (next === 'complete') {
+			completeScene();
+		} else {
+			phase = next;
 		}
 	}
 
+	// Clicks on the dialogue box advance the narrative too, not just the
+	// backdrop. Buttons (close, continue, choices) handle themselves, and
+	// advance() ignores the choices phase.
+	function handleContainerClick(e: MouseEvent) {
+		e.stopPropagation();
+		if (e.target instanceof Element && e.target.closest('button')) return;
+		advance();
+	}
+
 	function handleChoice(index: number) {
-		if (!scene.choices) return;
+		if (!scene?.choices) return;
 
 		selectedChoice = scene.choices[index];
 		selectedChoiceIndex = index;
@@ -86,7 +79,7 @@
 
 <div class="scene-overlay" class:overlay transition:fadeFast={{ duration: 200 }} onclick={advance} role="button" tabindex="0" onkeypress={(e) => e.key === 'Enter' && advance()}>
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<div class="scene-container" transition:pop={{ duration: 240, y: 18 }} onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && onClose()} role="dialog" aria-modal="true" tabindex="-1">
+	<div class="scene-container" transition:pop={{ duration: 240, y: 18 }} onclick={handleContainerClick} onkeydown={(e) => e.key === 'Escape' && onClose()} role="dialog" aria-modal="true" tabindex="-1">
 		<!-- Header with event title -->
 		{#if eventName}
 			<div class="scene-header">
