@@ -3,6 +3,7 @@
  */
 
 import { fetchProviderModels, type ModelInfo } from './model-fetcher';
+import { getLLMProvider, getTTSProvider } from './registry';
 import { settingsStore } from '$lib/stores/settings.svelte';
 
 export type { ModelInfo };
@@ -58,7 +59,9 @@ export async function fetchModels(options: FetchModelsOptions): Promise<void> {
 		onStale
 	} = options;
 
-	if (!providerId || (!isLocal && !apiKey)) return;
+	const provider = getLLMProvider(providerId) || getTTSProvider(providerId);
+	// Custom OpenAI-compatible endpoints may not require an API key.
+	if (!providerId || (!isLocal && !apiKey && !provider?.custom)) return;
 
 	onStart();
 

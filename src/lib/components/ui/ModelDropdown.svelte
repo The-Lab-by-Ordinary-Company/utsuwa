@@ -29,13 +29,34 @@
 		disabledMessage = 'Enter API key first'
 	}: Props = $props();
 
+	let searchQuery = $state('');
+	let open = $state(false);
+
 	const isDisabled = $derived(disabled || isLoading);
 
 	const selectedModel = $derived(models.find((m) => m.id === value));
+
+	// Always include the currently selected model, even if it doesn't match the filter
+	const filteredModels = $derived.by(() => {
+		const q = searchQuery.trim().toLowerCase();
+		if (!q) return models;
+		const filtered = models.filter(
+			(m) => m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)
+		);
+		if (selectedModel && !filtered.some((m) => m.id === selectedModel.id)) {
+			return [selectedModel, ...filtered];
+		}
+		return filtered;
+	});
+
+	function handleSelect(modelId: string) {
+		searchQuery = '';
+		onSelect(modelId);
+	}
 </script>
 
 <div class="model-dropdown-wrapper">
-	<DropdownMenu.Root>
+	<DropdownMenu.Root bind:open>
 		<DropdownMenu.Trigger class="model-dropdown-trigger" disabled={isDisabled}>
 			{#if isLoading}
 				<span class="trigger-loading">
@@ -56,11 +77,27 @@
 
 		<DropdownMenu.Portal>
 			<DropdownMenu.Content class="model-dropdown-content" align="start" sideOffset={4}>
+				<div class="search-row">
+					<Icon name="search" size={14} />
+					<input
+						type="text"
+						class="search-input"
+						placeholder="Search models..."
+						bind:value={searchQuery}
+						onclick={(e) => e.stopPropagation()}
+						onkeydown={(e) => e.stopPropagation()}
+					/>
+					{#if searchQuery}
+						<button class="search-clear" onclick={() => (searchQuery = '')}>
+							<Icon name="x" size={12} />
+						</button>
+					{/if}
+				</div>
 				<div class="model-dropdown-scroll">
-					{#each models as model (model.id)}
+					{#each filteredModels as model (model.id)}
 						<DropdownMenu.Item
 							class="model-item {value === model.id ? 'selected' : ''}"
-							onSelect={() => onSelect(model.id)}
+							onSelect={() => handleSelect(model.id)}
 						>
 							<span class="model-name">{model.name}</span>
 							{#if value === model.id}
@@ -70,8 +107,8 @@
 							{/if}
 						</DropdownMenu.Item>
 					{/each}
-					{#if models.length === 0 && !isLoading}
-						<div class="no-models">No models available</div>
+					{#if filteredModels.length === 0 && !isLoading}
+						<div class="no-models">No models found</div>
 					{/if}
 				</div>
 			</DropdownMenu.Content>
@@ -208,6 +245,51 @@
 		}
 	}
 
+	.search-row {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.5rem;
+		margin-bottom: 0.25rem;
+		background: var(--bg-secondary);
+		border: 1px solid transparent;
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
+	}
+
+	.search-input {
+		flex: 1;
+		border: none;
+		outline: none;
+		background: transparent;
+		font-family: inherit;
+		font-size: 0.8125rem;
+		color: var(--text-primary);
+		padding: 0;
+		min-width: 0;
+	}
+
+	.search-input::placeholder {
+		color: var(--text-tertiary);
+	}
+
+	.search-clear {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.125rem;
+		background: none;
+		border: none;
+		color: var(--text-tertiary);
+		cursor: pointer;
+		border-radius: 50%;
+		transition: color 0.15s;
+	}
+
+	.search-clear:hover {
+		color: var(--text-primary);
+	}
+
 	:global(.model-dropdown-content[data-state='closed']) {
 		animation: modelSlideUp 0.13s var(--ease-brand) forwards;
 	}
@@ -220,7 +302,7 @@
 	}
 
 	.model-dropdown-scroll {
-		max-height: 280px;
+		max-height: 240px;
 		overflow-y: auto;
 	}
 

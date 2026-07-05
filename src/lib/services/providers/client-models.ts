@@ -74,6 +74,20 @@ export async function fetchModelsDirect(
 				}));
 				break;
 			}
+			case 'openai-compatible': {
+				// OpenAI-compatible endpoints (OpenRouter, Together, vLLM, ...) may or
+				// may not require an API key. Keep all returned models as-is.
+				const headers: Record<string, string> = {};
+				if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+				const res = await fetch(`${cleanBaseUrl}/models`, { headers });
+				if (!res.ok) throw new Error(`Failed to fetch models: ${res.statusText}`);
+				const data = await res.json();
+				models = (data.data || []).map((m: { id: string }) => ({
+					id: m.id,
+					name: m.id
+				}));
+				break;
+			}
 			case 'anthropic': {
 				if (!apiKey) throw new Error('API key required');
 				const res = await fetch(`${cleanBaseUrl}/models`, {

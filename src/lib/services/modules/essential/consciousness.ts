@@ -40,6 +40,41 @@ export const consciousnessModule: ModuleDefinition = {
 				label: 'Max Tokens',
 				description: 'Maximum tokens in response',
 				defaultValue: 2048
+			},
+			{
+				key: 'nsfwMode',
+				type: 'boolean',
+				label: 'Unfiltered Mode (NSFW)',
+				description: 'Injects a preamble instructing the LLM to write uncensored, immersive prose without moralizing or content filtering. Use only with local or uncensored models.',
+				defaultValue: false
+			},
+			{
+				key: 'contextSize',
+				type: 'number',
+				label: 'Context Size',
+				description: 'Maximum context size of the model in tokens',
+				defaultValue: 32768
+			},
+			{
+				key: 'topP',
+				type: 'number',
+				label: 'Top P',
+				description: 'Nucleus sampling threshold (0.0-1.0)',
+				defaultValue: 1.0
+			},
+			{
+				key: 'presencePenalty',
+				type: 'number',
+				label: 'Presence Penalty',
+				description: 'Penalizes tokens that have already appeared (-2.0 to 2.0)',
+				defaultValue: 0
+			},
+			{
+				key: 'frequencyPenalty',
+				type: 'number',
+				label: 'Frequency Penalty',
+				description: 'Penalizes tokens based on how often they appeared (-2.0 to 2.0)',
+				defaultValue: 0
 			}
 		]
 	},

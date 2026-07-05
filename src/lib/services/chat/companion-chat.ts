@@ -15,7 +15,8 @@ import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry
 import { streamChatDirect } from '$lib/services/chat/client-chat';
 import { processCompanionTurn } from '$lib/services/chat/companion-turn';
 import { retrieveRelevantContext } from '$lib/engine/memory';
-import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
+import { buildSystemPrompt, truncateMessagesToContext, type PromptContext } from '$lib/ai/prompt-builder';
+import { getMemoryBudget, type MemoryBudget } from '$lib/types/memory';
 import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
 import { isTauri } from '$lib/services/platform';
@@ -38,13 +39,18 @@ export interface CompanionChatHooks {
 }
 
 async function buildCompanionPrompt(userMessage: string, hasImages: boolean): Promise<string> {
+	const consciousnessSettings = modulesStore.getModuleSettings('consciousness');
+	const contextSize = Number(consciousnessSettings.contextSize) || 32768;
 	const context: PromptContext = {
 		persona: personaStore.activeCard,
 		state: characterStore.state,
 		memories: await retrieveRelevantContext(userMessage),
 		userMessage,
 		systemTime: new Date(),
-		hasImages
+		hasImages,
+		nsfwMode: !!consciousnessSettings.nsfwMode,
+		memoryBudget: getMemoryBudget(contextSize),
+		contextSize
 	};
 	return buildSystemPrompt(context);
 }
@@ -170,9 +176,37 @@ export async function sendCompanionMessage(
 
 		chatStore.addMessage('assistant', '');
 		const selectedModel = model || providerMeta?.models?.[0]?.id || '';
-		const baseURL = providerConfig.baseUrl || providerMeta?.defaultBaseUrl;
+		// Fixed cloud providers always route through their official endpoint.
+		// Custom endpoints and local providers respect the user-supplied base URL.
+		const baseURL = providerMeta?.custom || providerMeta?.isLocal
+			? providerConfig.baseUrl || providerMeta?.defaultBaseUrl
+			: providerMeta?.defaultBaseUrl;
 		const messages = buildMessages(images);
+
+		// Truncate history to fit the configured context window. The system prompt
+		// is temporarily included so its token cost is accounted for.
+		const contextSize = Number(consciousnessSettings.contextSize) || 32768;
+		const allMessages: Array<{ role: string; content: string | unknown }> = [
+			{ role: 'system', content: systemPrompt },
+			...messages
+		];
+		truncateMessagesToContext(allMessages, contextSize);
+		const truncatedMessages = allMessages.slice(1) as typeof messages;
+
 		const onDelta = (full: string) => chatStore.updateLastMessage(full);
+
+		// Advanced parameters are configurable for OpenAI-compatible endpoints.
+		// Other providers ignore them on the server/client side.
+		const llmParams =
+			providerMeta?.custom
+				? {
+						temperature: (consciousnessSettings.temperature as number) ?? 0.7,
+						maxTokens: (consciousnessSettings.maxTokens as number) ?? 2048,
+						topP: (consciousnessSettings.topP as number) ?? 1.0,
+						presencePenalty: (consciousnessSettings.presencePenalty as number) ?? 0,
+						frequencyPenalty: (consciousnessSettings.frequencyPenalty as number) ?? 0
+					}
+				: {};
 
 		let fullContent = '';
 		if (isTauri() || providerMeta?.isLocal) {
@@ -180,12 +214,13 @@ export async function sendCompanionMessage(
 			await new Promise<void>((resolve, reject) => {
 				streamChatDirect(
 					{
-						messages,
+						messages: truncatedMessages,
 						provider: provider as LLMProvider,
 						model: selectedModel,
 						apiKey: apiKey || undefined,
 						baseURL,
-						systemPrompt
+						systemPrompt,
+						...llmParams
 					},
 					(text) => {
 						fullContent += text;
@@ -199,12 +234,13 @@ export async function sendCompanionMessage(
 			// Cloud providers on web go through the SvelteKit server route.
 			fullContent = await streamServerRoute(
 				{
-					messages: messages.map((m) => ({ role: m.role, content: toOpenAIContent(m.content) })),
+					messages: truncatedMessages.map((m) => ({ role: m.role, content: toOpenAIContent(m.content) })),
 					provider,
 					model: selectedModel,
 					apiKey: apiKey || 'not-needed',
 					baseURL,
-					systemPrompt
+					systemPrompt,
+					...llmParams
 				},
 				onDelta
 			);

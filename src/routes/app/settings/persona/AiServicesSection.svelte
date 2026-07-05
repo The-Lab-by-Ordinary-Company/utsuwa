@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { slideOpen } from '$lib/utils/motion';
 	import { settingsStore } from '$lib/stores/settings.svelte';
+	import { modulesStore } from '$lib/stores/modules.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import { Icon, ProviderDropdown, ModelDropdown } from '$lib/components/ui';
 	import type { PersonaPageState } from './persona-page.svelte';
@@ -79,6 +80,7 @@
 
 						<!-- Model: manual entry for custom endpoints, discovered dropdown otherwise -->
 						{#if provider?.custom}
+							{@const customConfig = settingsStore.getProviderConfig(provider.id)}
 							<div class="api-key-row">
 								<input
 									type="text"
@@ -88,7 +90,160 @@
 									oninput={(e) => page.handleLLMModelChange(e.currentTarget.value.trim())}
 								/>
 							</div>
-						{:else}
+							{#if customConfig.baseUrl}
+								<div class="api-key-row">
+									<ModelDropdown
+										models={page.llmModels}
+										value={page.consciousnessSettings.activeModel as string}
+										onSelect={page.handleLLMModelChange}
+										placeholder="Pick a fetched model..."
+										isLoading={page.llmIsLoading}
+										onRefresh={page.fetchLLMModels}
+										disabled={false}
+									/>
+								</div>
+							{:else}
+								<p class="provider-note">Enter a base URL to fetch available models.</p>
+							{/if}
+
+							<!-- Context Window -->
+								<div class="api-key-row context-size-row">
+									<label class="context-size-label" for="llm-context-size">
+										Context Window
+										<span class="context-size-value">{page.formatContextSize((page.consciousnessSettings.contextSize as number) || 32768)}</span>
+									</label>
+									<input
+										id="llm-context-size"
+										type="range"
+										class="context-size-slider"
+										min="0"
+										max="7"
+										step="1"
+										value={page.contextSizeSteps.indexOf((page.consciousnessSettings.contextSize as number) || 32768)}
+										oninput={(e) => page.handleContextSizeChange(page.contextSizeSteps[Number(e.currentTarget.value)])}
+									/>
+									<div class="context-size-ticks">
+										{#each page.contextSizeSteps as step}
+											<span>{page.formatContextSize(step)}</span>
+										{/each}
+									</div>
+									<p class="provider-note">Maximum context size of the selected model.</p>
+								</div>
+
+								<!-- Advanced Parameters -->
+								<details class="llm-advanced-params">
+									<summary>Advanced Parameters</summary>
+									<div class="llm-param-grid">
+										<div class="llm-param-row">
+											<label class="llm-param-label" for="llm-temperature">
+												Temperature
+												<span class="llm-param-value">{((page.consciousnessSettings.temperature as number) ?? 0.7).toFixed(2)}</span>
+											</label>
+											<input
+												id="llm-temperature"
+												type="range"
+												class="llm-param-slider"
+												min="0"
+												max="2"
+												step="0.05"
+												value={(page.consciousnessSettings.temperature as number) ?? 0.7}
+												oninput={(e) => page.handleLLMNumberSetting('temperature', Number(e.currentTarget.value))}
+											/>
+											<p class="provider-note">Controls randomness: 0 = focused, 2 = highly creative.</p>
+										</div>
+
+										<div class="llm-param-row">
+											<label class="llm-param-label" for="llm-top-p">
+												Top P
+												<span class="llm-param-value">{((page.consciousnessSettings.topP as number) ?? 1.0).toFixed(2)}</span>
+											</label>
+											<input
+												id="llm-top-p"
+												type="range"
+												class="llm-param-slider"
+												min="0"
+												max="1"
+												step="0.05"
+												value={(page.consciousnessSettings.topP as number) ?? 1.0}
+												oninput={(e) => page.handleLLMNumberSetting('topP', Number(e.currentTarget.value))}
+											/>
+											<p class="provider-note">Nucleus sampling: 1 = disabled.</p>
+										</div>
+
+										<div class="llm-param-row">
+											<label class="llm-param-label" for="llm-max-tokens">
+												Max Tokens
+												<span class="llm-param-value">{page.consciousnessSettings.maxTokens ?? '—'}</span>
+											</label>
+											<input
+												id="llm-max-tokens"
+												type="number"
+												class="api-key-input"
+												min="1"
+												step="1"
+												placeholder="Unlimited"
+												value={(page.consciousnessSettings.maxTokens as number) ?? ''}
+												oninput={(e) => {
+													const val = e.currentTarget.value;
+													page.handleLLMNumberSetting('maxTokens', val ? parseInt(val, 10) : undefined);
+												}}
+											/>
+											<p class="provider-note">Hard limit for the number of tokens in the response. Leave empty to use the provider default.</p>
+										</div>
+
+										<!-- NSFW Mode -->
+										<div class="nsfw-mode-row">
+											<label class="nsfw-mode-label">
+												<input
+													type="checkbox"
+													checked={!!page.consciousnessSettings.nsfwMode}
+													onchange={(e) => modulesStore.setModuleSetting('consciousness', 'nsfwMode', e.currentTarget.checked)}
+												/>
+												Unfiltered Mode (NSFW)
+											</label>
+											<p class="provider-note">Injects a preamble instructing the LLM to write uncensored, immersive prose without moralizing or content filtering. Use only with local or uncensored models.</p>
+										</div>
+
+										<div class="llm-param-row">
+											<label class="llm-param-label" for="llm-presence-penalty">
+												Presence Penalty
+												<span class="llm-param-value">{((page.consciousnessSettings.presencePenalty as number) ?? 0).toFixed(1)}</span>
+											</label>
+											<input
+												id="llm-presence-penalty"
+												type="range"
+												class="llm-param-slider"
+												min="-2"
+												max="2"
+												step="0.1"
+												value={(page.consciousnessSettings.presencePenalty as number) ?? 0}
+												oninput={(e) => page.handleLLMNumberSetting('presencePenalty', Number(e.currentTarget.value))}
+											/>
+											<p class="provider-note">Reduces repetition of tokens already used.</p>
+										</div>
+
+										<div class="llm-param-row">
+											<label class="llm-param-label" for="llm-frequency-penalty">
+												Frequency Penalty
+												<span class="llm-param-value">{((page.consciousnessSettings.frequencyPenalty as number) ?? 0).toFixed(1)}</span>
+											</label>
+											<input
+												id="llm-frequency-penalty"
+												type="range"
+												class="llm-param-slider"
+												min="-2"
+												max="2"
+												step="0.1"
+												value={(page.consciousnessSettings.frequencyPenalty as number) ?? 0}
+												oninput={(e) => page.handleLLMNumberSetting('frequencyPenalty', Number(e.currentTarget.value))}
+											/>
+											<p class="provider-note">Stronger penalty for frequently repeated tokens.</p>
+										</div>
+									</div>
+								</details>
+
+
+							{:else}
 							<ModelDropdown
 								models={page.llmModels}
 								value={page.consciousnessSettings.activeModel as string}
@@ -100,6 +255,7 @@
 								disabledMessage="Enter API key first"
 							/>
 						{/if}
+
 					{/if}
 				{/if}
 			</div>
@@ -443,5 +599,110 @@
 		40% { transform: translateX(4px); }
 		60% { transform: translateX(-3px); }
 		80% { transform: translateX(2px); }
+	}
+
+	.context-size-row {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.35rem;
+		margin-top: 0.5rem;
+	}
+
+	.context-size-label {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+	}
+
+	.context-size-value {
+		font-size: 0.8rem;
+		color: var(--text-tertiary);
+	}
+
+	.context-size-slider {
+		width: 100%;
+		cursor: pointer;
+	}
+
+	.context-size-ticks {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.65rem;
+		color: var(--text-tertiary);
+		padding: 0 0.25rem;
+	}
+
+	.llm-advanced-params {
+		margin-top: 0.75rem;
+		border: 1px solid var(--bg-tertiary);
+		border-radius: var(--radius-lg);
+		padding: 0.75rem;
+		background: var(--bg-primary);
+	}
+
+	.llm-advanced-params summary {
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.llm-param-grid {
+		margin-top: 0.75rem;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.llm-param-row {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.llm-param-label {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+	}
+
+	.llm-param-value {
+		font-size: 0.75rem;
+		color: var(--text-tertiary);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.llm-param-slider {
+		width: 100%;
+		cursor: pointer;
+	}
+
+	.nsfw-mode-row {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		margin-top: 0.5rem;
+	}
+
+	.nsfw-mode-label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+		cursor: pointer;
+	}
+
+	.nsfw-mode-label input[type='checkbox'] {
+		accent-color: #01B2FF;
+		cursor: pointer;
 	}
 </style>

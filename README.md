@@ -201,10 +201,14 @@ pnpm tauri dev
 #### Configuration
 
 1. Click the **Settings** (gear icon) in the sidebar
-2. Navigate to **Settings > Character** to configure your chat provider:
+2. Navigate to **Settings > Character** and expand **AI Services** to configure your chat provider:
    - Enable Chat (LLM)
    - Select a cloud provider and enter your API key
-   - Or select a local server like Ollama or LM Studio and choose an installed model from the discovered model dropdown
+   - Or select **OpenAI-Compatible** for custom endpoints (OpenRouter, Together, vLLM, LiteLLM, Ollama, LM Studio, etc.). Enter the base URL and optionally an API key, then refresh to discover available models. You can also filter the model list with the search field.
+   - Choose a model from the dropdown, or type a model ID manually for custom endpoints
+   - Set the **Context Window** to match your model. This scales how many recent turns, facts, and library entries are injected, and truncates older history to avoid prompt overflow.
+   - Open **Advanced Parameters** to adjust Temperature, Top P, Max Tokens, Presence Penalty, and Frequency Penalty. These are only applied for OpenAI-Compatible endpoints.
+   - **Unfiltered Mode (NSFW)** adds an uncensored-fiction preamble to the system prompt. Use only with local or uncensored models. This option is only available for OpenAI-Compatible endpoints.
 3. Configure text-to-speech in the same settings area (optional):
    - Select a TTS provider
    - Enter your API key

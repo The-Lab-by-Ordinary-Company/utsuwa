@@ -146,7 +146,12 @@ export function createPersonaPageState() {
 		await fetchModels({
 			providerId: provider.id,
 			apiKey: config.apiKey ?? '',
-			baseUrl: config.baseUrl,
+			// Fixed cloud providers always use their official default URL to avoid
+			// stale proxy/baseUrl values. Custom endpoints and local providers respect
+			// the user-supplied base URL (falling back to the provider default).
+			baseUrl: provider.custom || provider.isLocal
+				? (config.baseUrl || provider.defaultBaseUrl)
+				: provider.defaultBaseUrl,
 			isLocal: provider.isLocal,
 			getCurrentProviderId: () => consciousnessSettings.activeProvider as string,
 			onStart: () => {
@@ -269,6 +274,22 @@ export function createPersonaPageState() {
 
 	function handleLLMModelChange(modelId: string) {
 		modulesStore.setModuleSetting('consciousness', 'activeModel', modelId);
+	}
+
+	const contextSizeSteps = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072];
+
+	function formatContextSize(value: number): string {
+		if (value >= 1024) return `${value / 1024}k`;
+		return String(value);
+	}
+
+	function handleContextSizeChange(value: number) {
+		modulesStore.setModuleSetting('consciousness', 'contextSize', value);
+	}
+
+	function handleLLMNumberSetting(key: string, value: number | undefined) {
+		if (value !== undefined && Number.isNaN(value)) return;
+		modulesStore.setModuleSetting('consciousness', key, value);
 	}
 
 	function handleLLMBaseUrlChange(providerId: string, baseUrl: string) {
@@ -491,9 +512,11 @@ export function createPersonaPageState() {
 
 		// Constants
 		achievementConfig,
+		contextSizeSteps,
 
 		// Actions
 		formatAchievementDate,
+		formatContextSize,
 		fetchLLMModels,
 		fetchTTSModels,
 		debouncedFetchLLMModels,
@@ -501,6 +524,8 @@ export function createPersonaPageState() {
 		saveSystemPrompt,
 		handleLLMProviderChange,
 		handleLLMModelChange,
+		handleContextSizeChange,
+		handleLLMNumberSetting,
 		handleLLMBaseUrlChange,
 		handleTTSProviderChange,
 		handleTTSModelChange,

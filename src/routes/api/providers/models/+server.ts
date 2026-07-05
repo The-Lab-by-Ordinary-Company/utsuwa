@@ -212,6 +212,10 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!apiKey) throw new Error('API key required for OpenAI');
 				models = await fetchOpenAIModels(apiKey, cleanBaseUrl);
 				break;
+			case 'openai-compatible':
+				// OpenAI-compatible endpoints may or may not require an API key.
+				models = await fetchOpenAIModels(apiKey || '', cleanBaseUrl);
+				break;
 			case 'anthropic':
 				if (!apiKey) throw new Error('API key required for Anthropic');
 				models = await fetchAnthropicModels(apiKey, cleanBaseUrl);
