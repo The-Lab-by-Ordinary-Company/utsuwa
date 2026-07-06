@@ -126,6 +126,15 @@ Utsuwa supports popular cloud and local LLMs. For endpoints that speak the OpenA
 | **Local** | Ollama, LM Studio |
 | **OpenAI-Compatible** | OpenRouter, Together, vLLM, LiteLLM, etc. |
 
+#### Context Window and Memory Budget
+
+The **Context Window** setting is available for every LLM provider. When enabled, it tells Utsuwa how many tokens the selected model can process. The app then:
+
+- Scales the amount of injected memory (recent conversation turns and relevant facts) to match the window size.
+- Truncates older chat history before sending, always keeping the system prompt and the user's newest message.
+
+If the setting is left off, Utsuwa keeps the historical defaults (6 recent turns, 5 facts) and does not truncate history. This is useful when you want the provider to handle its own context management.
+
 ### TTS Providers (3)
 
 | Category | Providers |
@@ -208,10 +217,11 @@ pnpm tauri dev
 #### Configuration
 
 1. Click the **Settings** (gear icon) in the sidebar
-2. Navigate to **Settings > Character** to configure your chat provider:
+2. Navigate to **Settings > AI Services** to configure your chat provider:
    - Enable Chat (LLM)
    - Select a cloud provider and enter your API key
    - Or select a local server like Ollama or LM Studio and choose an installed model from the discovered model dropdown
+   - Optional: enable **Context Window** to scale memory injection and history truncation to your model's token limit
 3. Configure text-to-speech in the same settings area (optional):
    - Select a TTS provider
    - Enter your API key
