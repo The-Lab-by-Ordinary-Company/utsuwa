@@ -9,3 +9,4 @@ export { default as TopLeftButtons } from './TopLeftButtons.svelte';
 export { default as InfoModal } from './InfoModal.svelte';
 export { default as ProviderDropdown } from './ProviderDropdown.svelte';
 export { default as ModelDropdown } from './ModelDropdown.svelte';
+export { default as ContextSizeSlider } from './ContextSizeSlider.svelte';
