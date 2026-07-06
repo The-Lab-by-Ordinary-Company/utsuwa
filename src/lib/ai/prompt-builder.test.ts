@@ -5,10 +5,13 @@ import {
 	buildSystemPrompt,
 	buildExtractionSystemPrompt,
 	truncateMessagesToContext,
+	truncateChatHistory,
+	estimateTokens,
 	type PromptContext
 } from './prompt-builder.ts';
 import type { CharacterState } from '$lib/types/character';
 import type { RelevantContext } from '$lib/types/memory';
+import { getMemoryBudget } from '../types/memory.ts';
 
 function makeState(overrides: Partial<CharacterState> = {}): CharacterState {
 	return {
@@ -243,4 +246,101 @@ test('truncateMessagesToContext is a no-op with no messages', () => {
 	const messages: Array<{ role: string; content: string }> = [];
 	truncateMessagesToContext(messages, 2048);
 	assert.equal(messages.length, 0);
+});
+
+test('getMemoryBudget boundary values', () => {
+	assert.deepEqual(getMemoryBudget(4095), { workingMemoryTurns: 6, relevantFacts: 3 });
+	assert.deepEqual(getMemoryBudget(4096), { workingMemoryTurns: 6, relevantFacts: 3 });
+	assert.deepEqual(getMemoryBudget(4097), { workingMemoryTurns: 10, relevantFacts: 5 });
+	assert.deepEqual(getMemoryBudget(8192), { workingMemoryTurns: 10, relevantFacts: 5 });
+	assert.deepEqual(getMemoryBudget(8193), { workingMemoryTurns: 20, relevantFacts: 10 });
+});
+
+test('estimateTokens handles empty, latin and cjk text', () => {
+	assert.equal(estimateTokens(''), 0);
+	assert.equal(estimateTokens('hello'), 2); // 5 chars / 4 = 1.25 -> 2
+	assert.equal(estimateTokens('a'.repeat(100)), 25);
+	// CJK characters are estimated conservatively (1 token per char) so the
+	// budget is not exhausted too quickly for non-Latin scripts.
+	assert.ok(estimateTokens('日本語のテキスト') > estimateTokens('latin text'));
+});
+
+test('memory budget defaults are used when contextSize is unset', () => {
+	const memories: RelevantContext = {
+		recentTurns: Array.from({ length: 12 }, (_, i) => ({
+			id: i,
+			role: i % 2 === 0 ? 'user' : 'assistant',
+			content: `turn ${i}`,
+			createdAt: new Date()
+		})) as Array<{ id: number; role: 'user' | 'assistant'; content: string; createdAt: Date }>,
+		relevantFacts: Array.from({ length: 8 }, (_, i) => ({
+			id: i,
+			content: `fact ${i}`,
+			category: 'user' as const,
+			importance: 50,
+			confidence: 0.8,
+			referenceCount: 0,
+			createdAt: new Date()
+		})),
+		triggeredMemories: [],
+		recentSessions: []
+	};
+
+	const prompt = buildSystemPrompt(makeContext({ memories }));
+	const turns = (prompt.match(/turn \d+/g) || []).length;
+	const facts = (prompt.match(/fact \d+/g) || []).length;
+	assert.equal(turns, 6, 'default keeps 6 recent turns');
+	assert.equal(facts, 5, 'default keeps 5 facts');
+});
+
+test('truncateMessagesToContext keeps newest user message when system prompt nearly fills window', () => {
+	const messages = [
+		{ role: 'system', content: 'x'.repeat(6000) }, // ~1500 tokens
+		{ role: 'user', content: 'older question' },
+		{ role: 'assistant', content: 'y'.repeat(100) },
+		{ role: 'user', content: 'newest question' }
+	];
+	truncateMessagesToContext(messages, 2048);
+	assert.equal(messages[0].role, 'system');
+	assert.equal(messages[messages.length - 1].content, 'newest question');
+});
+
+test('truncateMessagesToContext ignores extra system messages and treats first non-system as history start', () => {
+	const messages = [
+		{ role: 'system', content: 'x'.repeat(400) },
+		{ role: 'system', content: 'extra system instruction' },
+		{ role: 'user', content: 'a'.repeat(400) },
+		{ role: 'assistant', content: 'b'.repeat(400) },
+		{ role: 'user', content: 'newest message' }
+	];
+	// System tokens counted from first message only; reserve leaves room for newest user.
+	truncateMessagesToContext(messages, 700);
+	assert.equal(messages[0].role, 'system');
+	assert.equal(messages[messages.length - 1].content, 'newest message');
+});
+
+test('truncateChatHistory combines system prompt budgeting with original message slicing', () => {
+	const messages = [
+		{ role: 'user', content: 'a'.repeat(400) },
+		{ role: 'assistant', content: 'b'.repeat(400) },
+		{ role: 'user', content: 'newest message' }
+	];
+	const systemPrompt = 'x'.repeat(400); // ~100 tokens
+	const result = truncateChatHistory(messages, systemPrompt, 700);
+	// System + reserve leaves ~100 tokens for history; newest user (~4 tokens)
+	// plus at most one older message fit.
+	assert.ok(result.length > 0);
+	assert.equal(result[result.length - 1].content, 'newest message');
+});
+
+test('truncateChatHistory handles image content placeholders', () => {
+	const messages = [
+		{ role: 'user', content: 'a'.repeat(400) },
+		{ role: 'assistant', content: { type: 'image_url', image_url: { url: 'data:image/png;base64,abc' } } },
+		{ role: 'user', content: 'newest message' }
+	];
+	const systemPrompt = 'x'.repeat(400);
+	const result = truncateChatHistory(messages, systemPrompt, 700);
+	assert.ok(result.length > 0);
+	assert.equal(result[result.length - 1].content, 'newest message');
 });

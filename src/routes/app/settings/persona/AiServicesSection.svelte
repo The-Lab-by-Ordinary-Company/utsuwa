@@ -4,28 +4,21 @@
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import { Icon, ProviderDropdown, ModelDropdown } from '$lib/components/ui';
 	import type { PersonaPageState } from './persona-page.svelte';
+	import {
+		CONTEXT_SIZE_STEPS,
+		DEFAULT_CONTEXT_SIZE,
+		formatContextSize,
+		snapContextSize
+	} from '$lib/utils/context-window';
 
 	let { page }: { page: PersonaPageState } = $props();
-
-	const contextSizeSteps = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072];
-
-	function formatContextSize(value: number): string {
-		if (value >= 1024) return `${value / 1024}k`;
-		return String(value);
-	}
-
-	function snapContextSize(value: number): number {
-		return contextSizeSteps.reduce((prev, curr) =>
-			Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
-		);
-	}
 
 	function handleContextSizeChange(value: number) {
 		page.handleLLMNumberSetting('contextSize', value);
 	}
 
 	function handleContextSizeToggle(enabled: boolean) {
-		page.handleLLMNumberSetting('contextSize', enabled ? 32768 : undefined);
+		page.handleLLMNumberSetting('contextSize', enabled ? DEFAULT_CONTEXT_SIZE : undefined);
 	}
 </script>
 
@@ -267,13 +260,13 @@
 									type="range"
 									class="llm-param-slider"
 									min="0"
-									max={contextSizeSteps.length - 1}
+									max={CONTEXT_SIZE_STEPS.length - 1}
 									step="1"
-									value={contextSizeSteps.indexOf(snapContextSize(contextSize))}
-									oninput={(e) => handleContextSizeChange(contextSizeSteps[Number(e.currentTarget.value)])}
+									value={CONTEXT_SIZE_STEPS.indexOf(snapContextSize(contextSize))}
+									oninput={(e) => handleContextSizeChange(CONTEXT_SIZE_STEPS[Number(e.currentTarget.value)])}
 								/>
 								<div class="context-size-ticks">
-									{#each contextSizeSteps as step}
+									{#each CONTEXT_SIZE_STEPS as step}
 										<span>{formatContextSize(step)}</span>
 									{/each}
 								</div>

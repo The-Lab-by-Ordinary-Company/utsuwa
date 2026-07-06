@@ -405,10 +405,33 @@ function formatTimeSince(lastInteraction: Date | null): string {
 	return `${Math.floor(days / 7)} weeks ago`;
 }
 
-// Rough token estimate: 1 token ≈ 4 characters for Latin script.
-// Good enough for prompt budgeting; exact counts depend on the tokenizer.
+// Approximate token count for prompt budgeting.
+// - Latin script is roughly 4 characters per token.
+// - CJK and other logographic scripts are much denser; count them as ~1 token
+//   per character so the budget is not exhausted too quickly for non-Latin chats.
+// Exact counts depend on the tokenizer; this is intentionally conservative.
 export function estimateTokens(text: string): number {
-	return Math.ceil(text.length / 4);
+	if (text.length === 0) return 0;
+
+	let cjkCount = 0;
+	let otherCount = 0;
+	for (const char of text) {
+		const code = char.codePointAt(0) ?? 0;
+		if (
+			(code >= 0x4e00 && code <= 0x9fff) || // CJK Unified Ideographs
+			(code >= 0x3040 && code <= 0x309f) || // Hiragana
+			(code >= 0x30a0 && code <= 0x30ff) || // Katakana
+			(code >= 0xac00 && code <= 0xd7af) || // Hangul
+			(code >= 0x3400 && code <= 0x4dbf) || // CJK Extension A
+			(code >= 0x20000 && code <= 0x2a6df) // CJK Extension B
+		) {
+			cjkCount++;
+		} else {
+			otherCount++;
+		}
+	}
+
+	return Math.ceil(cjkCount + otherCount / 4);
 }
 
 // Minimal budget reserved for the model's response and generation overhead.
@@ -416,6 +439,8 @@ const RESPONSE_TOKEN_RESERVE = 500;
 // Floor that guarantees at least the newest user message is kept even when the
 // system prompt already consumes most of the context window.
 const MIN_HISTORY_MESSAGE_TOKENS = 50;
+
+const isDev = typeof import.meta !== 'undefined' && (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
 
 /**
  * Truncate message history to fit inside the configured context window.
@@ -448,9 +473,38 @@ export function truncateMessagesToContext(
 			// Keep message i (it already tipped us over budget) and remove all
 			// older history before it. The loop goes newest→oldest, so i is the
 			// oldest message we can still afford.
-			messages.splice(historyStart, i - historyStart);
+			const removed = i - historyStart;
+			if (isDev && removed > 0) {
+				console.warn(
+					`[truncateMessagesToContext] removed ${removed} older messages to fit context window (${contextSize} tokens)`
+				);
+			}
+			messages.splice(historyStart, removed);
 			return;
 		}
 	}
+}
+
+/**
+ * Truncate chat history so it fits inside the configured context window after
+ * prepending the system prompt. Returns the slice of the original messages that
+ * should be sent to the LLM. Non-string content (e.g. image blocks) is replaced
+ * by a placeholder for budgeting purposes.
+ */
+export function truncateChatHistory<T extends { role: string; content: unknown }>(
+	messages: T[],
+	systemPrompt: string,
+	contextSize: number
+): T[] {
+	const messagesWithSystem = [
+		{ role: 'system' as const, content: systemPrompt },
+		...messages.map((m) => ({
+			role: m.role,
+			content: typeof m.content === 'string' ? m.content : '[image content]'
+		}))
+	];
+	truncateMessagesToContext(messagesWithSystem, contextSize);
+	const keptHistoryCount = messagesWithSystem.length - 1;
+	return messages.slice(-keptHistoryCount);
 }
 

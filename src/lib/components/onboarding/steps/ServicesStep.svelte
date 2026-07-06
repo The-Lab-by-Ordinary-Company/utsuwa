@@ -9,6 +9,12 @@
 		debounce,
 		type ModelInfo
 	} from '$lib/services/providers/use-model-fetch';
+	import {
+		CONTEXT_SIZE_STEPS,
+		DEFAULT_CONTEXT_SIZE,
+		formatContextSize,
+		snapContextSize
+	} from '$lib/utils/context-window';
 
 	interface Props {
 		onNext: () => void;
@@ -17,32 +23,20 @@
 
 	let { onNext, onBack }: Props = $props();
 
-	const contextSizeSteps = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072];
-
-	function formatContextSize(value: number): string {
-		if (value >= 1024) return `${value / 1024}k`;
-		return String(value);
-	}
-
-	function snapContextSize(value: number): number {
-		return contextSizeSteps.reduce((prev, curr) =>
-			Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
-		);
-	}
 
 	function handleContextSizeChange(value: number) {
 		modulesStore.setModuleSetting('consciousness', 'contextSize', value);
 	}
 
 	function handleContextSizeToggle(enabled: boolean) {
-		modulesStore.setModuleSetting('consciousness', 'contextSize', enabled ? 32768 : undefined);
+		modulesStore.setModuleSetting('consciousness', 'contextSize', enabled ? DEFAULT_CONTEXT_SIZE : undefined);
 	}
 
 	// LLM State
 	const llmSettings = $derived(modulesStore.getModuleSettings('consciousness'));
 	const llmProvider = $derived(getLLMProvider(llmSettings.activeProvider as string));
 	const staticLLMModels = $derived(llmProvider?.models ?? []);
-	const llmContextSize = $derived((llmSettings.contextSize as number | undefined) ?? undefined);
+	const llmContextSize = $derived(llmSettings.contextSize as number | undefined);
 	const llmContextEnabled = $derived(llmContextSize !== undefined && llmContextSize > 0);
 
 	// Dynamic model fetching state for LLM
@@ -460,13 +454,13 @@
 					type="range"
 					class="context-size-slider"
 					min="0"
-					max={contextSizeSteps.length - 1}
+					max={CONTEXT_SIZE_STEPS.length - 1}
 					step="1"
-					value={contextSizeSteps.indexOf(snapContextSize(llmContextSize as number))}
-					oninput={(e) => handleContextSizeChange(contextSizeSteps[Number(e.currentTarget.value)])}
+					value={CONTEXT_SIZE_STEPS.indexOf(snapContextSize(llmContextSize as number))}
+					oninput={(e) => handleContextSizeChange(CONTEXT_SIZE_STEPS[Number(e.currentTarget.value)])}
 				/>
 				<div class="context-size-ticks">
-					{#each contextSizeSteps as step}
+					{#each CONTEXT_SIZE_STEPS as step}
 						<span>{formatContextSize(step)}</span>
 					{/each}
 				</div>

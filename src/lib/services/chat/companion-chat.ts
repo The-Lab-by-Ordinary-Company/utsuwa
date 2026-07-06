@@ -15,7 +15,7 @@ import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry
 import { streamChatDirect } from '$lib/services/chat/client-chat';
 import { processCompanionTurn } from '$lib/services/chat/companion-turn';
 import { retrieveRelevantContext } from '$lib/engine/memory';
-import { buildSystemPrompt, truncateMessagesToContext, type PromptContext } from '$lib/ai/prompt-builder';
+import { buildSystemPrompt, truncateChatHistory, type PromptContext } from '$lib/ai/prompt-builder';
 import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
 import { isTauri } from '$lib/services/platform';
@@ -183,19 +183,9 @@ export async function sendCompanionMessage(
 		// Truncate message history to the configured context window. This applies
 		// to every provider so users can size prompts to their model's limit.
 		// Image turns use a non-string content shape; token estimation for them is
-		// skipped by substituting a placeholder, and the resulting suffix length is
-		// applied to the original message array.
+		// handled by substituting a placeholder inside the helper.
 		if (contextSize && contextSize > 0 && messages.length > 0) {
-			const messagesWithSystem = [
-				{ role: 'system' as const, content: systemPrompt },
-				...messages.map((m) => ({
-					role: m.role,
-					content: typeof m.content === 'string' ? m.content : '[image content]'
-				}))
-			];
-			truncateMessagesToContext(messagesWithSystem, contextSize);
-			const keptHistoryCount = messagesWithSystem.length - 1;
-			messages = messages.slice(-keptHistoryCount);
+			messages = truncateChatHistory(messages, systemPrompt, contextSize);
 		}
 
 		// Advanced parameters are only supported for OpenAI-compatible endpoints.
