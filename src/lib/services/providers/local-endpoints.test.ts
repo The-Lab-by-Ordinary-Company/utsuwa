@@ -11,7 +11,8 @@ import {
 	getLocalTTSConnectionHint,
 	isLocalSTTProvider,
 	getSTTBaseUrl,
-	getLocalSTTConnectionHint
+	getLocalSTTConnectionHint,
+	ensureOpenAIPath, looksLikeOllama
 } from './local-endpoints.ts';
 
 test('identifies local STT providers', () => {
@@ -103,4 +104,27 @@ test('provides local TTS troubleshooting hint with CORS guidance', () => {
 		getLocalTTSConnectionHint('http://localhost:8880', 'https://utsuwa.app'),
 		/https:\/\/utsuwa\.app/
 	);
+});
+
+// --- ensureOpenAIPath (shared by model discovery and custom-endpoint chat) ---
+
+test('ensureOpenAIPath appends /v1 to bare base URLs', () => {
+	assert.equal(ensureOpenAIPath('https://api.together.xyz'), 'https://api.together.xyz/v1');
+	assert.equal(ensureOpenAIPath('https://api.together.xyz/'), 'https://api.together.xyz/v1');
+});
+
+test('ensureOpenAIPath leaves /v1 URLs unchanged', () => {
+	assert.equal(ensureOpenAIPath('https://api.openai.com/v1'), 'https://api.openai.com/v1');
+	assert.equal(ensureOpenAIPath('https://api.openai.com/v1/'), 'https://api.openai.com/v1');
+});
+
+// --- looksLikeOllama ---
+
+test('looksLikeOllama matches default local Ollama only', () => {
+	assert.equal(looksLikeOllama('http://localhost:11434'), true);
+	assert.equal(looksLikeOllama('http://127.0.0.1:11434'), true);
+	assert.equal(looksLikeOllama('http://localhost:11434/v1'), true);
+	assert.equal(looksLikeOllama('http://localhost:1234'), false);
+	assert.equal(looksLikeOllama('https://api.openai.com/v1'), false);
+	assert.equal(looksLikeOllama('not a url'), false);
 });

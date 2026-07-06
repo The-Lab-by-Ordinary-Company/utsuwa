@@ -214,7 +214,7 @@ export async function sendCompanionMessage(
 					messages: messages.map((m) => ({ role: m.role, content: toOpenAIContent(m.content) })),
 					provider,
 					model: selectedModel,
-					apiKey: apiKey || 'not-needed',
+					apiKey: apiKey || (providerMeta?.custom ? undefined : 'not-needed'),
 					baseURL,
 					systemPrompt,
 					...advancedParams

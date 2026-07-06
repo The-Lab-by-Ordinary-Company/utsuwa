@@ -2,7 +2,7 @@ import { streamText } from '@xsai/stream-text';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import type { LLMProvider } from '$lib/types';
-import { getChatBaseUrl } from '$lib/services/providers/local-endpoints';
+import { ensureOpenAIPath, getChatBaseUrl } from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
 import { sanitizeProviderError } from '$lib/services/providers/provider-errors';
 import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-defaults';
@@ -51,6 +51,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			headers['anthropic-dangerous-direct-browser-access'] = 'true';
 		} else if (isLocalProvider) {
 			providerBaseURL = getChatBaseUrl(typedProvider, providerBaseURL);
+		} else if (typedProvider === 'openai-compatible') {
+			// Same /v1 normalization as model discovery, so a base URL that
+			// populates the dropdown can't then 404 on chat.
+			providerBaseURL = providerBaseURL ? ensureOpenAIPath(providerBaseURL) : providerBaseURL;
 		} else {
 			// Use default base URL for provider
 			providerBaseURL = providerBaseURL || DEFAULT_CHAT_BASE_URLS[typedProvider];
@@ -80,7 +84,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		let result;
 		try {
 			result = streamText({
-				apiKey: apiKey || 'not-needed',
+				// Keyless custom endpoints must not receive a fabricated bearer;
+				// strict gateways reject 'Bearer not-needed'. xsai omits the
+				// Authorization header entirely when apiKey is undefined.
+				apiKey: apiKey || (typedProvider === 'openai-compatible' ? undefined : 'not-needed'),
 				baseURL: providerBaseURL,
 				model,
 				messages: messagesWithSystem,

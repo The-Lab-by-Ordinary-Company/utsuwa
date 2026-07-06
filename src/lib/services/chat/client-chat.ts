@@ -1,5 +1,6 @@
 import type { LLMProvider } from '$lib/types';
 import {
+	ensureOpenAIPath,
 	getChatBaseUrl,
 	getLocalProviderConnectionHint,
 	isLocalLLMProvider
@@ -54,9 +55,13 @@ export async function streamChatDirect(
 		return;
 	}
 
+	// Custom endpoints get the same /v1 normalization as model discovery, so a
+	// base URL that populates the dropdown can't then 404 on chat.
 	const providerBaseURL = isLocal
 		? getChatBaseUrl(provider, baseURL)
-		: baseURL || DEFAULT_CHAT_BASE_URLS[provider];
+		: provider === 'openai-compatible' && baseURL
+			? ensureOpenAIPath(baseURL)
+			: baseURL || DEFAULT_CHAT_BASE_URLS[provider];
 	if (!providerBaseURL) {
 		onError(`Unknown provider: ${provider}`);
 		return;
@@ -215,7 +220,11 @@ export async function extractStateUpdates(options: ExtractOptions): Promise<stri
 	const isLocal = isLocalLLMProvider(provider);
 	if (!apiKey && !isLocal && provider !== 'openai-compatible') return null;
 
-	const base = isLocal ? getChatBaseUrl(provider, baseURL) : baseURL || DEFAULT_CHAT_BASE_URLS[provider];
+	const base = isLocal
+		? getChatBaseUrl(provider, baseURL)
+		: provider === 'openai-compatible' && baseURL
+			? ensureOpenAIPath(baseURL)
+			: baseURL || DEFAULT_CHAT_BASE_URLS[provider];
 	if (!base) return null;
 
 	const trimmedBase = base.replace(/\/+$/, '');

@@ -4,7 +4,8 @@ import type { LLMProvider } from '$lib/types';
 import {
 	ensureOpenAIPath,
 	getModelsBaseUrl,
-	isLocalLLMProvider
+	isLocalLLMProvider,
+	looksLikeOllama
 } from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
 import { DEFAULT_MODELS_BASE_URLS } from '$lib/services/providers/provider-defaults';
@@ -60,18 +61,6 @@ function normalizeModelName(id: string, providerId: string): string {
 		.replace(/O3/g, 'o3');
 
 	return name;
-}
-
-function looksLikeOllama(baseUrl: string): boolean {
-	try {
-		const url = new URL(baseUrl);
-		return (
-			(url.hostname === 'localhost' || url.hostname === '127.0.0.1') &&
-			url.port === '11434'
-		);
-	} catch {
-		return false;
-	}
 }
 
 async function fetchOpenAIModels(apiKey: string | undefined, baseUrl: string): Promise<ModelInfo[]> {

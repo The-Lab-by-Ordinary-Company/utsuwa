@@ -20,6 +20,21 @@ export function ensureOpenAIPath(url: string): string {
 	return cleanUrl.endsWith('/v1') ? cleanUrl : `${cleanUrl}/v1`;
 }
 
+// A default local Ollama reached through the OpenAI-compatible provider: its
+// model list lives at /api/tags instead of /v1/models. Shared so the web and
+// desktop discovery paths can't drift.
+export function looksLikeOllama(baseUrl: string): boolean {
+	try {
+		const url = new URL(baseUrl);
+		return (
+			(url.hostname === 'localhost' || url.hostname === '127.0.0.1') &&
+			url.port === '11434'
+		);
+	} catch {
+		return false;
+	}
+}
+
 export function isLocalLLMProvider(providerId: string): boolean {
 	return LOCAL_LLM_PROVIDERS.has(providerId);
 }

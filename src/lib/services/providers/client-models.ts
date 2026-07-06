@@ -3,7 +3,8 @@ import {
 	ensureOpenAIPath,
 	getLocalProviderConnectionHint,
 	getModelsBaseUrl,
-	isLocalLLMProvider
+	isLocalLLMProvider,
+	looksLikeOllama
 } from './local-endpoints';
 import { DEFAULT_MODELS_BASE_URLS } from './provider-defaults.ts';
 
@@ -40,18 +41,6 @@ function normalizeModelName(id: string, providerId: string): string {
 		.replace(/O1/g, 'o1')
 		.replace(/O3/g, 'o3');
 	return name;
-}
-
-function looksLikeOllama(baseUrl: string): boolean {
-	try {
-		const url = new URL(baseUrl);
-		return (
-			(url.hostname === 'localhost' || url.hostname === '127.0.0.1') &&
-			url.port === '11434'
-		);
-	} catch {
-		return false;
-	}
 }
 
 /**
