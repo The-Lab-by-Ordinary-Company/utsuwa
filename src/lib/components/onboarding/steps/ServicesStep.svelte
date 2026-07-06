@@ -17,10 +17,33 @@
 
 	let { onNext, onBack }: Props = $props();
 
+	const contextSizeSteps = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072];
+
+	function formatContextSize(value: number): string {
+		if (value >= 1024) return `${value / 1024}k`;
+		return String(value);
+	}
+
+	function snapContextSize(value: number): number {
+		return contextSizeSteps.reduce((prev, curr) =>
+			Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+		);
+	}
+
+	function handleContextSizeChange(value: number) {
+		modulesStore.setModuleSetting('consciousness', 'contextSize', value);
+	}
+
+	function handleContextSizeToggle(enabled: boolean) {
+		modulesStore.setModuleSetting('consciousness', 'contextSize', enabled ? 32768 : undefined);
+	}
+
 	// LLM State
 	const llmSettings = $derived(modulesStore.getModuleSettings('consciousness'));
 	const llmProvider = $derived(getLLMProvider(llmSettings.activeProvider as string));
 	const staticLLMModels = $derived(llmProvider?.models ?? []);
+	const llmContextSize = $derived((llmSettings.contextSize as number | undefined) ?? undefined);
+	const llmContextEnabled = $derived(llmContextSize !== undefined && llmContextSize > 0);
 
 	// Dynamic model fetching state for LLM
 	let llmIsLoading = $state(false);
@@ -408,6 +431,50 @@
 				disabledMessage="Enter API key first"
 			/>
 		{/if}
+
+		<!-- Context Window -->
+		<div class="context-size-row">
+			<label class="context-size-label" for="ob-llm-context-size-toggle">
+				Context Window
+				{#if llmContextEnabled}
+					<span class="context-size-value">{formatContextSize(snapContextSize(llmContextSize as number))}</span>
+				{:else}
+					<span class="context-size-value">Default</span>
+				{/if}
+			</label>
+			<button
+				id="ob-llm-context-size-toggle"
+				class="toggle-btn"
+				class:enabled={llmContextEnabled}
+				onclick={() => handleContextSizeToggle(!llmContextEnabled)}
+				aria-label="Toggle context window scaling"
+			>
+				<span class="toggle-track">
+					<span class="toggle-thumb"></span>
+				</span>
+			</button>
+		</div>
+		{#if llmContextEnabled}
+			<div class="context-size-slider-row">
+				<input
+					type="range"
+					class="context-size-slider"
+					min="0"
+					max={contextSizeSteps.length - 1}
+					step="1"
+					value={contextSizeSteps.indexOf(snapContextSize(llmContextSize as number))}
+					oninput={(e) => handleContextSizeChange(contextSizeSteps[Number(e.currentTarget.value)])}
+				/>
+				<div class="context-size-ticks">
+					{#each contextSizeSteps as step}
+						<span>{formatContextSize(step)}</span>
+					{/each}
+				</div>
+			</div>
+		{/if}
+		<p class="provider-note">
+			When enabled, memory injection and chat history are scaled to fit the selected model's context window.
+		</p>
 	</div>
 
 	<!-- TTS Section -->
@@ -731,5 +798,47 @@
 		margin: 0;
 		font-size: 0.8rem;
 		color: var(--text-tertiary);
+	}
+
+	.context-size-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.context-size-label {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex: 1;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+	}
+
+	.context-size-value {
+		font-size: 0.8rem;
+		color: var(--text-tertiary);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.context-size-slider-row {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.context-size-slider {
+		width: 100%;
+		cursor: pointer;
+	}
+
+	.context-size-ticks {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.7rem;
+		color: var(--text-tertiary);
+		padding: 0 0.25rem;
 	}
 </style>

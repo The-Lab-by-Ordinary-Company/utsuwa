@@ -6,6 +6,27 @@
 	import type { PersonaPageState } from './persona-page.svelte';
 
 	let { page }: { page: PersonaPageState } = $props();
+
+	const contextSizeSteps = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072];
+
+	function formatContextSize(value: number): string {
+		if (value >= 1024) return `${value / 1024}k`;
+		return String(value);
+	}
+
+	function snapContextSize(value: number): number {
+		return contextSizeSteps.reduce((prev, curr) =>
+			Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+		);
+	}
+
+	function handleContextSizeChange(value: number) {
+		page.handleLLMNumberSetting('contextSize', value);
+	}
+
+	function handleContextSizeToggle(enabled: boolean) {
+		page.handleLLMNumberSetting('contextSize', enabled ? 32768 : undefined);
+	}
 </script>
 
 <!-- AI Services (collapsible) -->
@@ -215,6 +236,52 @@
 								disabledMessage="Enter API key first"
 							/>
 						{/if}
+
+						<!-- Context Window -->
+						{@const contextSize = page.consciousnessSettings.contextSize as number | undefined}
+						{@const contextEnabled = contextSize !== undefined && contextSize > 0}
+						<div class="context-size-row">
+							<label class="context-size-label" for="llm-context-size-toggle">
+								Context Window
+								{#if contextEnabled}
+									<span class="context-size-value">{formatContextSize(snapContextSize(contextSize))}</span>
+								{:else}
+									<span class="context-size-value">Default</span>
+								{/if}
+							</label>
+							<button
+								id="llm-context-size-toggle"
+								class="service-toggle"
+								class:enabled={contextEnabled}
+								onclick={() => handleContextSizeToggle(!contextEnabled)}
+								aria-label="Toggle context window scaling"
+							>
+								<span class="toggle-track">
+									<span class="toggle-thumb"></span>
+								</span>
+							</button>
+						</div>
+						{#if contextEnabled}
+							<div class="context-size-slider-row">
+								<input
+									type="range"
+									class="llm-param-slider"
+									min="0"
+									max={contextSizeSteps.length - 1}
+									step="1"
+									value={contextSizeSteps.indexOf(snapContextSize(contextSize))}
+									oninput={(e) => handleContextSizeChange(contextSizeSteps[Number(e.currentTarget.value)])}
+								/>
+								<div class="context-size-ticks">
+									{#each contextSizeSteps as step}
+										<span>{formatContextSize(step)}</span>
+									{/each}
+								</div>
+							</div>
+						{/if}
+						<p class="provider-note">
+							When enabled, memory injection and chat history are scaled to fit the selected model's context window.
+						</p>
 					{/if}
 				{/if}
 			</div>
@@ -607,5 +674,42 @@
 	.llm-param-slider {
 		width: 100%;
 		cursor: pointer;
+	}
+
+	.context-size-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.context-size-label {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex: 1;
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+	}
+
+	.context-size-value {
+		font-size: 0.75rem;
+		color: var(--text-tertiary);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.context-size-slider-row {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.context-size-ticks {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.65rem;
+		color: var(--text-tertiary);
+		padding: 0 0.25rem;
 	}
 </style>

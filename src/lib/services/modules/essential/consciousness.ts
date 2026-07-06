@@ -48,6 +48,12 @@ export const consciousnessModule: ModuleDefinition = {
 				description: 'Maximum tokens in response. Leave empty to use the provider default.'
 			},
 			{
+				key: 'contextSize',
+				type: 'number',
+				label: 'Context Window',
+				description: 'Maximum context size of the selected model in tokens. Used to scale memory injection and truncate history. Leave empty to keep the default behavior.'
+			},
+			{
 				key: 'presencePenalty',
 				type: 'number',
 				label: 'Presence Penalty',

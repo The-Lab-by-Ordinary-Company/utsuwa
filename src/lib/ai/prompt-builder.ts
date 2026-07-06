@@ -1,5 +1,6 @@
 import type { CharacterState } from '$lib/types/character';
-import type { Fact, SessionSummary, RelevantContext } from '$lib/types/memory';
+import type { Fact, SessionSummary, RelevantContext, MemoryBudget } from '../types/memory.ts';
+import { getMemoryBudget } from '../types/memory.ts';
 import type { PersonaCard } from '$lib/stores/persona.svelte';
 // Relative import keeps this module runnable under the node test runner
 import { STAGE_BEHAVIORS, STAGE_INSTRUCTIONS } from '../engine/stages.ts';
@@ -14,6 +15,15 @@ export interface PromptContext {
 	// True when the user has shown her an image this turn. Adds the
 	// "being shown" reception layer so she receives it like a person.
 	hasImages?: boolean;
+	// Configured context window size in tokens. Used to scale memory injection
+	// and truncate history. When unset, historical defaults (6 turns, 5 facts)
+	// are preserved.
+	contextSize?: number;
+}
+
+function getContextMemoryBudget(contextSize?: number): MemoryBudget | undefined {
+	if (!contextSize || contextSize <= 0) return undefined;
+	return getMemoryBudget(contextSize);
 }
 
 // Build the complete system prompt
@@ -69,16 +79,19 @@ Energy: ${energyDesc} (${ctx.state.energy}/100)
 </state>`);
 
 	// Memories
+	const memoryBudget = getContextMemoryBudget(ctx.contextSize);
 	const memorySections: string[] = [];
 	if (mem.recentTurns.length > 0) {
+		const turnLimit = memoryBudget?.workingMemoryTurns ?? 6;
 		const recentChat = mem.recentTurns
-			.slice(-6)
+			.slice(-turnLimit)
 			.map((t) => `${t.role === 'user' ? 'They' : 'You'}: ${t.content}`)
 			.join('\n');
 		memorySections.push(`Recent conversation:\n${recentChat}`);
 	}
 	if (mem.relevantFacts.length > 0) {
-		const factsText = mem.relevantFacts.slice(0, 5).map((f) => `- ${f.content}`).join('\n');
+		const factLimit = memoryBudget?.relevantFacts ?? 5;
+		const factsText = mem.relevantFacts.slice(0, factLimit).map((f) => `- ${f.content}`).join('\n');
 		memorySections.push(`Things you know about them:\n${factsText}`);
 	}
 
@@ -192,12 +205,14 @@ ${state.currentStreak > 1 ? `Current Streak: ${state.currentStreak} days` : ''}
 // Memory layer - what she remembers
 function buildMemoryLayer(ctx: PromptContext): string {
 	const mem = ctx.memories;
+	const memoryBudget = getContextMemoryBudget(ctx.contextSize);
 	let sections: string[] = [];
 
 	// Recent conversation
 	if (mem.recentTurns.length > 0) {
+		const turnLimit = memoryBudget?.workingMemoryTurns ?? 6;
 		const recentChat = mem.recentTurns
-			.slice(-6)
+			.slice(-turnLimit)
 			.map((t) => `${t.role === 'user' ? 'They' : 'You'}: ${t.content}`)
 			.join('\n');
 		sections.push(`Recent conversation:\n${recentChat}`);
@@ -205,7 +220,8 @@ function buildMemoryLayer(ctx: PromptContext): string {
 
 	// Relevant facts
 	if (mem.relevantFacts.length > 0) {
-		const factsText = mem.relevantFacts.slice(0, 5).map((f) => `- ${f.content}`).join('\n');
+		const factLimit = memoryBudget?.relevantFacts ?? 5;
+		const factsText = mem.relevantFacts.slice(0, factLimit).map((f) => `- ${f.content}`).join('\n');
 		sections.push(`Things you know about them:\n${factsText}`);
 	}
 
@@ -387,5 +403,54 @@ function formatTimeSince(lastInteraction: Date | null): string {
 	if (days < 7) return `${days} days ago`;
 
 	return `${Math.floor(days / 7)} weeks ago`;
+}
+
+// Rough token estimate: 1 token ≈ 4 characters for Latin script.
+// Good enough for prompt budgeting; exact counts depend on the tokenizer.
+export function estimateTokens(text: string): number {
+	return Math.ceil(text.length / 4);
+}
+
+// Minimal budget reserved for the model's response and generation overhead.
+const RESPONSE_TOKEN_RESERVE = 500;
+// Floor that guarantees at least the newest user message is kept even when the
+// system prompt already consumes most of the context window.
+const MIN_HISTORY_MESSAGE_TOKENS = 50;
+
+/**
+ * Truncate message history to fit inside the configured context window.
+ * Operates in-place. Always keeps the system message (index 0) and the most
+ * recent user message. Requires that the first message is the system prompt.
+ */
+export function truncateMessagesToContext(
+	messages: Array<{ role: string; content: string }>,
+	contextSize: number
+): void {
+	if (messages.length === 0) return;
+
+	const systemMsg = messages[0];
+	const systemTokens = estimateTokens(systemMsg.content);
+	const maxHistoryTokens = Math.max(
+		contextSize - systemTokens - RESPONSE_TOKEN_RESERVE,
+		MIN_HISTORY_MESSAGE_TOKENS
+	);
+
+	const historyStart = messages.findIndex((m, i) => i > 0 && m.role !== 'system');
+	if (historyStart === -1) return;
+
+	let totalHistoryTokens = 0;
+	// Walk backwards from the newest message so we can stop once the budget is
+	// exhausted and remove everything older in one splice.
+	for (let i = messages.length - 1; i >= historyStart; i--) {
+		const tokens = estimateTokens(messages[i].content);
+		totalHistoryTokens += tokens;
+		if (totalHistoryTokens > maxHistoryTokens) {
+			// Keep message i (it already tipped us over budget) and remove all
+			// older history before it. The loop goes newest→oldest, so i is the
+			// oldest message we can still afford.
+			messages.splice(historyStart, i - historyStart);
+			return;
+		}
+	}
 }
 

@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildSystemPrompt, buildExtractionSystemPrompt, type PromptContext } from './prompt-builder.ts';
+import {
+	buildSystemPrompt,
+	buildExtractionSystemPrompt,
+	truncateMessagesToContext,
+	type PromptContext
+} from './prompt-builder.ts';
 import type { CharacterState } from '$lib/types/character';
 import type { RelevantContext } from '$lib/types/memory';
 
@@ -115,4 +120,127 @@ test('extraction prompt only mentions images when there are images', () => {
 	assert.ok(buildExtractionSystemPrompt(true).includes('showed the companion an image'));
 	assert.ok(!buildExtractionSystemPrompt(false).includes('showed the companion an image'));
 	assert.ok(buildExtractionSystemPrompt().includes('ONLY a JSON object'));
+});
+
+test('context size scales memory injection in dating-sim mode', () => {
+	const memories: RelevantContext = {
+		recentTurns: Array.from({ length: 12 }, (_, i) => ({
+			id: i,
+			role: i % 2 === 0 ? 'user' : 'assistant',
+			content: `turn ${i}`,
+			createdAt: new Date()
+		})) as Array<{ id: number; role: 'user' | 'assistant'; content: string; createdAt: Date }>,
+		relevantFacts: Array.from({ length: 8 }, (_, i) => ({
+			id: i,
+			content: `fact ${i}`,
+			category: 'user' as const,
+			importance: 50,
+			confidence: 0.8,
+			referenceCount: 0,
+			createdAt: new Date()
+		})),
+		triggeredMemories: [],
+		recentSessions: []
+	};
+
+	const small = buildSystemPrompt(makeContext({ contextSize: 2048, memories }));
+	const large = buildSystemPrompt(makeContext({ contextSize: 32768, memories }));
+
+	// Small context keeps fewer turns/facts than large context.
+	const smallTurns = (small.match(/turn \d+/g) || []).length;
+	const largeTurns = (large.match(/turn \d+/g) || []).length;
+	assert.ok(smallTurns < largeTurns, `expected small context to keep fewer turns (${smallTurns} vs ${largeTurns})`);
+
+	const smallFacts = (small.match(/fact \d+/g) || []).length;
+	const largeFacts = (large.match(/fact \d+/g) || []).length;
+	assert.ok(smallFacts < largeFacts, `expected small context to keep fewer facts (${smallFacts} vs ${largeFacts})`);
+});
+
+test('context size scales memory injection in companion mode', () => {
+	const memories: RelevantContext = {
+		recentTurns: Array.from({ length: 12 }, (_, i) => ({
+			id: i,
+			role: i % 2 === 0 ? 'user' : 'assistant',
+			content: `turn ${i}`,
+			createdAt: new Date()
+		})) as Array<{ id: number; role: 'user' | 'assistant'; content: string; createdAt: Date }>,
+		relevantFacts: Array.from({ length: 8 }, (_, i) => ({
+			id: i,
+			content: `fact ${i}`,
+			category: 'user' as const,
+			importance: 50,
+			confidence: 0.8,
+			referenceCount: 0,
+			createdAt: new Date()
+		})),
+		triggeredMemories: [],
+		recentSessions: []
+	};
+
+	const small = buildSystemPrompt(
+		makeContext({ state: makeState({ appMode: 'companion' }), contextSize: 2048, memories })
+	);
+	const large = buildSystemPrompt(
+		makeContext({ state: makeState({ appMode: 'companion' }), contextSize: 32768, memories })
+	);
+
+	const smallTurns = (small.match(/turn \d+/g) || []).length;
+	const largeTurns = (large.match(/turn \d+/g) || []).length;
+	assert.ok(smallTurns < largeTurns, `expected small context to keep fewer turns (${smallTurns} vs ${largeTurns})`);
+
+	const smallFacts = (small.match(/fact \d+/g) || []).length;
+	const largeFacts = (large.match(/fact \d+/g) || []).length;
+	assert.ok(smallFacts < largeFacts, `expected small context to keep fewer facts (${smallFacts} vs ${largeFacts})`);
+});
+
+test('truncateMessagesToContext keeps all messages when within budget', () => {
+	const messages = [
+		{ role: 'system', content: 'x'.repeat(400) }, // ~100 tokens
+		{ role: 'user', content: 'hello' },
+		{ role: 'assistant', content: 'hi there' },
+		{ role: 'user', content: 'how are you?' }
+	];
+	truncateMessagesToContext(messages, 2048);
+	assert.equal(messages.length, 4);
+});
+
+test('truncateMessagesToContext removes oldest history to fit budget', () => {
+	const messages = [
+		{ role: 'system', content: 'x'.repeat(400) }, // ~100 tokens
+		{ role: 'user', content: 'a'.repeat(400) }, // ~100 tokens
+		{ role: 'assistant', content: 'b'.repeat(400) }, // ~100 tokens
+		{ role: 'user', content: 'newest message' }
+	];
+	// 100 system + 500 reserve = 600 used; 700 - 600 = 100 history budget.
+	// The two oldest history messages exceed that, so at least one is dropped.
+	truncateMessagesToContext(messages, 700);
+	// System + newest user must remain.
+	assert.equal(messages[0].role, 'system');
+	assert.equal(messages[messages.length - 1].content, 'newest message');
+	// At least one older message was dropped.
+	assert.ok(messages.length < 4);
+});
+
+test('truncateMessagesToContext always keeps newest user message even with oversized system prompt', () => {
+	const messages = [
+		{ role: 'system', content: 'x'.repeat(10000) }, // ~2500 tokens, exceeds context window
+		{ role: 'user', content: 'please help me' }
+	];
+	truncateMessagesToContext(messages, 2048);
+	assert.equal(messages.length, 2);
+	assert.equal(messages[0].role, 'system');
+	assert.equal(messages[1].content, 'please help me');
+});
+
+test('truncateMessagesToContext handles empty history gracefully', () => {
+	const messages = [{ role: 'system', content: 'you are helpful' }];
+	truncateMessagesToContext(messages, 2048);
+	assert.equal(messages.length, 1);
+	assert.equal(messages[0].role, 'system');
+});
+
+test('truncateMessagesToContext is a no-op with no messages', () => {
+	const messages: Array<{ role: string; content: string }> = [];
+	truncateMessagesToContext(messages, 2048);
+	assert.equal(messages.length, 0);
 });

@@ -15,7 +15,7 @@ import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry
 import { streamChatDirect } from '$lib/services/chat/client-chat';
 import { processCompanionTurn } from '$lib/services/chat/companion-turn';
 import { retrieveRelevantContext } from '$lib/engine/memory';
-import { buildSystemPrompt, type PromptContext } from '$lib/ai/prompt-builder';
+import { buildSystemPrompt, truncateMessagesToContext, type PromptContext } from '$lib/ai/prompt-builder';
 import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
 import { isTauri } from '$lib/services/platform';
@@ -37,14 +37,19 @@ export interface CompanionChatHooks {
 	beforeStream?: () => void;
 }
 
-async function buildCompanionPrompt(userMessage: string, hasImages: boolean): Promise<string> {
+async function buildCompanionPrompt(
+	userMessage: string,
+	hasImages: boolean,
+	contextSize?: number
+): Promise<string> {
 	const context: PromptContext = {
 		persona: personaStore.activeCard,
 		state: characterStore.state,
 		memories: await retrieveRelevantContext(userMessage),
 		userMessage,
 		systemTime: new Date(),
-		hasImages
+		hasImages,
+		contextSize
 	};
 	return buildSystemPrompt(context);
 }
@@ -160,7 +165,8 @@ export async function sendCompanionMessage(
 			throw new Error('Please configure a provider in Settings > Modules > Consciousness');
 		}
 
-		const systemPrompt = await buildCompanionPrompt(content, images.length > 0);
+		const contextSize = (consciousnessSettings.contextSize as number | undefined) || undefined;
+		const systemPrompt = await buildCompanionPrompt(content, images.length > 0, contextSize);
 		const providerConfig = settingsStore.getProviderConfig(provider);
 		const apiKey = providerConfig.apiKey;
 		const providerMeta = getLLMProvider(provider);
@@ -171,8 +177,26 @@ export async function sendCompanionMessage(
 		chatStore.addMessage('assistant', '');
 		const selectedModel = model || providerMeta?.models?.[0]?.id || '';
 		const baseURL = providerConfig.baseUrl || providerMeta?.defaultBaseUrl;
-		const messages = buildMessages(images);
+		let messages = buildMessages(images);
 		const onDelta = (full: string) => chatStore.updateLastMessage(full);
+
+		// Truncate message history to the configured context window. This applies
+		// to every provider so users can size prompts to their model's limit.
+		// Image turns use a non-string content shape; token estimation for them is
+		// skipped by substituting a placeholder, and the resulting suffix length is
+		// applied to the original message array.
+		if (contextSize && contextSize > 0 && messages.length > 0) {
+			const messagesWithSystem = [
+				{ role: 'system' as const, content: systemPrompt },
+				...messages.map((m) => ({
+					role: m.role,
+					content: typeof m.content === 'string' ? m.content : '[image content]'
+				}))
+			];
+			truncateMessagesToContext(messagesWithSystem, contextSize);
+			const keptHistoryCount = messagesWithSystem.length - 1;
+			messages = messages.slice(-keptHistoryCount);
+		}
 
 		// Advanced parameters are only supported for OpenAI-compatible endpoints.
 		const advancedParams = providerMeta?.custom
