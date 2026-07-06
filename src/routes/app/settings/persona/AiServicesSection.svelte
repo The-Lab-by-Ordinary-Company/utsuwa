@@ -224,6 +224,7 @@
 						<ContextSizeSlider
 							contextSize={page.consciousnessSettings.contextSize as number | undefined}
 							onChange={handleContextSizeChange}
+							id="llm-context-size-toggle"
 						/>
 					{/if}
 				{/if}

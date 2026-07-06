@@ -418,7 +418,6 @@
 		<ContextSizeSlider
 			contextSize={llmContextSize}
 			onChange={handleContextSizeChange}
-			toggleClass="toggle-btn"
 			id="ob-llm-context-size-toggle"
 		/>
 	</div>

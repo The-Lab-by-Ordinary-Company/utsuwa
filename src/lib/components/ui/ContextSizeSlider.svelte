@@ -9,7 +9,6 @@
 	interface Props {
 		contextSize: number | undefined;
 		onChange: (value: number | undefined) => void;
-		toggleClass?: string;
 		id?: string;
 		note?: string;
 	}
@@ -17,7 +16,6 @@
 	let {
 		contextSize,
 		onChange,
-		toggleClass = 'service-toggle',
 		id = 'llm-context-size-toggle',
 		note = 'When enabled, memory injection and chat history are scaled to fit the selected model\'s context window.'
 	}: Props = $props();
@@ -45,7 +43,7 @@
 	</label>
 	<button
 		{id}
-		class={toggleClass}
+		class="context-size-toggle"
 		class:enabled
 		onclick={handleToggle}
 		aria-label="Toggle context window scaling"
@@ -73,7 +71,7 @@
 		</div>
 	</div>
 {/if}
-<p class="provider-note">{note}</p>
+<p class="context-size-note">{note}</p>
 
 <style>
 	.context-size-row {
@@ -99,6 +97,46 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	.context-size-toggle {
+		margin-left: auto;
+		position: relative;
+		width: 40px;
+		height: 22px;
+		background: transparent;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+	}
+
+	.context-size-toggle .toggle-track {
+		display: block;
+		width: 100%;
+		height: 100%;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-full);
+		transition: background 0.2s ease;
+	}
+
+	.context-size-toggle.enabled .toggle-track {
+		background: var(--accent);
+	}
+
+	.context-size-toggle .toggle-thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 18px;
+		height: 18px;
+		background: #fff;
+		border-radius: var(--radius-full);
+		transition: transform 0.2s ease;
+		box-shadow: var(--shadow-xs);
+	}
+
+	.context-size-toggle.enabled .toggle-thumb {
+		transform: translateX(18px);
+	}
+
 	.context-size-slider-row {
 		display: flex;
 		flex-direction: column;
@@ -116,5 +154,11 @@
 		font-size: 0.65rem;
 		color: var(--text-tertiary);
 		padding: 0 0.25rem;
+	}
+
+	.context-size-note {
+		margin: 0;
+		font-size: 0.75rem;
+		color: var(--text-tertiary);
 	}
 </style>
