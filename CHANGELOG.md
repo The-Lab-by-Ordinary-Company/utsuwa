@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-07-06
+
+### Added
+- **Context window control**: a new Context Window setting in AI Services and onboarding, for every LLM provider. When enabled, memory injection scales to your model's window (small local models get a lean memory layer, larger models get more turns and facts) and older chat history is trimmed so prompts fit, always keeping the persona and your newest message. Leave it off and behavior is unchanged. This is our first community-contributed feature, from @dezihh, thank you.
+
+### Fixed
+- Custom OpenAI-compatible endpoints: a base URL entered without /v1 now works for chat, not just the model dropdown, and keyless endpoints no longer receive a fabricated Authorization header that strict gateways rejected.
+- Switching TTS providers no longer carries the previous provider's voice along, which could make the new provider fail silently with a voice it doesn't know. The voice now resets to the new provider's default, and playback failures show a brief message naming the actual problem instead of the companion just going quiet.
+
 ## [0.9.0] - 2026-07-05
 
 ### Added
