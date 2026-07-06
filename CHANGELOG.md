@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.1] - 2026-07-06
 
 ### Added
-- **Context window control**: a new Context Window setting in AI Services and onboarding, for every LLM provider. When enabled, memory injection scales to your model's window (small local models get a lean memory layer, larger models get more turns and facts) and older chat history is trimmed so prompts fit, always keeping the persona and your newest message. Leave it off and behavior is unchanged. This is our first community-contributed feature, from @dezihh, thank you.
+- **OpenAI-compatible endpoints, first class**: the OpenAI-Compatible provider now discovers models from your endpoint automatically (including a local Ollama), offers them in a searchable dropdown, and exposes advanced parameters: temperature, top P, max tokens, and presence and frequency penalties. Contributed by @dezihh.
+- **Context window control**: a new Context Window setting in AI Services and onboarding, for every LLM provider. When enabled, memory injection scales to your model's window (small local models get a lean memory layer, larger models get more turns and facts) and older chat history is trimmed so prompts fit, always keeping the persona and your newest message. Leave it off and behavior is unchanged. Also contributed by @dezihh: this release ships our first community contributions, thank you.
 
 ### Fixed
 - Custom OpenAI-compatible endpoints: a base URL entered without /v1 now works for chat, not just the model dropdown, and keyless endpoints no longer receive a fabricated Authorization header that strict gateways rejected.
