@@ -7,7 +7,14 @@ import type {
 	MemorySearchOptions,
 	NewFact
 } from '$lib/types/memory';
-import { MAX_WORKING_MEMORY_TURNS, MAX_RELEVANT_FACTS, MAX_RECENT_SESSIONS, DEFAULT_FACT_IMPORTANCE, DEFAULT_FACT_CONFIDENCE } from '$lib/types/memory';
+import {
+	MAX_WORKING_MEMORY_TURNS,
+	MAX_RELEVANT_FACTS,
+	MAX_RECENT_SESSIONS,
+	DEFAULT_FACT_IMPORTANCE,
+	DEFAULT_FACT_CONFIDENCE,
+	getMemoryBudget
+} from '$lib/types/memory';
 import * as memoryStorage from '$lib/services/storage/memory';
 import { embedText, findSimilarFacts, isEmbeddingReady } from '$lib/services/embeddings';
 import { hasCurrentEmbedding } from './embedding-version';
@@ -194,10 +201,16 @@ export const memoryApi = {
 	}
 };
 
-// Retrieve relevant context for prompt building
-export async function retrieveRelevantContext(userMessage: string): Promise<RelevantContext> {
+// Retrieve relevant context for prompt building.
+// When contextSize is provided, recent turns are bounded by the memory budget
+// so the 20-turn tier for large context windows is actually reachable.
+export async function retrieveRelevantContext(
+	userMessage: string,
+	contextSize?: number
+): Promise<RelevantContext> {
 	// Get recent turns from working memory
-	const recentTurns = getRecentTurns(10);
+	const turnLimit = contextSize ? getMemoryBudget(contextSize).workingMemoryTurns : 10;
+	const recentTurns = getRecentTurns(turnLimit);
 
 	// Search for relevant facts based on user message
 	let relevantFacts: Fact[] = [];

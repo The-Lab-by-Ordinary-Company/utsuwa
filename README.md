@@ -130,10 +130,11 @@ Utsuwa supports popular cloud and local LLMs. For endpoints that speak the OpenA
 
 The **Context Window** setting is available for every LLM provider. When enabled, it tells Utsuwa how many tokens the selected model can process. The app then:
 
+- Retrieves the matching number of recent conversation turns from working memory.
 - Scales the amount of injected memory (recent conversation turns and relevant facts) to match the window size.
 - Truncates older chat history before sending, always keeping the system prompt and the user's newest message.
 
-If the setting is left off, Utsuwa keeps the historical defaults (6 recent turns, 5 facts) and does not truncate history. This is useful when you want the provider to handle its own context management.
+If the setting is left off, Utsuwa keeps the historical defaults (10 retrieved turns, 6 injected turns, 5 facts) and does not truncate history. This is useful when you want the provider to handle its own context management.
 
 ### TTS Providers (3)
 

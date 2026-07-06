@@ -45,7 +45,7 @@ async function buildCompanionPrompt(
 	const context: PromptContext = {
 		persona: personaStore.activeCard,
 		state: characterStore.state,
-		memories: await retrieveRelevantContext(userMessage),
+		memories: await retrieveRelevantContext(userMessage, contextSize),
 		userMessage,
 		systemTime: new Date(),
 		hasImages,
