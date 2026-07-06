@@ -293,6 +293,34 @@ test('memory budget defaults are used when contextSize is unset', () => {
 	assert.equal(facts, 5, 'default keeps 5 facts');
 });
 
+test('truncateMessagesToContext drops an oversized older message instead of keeping it', () => {
+	const messages = [
+		{ role: 'system', content: 'x'.repeat(4000) }, // ~1000 tokens
+		{ role: 'user', content: 'old small question' },
+		{ role: 'user', content: 'p'.repeat(80000) }, // ~20000 tokens, a big paste
+		{ role: 'assistant', content: 'short answer' },
+		{ role: 'user', content: 'newest message' }
+	];
+	truncateMessagesToContext(messages, 4096);
+	// The paste blows the budget, so it goes, along with everything older.
+	assert.equal(messages.length, 3);
+	assert.equal(messages[0].role, 'system');
+	assert.equal(messages[1].content, 'short answer');
+	assert.equal(messages[2].content, 'newest message');
+});
+
+test('truncateMessagesToContext keeps a newest message that alone exceeds the budget', () => {
+	const messages = [
+		{ role: 'system', content: 'x'.repeat(4000) },
+		{ role: 'user', content: 'older' },
+		{ role: 'user', content: 'n'.repeat(80000) }
+	];
+	truncateMessagesToContext(messages, 4096);
+	assert.equal(messages.length, 2);
+	assert.equal(messages[0].role, 'system');
+	assert.equal(messages[1].content.length, 80000);
+});
+
 test('truncateMessagesToContext keeps newest user message when system prompt nearly fills window', () => {
 	const messages = [
 		{ role: 'system', content: 'x'.repeat(6000) }, // ~1500 tokens

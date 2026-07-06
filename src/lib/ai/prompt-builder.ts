@@ -470,10 +470,11 @@ export function truncateMessagesToContext(
 		const tokens = estimateTokens(messages[i].content);
 		totalHistoryTokens += tokens;
 		if (totalHistoryTokens > maxHistoryTokens) {
-			// Keep message i (it already tipped us over budget) and remove all
-			// older history before it. The loop goes newest→oldest, so i is the
-			// oldest message we can still afford.
-			const removed = i - historyStart;
+			// Message i tipped us over budget, so it goes too, along with all
+			// older history. The one exception is the newest message: it is
+			// always kept, even oversized, so the user's current turn survives.
+			const keepFrom = i === messages.length - 1 ? i : i + 1;
+			const removed = keepFrom - historyStart;
 			if (isDev && removed > 0) {
 				console.warn(
 					`[truncateMessagesToContext] removed ${removed} older messages to fit context window (${contextSize} tokens)`
