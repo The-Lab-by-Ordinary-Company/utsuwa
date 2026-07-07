@@ -319,6 +319,10 @@ pnpm tauri build  # Build desktop app installer
 
 - [ ] **File and Video Uploads** - Add support for attaching files and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools (image support has shipped)
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
+- [ ] **Hands-Free Voice Mode** - Full duplex conversation: speak naturally and she answers, no push-to-talk, with voice activity detection
+- [ ] **Omnivoice Local TTS** - Self-hosted voice engine support with a dual-voice setup and text chunking, so she starts speaking within moments instead of waiting for the full reply
+- [ ] **MCP Tool Calling** - Model Context Protocol support so your companion can reach beyond the chat: search the web for news, pull live data, or quiz you on Spanish vocabulary, through MCP servers you run yourself
+- [ ] **Flexible Chat Layout** - Choose between the floating chat bar, a full conversation sidebar, or both at once
 
 ## Contributing
 
