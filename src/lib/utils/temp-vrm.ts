@@ -1,4 +1,7 @@
-interface VrmModel {
+// Minimal shape needed by restore(). This intentionally uses `Pick`-like
+// naming (VrmModelRef) so it is not confused with the full VrmModel type
+// exported by the store, while still accepting any object with id + url.
+interface VrmModelRef {
 	id: string;
 	url: string;
 }
@@ -30,14 +33,14 @@ export function createTempVrmManager() {
 			state.originalId = currentActiveModelId;
 		}
 
-		const blob = new Blob([await file.arrayBuffer()], { type: 'model/vrm' });
-		state.url = URL.createObjectURL(blob);
+		// Use the File directly instead of copying it into a new Blob.
+		state.url = URL.createObjectURL(file);
 		state.active = true;
 
 		return { ...state };
 	}
 
-	function restore(models: VrmModel[], defaultModels: VrmModel[]): TempVrmState {
+	function restore(models: VrmModelRef[], defaultModels: VrmModelRef[]): TempVrmState {
 		if (state.url) {
 			URL.revokeObjectURL(state.url);
 			state.url = null;

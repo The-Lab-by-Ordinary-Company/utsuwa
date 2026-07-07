@@ -365,11 +365,16 @@ function createVrmStore() {
 		availableExpressions = [];
 	}
 
-	async function restoreOriginalModel(): Promise<void> {
+	function restoreOriginalModel(): void {
 		const result = tempModelManager.restore(models, DEFAULT_MODELS);
 		if (result.originalId) {
 			activeModelId = result.originalId;
 			modelUrl = result.url;
+		} else {
+			// Defensive fallback: if neither original nor defaults are available,
+			// clear the temp model state so the scene does not stay stuck.
+			activeModelId = null;
+			modelUrl = null;
 		}
 	}
 

@@ -75,3 +75,40 @@ test('restore without a prior temp model is a no-op', () => {
 	assert.equal(result.originalId, null);
 	assert.equal(result.url, null);
 });
+
+test('load with null activeModelId still creates a temp model', async () => {
+	const manager = createTempVrmManager();
+	const result = await manager.load(makeFile(), null);
+
+	assert.equal(result.active, true);
+	assert.equal(result.originalId, null);
+	assert.ok(result.url?.startsWith('blob:'));
+});
+
+test('double restore is idempotent', async () => {
+	const manager = createTempVrmManager();
+	await manager.load(makeFile(), 'original-id');
+	const first = manager.restore(
+		[{ id: 'original-id', url: '/models/original.vrm' }],
+		[{ id: 'default-id', url: '/models/default.vrm' }]
+	);
+	const second = manager.restore(
+		[{ id: 'original-id', url: '/models/original.vrm' }],
+		[{ id: 'default-id', url: '/models/default.vrm' }]
+	);
+
+	assert.equal(first.originalId, 'original-id');
+	assert.equal(second.originalId, null);
+	assert.equal(second.url, null);
+	assert.equal(second.active, false);
+});
+
+test('restore returns no model when original and defaults are missing', async () => {
+	const manager = createTempVrmManager();
+	await manager.load(makeFile(), 'original-id');
+	const result = manager.restore([], []);
+
+	assert.equal(result.active, false);
+	assert.equal(result.originalId, null);
+	assert.equal(result.url, null);
+});
