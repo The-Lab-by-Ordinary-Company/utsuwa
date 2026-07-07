@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-07-07
+
+### Added
+- **Temporary VRM preview in Developer Tools**: upload a .vrm file and preview it in the viewport without saving anything. The model lives in memory only, and your real avatar returns automatically when you leave the page or click Restore Original. Contributed by @dezihh.
+
+### Fixed
+- With a Context Window configured, an oversized message in chat history (a large paste, for example) no longer slips through truncation and overflows the model's window. The message that breaks the budget is now dropped along with everything older, while your newest message is always kept.
+
+### Changed
+- The landing page now shows AR mode among the feature callouts, with a real capture from an Android device.
+
 ## [0.9.1] - 2026-07-06
 
 ### Added
