@@ -213,23 +213,29 @@
 	}
 
 	// ── Temporary VRM Upload ──
-	let tempModelUploading = $state(false);
 	let tempModelName = $state('');
+
+	// If parsing the temporary model fails, restore the original avatar so the
+	// expression list and viewport do not stay empty/corrupted.
+	$effect(() => {
+		if (vrmStore.tempModelLoadError) {
+			vrmStore.restoreOriginalModel();
+			tempModelName = '';
+		}
+	});
 
 	function handleTempModelSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
-		if (!file || !file.name.endsWith('.vrm')) return;
+		if (!file || !/\.vrm$/i.test(file.name)) return;
 
 		tempModelName = file.name;
-		tempModelUploading = true;
-		vrmStore.loadTempModel(file).then(() => {
-			tempModelUploading = false;
-		}).catch((err) => {
+		try {
+			vrmStore.loadTempModel(file);
+		} catch (err) {
 			console.error('Failed to load temp model:', err);
-			tempModelUploading = false;
 			tempModelName = '';
-		});
+		}
 		input.value = ''; // reset so same file can be selected again
 	}
 
@@ -317,24 +323,24 @@
 					<div class="temp-model-info">
 						<span class="temp-model-name">{tempModelName || 'Temporary model'}</span>
 						<button
-							class="action-btn reset"
+							class="action-btn"
 							onclick={restoreOriginalModel}
-							disabled={tempModelUploading}
+							disabled={vrmStore.tempModelLoading}
 						>
 							<Icon name="rotate-ccw" size={14} />
 							Restore Original
 						</button>
 					</div>
 				{:else}
-					<label class="upload-btn">
+					<label class="upload-btn" class:disabled={vrmStore.tempModelLoading}>
 						<Icon name="upload" size={14} />
-						{tempModelUploading ? 'Loading…' : 'Upload VRM'}
+						{vrmStore.tempModelLoading ? 'Loading…' : 'Upload VRM'}
 						<input
 							type="file"
-							accept=".vrm"
+							accept=".vrm,.VRM"
 							onchange={handleTempModelSelect}
-							disabled={tempModelUploading}
-							style="display: none;"
+							disabled={vrmStore.tempModelLoading}
+							class="sr-only"
 						/>
 					</label>
 				{/if}
@@ -643,6 +649,11 @@
 
 	.upload-btn:active {
 		transform: scale(0.98);
+	}
+
+	.upload-btn.disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
 	}
 
 	.temp-model-info {

@@ -1,7 +1,7 @@
 // Minimal shape needed by restore(). This intentionally uses `Pick`-like
 // naming (VrmModelRef) so it is not confused with the full VrmModel type
 // exported by the store, while still accepting any object with id + url.
-interface VrmModelRef {
+export interface VrmModelRef {
 	id: string;
 	url: string;
 }
@@ -22,7 +22,7 @@ export interface TempVrmState {
 export function createTempVrmManager() {
 	let state: TempVrmState = { url: null, originalId: null, active: false };
 
-	async function load(file: File, currentActiveModelId: string | null): Promise<TempVrmState> {
+	function load(file: File, currentActiveModelId: string | null): TempVrmState {
 		// Revoke any previous temp URL to avoid leaking blob URLs.
 		if (state.url) {
 			URL.revokeObjectURL(state.url);
@@ -34,7 +34,13 @@ export function createTempVrmManager() {
 		}
 
 		// Use the File directly instead of copying it into a new Blob.
-		state.url = URL.createObjectURL(file);
+		try {
+			state.url = URL.createObjectURL(file);
+		} catch (e) {
+			state.url = null;
+			state.active = false;
+			throw new Error(`Failed to create object URL for temporary VRM: ${e}`);
+		}
 		state.active = true;
 
 		return { ...state };

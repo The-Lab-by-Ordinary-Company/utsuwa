@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import type { VRM } from '@pixiv/three-vrm';
 import localforage from 'localforage';
 import { isTauri } from '$lib/services/platform/platform';
-import { createTempVrmManager } from '$lib/utils/temp-vrm';
+import { createTempVrmStoreIntegration } from '$lib/utils/temp-vrm-store';
 
 export interface VrmModel {
 	id: string;
@@ -70,7 +70,50 @@ function createVrmStore() {
 
 	// ── Temporary model (for Developer Tools preview) ──
 	// Kept in memory only; never persisted to storage.
-	const tempModelManager = createTempVrmManager();
+	const tempVrm = createTempVrmStoreIntegration();
+	let tempModelActive = $state(false);
+	let tempModelLoading = $state(false);
+	let tempModelLoadError = $state(false);
+
+	// Reactive bridge between the integration helper and the store's $state.
+	const tempState = {
+		get modelUrl() {
+			return modelUrl;
+		},
+		set modelUrl(value: string | null) {
+			modelUrl = value;
+		},
+		get activeModelId() {
+			return activeModelId;
+		},
+		set activeModelId(value: string | null) {
+			activeModelId = value;
+		},
+		get availableExpressions() {
+			return availableExpressions;
+		},
+		set availableExpressions(value: string[]) {
+			availableExpressions = value;
+		},
+		get tempModelActive() {
+			return tempModelActive;
+		},
+		set tempModelActive(value: boolean) {
+			tempModelActive = value;
+		},
+		get tempModelLoading() {
+			return tempModelLoading;
+		},
+		set tempModelLoading(value: boolean) {
+			tempModelLoading = value;
+		},
+		get tempModelLoadError() {
+			return tempModelLoadError;
+		},
+		set tempModelLoadError(value: boolean) {
+			tempModelLoadError = value;
+		}
+	};
 
 	// Animation state
 	let currentAnimation = $state<string | null>(null);
@@ -214,7 +257,7 @@ function createVrmStore() {
 	}
 
 	async function saveToStorage() {
-		if (!vrmStorage || !storageReady) return;
+		if (!vrmStorage || !storageReady || !tempVrm.canSave(tempState)) return;
 		try {
 			// Save custom models (not defaults) — strip blob URLs since they're ephemeral
 			const customModels = models
@@ -242,13 +285,26 @@ function createVrmStore() {
 
 	function setLoading(loading: boolean) {
 		isLoading = loading;
+		if (!loading) {
+			// The temporary model has finished parsing (or gave up).
+			tempVrm.onLoadingFinished(tempState);
+		}
 	}
 
-	function setError(err: string | null) {
-		// Clear any existing timeout
+	function clearError() {
 		if (errorTimeout) {
 			clearTimeout(errorTimeout);
 			errorTimeout = null;
+		}
+		error = null;
+	}
+
+	function setError(err: string | null) {
+		clearError();
+		// Track temp-load failures separately from other errors so the Developer
+		// page can restore the original avatar without catching unrelated errors.
+		if (err) {
+			tempVrm.onError(tempState);
 		}
 		error = err;
 		isLoading = false;
@@ -278,7 +334,7 @@ function createVrmStore() {
 	}
 
 	async function syncActiveModel() {
-		if (!storageReady) return;
+		if (!storageReady || tempModelActive) return;
 		const savedActiveId = await vrmStorage?.getItem<string>('active-model-id');
 		if (!savedActiveId || savedActiveId === activeModelId) return;
 
@@ -358,23 +414,19 @@ function createVrmStore() {
 		isTalking = false;
 	}
 
-	async function loadTempModel(file: File): Promise<void> {
-		const result = await tempModelManager.load(file, activeModelId);
-		modelUrl = result.url;
-		activeModelId = null;
-		availableExpressions = [];
+	function loadTempModel(file: File): void {
+		tempVrm.load(tempState, file);
 	}
 
 	function restoreOriginalModel(): void {
-		const result = tempModelManager.restore(models, DEFAULT_MODELS);
-		if (result.originalId) {
-			activeModelId = result.originalId;
-			modelUrl = result.url;
-		} else {
-			// Defensive fallback: if neither original nor defaults are available,
-			// clear the temp model state so the scene does not stay stuck.
-			activeModelId = null;
-			modelUrl = null;
+		// Clear any earlier temp-load error so a successful restore does not
+		// keep a stale "Failed to parse VRM" message on screen.
+		clearError();
+		tempVrm.restore(tempState, models, DEFAULT_MODELS);
+		// Defensive: if neither the original nor any default could be restored,
+		// surface an error instead of leaving the viewport blank silently.
+		if (!tempModelActive && activeModelId === null && modelUrl === null) {
+			setError('No VRM model available to restore.');
 		}
 	}
 
@@ -497,7 +549,13 @@ function createVrmStore() {
 			return headScreenPosition;
 		},
 		get tempModelActive() {
-			return tempModelManager.getState().active;
+			return tempModelActive;
+		},
+		get tempModelLoading() {
+			return tempModelLoading;
+		},
+		get tempModelLoadError() {
+			return tempModelLoadError;
 		},
 		setModelUrl,
 		setHeadPosition,

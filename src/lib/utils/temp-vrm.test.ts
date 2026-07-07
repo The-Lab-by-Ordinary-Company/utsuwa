@@ -112,3 +112,25 @@ test('restore returns no model when original and defaults are missing', async ()
 	assert.equal(result.originalId, null);
 	assert.equal(result.url, null);
 });
+
+test('originalId is frozen after the first temp load', async () => {
+	const manager = createTempVrmManager();
+	await manager.load(makeFile('first.vrm'), 'first-active-id');
+	await manager.load(makeFile('second.vrm'), 'second-active-id');
+
+	const state = manager.getState();
+	assert.equal(state.active, true);
+	assert.equal(state.originalId, 'first-active-id');
+
+	const result = manager.restore(
+		[
+			{ id: 'first-active-id', url: '/models/first.vrm' },
+			{ id: 'second-active-id', url: '/models/second.vrm' }
+		],
+		[{ id: 'default-id', url: '/models/default.vrm' }]
+	);
+
+	assert.equal(result.active, false);
+	assert.equal(result.originalId, 'first-active-id');
+	assert.equal(result.url, '/models/first.vrm');
+});
