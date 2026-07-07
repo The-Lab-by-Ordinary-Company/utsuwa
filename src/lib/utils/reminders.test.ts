@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractReminderTags, parseReminderTime, tryExtractReminderFromUserMessage } from './reminders.ts';
+import {
+	classifyReminder,
+	extractReminderTags,
+	isOldExecutedReminder,
+	parseReminderTime,
+	tryExtractReminderFromUserMessage
+} from './reminders.ts';
 
 test('extractReminderTags parses a single tag', () => {
 	const { reminders, cleanedText } = extractReminderTags(
@@ -77,4 +83,50 @@ test('tryExtractReminderFromUserMessage handles content-before-time order', () =
 	assert.ok(result);
 	assert.equal(result!.content, 'call mom');
 	assert.ok(result!.triggerAt.getTime() > Date.now() + 4 * 60 * 1000);
+});
+
+test('tryExtractReminderFromUserMessage ignores sentences without reminder intent', () => {
+	assert.equal(tryExtractReminderFromUserMessage('Taxi in 10 Minuten zu meinem Termin'), null);
+	assert.equal(tryExtractReminderFromUserMessage('Ich fahre in 5 Minuten nach Hause'), null);
+	assert.equal(tryExtractReminderFromUserMessage('In 10 minutes to the airport'), null);
+	assert.equal(tryExtractReminderFromUserMessage('Das Meeting ist in 30 Minuten'), null);
+});
+
+test('tryExtractReminderFromUserMessage keeps explicit reminder forms', () => {
+	const a = tryExtractReminderFromUserMessage('Reminder in 10 minutes drink water');
+	assert.ok(a);
+	assert.equal(a!.content, 'drink water');
+
+	const b = tryExtractReminderFromUserMessage('Erinnerung in 10 Minuten Kaffee trinken');
+	assert.ok(b);
+	assert.equal(b!.content, 'Kaffee trinken');
+});
+
+test('classifyReminder distinguishes pending, fire and missed', () => {
+	const now = Date.now();
+	assert.equal(classifyReminder(new Date(now + 1000), now, 5000), 'pending');
+	assert.equal(classifyReminder(new Date(now - 1000), now, 5000), 'fire');
+	assert.equal(classifyReminder(new Date(now - 6000), now, 5000), 'missed');
+	assert.equal(classifyReminder(new Date(now), now, 5000), 'fire');
+});
+
+test('isOldExecutedReminder identifies executed reminders past the TTL', () => {
+	const now = Date.now();
+	const ttl = 7 * 24 * 60 * 60 * 1000;
+	assert.equal(
+		isOldExecutedReminder(
+			{ executed: true, triggerAt: new Date(now - ttl - 1000) },
+			now,
+			ttl
+		),
+		true
+	);
+	assert.equal(
+		isOldExecutedReminder({ executed: true, triggerAt: new Date(now - ttl + 1000) }, now, ttl),
+		false
+	);
+	assert.equal(
+		isOldExecutedReminder({ executed: false, triggerAt: new Date(now - ttl - 1000) }, now, ttl),
+		false
+	);
 });

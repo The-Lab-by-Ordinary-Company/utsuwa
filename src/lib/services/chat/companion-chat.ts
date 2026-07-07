@@ -17,7 +17,7 @@ import { processCompanionTurn } from '$lib/services/chat/companion-turn';
 import { retrieveRelevantContext } from '$lib/engine/memory';
 import { buildSystemPrompt, truncateChatHistory, type PromptContext } from '$lib/ai/prompt-builder';
 import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
-import { tryExtractReminderFromUserMessage } from '$lib/utils/reminders';
+import { extractReminderTags, tryExtractReminderFromUserMessage } from '$lib/utils/reminders';
 import { reminderStore } from '$lib/stores/reminders.svelte';
 import { getWorkingMemory } from '$lib/engine/memory';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
@@ -151,19 +151,9 @@ export async function sendCompanionMessage(
 	chatStore.addMessage('user', content, shown.length ? shown : undefined);
 	hooks.onShownImages?.(shown);
 
-	// Client fallback: schedule a reminder directly when the user phrases it
-	// naturally and the LLM later fails to emit a [reminder:...] tag.
+	// Client fallback: if the user phrases a reminder naturally and the LLM
+	// fails to emit a [reminder:...] tag, schedule it after the turn.
 	const directReminder = tryExtractReminderFromUserMessage(content);
-	if (directReminder) {
-		const sessionId = getWorkingMemory().currentSessionId;
-		if (sessionId) {
-			try {
-				await reminderStore.addReminder(directReminder.content, directReminder.triggerAt, sessionId);
-			} catch (e) {
-				console.error('[Reminder] Direct scheduling failed:', e);
-			}
-		}
-	}
 
 	chatStore.setLoading(true);
 	chatStore.setError(null);
@@ -272,6 +262,27 @@ export async function sendCompanionMessage(
 			},
 			debug: import.meta.env.DEV
 		});
+
+		// Schedule a direct fallback only when the LLM did not emit any reminder
+		// tag itself. This prevents duplicate reminders when the model correctly
+		// schedules one via [reminder:...].
+		if (directReminder) {
+			const { reminders: llmReminders } = extractReminderTags(fullContent);
+			if (llmReminders.length === 0) {
+				const sessionId = getWorkingMemory().currentSessionId;
+				if (sessionId) {
+					try {
+						await reminderStore.addReminder(
+							directReminder.content,
+							directReminder.triggerAt,
+							sessionId
+						);
+					} catch (e) {
+						console.error('[Reminder] Direct scheduling failed:', e);
+					}
+				}
+			}
+		}
 
 		hooks.onNewMemory?.(turn.newMemory);
 		if (turn.triggeredEvent) hooks.setActiveEvent(turn.triggeredEvent);

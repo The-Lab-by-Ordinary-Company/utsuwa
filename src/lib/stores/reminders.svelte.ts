@@ -2,6 +2,11 @@ import { browser } from '$app/environment';
 import { db } from '$lib/db';
 import type { Reminder } from '$lib/types/memory';
 import { getWorkingMemory } from '$lib/engine/memory';
+import {
+	classifyReminder,
+	isOldExecutedReminder,
+	DEFAULT_REMINDER_TTL_MS
+} from '$lib/utils/reminders';
 
 const POLL_INTERVAL_MS = 10000;
 const GRACE_MS = 5000;
@@ -10,7 +15,6 @@ let upcoming = $state<Reminder[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let onReminderFired: ((reminder: Reminder) => void) | null = null;
 let onMissedReminders: ((reminders: Reminder[]) => void) | null = null;
-let missedChecked = false;
 
 async function loadUpcoming(sessionId: number) {
 	const now = new Date();
@@ -24,6 +28,21 @@ async function loadUpcoming(sessionId: number) {
 	upcoming = items as Reminder[];
 }
 
+async function cleanupOldReminders(sessionId: number) {
+	const now = Date.now();
+	const old = await db.reminders
+		.where('sessionId')
+		.equals(sessionId)
+		.and((r) => isOldExecutedReminder(r, now, DEFAULT_REMINDER_TTL_MS))
+		.toArray();
+
+	for (const reminder of old) {
+		if (reminder.id !== undefined) {
+			await db.reminders.delete(reminder.id);
+		}
+	}
+}
+
 async function checkReminders() {
 	const sessionId = getWorkingMemory().currentSessionId;
 	if (!sessionId) return;
@@ -35,40 +54,30 @@ async function checkReminders() {
 		.and((r) => !r.executed && r.triggerAt.getTime() <= now)
 		.toArray();
 
+	const fired: Reminder[] = [];
+	const missed: Reminder[] = [];
+
 	for (const reminder of due) {
-		// Still within polling grace → fire normally.
-		if (now - reminder.triggerAt.getTime() <= GRACE_MS) {
-			if (reminder.id !== undefined) {
-				await db.reminders.update(reminder.id, { executed: true });
-			}
-			onReminderFired?.(reminder as Reminder);
-		}
-		// Older reminders are handled as missed in handleMissedReminders.
-	}
-
-	await loadUpcoming(sessionId);
-}
-
-async function handleMissedReminders() {
-	const sessionId = getWorkingMemory().currentSessionId;
-	if (!sessionId) return;
-
-	const cutoff = Date.now() - GRACE_MS;
-	const missed = await db.reminders
-		.where('sessionId')
-		.equals(sessionId)
-		.and((r) => !r.executed && r.triggerAt.getTime() <= cutoff)
-		.toArray();
-
-	if (missed.length === 0) return;
-
-	for (const reminder of missed) {
 		if (reminder.id !== undefined) {
 			await db.reminders.update(reminder.id, { executed: true });
 		}
+
+		const fate = classifyReminder(reminder.triggerAt, now, GRACE_MS);
+		if (fate === 'fire') {
+			fired.push(reminder as Reminder);
+		} else if (fate === 'missed') {
+			missed.push(reminder as Reminder);
+		}
 	}
 
-	onMissedReminders?.(missed as Reminder[]);
+	for (const reminder of fired) {
+		onReminderFired?.(reminder);
+	}
+	if (missed.length > 0) {
+		onMissedReminders?.(missed);
+	}
+
+	await loadUpcoming(sessionId);
 }
 
 export function startPolling() {
@@ -78,9 +87,11 @@ export function startPolling() {
 		checkReminders().catch((e) => console.error('[Reminders] Poll error:', e));
 	}, POLL_INTERVAL_MS);
 
-	if (!missedChecked) {
-		missedChecked = true;
-		handleMissedReminders().catch((e) => console.error('[Reminders] Missed check error:', e));
+	const sessionId = getWorkingMemory().currentSessionId;
+	if (sessionId) {
+		cleanupOldReminders(sessionId).catch((e) =>
+			console.error('[Reminders] Cleanup error:', e)
+		);
 	}
 
 	checkReminders().catch((e) => console.error('[Reminders] Initial check error:', e));

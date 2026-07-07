@@ -47,32 +47,35 @@ export function parseReminderTime(timeStr: string): Date | null {
 
 // Fallback patterns for natural-language reminder requests.
 // Group 1 = time, Group 2 = content when group1IsTime is true.
+// These require an explicit reminder verb ("remind me", "erinnere mich",
+// "reminder", "erinnerung") to avoid false positives like
+// "Taxi in 10 Minuten zu meinem Termin".
 const REMINDER_PATTERNS: { pattern: RegExp; group1IsTime: boolean }[] = [
-	// German
+	// German explicit
 	{
-		pattern: /(?:in|nach)\s+(\d[\d\s]*(?:minuten?|min|sekunden?|sek|stunden?|h)?)\b[\s\S]*?(?:reminder|erinnern|erinnere|erinnerung|dass|zu|an|daran)\s*(.+)/i,
-		group1IsTime: true
-	},
-	{
-		pattern: /erinn(?:ere|er)\s+mich\s+(?:bitte\s+)?(?:in|nach)\s+([\d\s]+(?:minuten?|min|sekunden?|sek|stunden?|h)?(?:\s+\d+\s*(?:minuten?|min|sekunden?|sek|stunden?|h))?)\s+(?:an|daran|zu|das|dass)?\s+(.+?)(?:\.|$)/i,
+		pattern: /erinn(?:ere|er)\s+mich\s+(?:bitte\s+)?(?:in|nach)\s+([\d\s]+(?:minuten?|min|sekunden?|sek|stunden?|h)?(?:\s+\d+\s*(?:minuten?|min|sekunden?|sek|stunden?|h))?)\s+(?:an|daran|zu|das|dass)?\s+(.+?)(?:[.!?]|$)/i,
 		group1IsTime: true
 	},
 	{
 		pattern: /erinn(?:ere|er)\s+mich\s+(?:bitte\s+)?(?:an|daran|zu|das|dass)?\s+(.+?)\s+(?:in|nach)\s+([\d\s]+(?:minuten?|min|sekunden?|sek|stunden?|h)?(?:\s+\d+\s*(?:minuten?|min|sekunden?|sek|stunden?|h))?)/i,
 		group1IsTime: false
 	},
-	// English
 	{
-		pattern: /(?:in|after)\s+(\d[\d\s]*(?:minutes?|mins?|seconds?|secs?|hours?|h)?)\b[\s\S]*?(?:remind|reminder|to|about|that)\s*(.+)/i,
+		pattern: /(?:reminder|erinnerung)(?:\s+bitte)?\s+(?:in|nach)\s+([\d\s]+(?:minuten?|min|sekunden?|sek|stunden?|h)?(?:\s+\d+\s*(?:minuten?|min|sekunden?|sek|stunden?|h))?)\s+(.+?)(?:[.!?]|$)/i,
 		group1IsTime: true
 	},
+	// English explicit
 	{
-		pattern: /remind\s+me\s+(?:in|after)\s+([\d\s]+(?:minutes?|mins?|seconds?|secs?|hours?|h)?(?:\s+\d+\s*(?:minutes?|mins?|seconds?|secs?|hours?|h))?)\s+(?:to|about|that)?\s+(.+?)(?:\.|$)/i,
+		pattern: /remind\s+me\s+(?:in|after)\s+([\d\s]+(?:minutes?|mins?|seconds?|secs?|hours?|h)?(?:\s+\d+\s*(?:minutes?|mins?|seconds?|secs?|hours?|h))?)\s+(?:to|about|that)?\s+(.+?)(?:[.!?]|$)/i,
 		group1IsTime: true
 	},
 	{
 		pattern: /remind\s+me\s+(?:to|about|that)?\s+(.+?)\s+(?:in|after)\s+([\d\s]+(?:minutes?|mins?|seconds?|secs?|hours?|h)?(?:\s+\d+\s*(?:minutes?|mins?|seconds?|secs?|hours?|h))?)/i,
 		group1IsTime: false
+	},
+	{
+		pattern: /reminder(?:\s+please)?\s+(?:in|after)\s+([\d\s]+(?:minutes?|mins?|seconds?|secs?|hours?|h)?(?:\s+\d+\s*(?:minutes?|mins?|seconds?|secs?|hours?|h))?)\s+(.+?)(?:[.!?]|$)/i,
+		group1IsTime: true
 	}
 ];
 
@@ -93,4 +96,30 @@ export function tryExtractReminderFromUserMessage(text: string): ParsedReminder 
 		}
 	}
 	return null;
+}
+
+export type ReminderFate = 'pending' | 'fire' | 'missed';
+
+/**
+ * Classify a non-executed reminder against the current time and polling grace.
+ * - pending: trigger time is in the future
+ * - fire: trigger time is due and within the grace window
+ * - missed: trigger time is due and beyond the grace window
+ */
+export function classifyReminder(triggerAt: Date, now: number, graceMs: number): ReminderFate {
+	const triggerMs = triggerAt.getTime();
+	if (triggerMs > now) return 'pending';
+	return now - triggerMs <= graceMs ? 'fire' : 'missed';
+}
+
+/** Default TTL for executed reminders before they are cleaned up (7 days). */
+export const DEFAULT_REMINDER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Returns true for executed reminders whose trigger time is older than the TTL. */
+export function isOldExecutedReminder(
+	reminder: { executed: boolean; triggerAt: Date },
+	now: number,
+	 ttlMs: number
+): boolean {
+	return reminder.executed && reminder.triggerAt.getTime() + ttlMs < now;
 }
