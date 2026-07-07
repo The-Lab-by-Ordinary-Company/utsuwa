@@ -56,6 +56,12 @@
 			alt: 'Utsuwa desktop app with a 3D VRM avatar companion and chat interface'
 		},
 		{
+			title: 'She steps into your room.',
+			body: 'Place her on your real floor through the camera and she stands there in your space, holding her ground as you move around her. Drag her anywhere, pinch to resize, and keep the chat open the whole time, in Android Chrome or any WebXR-capable headset browser.',
+			shot: 'ar',
+			alt: 'Utsuwa VRM companion in WebXR AR camera passthrough shown on an Android phone held in a hand'
+		},
+		{
 			title: 'She actually remembers.',
 			body: 'Local AI embeddings weave your conversations into a web of memories she can recall by meaning, not keywords. Affection, trust, and mood shift over time across eight relationship stages — from Stranger to Soulmate.',
 			shot: 'memory',
