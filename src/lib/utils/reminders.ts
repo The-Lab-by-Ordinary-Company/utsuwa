@@ -119,7 +119,7 @@ export const DEFAULT_REMINDER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export function isOldExecutedReminder(
 	reminder: { executed: boolean; triggerAt: Date },
 	now: number,
-	 ttlMs: number
+	ttlMs: number
 ): boolean {
 	return reminder.executed && reminder.triggerAt.getTime() + ttlMs < now;
 }

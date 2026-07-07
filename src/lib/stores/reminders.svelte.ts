@@ -10,11 +10,13 @@ import {
 
 const POLL_INTERVAL_MS = 10000;
 const GRACE_MS = 5000;
+const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 let upcoming = $state<Reminder[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let onReminderFired: ((reminder: Reminder) => void) | null = null;
 let onMissedReminders: ((reminders: Reminder[]) => void) | null = null;
+let lastCleanupAt = 0;
 
 async function loadUpcoming(sessionId: number) {
 	const now = new Date();
@@ -78,6 +80,13 @@ async function checkReminders() {
 	}
 
 	await loadUpcoming(sessionId);
+
+	if (now - lastCleanupAt > CLEANUP_INTERVAL_MS) {
+		lastCleanupAt = now;
+		cleanupOldReminders(sessionId).catch((e) =>
+			console.error('[Reminders] Cleanup error:', e)
+		);
+	}
 }
 
 export function startPolling() {
@@ -86,13 +95,6 @@ export function startPolling() {
 	pollTimer = setInterval(() => {
 		checkReminders().catch((e) => console.error('[Reminders] Poll error:', e));
 	}, POLL_INTERVAL_MS);
-
-	const sessionId = getWorkingMemory().currentSessionId;
-	if (sessionId) {
-		cleanupOldReminders(sessionId).catch((e) =>
-			console.error('[Reminders] Cleanup error:', e)
-		);
-	}
 
 	checkReminders().catch((e) => console.error('[Reminders] Initial check error:', e));
 }
