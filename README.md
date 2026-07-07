@@ -67,6 +67,7 @@
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
 - **Character Customization**: Customize your companion's name, personality, and system prompt
+- **Avatar Tasks & Timers**: Your companion can schedule reminders for itself, e.g. to check back with you later. Missed timers are surfaced to the companion so it can decide whether to mention them, ask about them, or discard them
 - **Companion System**: Multi-axis relationship tracking with mood, events, and semantic memory
 - **Semantic Memory**: Local AI-powered memory search using Transformers.js - finds memories by meaning, not just keywords
 - **Memory Graph**: Interactive visualization showing how memories connect semantically
@@ -93,6 +94,7 @@ Build a meaningful relationship with your AI companion through a dating sim-insp
 - **Semantic Memory**: Facts are indexed with vector embeddings for meaning-based retrieval - "outdoor activities" finds memories about hiking. Runs locally using Transformers.js, no API calls
 - **Natural Progression**: Hybrid system combining app heuristics + LLM suggestions for believable relationship growth
 - **Time-Aware**: Your companion notices when you've been away and reacts accordingly
+- **Scheduled Tasks**: The companion can set timers/reminders for itself. Timers that fired while the app was closed are marked as missed and handed to the companion, which decides how to handle them
 
 See the [Companion System Architecture](https://docs.utsuwa.ai/technology/companion-system) for full details.
 

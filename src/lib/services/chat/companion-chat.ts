@@ -17,6 +17,9 @@ import { processCompanionTurn } from '$lib/services/chat/companion-turn';
 import { retrieveRelevantContext } from '$lib/engine/memory';
 import { buildSystemPrompt, truncateChatHistory, type PromptContext } from '$lib/ai/prompt-builder';
 import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
+import { tryExtractReminderFromUserMessage } from '$lib/utils/reminders';
+import { reminderStore } from '$lib/stores/reminders.svelte';
+import { getWorkingMemory } from '$lib/engine/memory';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
 import { isTauri } from '$lib/services/platform';
 import type { LLMProvider, TTSProvider } from '$lib/types';
@@ -42,6 +45,7 @@ async function buildCompanionPrompt(
 	hasImages: boolean,
 	contextSize?: number
 ): Promise<string> {
+	const workingMemory = getWorkingMemory();
 	const context: PromptContext = {
 		persona: personaStore.activeCard,
 		state: characterStore.state,
@@ -49,7 +53,9 @@ async function buildCompanionPrompt(
 		userMessage,
 		systemTime: new Date(),
 		hasImages,
-		contextSize
+		contextSize,
+		pendingReminders: reminderStore.upcoming.map((r) => ({ triggerAt: r.triggerAt, content: r.content })),
+		sessionStartedAt: workingMemory.sessionStartedAt
 	};
 	return buildSystemPrompt(context);
 }
@@ -144,6 +150,21 @@ export async function sendCompanionMessage(
 	const shown = images.map((img) => ({ id: img.id, url: URL.createObjectURL(img.blob) }));
 	chatStore.addMessage('user', content, shown.length ? shown : undefined);
 	hooks.onShownImages?.(shown);
+
+	// Client fallback: schedule a reminder directly when the user phrases it
+	// naturally and the LLM later fails to emit a [reminder:...] tag.
+	const directReminder = tryExtractReminderFromUserMessage(content);
+	if (directReminder) {
+		const sessionId = getWorkingMemory().currentSessionId;
+		if (sessionId) {
+			try {
+				await reminderStore.addReminder(directReminder.content, directReminder.triggerAt, sessionId);
+			} catch (e) {
+				console.error('[Reminder] Direct scheduling failed:', e);
+			}
+		}
+	}
+
 	chatStore.setLoading(true);
 	chatStore.setError(null);
 	hooks.setTyping(true);

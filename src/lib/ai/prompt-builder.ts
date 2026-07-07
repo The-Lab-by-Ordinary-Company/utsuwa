@@ -19,11 +19,47 @@ export interface PromptContext {
 	// and truncate history. When unset, historical defaults (6 turns, 5 facts)
 	// are preserved.
 	contextSize?: number;
+	// Active pending reminders for the current session.
+	pendingReminders?: Array<{ triggerAt: Date; content: string }>;
+	// When the current conversation session started, for time-sense.
+	sessionStartedAt?: Date;
 }
 
 function getContextMemoryBudget(contextSize?: number): MemoryBudget | undefined {
 	if (!contextSize || contextSize <= 0) return undefined;
 	return getMemoryBudget(contextSize);
+}
+
+function buildTimeSense(ctx: PromptContext): string {
+	const parts: string[] = [];
+	if (ctx.sessionStartedAt) {
+		const elapsedMs = ctx.systemTime.getTime() - ctx.sessionStartedAt.getTime();
+		const elapsedMin = Math.floor(elapsedMs / 60000);
+		if (elapsedMin < 1) {
+			parts.push('Session just started.');
+		} else if (elapsedMin < 60) {
+			parts.push(`Session has been running for ${elapsedMin} minutes.`);
+		} else {
+			const elapsedH = Math.floor(elapsedMin / 60);
+			const remainingMin = elapsedMin % 60;
+			parts.push(`Session has been running for ${elapsedH}h ${remainingMin}min.`);
+		}
+	}
+	if (ctx.pendingReminders && ctx.pendingReminders.length > 0) {
+		const next = ctx.pendingReminders[0];
+		const untilMin = Math.max(
+			0,
+			Math.ceil((next.triggerAt.getTime() - ctx.systemTime.getTime()) / 60000)
+		);
+		parts.push(`Next scheduled reminder: "${next.content}" in ${untilMin} minutes.`);
+	}
+	return parts.join(' ');
+}
+
+function buildReminderInstruction(): string {
+	return `You can schedule future reminders/tasks for yourself by embedding a tag in your reply:
+[reminder:5min]short description of what to do[/reminder]
+Use this when the user asks you to remind them (or yourself) about something later. The tag will be removed from the visible text.`;
 }
 
 // Build the complete system prompt
@@ -53,9 +89,11 @@ function buildCompanionModePrompt(ctx: PromptContext): string {
 	const parts: string[] = [];
 
 	// System intro
+	const timeSense = buildTimeSense(ctx);
+
 	parts.push(`<system>
 You are ${ctx.persona.name}, a helpful AI companion.
-Current time: ${timeStr}, ${dateStr}
+Current time: ${timeStr}, ${dateStr}${timeSense ? '\n' + timeSense : ''}
 
 RULES:
 - Be helpful, friendly, and conversational
@@ -105,6 +143,8 @@ Energy: ${energyDesc} (${ctx.state.energy}/100)
 	parts.push(`<instructions>
 Respond naturally as ${ctx.persona.name}. Be helpful and engaging.
 
+${buildReminderInstruction()}
+
 After your reply, ALWAYS end with a JSON block, even when little changed:
 \`\`\`json
 {
@@ -149,6 +189,7 @@ OUTPUT FORMAT:
 2. After your response, output a JSON block with state updates (optional)
 
 Current time: ${timeStr}, ${dateStr}
+${buildTimeSense(ctx)}
 </system>`;
 }
 
@@ -315,6 +356,8 @@ Respond as ${ctx.persona.name} would, given:
 - Your relationship stage with them (${stage})
 - What you remember about them
 - Your core personality
+
+${buildReminderInstruction()}
 
 STAGE-SPECIFIC GUIDANCE:
 ${instructions}

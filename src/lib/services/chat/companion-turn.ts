@@ -12,6 +12,9 @@ import {
 import { checkAllEvents, checkEvent, eventsApi } from '$lib/engine/events';
 import { allEvents, relationshipStrainEvent } from '$lib/data/events';
 import { extractStateUpdates } from './client-chat';
+import { extractReminderTags } from '$lib/utils/reminders';
+import { reminderStore } from '$lib/stores/reminders.svelte';
+import { getWorkingMemory } from '$lib/engine/memory';
 import type { LLMProvider } from '$lib/types';
 import type { EventDefinition } from '$lib/types/events';
 
@@ -52,7 +55,20 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	const userAnalysis = analyzeMessage(userMessage);
 	const baselineUpdates = calculateBaselineUpdates(userMessage, state);
 
-	const parsed = parseResponse(companionResponse, state.name);
+	// Extract any reminder tags the model emitted and schedule them.
+	const { reminders: llmReminders, cleanedText: reminderCleaned } = extractReminderTags(companionResponse);
+	const currentSessionId = getWorkingMemory().currentSessionId;
+	if (currentSessionId && llmReminders.length > 0) {
+		for (const r of llmReminders) {
+			try {
+				await reminderStore.addReminder(r.content, r.triggerAt, currentSessionId);
+			} catch (e) {
+				console.error('[Reminder] Failed to save LLM reminder:', e);
+			}
+		}
+	}
+
+	const parsed = parseResponse(reminderCleaned, state.name);
 	const dialogue = parsed.dialogue;
 	let llmUpdates = parsed.stateUpdates;
 

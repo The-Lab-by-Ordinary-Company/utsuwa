@@ -76,6 +76,16 @@ export interface NewFact {
 	source?: string;
 }
 
+// Scheduled reminder / task
+export interface Reminder {
+	id?: number;
+	triggerAt: Date;
+	content: string;
+	executed: boolean;
+	createdAt: Date;
+	sessionId: number;
+}
+
 // Working memory state (in-memory during session)
 export interface WorkingMemory {
 	turns: ConversationTurn[];

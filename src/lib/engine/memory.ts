@@ -27,6 +27,11 @@ let workingMemory: WorkingMemory = {
 	messageCount: 0
 };
 
+// Expose read-only access to the current working memory state
+export function getWorkingMemory(): WorkingMemory {
+	return workingMemory;
+}
+
 // Add a turn to working memory
 export function addTurnToWorkingMemory(turn: Omit<ConversationTurn, 'id'>): void {
 	workingMemory.turns.push({
