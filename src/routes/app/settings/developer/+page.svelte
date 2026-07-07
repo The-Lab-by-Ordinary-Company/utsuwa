@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import VrmScene from '$lib/components/vrm/VrmScene.svelte';
 	import { Icon } from '$lib/components/ui';
@@ -211,6 +212,37 @@
 		}, 500);
 	}
 
+	// ── Temporary VRM Upload ──
+	let tempModelUploading = $state(false);
+	let tempModelName = $state('');
+
+	function handleTempModelSelect(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file || !file.name.endsWith('.vrm')) return;
+
+		tempModelName = file.name;
+		tempModelUploading = true;
+		vrmStore.loadTempModel(file).then(() => {
+			tempModelUploading = false;
+		}).catch((err) => {
+			console.error('Failed to load temp model:', err);
+			tempModelUploading = false;
+			tempModelName = '';
+		});
+		input.value = ''; // reset so same file can be selected again
+	}
+
+	function restoreOriginalModel() {
+		vrmStore.restoreOriginalModel();
+		tempModelName = '';
+	}
+
+	// Restore original avatar when leaving the developer page
+	onDestroy(() => {
+		vrmStore.restoreOriginalModel();
+	});
+
 	// Clear all VRM storage (IndexedDB)
 	let clearingStorage = $state(false);
 	async function clearVrmStorage() {
@@ -273,6 +305,41 @@
 
 		<!-- Controls Panel -->
 		<div class="controls-panel">
+			<!-- Temporary VRM Model Upload -->
+			<section class="section">
+				<h3>Temporary VRM Model</h3>
+				<p class="hint">
+					Upload a .vrm file to preview it in the viewport. The model is loaded in memory only
+					and is <strong>not saved</strong>. When you leave this page or click "Restore Original",
+					the previously active avatar returns automatically.
+				</p>
+				{#if vrmStore.tempModelActive}
+					<div class="temp-model-info">
+						<span class="temp-model-name">{tempModelName || 'Temporary model'}</span>
+						<button
+							class="action-btn reset"
+							onclick={restoreOriginalModel}
+							disabled={tempModelUploading}
+						>
+							<Icon name="rotate-ccw" size={14} />
+							Restore Original
+						</button>
+					</div>
+				{:else}
+					<label class="upload-btn">
+						<Icon name="upload" size={14} />
+						{tempModelUploading ? 'Loading…' : 'Upload VRM'}
+						<input
+							type="file"
+							accept=".vrm"
+							onchange={handleTempModelSelect}
+							disabled={tempModelUploading}
+							style="display: none;"
+						/>
+					</label>
+				{/if}
+			</section>
+
 			<!-- Animation Selection -->
 		<section class="section">
 			<h3>Animation</h3>
@@ -554,6 +621,44 @@
 	.action-btn.reset:hover {
 		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
 		color: var(--color-error);
+	}
+
+	.upload-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		background: var(--accent);
+		border-radius: var(--radius-full);
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--accent-contrast, #fff);
+		cursor: pointer;
+		transition: background 0.15s, transform 0.1s;
+	}
+
+	.upload-btn:hover {
+		background: color-mix(in srgb, var(--accent), var(--text-primary) 15%);
+	}
+
+	.upload-btn:active {
+		transform: scale(0.98);
+	}
+
+	.temp-model-info {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.5rem 0.75rem;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-lg);
+	}
+
+	.temp-model-name {
+		font-size: 0.875rem;
+		color: var(--text-secondary);
+		word-break: break-all;
 	}
 
 	.event-buttons {

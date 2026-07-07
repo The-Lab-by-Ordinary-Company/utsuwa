@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import type { VRM } from '@pixiv/three-vrm';
 import localforage from 'localforage';
 import { isTauri } from '$lib/services/platform/platform';
+import { createTempVrmManager } from '$lib/utils/temp-vrm';
 
 export interface VrmModel {
 	id: string;
@@ -66,6 +67,10 @@ function createVrmStore() {
 
 	// Available expressions on current model (persists across navigation)
 	let availableExpressions = $state<string[]>([]);
+
+	// ── Temporary model (for Developer Tools preview) ──
+	// Kept in memory only; never persisted to storage.
+	const tempModelManager = createTempVrmManager();
 
 	// Animation state
 	let currentAnimation = $state<string | null>(null);
@@ -353,6 +358,21 @@ function createVrmStore() {
 		isTalking = false;
 	}
 
+	async function loadTempModel(file: File): Promise<void> {
+		const result = await tempModelManager.load(file, activeModelId);
+		modelUrl = result.url;
+		activeModelId = null;
+		availableExpressions = [];
+	}
+
+	async function restoreOriginalModel(): Promise<void> {
+		const result = tempModelManager.restore(models, DEFAULT_MODELS);
+		if (result.originalId) {
+			activeModelId = result.originalId;
+			modelUrl = result.url;
+		}
+	}
+
 	async function addModel(file: File, previewDataUrl?: string): Promise<void> {
 		const id = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 		const name = file.name.replace(/\.vrm$/i, '');
@@ -471,6 +491,9 @@ function createVrmStore() {
 		get headScreenPosition() {
 			return headScreenPosition;
 		},
+		get tempModelActive() {
+			return tempModelManager.getState().active;
+		},
 		setModelUrl,
 		setHeadPosition,
 		setHeadScreenPosition,
@@ -485,6 +508,8 @@ function createVrmStore() {
 		removeModel,
 		getActiveModel,
 		setModelPreview,
+		loadTempModel,
+		restoreOriginalModel,
 		whenReady: () => ready
 	};
 }
