@@ -20,6 +20,7 @@
 	import { canShowImages } from '$lib/services/providers/vision';
 	import { onDestroy } from 'svelte';
 	import { sendCompanionMessage } from '$lib/services/chat/companion-chat';
+	import { sendReminderMessage } from '$lib/services/chat/reminder-chat';
 	import { reminderStore } from '$lib/stores/reminders.svelte';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { isTauri } from '$lib/services/platform';
@@ -129,7 +130,7 @@
 	$effect(() => {
 		reminderStore.setOnReminderFired((reminder) => {
 			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it NOW by performing the described action or saying something enthusiastic and fitting.`;
-			sendReminderMessage(msg);
+			sendReminderMessage((content) => handleSend(content), msg);
 		});
 		reminderStore.startPolling();
 		return () => {
@@ -158,22 +159,6 @@
 			onShownImages: (shown) => (thinkingImages = shown),
 			onNewMemory: (m) => (lastNewMemory = m)
 		});
-	}
-
-	// Send a fired reminder through the chat pipeline. If the LLM is currently
-	// generating, wait briefly so the reminder doesn't interrupt or collide.
-	function sendReminderMessage(msg: string) {
-		if (chatStore.isLoading) {
-			const waitInterval = setInterval(() => {
-				if (!chatStore.isLoading) {
-					clearInterval(waitInterval);
-					handleSend(msg);
-				}
-			}, 500);
-			setTimeout(() => clearInterval(waitInterval), 60000);
-		} else {
-			handleSend(msg);
-		}
 	}
 
 	// Handle speech bubble hide

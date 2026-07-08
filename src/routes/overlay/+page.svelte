@@ -22,6 +22,7 @@
 	import { overlayStore } from '$lib/stores/overlay.svelte';
 	import { isTauri, startDragging } from '$lib/services/platform';
 	import { sendCompanionMessage } from '$lib/services/chat/companion-chat';
+	import { sendReminderMessage } from '$lib/services/chat/reminder-chat';
 	import { eventsApi } from '$lib/engine/events';
 	import { completionMarkers } from '$lib/engine/event-completion';
 	import { reminderStore } from '$lib/stores/reminders.svelte';
@@ -175,7 +176,7 @@
 	$effect(() => {
 		reminderStore.setOnReminderFired((reminder) => {
 			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it NOW by performing the described action or saying something enthusiastic and fitting.`;
-			sendReminderMessage(msg);
+			sendReminderMessage((content) => handleSend(content), msg);
 		});
 		reminderStore.startPolling();
 		return () => {
@@ -227,22 +228,6 @@
 			setActiveEvent: (e) => (activeEvent = e),
 			beforeStream: () => overlayStore.setChatExpanded(false)
 		});
-	}
-
-	// Send a fired reminder through the chat pipeline. If the LLM is currently
-	// generating, wait briefly so the reminder doesn't interrupt or collide.
-	function sendReminderMessage(msg: string) {
-		if (chatStore.isLoading) {
-			const waitInterval = setInterval(() => {
-				if (!chatStore.isLoading) {
-					clearInterval(waitInterval);
-					handleSend(msg);
-				}
-			}, 500);
-			setTimeout(() => clearInterval(waitInterval), 60000);
-		} else {
-			handleSend(msg);
-		}
 	}
 
 	function handleBubbleHide() {

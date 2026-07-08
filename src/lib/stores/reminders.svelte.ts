@@ -33,10 +33,13 @@ async function loadUpcoming() {
 	}
 
 	const now = new Date();
+	// Use the compound index to read only non-executed future reminders, then
+	// filter by session client-side. This avoids scanning executed rows or all
+	// reminders of a long-lived session.
 	const items = await db.reminders
-		.where('sessionId')
-		.equals(sessionId)
-		.and((r) => !r.executed && r.triggerAt > now)
+		.where('[executed+triggerAt]')
+		.between([0, now], [0, MAX_DATE], false, false)
+		.and((r) => r.sessionId === sessionId)
 		.toArray();
 
 	items.sort((a, b) => a.triggerAt.getTime() - b.triggerAt.getTime());
@@ -67,10 +70,12 @@ async function checkReminders() {
 
 	const now = Date.now();
 	const nowDate = new Date(now);
+	// Use the compound index to read only non-executed due reminders, then
+	// filter by session client-side.
 	const due = await db.reminders
-		.where('sessionId')
-		.equals(sessionId)
-		.and((r) => !r.executed && r.triggerAt <= nowDate)
+		.where('[executed+triggerAt]')
+		.between([0, new Date(0)], [0, nowDate], true, true)
+		.and((r) => r.sessionId === sessionId)
 		.toArray();
 
 	const newlyFired: Reminder[] = [];
