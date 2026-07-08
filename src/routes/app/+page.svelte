@@ -123,12 +123,18 @@
 		}
 	});
 
-	// Start reminder polling. Reminders are surfaced purely through the alarm
-	// icon UI; they no longer inject messages into the chat stream.
+	// Start reminder polling and react to fired reminders by sending them back
+	// through the companion pipeline. This lets the LLM decide the action
+	// (speech, web search, etc.) instead of showing a passive toast.
 	$effect(() => {
+		reminderStore.setOnReminderFired((reminder) => {
+			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it NOW by performing the described action or saying something enthusiastic and fitting.`;
+			sendReminderMessage(msg);
+		});
 		reminderStore.startPolling();
 		return () => {
 			reminderStore.stopPolling();
+			reminderStore.setOnReminderFired(null);
 		};
 	});
 
@@ -152,6 +158,22 @@
 			onShownImages: (shown) => (thinkingImages = shown),
 			onNewMemory: (m) => (lastNewMemory = m)
 		});
+	}
+
+	// Send a fired reminder through the chat pipeline. If the LLM is currently
+	// generating, wait briefly so the reminder doesn't interrupt or collide.
+	function sendReminderMessage(msg: string) {
+		if (chatStore.isLoading) {
+			const waitInterval = setInterval(() => {
+				if (!chatStore.isLoading) {
+					clearInterval(waitInterval);
+					handleSend(msg);
+				}
+			}, 500);
+			setTimeout(() => clearInterval(waitInterval), 60000);
+		} else {
+			handleSend(msg);
+		}
 	}
 
 	// Handle speech bubble hide

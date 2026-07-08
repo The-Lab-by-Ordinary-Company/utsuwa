@@ -170,11 +170,17 @@
 		}
 	});
 	// Start reminder polling in the overlay too, so timers fire even when the
-	// main app window is hidden.
+	// main app window is hidden. Fired reminders are sent back through the LLM
+	// so the companion can react (speech, search, etc.).
 	$effect(() => {
+		reminderStore.setOnReminderFired((reminder) => {
+			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it NOW by performing the described action or saying something enthusiastic and fitting.`;
+			sendReminderMessage(msg);
+		});
 		reminderStore.startPolling();
 		return () => {
 			reminderStore.stopPolling();
+			reminderStore.setOnReminderFired(null);
 		};
 	});
 
@@ -221,6 +227,22 @@
 			setActiveEvent: (e) => (activeEvent = e),
 			beforeStream: () => overlayStore.setChatExpanded(false)
 		});
+	}
+
+	// Send a fired reminder through the chat pipeline. If the LLM is currently
+	// generating, wait briefly so the reminder doesn't interrupt or collide.
+	function sendReminderMessage(msg: string) {
+		if (chatStore.isLoading) {
+			const waitInterval = setInterval(() => {
+				if (!chatStore.isLoading) {
+					clearInterval(waitInterval);
+					handleSend(msg);
+				}
+			}, 500);
+			setTimeout(() => clearInterval(waitInterval), 60000);
+		} else {
+			handleSend(msg);
+		}
 	}
 
 	function handleBubbleHide() {

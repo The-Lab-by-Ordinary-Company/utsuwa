@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { db } from '$lib/db';
+import { getWorkingMemory } from '$lib/engine/memory';
 import type { Reminder } from '$lib/types/memory';
 import {
 	classifyReminder,
@@ -22,14 +23,23 @@ let upcoming = $state<Reminder[]>([]);
 let recentFired = $state<Reminder[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let lastCleanupAt = 0;
+let onReminderFired: ((reminder: Reminder) => void) | null = null;
 
 async function loadUpcoming() {
+	const sessionId = getWorkingMemory().currentSessionId;
+	if (!sessionId) {
+		upcoming = [];
+		return;
+	}
+
 	const now = new Date();
 	const items = await db.reminders
-		.where('[executed+triggerAt]')
-		.between([0, now], [0, MAX_DATE], false, false)
+		.where('sessionId')
+		.equals(sessionId)
+		.and((r) => !r.executed && r.triggerAt > now)
 		.toArray();
 
+	items.sort((a, b) => a.triggerAt.getTime() - b.triggerAt.getTime());
 	upcoming = items as Reminder[];
 }
 
@@ -49,13 +59,18 @@ async function cleanupOldReminders() {
 }
 
 async function checkReminders() {
+	const sessionId = getWorkingMemory().currentSessionId;
+	if (!sessionId) {
+		console.debug('[Reminders] No session ID, skipping check');
+		return;
+	}
+
 	const now = Date.now();
 	const nowDate = new Date(now);
-	// Use the compound index so only non-executed reminders at or before the
-	// current time are read, without scanning the full table.
 	const due = await db.reminders
-		.where('[executed+triggerAt]')
-		.between([0, new Date(0)], [0, nowDate], true, true)
+		.where('sessionId')
+		.equals(sessionId)
+		.and((r) => !r.executed && r.triggerAt <= nowDate)
 		.toArray();
 
 	const newlyFired: Reminder[] = [];
@@ -85,6 +100,7 @@ async function checkReminders() {
 		for (const reminder of newlyFired) {
 			if (!existingIds.has(reminder.id)) {
 				recentFired.push(reminder as Reminder);
+				onReminderFired?.(reminder as Reminder);
 			}
 		}
 	}
@@ -166,6 +182,10 @@ export function dismissRecentFired(id?: number) {
 	recentFired = recentFired.filter((r) => r.id !== id);
 }
 
+export function setOnReminderFired(callback: ((reminder: Reminder) => void) | null) {
+	onReminderFired = callback;
+}
+
 export const reminderStore = {
 	get upcoming() {
 		return upcoming;
@@ -177,5 +197,6 @@ export const reminderStore = {
 	stopPolling,
 	addReminder,
 	deleteReminder,
-	dismissRecentFired
+	dismissRecentFired,
+	setOnReminderFired
 };
