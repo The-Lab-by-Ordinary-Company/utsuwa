@@ -204,6 +204,8 @@
 		onInfoClick={() => showInfoModal = true}
 		upcomingReminders={reminderStore.upcoming}
 		onDeleteReminder={reminderStore.deleteReminder}
+		recentFired={reminderStore.recentFired}
+		onDismissRecentFired={reminderStore.dismissRecentFired}
 	/>
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />

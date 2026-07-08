@@ -19,9 +19,8 @@ const MAX_FUTURE_MS = 365 * 24 * 60 * 60 * 1000;
 const MAX_DATE = new Date(8640000000000000);
 
 let upcoming = $state<Reminder[]>([]);
+let recentFired = $state<Reminder[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
-let onReminderFired: ((reminder: Reminder) => void) | null = null;
-let onMissedReminders: ((reminders: Reminder[]) => void) | null = null;
 let lastCleanupAt = 0;
 
 async function loadUpcoming() {
@@ -59,8 +58,7 @@ async function checkReminders() {
 		.between([0, new Date(0)], [0, nowDate], true, true)
 		.toArray();
 
-	const fired: Reminder[] = [];
-	const missed: Reminder[] = [];
+	const newlyFired: Reminder[] = [];
 
 	for (const reminder of due) {
 		if (reminder.id === undefined) continue;
@@ -75,18 +73,20 @@ async function checkReminders() {
 		if (claimed === 0) continue;
 
 		const fate = classifyReminder(reminder.triggerAt, now, GRACE_MS);
-		if (fate === 'fire') {
-			fired.push(reminder as Reminder);
-		} else if (fate === 'missed') {
-			missed.push(reminder as Reminder);
+		if (fate === 'fire' || fate === 'missed') {
+			newlyFired.push(reminder as Reminder);
 		}
 	}
 
-	for (const reminder of fired) {
-		onReminderFired?.(reminder);
-	}
-	if (missed.length > 0) {
-		onMissedReminders?.(missed);
+	if (newlyFired.length > 0) {
+		// Avoid duplicates if a reminder somehow gets processed twice in the same
+		// window before the UI re-renders.
+		const existingIds = new Set(recentFired.map((r) => r.id));
+		for (const reminder of newlyFired) {
+			if (!existingIds.has(reminder.id)) {
+				recentFired.push(reminder as Reminder);
+			}
+		}
 	}
 
 	await loadUpcoming();
@@ -122,14 +122,6 @@ export function stopPolling() {
 		pollTimer = null;
 	}
 	document.removeEventListener('visibilitychange', handleVisibilityChange);
-}
-
-export function setOnReminderFired(callback: ((reminder: Reminder) => void) | null) {
-	onReminderFired = callback;
-}
-
-export function setOnMissedReminders(callback: ((reminders: Reminder[]) => void) | null) {
-	onMissedReminders = callback;
 }
 
 export async function addReminder(
@@ -169,14 +161,21 @@ export async function deleteReminder(id: number) {
 	await loadUpcoming();
 }
 
+export function dismissRecentFired(id?: number) {
+	if (id === undefined) return;
+	recentFired = recentFired.filter((r) => r.id !== id);
+}
+
 export const reminderStore = {
 	get upcoming() {
 		return upcoming;
 	},
+	get recentFired() {
+		return recentFired;
+	},
 	startPolling,
 	stopPolling,
-	setOnReminderFired,
-	setOnMissedReminders,
 	addReminder,
-	deleteReminder
+	deleteReminder,
+	dismissRecentFired
 };

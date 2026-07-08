@@ -50,6 +50,18 @@ test('parseReminderTime handles minutes, hours and seconds', () => {
 	assert.ok(result!.getTime() <= after + 60 * 60 * 1000 + 5 * 60 * 1000 + 30 * 1000 + 100);
 });
 
+test('parseReminderTime handles shorthand and combined units', () => {
+	const before = Date.now();
+
+	const mResult = parseReminderTime('90m');
+	assert.ok(mResult);
+	assert.ok(mResult!.getTime() >= before + 90 * 60 * 1000);
+
+	const combined = parseReminderTime('1h30m');
+	assert.ok(combined);
+	assert.ok(combined!.getTime() >= before + 90 * 60 * 1000);
+});
+
 test('parseReminderTime returns null for empty or invalid input', () => {
 	assert.equal(parseReminderTime(''), null);
 	assert.equal(parseReminderTime('later'), null);

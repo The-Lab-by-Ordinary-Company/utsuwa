@@ -14,12 +14,16 @@
 		onInfoClick: () => void;
 		upcomingReminders?: Reminder[];
 		onDeleteReminder?: (id: number) => void;
+		recentFired?: Reminder[];
+		onDismissRecentFired?: (id: number) => void;
 	}
 
 	let {
 		onInfoClick,
 		upcomingReminders = [],
-		onDeleteReminder
+		onDeleteReminder,
+		recentFired = [],
+		onDismissRecentFired
 	}: Props = $props();
 	let showOverlayBtn = $state(false);
 	let clusterOpen = $state(false);
@@ -85,6 +89,11 @@
 		onDeleteReminder?.(id);
 	}
 
+	function dismissRecentFired(id?: number) {
+		if (id === undefined) return;
+		onDismissRecentFired?.(id);
+	}
+
 	async function launchOverlay() {
 		try {
 			const { invoke } = await import('@tauri-apps/api/core');
@@ -111,8 +120,8 @@
 				title="Open reminders"
 			>
 				<Icon name="bell" size={20} />
-				{#if upcomingReminders.length > 0}
-					<span class="reminder-badge">{upcomingReminders.length}</span>
+				{#if upcomingReminders.length > 0 || recentFired.length > 0}
+					<span class="reminder-badge">{upcomingReminders.length + recentFired.length}</span>
 				{/if}
 			</button>
 			{#if remindersOpen}
@@ -135,6 +144,28 @@
 										title="Delete reminder"
 									>
 										<Icon name="trash" size={14} />
+									</button>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+
+					{#if recentFired.length > 0}
+						<div class="reminder-header reminder-header--fired">Fired or missed</div>
+						<ul class="reminder-list">
+							{#each recentFired as reminder (reminder.id)}
+								<li class="reminder-item reminder-item--fired">
+									<div class="reminder-text">
+										<span class="reminder-content">{reminder.content}</span>
+										<span class="reminder-time">{formatTimeLabel(reminder.triggerAt)}</span>
+									</div>
+									<button
+										class="reminder-delete"
+										onclick={() => dismissRecentFired(reminder.id)}
+										aria-label="Dismiss reminder"
+										title="Dismiss reminder"
+									>
+										<Icon name="check" size={14} />
 									</button>
 								</li>
 							{/each}
@@ -330,7 +361,7 @@
 		min-width: 18px;
 		height: 18px;
 		padding: 0 5px;
-		background: #ff4757;
+		background: var(--color-error);
 		color: white;
 		font-size: 10px;
 		font-weight: 700;
@@ -364,6 +395,11 @@
 		letter-spacing: 0.04em;
 		margin-bottom: 0.5rem;
 		padding: 0 0.25rem;
+	}
+
+	.reminder-header--fired {
+		margin-top: 0.75rem;
+		color: var(--color-error);
 	}
 
 	.reminder-empty {
@@ -435,7 +471,7 @@
 	}
 
 	.reminder-delete:hover {
-		color: #ff4757;
-		background: rgba(255, 71, 87, 0.1);
+		color: var(--color-error);
+		background: color-mix(in srgb, var(--color-error) 10%, transparent);
 	}
 </style>
