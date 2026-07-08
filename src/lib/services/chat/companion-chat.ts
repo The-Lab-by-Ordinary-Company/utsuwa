@@ -43,7 +43,8 @@ export interface CompanionChatHooks {
 async function buildCompanionPrompt(
 	userMessage: string,
 	hasImages: boolean,
-	contextSize?: number
+	contextSize?: number,
+	systemEvent?: string
 ): Promise<string> {
 	const workingMemory = getWorkingMemory();
 	const context: PromptContext = {
@@ -55,7 +56,8 @@ async function buildCompanionPrompt(
 		hasImages,
 		contextSize,
 		pendingReminders: reminderStore.upcoming.map((r) => ({ triggerAt: r.triggerAt, content: r.content })),
-		sessionStartedAt: workingMemory.sessionStartedAt
+		sessionStartedAt: workingMemory.sessionStartedAt,
+		systemEvent
 	};
 	return buildSystemPrompt(context);
 }
@@ -135,11 +137,18 @@ async function streamServerRoute(
  * state, keepsakes, TTS, and the talking animation. Errors surface via
  * chatStore.setError; the returned promise always resolves.
  */
+export interface SendCompanionMessageOptions {
+	/** When true, the message is delivered as a system event instead of a user turn. */
+	systemEvent?: boolean;
+}
+
 export async function sendCompanionMessage(
 	content: string,
 	images: PreparedImage[],
-	hooks: CompanionChatHooks
+	hooks: CompanionChatHooks,
+	options: SendCompanionMessageOptions = {}
 ): Promise<void> {
+	const { systemEvent = false } = options;
 	if ((!content.trim() && images.length === 0) || chatStore.isLoading) return;
 
 	if (!modulesStore.isModuleEnabled('consciousness')) {
@@ -148,12 +157,15 @@ export async function sendCompanionMessage(
 	}
 
 	const shown = images.map((img) => ({ id: img.id, url: URL.createObjectURL(img.blob) }));
-	chatStore.addMessage('user', content, shown.length ? shown : undefined);
-	hooks.onShownImages?.(shown);
+
+	if (!systemEvent) {
+		chatStore.addMessage('user', content, shown.length ? shown : undefined);
+		hooks.onShownImages?.(shown);
+	}
 
 	// Client fallback: if the user phrases a reminder naturally and the LLM
 	// fails to emit a [reminder:...] tag, schedule it after the turn.
-	const directReminder = tryExtractReminderFromUserMessage(content);
+	const directReminder = systemEvent ? null : tryExtractReminderFromUserMessage(content);
 
 	chatStore.setLoading(true);
 	chatStore.setError(null);
@@ -163,7 +175,8 @@ export async function sendCompanionMessage(
 
 	// Only touch relationship-time state once the character has loaded, or an
 	// early message would mutate the default state that load then discards.
-	if (characterStore.isReady) {
+	// System events (e.g. fired reminders) must not count as interaction.
+	if (!systemEvent && characterStore.isReady) {
 		characterStore.updateStreak();
 		characterStore.updateDaysKnown();
 	}
@@ -177,7 +190,7 @@ export async function sendCompanionMessage(
 		}
 
 		const contextSize = (consciousnessSettings.contextSize as number | undefined) || undefined;
-		const systemPrompt = await buildCompanionPrompt(content, images.length > 0, contextSize);
+		const systemPrompt = await buildCompanionPrompt(content, images.length > 0, contextSize, systemEvent ? content : undefined);
 		const providerConfig = settingsStore.getProviderConfig(provider);
 		const apiKey = providerConfig.apiKey;
 		const providerMeta = getLLMProvider(provider);
@@ -260,6 +273,7 @@ export async function sendCompanionMessage(
 				baseURL,
 				hasImages: images.length > 0
 			},
+			systemEvent,
 			debug: import.meta.env.DEV
 		});
 

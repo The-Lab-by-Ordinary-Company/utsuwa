@@ -19,7 +19,7 @@
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
 	import { canShowImages } from '$lib/services/providers/vision';
 	import { onDestroy } from 'svelte';
-	import { sendCompanionMessage } from '$lib/services/chat/companion-chat';
+	import { sendCompanionMessage, type SendCompanionMessageOptions } from '$lib/services/chat/companion-chat';
 	import { sendReminderMessage } from '$lib/services/chat/reminder-chat';
 	import { reminderStore } from '$lib/stores/reminders.svelte';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
@@ -151,14 +151,18 @@
 
 
 	// Send a message through the shared companion pipeline.
-	async function handleSend(content: string, images: PreparedImage[] = []) {
+	async function handleSend(
+		content: string,
+		images: PreparedImage[] = [],
+		options?: SendCompanionMessageOptions
+	) {
 		await sendCompanionMessage(content, images, {
 			setTyping: (v) => (isTyping = v),
 			setLatestResponse: (v) => (latestResponse = v),
 			setActiveEvent: (e) => (activeEvent = e),
 			onShownImages: (shown) => (thinkingImages = shown),
 			onNewMemory: (m) => (lastNewMemory = m)
-		});
+		}, options);
 	}
 
 	// Handle speech bubble hide

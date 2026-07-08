@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import { db } from '$lib/db';
-import { getWorkingMemory } from '$lib/engine/memory';
 import type { Reminder } from '$lib/types/memory';
 import {
 	classifyReminder,
@@ -26,20 +25,13 @@ let lastCleanupAt = 0;
 let onReminderFired: ((reminder: Reminder) => void) | null = null;
 
 async function loadUpcoming() {
-	const sessionId = getWorkingMemory().currentSessionId;
-	if (!sessionId) {
-		upcoming = [];
-		return;
-	}
-
 	const now = new Date();
-	// Use the compound index to read only non-executed future reminders, then
-	// filter by session client-side. This avoids scanning executed rows or all
-	// reminders of a long-lived session.
+	// sessionId is kept only as metadata; pending reminders from any session are
+	// visible and fireable so timers survive a browser restart even when the
+	// current in-memory session id changes.
 	const items = await db.reminders
 		.where('[executed+triggerAt]')
 		.between([0, now], [0, MAX_DATE], false, false)
-		.and((r) => r.sessionId === sessionId)
 		.toArray();
 
 	items.sort((a, b) => a.triggerAt.getTime() - b.triggerAt.getTime());
@@ -62,20 +54,13 @@ async function cleanupOldReminders() {
 }
 
 async function checkReminders() {
-	const sessionId = getWorkingMemory().currentSessionId;
-	if (!sessionId) {
-		console.debug('[Reminders] No session ID, skipping check');
-		return;
-	}
-
 	const now = Date.now();
 	const nowDate = new Date(now);
-	// Use the compound index to read only non-executed due reminders, then
-	// filter by session client-side.
+	// Query all non-executed due reminders regardless of session so missed timers
+	// fire correctly after a browser restart.
 	const due = await db.reminders
 		.where('[executed+triggerAt]')
 		.between([0, new Date(0)], [0, nowDate], true, true)
-		.and((r) => r.sessionId === sessionId)
 		.toArray();
 
 	const newlyFired: Reminder[] = [];

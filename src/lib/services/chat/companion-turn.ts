@@ -28,6 +28,10 @@ export interface CompanionTurnInput {
 		baseURL?: string;
 		hasImages: boolean;
 	};
+	// When true, the turn is a system event (e.g. a fired reminder). Skip user-
+	// specific side effects like sentiment analysis, baseline stat updates,
+	// streak/interaction counting and fact extraction from the trigger text.
+	systemEvent?: boolean;
 	// DEV-only console logging of the raw/parsed model output.
 	debug?: boolean;
 }
@@ -49,11 +53,14 @@ export interface CompanionTurnResult {
 // extraction fallback). Page-specific side effects — showing the event modal,
 // keeping photos — stay in the pages via the return value.
 export async function processCompanionTurn(input: CompanionTurnInput): Promise<CompanionTurnResult> {
-	const { userMessage, companionResponse, llm, debug = false } = input;
+	const { userMessage, companionResponse, llm, systemEvent = false, debug = false } = input;
 
 	const state = characterStore.state;
-	const userAnalysis = analyzeMessage(userMessage);
-	const baselineUpdates = calculateBaselineUpdates(userMessage, state);
+	// System events (e.g. fired reminders) must not trigger sentiment heuristics,
+	// baseline stat updates, streak/interaction counting or fact extraction from
+	// the trigger text.
+	const userAnalysis = systemEvent ? null : analyzeMessage(userMessage);
+	const baselineUpdates = systemEvent ? null : calculateBaselineUpdates(userMessage, state);
 
 	// Extract any reminder tags the model emitted and schedule them.
 	const { reminders: llmReminders, cleanedText: reminderCleaned } = extractReminderTags(companionResponse);
@@ -111,9 +118,11 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 	// so the LLM's sanitized deltas carry full weight instead of being clamped
 	// relative to it. Otherwise the game layer silently flatlines for users
 	// chatting in Japanese and other non-Latin languages.
-	const finalUpdates = mergeUpdates(baselineUpdates, validatedLLMUpdates || {}, {
-		trustLLMDeltas: userAnalysis.nonLatinDominant
-	});
+	const finalUpdates = systemEvent
+		? validatedLLMUpdates || {}
+		: mergeUpdates(baselineUpdates || {}, validatedLLMUpdates || {}, {
+				trustLLMDeltas: userAnalysis?.nonLatinDominant ?? false
+			});
 	characterStore.applyUpdates(finalUpdates);
 
 	// Save the model's memory observation
@@ -140,31 +149,37 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 		}
 	}
 
-	// Persist the exchange (and mirror into working memory) so it survives reloads
-	await recordTurn({ role: 'user', content: userMessage });
+	// Persist the exchange (and mirror into working memory) so it survives reloads.
+	// For system events only the assistant reply is persisted; the trigger is not
+	// a user turn.
+	if (!systemEvent) {
+		await recordTurn({ role: 'user', content: userMessage });
+	}
 	await recordTurn({ role: 'assistant', content: dialogue });
 
 	// Extract and persist facts from the exchange. When the model already
 	// produced a memory this turn, cap the heuristic extraction at one so a
 	// single exchange can't fill the facts table with three takes on the same
-	// information.
-	const potentialFacts = extractPotentialFacts(dialogue, userMessage);
-	const maxHeuristicFacts = finalUpdates.newMemory ? 1 : 2;
-	for (const factContent of potentialFacts.slice(0, maxHeuristicFacts)) {
-		try {
-			await memoryApi.createFact({
-				content: factContent,
-				category: determineFactCategory(factContent),
-				importance: calculateFactImportance(factContent, userAnalysis.sentiment)
-			});
-		} catch (e) {
-			console.debug('Failed to save fact:', e);
+	// information. Skipped for system events.
+	if (!systemEvent && userAnalysis) {
+		const potentialFacts = extractPotentialFacts(dialogue, userMessage);
+		const maxHeuristicFacts = finalUpdates.newMemory ? 1 : 2;
+		for (const factContent of potentialFacts.slice(0, maxHeuristicFacts)) {
+			try {
+				await memoryApi.createFact({
+					content: factContent,
+					category: determineFactCategory(factContent),
+					importance: calculateFactImportance(factContent, userAnalysis.sentiment)
+				});
+			} catch (e) {
+				console.debug('Failed to save fact:', e);
+			}
 		}
 	}
 
 	// Check for triggered events (Dating Sim Mode only)
 	let triggeredEvent: EventDefinition | null = null;
-	if (characterStore.appMode === 'dating_sim') {
+	if (!systemEvent && characterStore.appMode === 'dating_sim') {
 		try {
 			const completedEvents = await eventsApi.getCompletedEvents();
 

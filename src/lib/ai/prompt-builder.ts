@@ -23,6 +23,9 @@ export interface PromptContext {
 	pendingReminders?: Array<{ triggerAt: Date; content: string }>;
 	// When the current conversation session started, for time-sense.
 	sessionStartedAt?: Date;
+	// Optional system event text (e.g. a fired reminder) delivered as an event
+	// block instead of a user turn.
+	systemEvent?: string;
 }
 
 function getContextMemoryBudget(contextSize?: number): MemoryBudget | undefined {
@@ -62,6 +65,11 @@ function buildReminderInstruction(): string {
 Use this when the user asks you to remind them (or yourself) about something later. The tag will be removed from the visible text.`;
 }
 
+function buildEventLayer(ctx: PromptContext): string | null {
+	if (!ctx.systemEvent) return null;
+	return `<event>\n${ctx.systemEvent}\n</event>`;
+}
+
 // Build the complete system prompt
 export function buildSystemPrompt(context: PromptContext): string {
 	// Companion Mode - simplified prompt without relationship mechanics
@@ -74,8 +82,9 @@ export function buildSystemPrompt(context: PromptContext): string {
 		buildStateLayer(context),
 		buildMemoryLayer(context),
 		...(context.hasImages ? [buildBeingShownLayer()] : []),
+		buildEventLayer(context),
 		buildInstructionLayer(context)
-	];
+	].filter((layer): layer is string => layer !== null);
 
 	return layers.join('\n\n');
 }
@@ -138,6 +147,9 @@ Energy: ${energyDesc} (${ctx.state.energy}/100)
 	}
 
 	if (ctx.hasImages) parts.push(buildBeingShownLayer());
+
+	const eventLayer = buildEventLayer(ctx);
+	if (eventLayer) parts.push(eventLayer);
 
 	// Simple instructions (no relationship mechanics)
 	parts.push(`<instructions>
