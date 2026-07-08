@@ -52,7 +52,7 @@ let currentSessionTurnCount = 0;
 
 // Open a session for this run on first use, so persisted turns can be grouped
 // and "last time you talked" style context has something to read.
-async function ensureSession(): Promise<number | undefined> {
+export async function ensureSession(): Promise<number | undefined> {
 	if (workingMemory.currentSessionId !== undefined) return workingMemory.currentSessionId;
 	try {
 		const session = await memoryApi.createSession();
