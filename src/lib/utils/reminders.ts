@@ -127,3 +127,30 @@ export function isOldExecutedReminder(
 ): boolean {
 	return !!(reminder.executed && reminder.triggerAt.getTime() + ttlMs < now);
 }
+
+// Cap reminder scheduling at one year. Beyond that the entry is almost certainly
+// a parsing mistake and would bloat the database indefinitely.
+const MAX_FUTURE_MS = 365 * 24 * 60 * 60 * 1000;
+
+/**
+ * Validate a reminder before persistence. Returns an error message when invalid,
+ * otherwise null. Extracted so the rules can be unit-tested without importing
+ * the Svelte store.
+ */
+export function validateReminder(content: string, triggerAt: Date): string | null {
+	if (!content.trim()) {
+		return 'Reminder content cannot be empty';
+	}
+
+	const triggerMs = triggerAt.getTime();
+	if (Number.isNaN(triggerMs)) {
+		return 'Invalid reminder trigger time';
+	}
+
+	const now = Date.now();
+	if (triggerMs > now + MAX_FUTURE_MS) {
+		return 'Reminder trigger time is too far in the future';
+	}
+
+	return null;
+}

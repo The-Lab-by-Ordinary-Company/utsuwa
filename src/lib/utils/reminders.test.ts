@@ -5,7 +5,8 @@ import {
 	extractReminderTags,
 	isOldExecutedReminder,
 	parseReminderTime,
-	tryExtractReminderFromUserMessage
+	tryExtractReminderFromUserMessage,
+	validateReminder
 } from './reminders.ts';
 
 test('extractReminderTags parses a single tag', () => {
@@ -166,4 +167,23 @@ test('isOldExecutedReminder identifies executed reminders past the TTL', () => {
 		isOldExecutedReminder({ executed: 0, triggerAt: new Date(now - ttl - 1000) }, now, ttl),
 		false
 	);
+});
+
+test('validateReminder rejects empty content', () => {
+	assert.equal(validateReminder('  ', new Date(Date.now() + 60000)), 'Reminder content cannot be empty');
+	assert.equal(validateReminder('', new Date(Date.now() + 60000)), 'Reminder content cannot be empty');
+});
+
+test('validateReminder rejects invalid trigger time', () => {
+	assert.equal(validateReminder('drink water', new Date(Number.NaN)), 'Invalid reminder trigger time');
+});
+
+test('validateReminder rejects times too far in the future', () => {
+	const tooFar = new Date(Date.now() + 366 * 24 * 60 * 60 * 1000);
+	assert.equal(validateReminder('drink water', tooFar), 'Reminder trigger time is too far in the future');
+});
+
+test('validateReminder accepts valid reminders', () => {
+	assert.equal(validateReminder('drink water', new Date(Date.now() + 60000)), null);
+	assert.equal(validateReminder('drink water', new Date(Date.now() + 24 * 60 * 60 * 1000)), null);
 });

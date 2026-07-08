@@ -119,6 +119,20 @@ test('showing an image adds the being_shown layer in both modes', () => {
 	assert.ok(!plain.includes('<being_shown>'));
 });
 
+test('systemEvent renders an <event> layer in both modes', () => {
+	const eventText = '⏰ REMINDER TRIGGERED: drink water';
+	const dating = buildSystemPrompt(makeContext({ systemEvent: eventText }));
+	assert.ok(dating.includes('<event>'));
+	assert.ok(dating.includes(eventText));
+	const companion = buildSystemPrompt(
+		makeContext({ systemEvent: eventText, state: makeState({ appMode: 'companion' }) })
+	);
+	assert.ok(companion.includes('<event>'));
+	assert.ok(companion.includes(eventText));
+	const plain = buildSystemPrompt(makeContext());
+	assert.ok(!plain.includes('<event>'));
+});
+
 test('extraction prompt only mentions images when there are images', () => {
 	assert.ok(buildExtractionSystemPrompt(true).includes('showed the companion an image'));
 	assert.ok(!buildExtractionSystemPrompt(false).includes('showed the companion an image'));

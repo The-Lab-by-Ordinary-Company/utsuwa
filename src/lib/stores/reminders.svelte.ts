@@ -4,6 +4,7 @@ import type { Reminder } from '$lib/types/memory';
 import {
 	classifyReminder,
 	isOldExecutedReminder,
+	validateReminder,
 	DEFAULT_REMINDER_TTL_MS
 } from '$lib/utils/reminders';
 
@@ -12,9 +13,6 @@ const POLL_INTERVAL_MS = 10000;
 // just because the timer fell on the far side of an interval.
 const GRACE_MS = 15000;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-// Cap reminder scheduling at one year. Beyond that the entry is almost certainly
-// a parsing mistake and would bloat the database indefinitely.
-const MAX_FUTURE_MS = 365 * 24 * 60 * 60 * 1000;
 // Largest safe date for compound-index range queries.
 const MAX_DATE = new Date(8640000000000000);
 
@@ -135,17 +133,9 @@ export async function addReminder(
 	triggerAt: Date,
 	sessionId: number
 ): Promise<Reminder> {
-	if (!content.trim()) {
-		throw new Error('Reminder content cannot be empty');
-	}
-
-	const now = Date.now();
-	const triggerMs = triggerAt.getTime();
-	if (Number.isNaN(triggerMs)) {
-		throw new Error('Invalid reminder trigger time');
-	}
-	if (triggerMs > now + MAX_FUTURE_MS) {
-		throw new Error('Reminder trigger time is too far in the future');
+	const validationError = validateReminder(content, triggerAt);
+	if (validationError) {
+		throw new Error(validationError);
 	}
 
 	const id = await db.reminders.add({
