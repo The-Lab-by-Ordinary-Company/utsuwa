@@ -68,7 +68,7 @@ async function checkReminders() {
 			.where('id')
 			.equals(reminder.id)
 			.and((r) => !r.executed)
-			.modify({ executed: true });
+			.modify({ executed: 1 });
 
 		if (claimed === 0) continue;
 
@@ -146,7 +146,7 @@ export async function addReminder(
 		content,
 		triggerAt,
 		sessionId,
-		executed: false,
+		executed: 0,
 		createdAt: new Date()
 	});
 	const reminder = await db.reminders.get(id);

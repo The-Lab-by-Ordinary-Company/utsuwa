@@ -81,7 +81,7 @@ export interface Reminder {
 	id?: number;
 	triggerAt: Date;
 	content: string;
-	executed: boolean;
+	executed: number;
 	createdAt: Date;
 	sessionId: number;
 }

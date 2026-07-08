@@ -121,9 +121,9 @@ export const DEFAULT_REMINDER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Returns true for executed reminders whose trigger time is older than the TTL. */
 export function isOldExecutedReminder(
-	reminder: { executed: boolean; triggerAt: Date },
+	reminder: { executed: number; triggerAt: Date },
 	now: number,
 	ttlMs: number
 ): boolean {
-	return reminder.executed && reminder.triggerAt.getTime() + ttlMs < now;
+	return !!(reminder.executed && reminder.triggerAt.getTime() + ttlMs < now);
 }

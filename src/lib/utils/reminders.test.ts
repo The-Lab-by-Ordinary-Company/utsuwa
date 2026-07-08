@@ -152,18 +152,18 @@ test('isOldExecutedReminder identifies executed reminders past the TTL', () => {
 	const ttl = 7 * 24 * 60 * 60 * 1000;
 	assert.equal(
 		isOldExecutedReminder(
-			{ executed: true, triggerAt: new Date(now - ttl - 1000) },
+			{ executed: 1, triggerAt: new Date(now - ttl - 1000) },
 			now,
 			ttl
 		),
 		true
 	);
 	assert.equal(
-		isOldExecutedReminder({ executed: true, triggerAt: new Date(now - ttl + 1000) }, now, ttl),
+		isOldExecutedReminder({ executed: 1, triggerAt: new Date(now - ttl + 1000) }, now, ttl),
 		false
 	);
 	assert.equal(
-		isOldExecutedReminder({ executed: false, triggerAt: new Date(now - ttl - 1000) }, now, ttl),
+		isOldExecutedReminder({ executed: 0, triggerAt: new Date(now - ttl - 1000) }, now, ttl),
 		false
 	);
 });
