@@ -136,6 +136,16 @@ class UtsuwaDatabase extends Dexie {
 			completedEvents: '++id, eventId, completedAt',
 			reminders: '++id, sessionId, triggerAt, executed'
 		});
+
+		// Version 5: Add compound index on reminders for efficient due/upcoming queries
+		this.version(5).stores({
+			characterStates: '++id, updatedAt',
+			facts: '++id, category, importance, createdAt',
+			sessions: '++id, startedAt',
+			conversationTurns: '++id, sessionId, createdAt',
+			completedEvents: '++id, eventId, completedAt',
+			reminders: '++id, sessionId, triggerAt, executed, [executed+triggerAt]'
+		});
 	}
 }
 

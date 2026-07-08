@@ -12,6 +12,11 @@ const POLL_INTERVAL_MS = 10000;
 // just because the timer fell on the far side of an interval.
 const GRACE_MS = 15000;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+// Cap reminder scheduling at one year. Beyond that the entry is almost certainly
+// a parsing mistake and would bloat the database indefinitely.
+const MAX_FUTURE_MS = 365 * 24 * 60 * 60 * 1000;
+// Largest safe date for compound-index range queries.
+const MAX_DATE = new Date(8640000000000000);
 
 let upcoming = $state<Reminder[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -22,12 +27,10 @@ let lastCleanupAt = 0;
 async function loadUpcoming() {
 	const now = new Date();
 	const items = await db.reminders
-		.where('executed')
-		.equals(0)
-		.and((r) => r.triggerAt > now)
+		.where('[executed+triggerAt]')
+		.between([0, now], [0, MAX_DATE], false, false)
 		.toArray();
 
-	items.sort((a, b) => a.triggerAt.getTime() - b.triggerAt.getTime());
 	upcoming = items as Reminder[];
 }
 
@@ -48,10 +51,12 @@ async function cleanupOldReminders() {
 
 async function checkReminders() {
 	const now = Date.now();
+	const nowDate = new Date(now);
+	// Use the compound index so only non-executed reminders at or before the
+	// current time are read, without scanning the full table.
 	const due = await db.reminders
-		.where('executed')
-		.equals(0)
-		.and((r) => r.triggerAt.getTime() <= now)
+		.where('[executed+triggerAt]')
+		.between([0, new Date(0)], [0, nowDate], true, true)
 		.toArray();
 
 	const fired: Reminder[] = [];
@@ -92,12 +97,21 @@ async function checkReminders() {
 	}
 }
 
+function handleVisibilityChange() {
+	if (document.hidden) return;
+	// Browsers throttle setInterval while the tab is hidden. Check immediately
+	// when the user returns so reminders don't sit unhandled.
+	checkReminders().catch((e) => console.error('[Reminders] Visibility check error:', e));
+}
+
 export function startPolling() {
 	if (!browser || pollTimer) return;
 
 	pollTimer = setInterval(() => {
 		checkReminders().catch((e) => console.error('[Reminders] Poll error:', e));
 	}, POLL_INTERVAL_MS);
+
+	document.addEventListener('visibilitychange', handleVisibilityChange);
 
 	checkReminders().catch((e) => console.error('[Reminders] Initial check error:', e));
 }
@@ -107,6 +121,7 @@ export function stopPolling() {
 		clearInterval(pollTimer);
 		pollTimer = null;
 	}
+	document.removeEventListener('visibilitychange', handleVisibilityChange);
 }
 
 export function setOnReminderFired(callback: ((reminder: Reminder) => void) | null) {
@@ -122,6 +137,19 @@ export async function addReminder(
 	triggerAt: Date,
 	sessionId: number
 ): Promise<Reminder> {
+	if (!content.trim()) {
+		throw new Error('Reminder content cannot be empty');
+	}
+
+	const now = Date.now();
+	const triggerMs = triggerAt.getTime();
+	if (Number.isNaN(triggerMs)) {
+		throw new Error('Invalid reminder trigger time');
+	}
+	if (triggerMs > now + MAX_FUTURE_MS) {
+		throw new Error('Reminder trigger time is too far in the future');
+	}
+
 	const id = await db.reminders.add({
 		content,
 		triggerAt,

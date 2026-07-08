@@ -16,7 +16,7 @@ export function extractReminderTags(text: string): { reminders: ParsedReminder[]
 		const timeStr = match[1].trim();
 		const content = match[2].trim();
 		const triggerAt = parseReminderTime(timeStr);
-		if (triggerAt) {
+		if (triggerAt && content) {
 			reminders.push({ content, triggerAt });
 		}
 	}
@@ -33,6 +33,10 @@ export function parseReminderTime(timeStr: string): Date | null {
 	const now = Date.now();
 	let totalMs = 0;
 
+	// Reject negative or zero durations. A leading/trailing minus is almost
+	// always a parsing error or user mistake, and zero is not a useful reminder.
+	if (/-\d/.test(timeStr)) return null;
+
 	const hMatch = timeStr.match(/(\d+)\s*h(?:our)?s?/i);
 	const mMatch = timeStr.match(/(\d+)\s*m(?:in)?/i);
 	const sMatch = timeStr.match(/(\d+)\s*s(?:ec)?/i);
@@ -41,7 +45,7 @@ export function parseReminderTime(timeStr: string): Date | null {
 	if (mMatch) totalMs += parseInt(mMatch[1], 10) * 60 * 1000;
 	if (sMatch) totalMs += parseInt(sMatch[1], 10) * 1000;
 
-	if (totalMs === 0) return null;
+	if (totalMs <= 0) return null;
 	return new Date(now + totalMs);
 }
 

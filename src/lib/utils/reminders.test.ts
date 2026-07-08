@@ -54,6 +54,8 @@ test('parseReminderTime returns null for empty or invalid input', () => {
 	assert.equal(parseReminderTime(''), null);
 	assert.equal(parseReminderTime('later'), null);
 	assert.equal(parseReminderTime('tomorrow'), null);
+	assert.equal(parseReminderTime('-5min'), null);
+	assert.equal(parseReminderTime('0min'), null);
 });
 
 test('tryExtractReminderFromUserMessage matches German request', () => {
@@ -85,6 +87,11 @@ test('tryExtractReminderFromUserMessage handles content-before-time order', () =
 	assert.ok(result!.triggerAt.getTime() > Date.now() + 4 * 60 * 1000);
 });
 
+test('tryExtractReminderFromUserMessage rejects negative or zero durations', () => {
+	assert.equal(tryExtractReminderFromUserMessage('Remind me in -5 minutes to stretch'), null);
+	assert.equal(tryExtractReminderFromUserMessage('Remind me in 0 minutes to stretch'), null);
+});
+
 test('tryExtractReminderFromUserMessage ignores sentences without reminder intent', () => {
 	assert.equal(tryExtractReminderFromUserMessage('Taxi in 10 Minuten zu meinem Termin'), null);
 	assert.equal(tryExtractReminderFromUserMessage('Ich fahre in 5 Minuten nach Hause'), null);
@@ -108,6 +115,24 @@ test('classifyReminder distinguishes pending, fire and missed', () => {
 	assert.equal(classifyReminder(new Date(now - 1000), now, 5000), 'fire');
 	assert.equal(classifyReminder(new Date(now - 6000), now, 5000), 'missed');
 	assert.equal(classifyReminder(new Date(now), now, 5000), 'fire');
+});
+
+test('extractReminderTags ignores invalid time strings', () => {
+	const { reminders, cleanedText } = extractReminderTags(
+		'[reminder:abc]do something[/reminder] [reminder:-5min]invalid[/reminder] Hello'
+	);
+
+	assert.equal(reminders.length, 0);
+	assert.equal(cleanedText, 'Hello');
+});
+
+test('extractReminderTags ignores empty content tags', () => {
+	const { reminders, cleanedText } = extractReminderTags(
+		'[reminder:5min][/reminder] [reminder:1h]   [/reminder] Hello'
+	);
+
+	assert.equal(reminders.length, 0);
+	assert.equal(cleanedText, 'Hello');
 });
 
 test('isOldExecutedReminder identifies executed reminders past the TTL', () => {
