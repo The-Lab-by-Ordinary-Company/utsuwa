@@ -8,14 +8,22 @@
 	import { arStore } from '$lib/stores/ar.svelte';
 	import { getColorMode, cycleColorMode, type ColorMode } from '$lib/utils/color-mode';
 	import { onMount } from 'svelte';
+	import type { Reminder } from '$lib/types/memory';
 
 	interface Props {
 		onInfoClick: () => void;
+		upcomingReminders?: Reminder[];
+		onDeleteReminder?: (id: number) => void;
 	}
 
-	let { onInfoClick }: Props = $props();
+	let {
+		onInfoClick,
+		upcomingReminders = [],
+		onDeleteReminder
+	}: Props = $props();
 	let showOverlayBtn = $state(false);
 	let clusterOpen = $state(false);
+	let remindersOpen = $state(false);
 	let showCamera = $state(false);
 	let colorMode = $state<ColorMode>('system');
 	let rootEl = $state<HTMLDivElement | null>(null);
@@ -45,12 +53,12 @@
 		showOverlayBtn = isTauri();
 		colorMode = getColorMode();
 
-		// Close the cluster when clicking anywhere outside it
+		// Close dropdowns when clicking anywhere outside the root element
 		const onPointerDown = (e: PointerEvent) => {
-			if (clusterOpen && rootEl && !rootEl.contains(e.target as Node)) {
-				clusterOpen = false;
-				showCamera = false;
-			}
+			if (!rootEl || rootEl.contains(e.target as Node)) return;
+			clusterOpen = false;
+			remindersOpen = false;
+			showCamera = false;
 		};
 		document.addEventListener('pointerdown', onPointerDown);
 		return () => document.removeEventListener('pointerdown', onPointerDown);
@@ -58,7 +66,23 @@
 
 	function toggleCluster() {
 		clusterOpen = !clusterOpen;
+		remindersOpen = false;
 		if (!clusterOpen) showCamera = false;
+	}
+
+	function formatTimeLabel(date: Date): string {
+		const now = new Date();
+		const diffMs = date.getTime() - now.getTime();
+		const diffMin = Math.max(0, Math.ceil(diffMs / 60000));
+		if (diffMin < 60) return `in ${diffMin} min`;
+		const diffH = Math.ceil(diffMin / 60);
+		return `in ${diffH} h`;
+	}
+
+	function deleteReminder(id?: number) {
+		if (id === undefined) return;
+		remindersOpen = false;
+		onDeleteReminder?.(id);
 	}
 
 	async function launchOverlay() {
@@ -78,6 +102,47 @@
 
 <div class="top-right-buttons" bind:this={rootEl}>
 	<div class="button-row">
+		<div class="reminder-wrapper">
+			<button
+				class="icon-btn"
+				class:active={remindersOpen}
+				onclick={() => (remindersOpen = !remindersOpen)}
+				aria-label="Open reminders"
+				title="Open reminders"
+			>
+				<Icon name="bell" size={20} />
+				{#if upcomingReminders.length > 0}
+					<span class="reminder-badge">{upcomingReminders.length}</span>
+				{/if}
+			</button>
+			{#if remindersOpen}
+				<div class="reminder-dropdown">
+					<div class="reminder-header">Open tasks</div>
+					{#if upcomingReminders.length === 0}
+						<div class="reminder-empty">No open tasks or timers</div>
+					{:else}
+						<ul class="reminder-list">
+							{#each upcomingReminders as reminder (reminder.id)}
+								<li class="reminder-item">
+									<div class="reminder-text">
+										<span class="reminder-content">{reminder.content}</span>
+										<span class="reminder-time">{formatTimeLabel(reminder.triggerAt)}</span>
+									</div>
+									<button
+										class="reminder-delete"
+										onclick={() => deleteReminder(reminder.id)}
+										aria-label="Delete reminder"
+										title="Delete reminder"
+									>
+										<Icon name="trash" size={14} />
+									</button>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</div>
+			{/if}
+		</div>
 		{#if showOverlayBtn}
 			<button class="icon-btn overlay-btn" onclick={launchOverlay} aria-label="Launch overlay" title="Launch Overlay Mode">
 				<Icon name="monitor" size={20} />
@@ -252,5 +317,125 @@
 
 	.overlay-btn:active {
 		color: #fff;
+	}
+
+	.reminder-wrapper {
+		position: relative;
+	}
+
+	.reminder-badge {
+		position: absolute;
+		top: -2px;
+		right: -2px;
+		min-width: 18px;
+		height: 18px;
+		padding: 0 5px;
+		background: #ff4757;
+		color: white;
+		font-size: 10px;
+		font-weight: 700;
+		border-radius: 9px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+	}
+
+	.reminder-dropdown {
+		position: absolute;
+		top: calc(100% + 8px);
+		right: 0;
+		width: 280px;
+		max-height: 320px;
+		overflow-y: auto;
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-lg);
+		padding: 0.75rem;
+		box-shadow: var(--shadow-lg);
+		z-index: 60;
+	}
+
+	.reminder-header {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		margin-bottom: 0.5rem;
+		padding: 0 0.25rem;
+	}
+
+	.reminder-empty {
+		font-size: 0.85rem;
+		color: var(--text-muted);
+		padding: 0.75rem 0.25rem;
+		text-align: center;
+	}
+
+	.reminder-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.reminder-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.5rem;
+		background: var(--bg-secondary);
+		border-radius: var(--radius-md);
+		transition: background 0.15s ease;
+	}
+
+	.reminder-item:hover {
+		background: var(--bg-tertiary);
+	}
+
+	.reminder-text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.reminder-content {
+		font-size: 0.85rem;
+		color: var(--text-primary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.reminder-time {
+		font-size: 0.75rem;
+		color: var(--text-muted);
+	}
+
+	.reminder-delete {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: var(--radius-full);
+		color: var(--text-muted);
+		cursor: pointer;
+		transition: color 0.15s ease, background 0.15s ease;
+		flex-shrink: 0;
+	}
+
+	.reminder-delete:hover {
+		color: #ff4757;
+		background: rgba(255, 71, 87, 0.1);
 	}
 </style>

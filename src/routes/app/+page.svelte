@@ -123,40 +123,14 @@
 		}
 	});
 
-	// Start reminder polling and handle fired / missed reminders
+	// Start reminder polling. Reminders are surfaced purely through the alarm
+	// icon UI; they no longer inject messages into the chat stream.
 	$effect(() => {
-		reminderStore.setOnReminderFired(async (reminder) => {
-			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it now by performing the described action or saying something fitting.`;
-			await sendReminderMessage(msg);
-		});
-		reminderStore.setOnMissedReminders(async (missed) => {
-			const list = missed
-				.map((r) => `- "${r.content}" (planned for ${r.triggerAt.toLocaleTimeString()})`)
-				.join('\n');
-			const msg = `⏰ MISSED REMINDERS while away:\n${list}\n\nDecide whether to mention them to the user, ask about them, or silently discard them.`;
-			await sendReminderMessage(msg);
-		});
 		reminderStore.startPolling();
 		return () => {
 			reminderStore.stopPolling();
-			reminderStore.setOnReminderFired(null);
-			reminderStore.setOnMissedReminders(null);
 		};
 	});
-
-	async function sendReminderMessage(msg: string) {
-		if (chatStore.isLoading) {
-			const waitInterval = setInterval(() => {
-				if (!chatStore.isLoading) {
-					clearInterval(waitInterval);
-					handleSend(msg);
-				}
-			}, 500);
-			setTimeout(() => clearInterval(waitInterval), 60000);
-		} else {
-			handleSend(msg);
-		}
-	}
 
 	// Shown-image previews are blob: URLs (shared between the chat history and the
 	// thinking overlay). Free them all when leaving the app so a long session's
@@ -226,7 +200,11 @@
 
 <div class="app-container">
 	<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} onBoardClick={() => showBoard = true} />
-	<TopRightButtons onInfoClick={() => showInfoModal = true} />
+	<TopRightButtons
+		onInfoClick={() => showInfoModal = true}
+		upcomingReminders={reminderStore.upcoming}
+		onDeleteReminder={reminderStore.deleteReminder}
+	/>
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />
 	{/if}

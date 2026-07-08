@@ -1,7 +1,6 @@
 import { browser } from '$app/environment';
 import { db } from '$lib/db';
 import type { Reminder } from '$lib/types/memory';
-import { getWorkingMemory } from '$lib/engine/memory';
 import {
 	classifyReminder,
 	isOldExecutedReminder,
@@ -9,7 +8,9 @@ import {
 } from '$lib/utils/reminders';
 
 const POLL_INTERVAL_MS = 10000;
-const GRACE_MS = 5000;
+// Grace must cover a full poll gap so a reminder never classifies as missed
+// just because the timer fell on the far side of an interval.
+const GRACE_MS = 15000;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 let upcoming = $state<Reminder[]>([]);
@@ -18,23 +19,23 @@ let onReminderFired: ((reminder: Reminder) => void) | null = null;
 let onMissedReminders: ((reminders: Reminder[]) => void) | null = null;
 let lastCleanupAt = 0;
 
-async function loadUpcoming(sessionId: number) {
+async function loadUpcoming() {
 	const now = new Date();
 	const items = await db.reminders
-		.where('sessionId')
-		.equals(sessionId)
-		.and((r) => !r.executed && r.triggerAt > now)
+		.where('executed')
+		.equals(0)
+		.and((r) => r.triggerAt > now)
 		.toArray();
 
 	items.sort((a, b) => a.triggerAt.getTime() - b.triggerAt.getTime());
 	upcoming = items as Reminder[];
 }
 
-async function cleanupOldReminders(sessionId: number) {
+async function cleanupOldReminders() {
 	const now = Date.now();
 	const old = await db.reminders
-		.where('sessionId')
-		.equals(sessionId)
+		.where('executed')
+		.equals(1)
 		.and((r) => isOldExecutedReminder(r, now, DEFAULT_REMINDER_TTL_MS))
 		.toArray();
 
@@ -46,23 +47,27 @@ async function cleanupOldReminders(sessionId: number) {
 }
 
 async function checkReminders() {
-	const sessionId = getWorkingMemory().currentSessionId;
-	if (!sessionId) return;
-
 	const now = Date.now();
 	const due = await db.reminders
-		.where('sessionId')
-		.equals(sessionId)
-		.and((r) => !r.executed && r.triggerAt.getTime() <= now)
+		.where('executed')
+		.equals(0)
+		.and((r) => r.triggerAt.getTime() <= now)
 		.toArray();
 
 	const fired: Reminder[] = [];
 	const missed: Reminder[] = [];
 
 	for (const reminder of due) {
-		if (reminder.id !== undefined) {
-			await db.reminders.update(reminder.id, { executed: true });
-		}
+		if (reminder.id === undefined) continue;
+
+		// Atomic claim: only the first caller/window gets to process this row.
+		const claimed = await db.reminders
+			.where('id')
+			.equals(reminder.id)
+			.and((r) => !r.executed)
+			.modify({ executed: true });
+
+		if (claimed === 0) continue;
 
 		const fate = classifyReminder(reminder.triggerAt, now, GRACE_MS);
 		if (fate === 'fire') {
@@ -79,13 +84,11 @@ async function checkReminders() {
 		onMissedReminders?.(missed);
 	}
 
-	await loadUpcoming(sessionId);
+	await loadUpcoming();
 
 	if (now - lastCleanupAt > CLEANUP_INTERVAL_MS) {
 		lastCleanupAt = now;
-		cleanupOldReminders(sessionId).catch((e) =>
-			console.error('[Reminders] Cleanup error:', e)
-		);
+		cleanupOldReminders().catch((e) => console.error('[Reminders] Cleanup error:', e));
 	}
 }
 
@@ -114,7 +117,11 @@ export function setOnMissedReminders(callback: ((reminders: Reminder[]) => void)
 	onMissedReminders = callback;
 }
 
-export async function addReminder(content: string, triggerAt: Date, sessionId: number): Promise<Reminder> {
+export async function addReminder(
+	content: string,
+	triggerAt: Date,
+	sessionId: number
+): Promise<Reminder> {
 	const id = await db.reminders.add({
 		content,
 		triggerAt,
@@ -125,14 +132,13 @@ export async function addReminder(content: string, triggerAt: Date, sessionId: n
 	const reminder = await db.reminders.get(id);
 	if (!reminder) throw new Error('Failed to create reminder');
 
-	await loadUpcoming(sessionId);
+	await loadUpcoming();
 	return reminder as Reminder;
 }
 
 export async function deleteReminder(id: number) {
 	await db.reminders.delete(id);
-	const sessionId = getWorkingMemory().currentSessionId;
-	if (sessionId) await loadUpcoming(sessionId);
+	await loadUpcoming();
 }
 
 export const reminderStore = {

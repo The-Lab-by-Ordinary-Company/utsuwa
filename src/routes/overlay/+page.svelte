@@ -24,6 +24,7 @@
 	import { sendCompanionMessage } from '$lib/services/chat/companion-chat';
 	import { eventsApi } from '$lib/engine/events';
 	import { completionMarkers } from '$lib/engine/event-completion';
+	import { reminderStore } from '$lib/stores/reminders.svelte';
 	import type { EventDefinition } from '$lib/types/events';
 	import type { StateUpdates } from '$lib/types/character';
 
@@ -168,6 +169,15 @@
 			activeEvent = debugEvent;
 		}
 	});
+	// Start reminder polling in the overlay too, so timers fire even when the
+	// main app window is hidden.
+	$effect(() => {
+		reminderStore.startPolling();
+		return () => {
+			reminderStore.stopPolling();
+		};
+	});
+
 
 	// Handle drag for Tauri window
 	function handleDragStart(e: MouseEvent) {
