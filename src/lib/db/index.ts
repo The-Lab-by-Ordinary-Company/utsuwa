@@ -146,6 +146,16 @@ class UtsuwaDatabase extends Dexie {
 			completedEvents: '++id, eventId, completedAt',
 			reminders: '++id, sessionId, triggerAt, executed, [executed+triggerAt]'
 		});
+
+		// Version 6: Add dismissed flag so recentFired notifications survive a reload.
+		this.version(6).stores({
+			characterStates: '++id, updatedAt',
+			facts: '++id, category, importance, createdAt',
+			sessions: '++id, startedAt',
+			conversationTurns: '++id, sessionId, createdAt',
+			completedEvents: '++id, eventId, completedAt',
+			reminders: '++id, sessionId, triggerAt, executed, dismissed, [executed+triggerAt]'
+		});
 	}
 }
 

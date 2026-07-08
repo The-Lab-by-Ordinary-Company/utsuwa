@@ -84,6 +84,7 @@ export interface Reminder {
 	executed: number;
 	createdAt: Date;
 	sessionId: number;
+	dismissed?: number;
 }
 
 // Working memory state (in-memory during session)

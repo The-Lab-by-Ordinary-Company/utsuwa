@@ -175,14 +175,14 @@
 	// main app window is hidden. Fired reminders are sent back through the LLM
 	// so the companion can react (speech, search, etc.).
 	$effect(() => {
-		reminderStore.setOnReminderFired((reminder) => {
+		const unsubscribeReminder = reminderStore.addReminderFiredListener((reminder) => {
 			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it NOW by performing the described action or saying something enthusiastic and fitting.`;
 			sendReminderMessage((content, options) => handleReminderSend(content, options), msg);
 		});
 		reminderStore.startPolling();
 		return () => {
 			reminderStore.stopPolling();
-			reminderStore.setOnReminderFired(null);
+			unsubscribeReminder();
 		};
 	});
 

@@ -15,12 +15,21 @@ const GRACE_MS = 15000;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 // Largest safe date for compound-index range queries.
 const MAX_DATE = new Date(8640000000000000);
+const BROADCAST_CHANNEL_NAME = 'utsuwa-reminders';
 
 let upcoming = $state<Reminder[]>([]);
 let recentFired = $state<Reminder[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let lastCleanupAt = 0;
-let onReminderFired: ((reminder: Reminder) => void) | null = null;
+const onReminderFiredCallbacks = new Set<(reminder: Reminder) => void>();
+let broadcastChannel: BroadcastChannel | null = null;
+function generateWindowId(): string {
+	if (browser && typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+		return crypto.randomUUID();
+	}
+	return `window-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+const windowId = generateWindowId();
 
 async function loadUpcoming() {
 	const now = new Date();
@@ -34,6 +43,20 @@ async function loadUpcoming() {
 
 	items.sort((a, b) => a.triggerAt.getTime() - b.triggerAt.getTime());
 	upcoming = items as Reminder[];
+}
+
+async function loadRecentFired() {
+	const cutoff = Date.now() - DEFAULT_REMINDER_TTL_MS;
+	// Restore notifications that fired but have not been dismissed yet so the
+	// alarm icon/counter survives a browser reload.
+	const items = await db.reminders
+		.where('executed')
+		.equals(1)
+		.and((r) => !r.dismissed && r.triggerAt.getTime() > cutoff)
+		.toArray();
+
+	items.sort((a, b) => b.triggerAt.getTime() - a.triggerAt.getTime());
+	recentFired = items as Reminder[];
 }
 
 async function cleanupOldReminders() {
@@ -61,8 +84,6 @@ async function checkReminders() {
 		.between([0, new Date(0)], [0, nowDate], true, true)
 		.toArray();
 
-	const newlyFired: Reminder[] = [];
-
 	for (const reminder of due) {
 		if (reminder.id === undefined) continue;
 
@@ -71,25 +92,27 @@ async function checkReminders() {
 			.where('id')
 			.equals(reminder.id)
 			.and((r) => !r.executed)
-			.modify({ executed: 1 });
+			.modify({ executed: 1, dismissed: 0 });
 
 		if (claimed === 0) continue;
 
 		const fate = classifyReminder(reminder.triggerAt, now, GRACE_MS);
-		if (fate === 'fire' || fate === 'missed') {
-			newlyFired.push(reminder as Reminder);
-		}
-	}
+		if (fate !== 'fire' && fate !== 'missed') continue;
 
-	if (newlyFired.length > 0) {
 		// Avoid duplicates if a reminder somehow gets processed twice in the same
 		// window before the UI re-renders.
-		const existingIds = new Set(recentFired.map((r) => r.id));
-		for (const reminder of newlyFired) {
-			if (!existingIds.has(reminder.id)) {
-				recentFired.push(reminder as Reminder);
-				onReminderFired?.(reminder as Reminder);
-			}
+		if (!recentFired.some((r) => r.id === reminder.id)) {
+			recentFired.push(reminder as Reminder);
+		}
+
+		// Notify other windows so every open surface updates its alarm icon.
+		broadcastReminderFired(reminder as Reminder);
+
+		// Only the window that claimed the reminder reacts through the LLM. This
+		// prevents both the main app and the desktop overlay from sending the same
+		// reminder message twice when both are open.
+		for (const callback of onReminderFiredCallbacks) {
+			callback(reminder as Reminder);
 		}
 	}
 
@@ -98,6 +121,37 @@ async function checkReminders() {
 	if (now - lastCleanupAt > CLEANUP_INTERVAL_MS) {
 		lastCleanupAt = now;
 		cleanupOldReminders().catch((e) => console.error('[Reminders] Cleanup error:', e));
+	}
+}
+
+function broadcastReminderFired(reminder: Reminder) {
+	if (!broadcastChannel) return;
+	try {
+		broadcastChannel.postMessage({ type: 'reminder-fired', sourceId: windowId, reminder });
+	} catch (e) {
+		console.error('[Reminders] Broadcast error:', e);
+	}
+}
+
+function handleBroadcastMessage(event: MessageEvent<unknown>) {
+	const message = event.data;
+	if (
+		!message ||
+		typeof message !== 'object' ||
+		(message as Record<string, unknown>).type !== 'reminder-fired'
+	) {
+		return;
+	}
+
+	const sourceId = (message as Record<string, unknown>).sourceId;
+	if (sourceId === windowId) return;
+
+	const reminder = (message as Record<string, unknown>).reminder as Reminder | undefined;
+	if (!reminder || reminder.id === undefined) return;
+
+	// Update the UI on this window without invoking the LLM reaction callback.
+	if (!recentFired.some((r) => r.id === reminder.id)) {
+		recentFired.push(reminder);
 	}
 }
 
@@ -111,13 +165,22 @@ function handleVisibilityChange() {
 export function startPolling() {
 	if (!browser || pollTimer) return;
 
+	if (typeof BroadcastChannel !== 'undefined') {
+		broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+		broadcastChannel.addEventListener('message', handleBroadcastMessage);
+	}
+
 	pollTimer = setInterval(() => {
 		checkReminders().catch((e) => console.error('[Reminders] Poll error:', e));
 	}, POLL_INTERVAL_MS);
 
 	document.addEventListener('visibilitychange', handleVisibilityChange);
 
-	checkReminders().catch((e) => console.error('[Reminders] Initial check error:', e));
+	// Restore any notifications from before the reload, then check for new ones.
+	loadRecentFired()
+		.then(() => loadUpcoming())
+		.then(() => checkReminders())
+		.catch((e) => console.error('[Reminders] Initial check error:', e));
 }
 
 export function stopPolling() {
@@ -126,6 +189,12 @@ export function stopPolling() {
 		pollTimer = null;
 	}
 	document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+	if (broadcastChannel) {
+		broadcastChannel.removeEventListener('message', handleBroadcastMessage);
+		broadcastChannel.close();
+		broadcastChannel = null;
+	}
 }
 
 export async function addReminder(
@@ -157,13 +226,32 @@ export async function deleteReminder(id: number) {
 	await loadUpcoming();
 }
 
-export function dismissRecentFired(id?: number) {
+export async function dismissRecentFired(id?: number) {
 	if (id === undefined) return;
 	recentFired = recentFired.filter((r) => r.id !== id);
+	await db.reminders.where('id').equals(id).modify({ dismissed: 1 });
 }
 
+export function addReminderFiredListener(callback: (reminder: Reminder) => void): () => void {
+	onReminderFiredCallbacks.add(callback);
+	return () => {
+		onReminderFiredCallbacks.delete(callback);
+	};
+}
+
+export function removeReminderFiredListener(callback: (reminder: Reminder) => void) {
+	onReminderFiredCallbacks.delete(callback);
+}
+
+/**
+ * @deprecated Use addReminderFiredListener instead. This setter replaces any
+ * previously registered callback and is kept only for quick backward compatibility.
+ */
 export function setOnReminderFired(callback: ((reminder: Reminder) => void) | null) {
-	onReminderFired = callback;
+	onReminderFiredCallbacks.clear();
+	if (callback) {
+		onReminderFiredCallbacks.add(callback);
+	}
 }
 
 export const reminderStore = {
@@ -178,5 +266,7 @@ export const reminderStore = {
 	addReminder,
 	deleteReminder,
 	dismissRecentFired,
+	addReminderFiredListener,
+	removeReminderFiredListener,
 	setOnReminderFired
 };
