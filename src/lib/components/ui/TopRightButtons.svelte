@@ -120,8 +120,8 @@
 				title="Open reminders"
 			>
 				<Icon name="bell" size={20} />
-				{#if upcomingReminders.length > 0 || recentFired.length > 0}
-					<span class="reminder-badge">{upcomingReminders.length + recentFired.length}</span>
+				{#if upcomingReminders.length > 0}
+					<span class="reminder-badge">{upcomingReminders.length}</span>
 				{/if}
 			</button>
 			{#if remindersOpen}
