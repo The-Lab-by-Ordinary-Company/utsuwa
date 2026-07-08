@@ -10,6 +10,18 @@
 		debounce,
 		type ModelInfo
 	} from '$lib/services/providers/use-model-fetch';
+	import { DOCS_URL } from '$lib/config/site';
+	import { isTauri } from '$lib/services/platform';
+
+	const LOCAL_LLM_DOCS_URL = `${DOCS_URL}/guides/local-llm-setup#allowing-utsuwa-to-reach-ollama`;
+
+	// Always open the docs subdomain; on desktop route it to the system browser.
+	function openLocalLlmDocs(e: MouseEvent) {
+		if (isTauri()) {
+			e.preventDefault();
+			import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl(LOCAL_LLM_DOCS_URL));
+		}
+	}
 
 	interface Props {
 		onNext: () => void;
@@ -316,6 +328,17 @@
 	}
 </script>
 
+{#snippet troubleHelp()}
+	<p class="provider-help">
+		Having trouble? Click <a
+			href={LOCAL_LLM_DOCS_URL}
+			target="_blank"
+			rel="noopener"
+			onclick={openLocalLlmDocs}>here</a
+		>
+	</p>
+{/snippet}
+
 <div class="ob-step services-step">
 	<div class="ob-head">
 		<h2 class="ob-title">Configure AI services</h2>
@@ -357,10 +380,13 @@
 		<!-- Base URL for local providers and custom OpenAI-compatible endpoints -->
 		{#if llmProvider?.isLocal || llmProvider?.custom}
 			{#if llmProvider.isLocal && llmFetchError}
-				<p class="provider-note error">
-					<Icon name="alert-circle" size={14} />
-					{llmFetchError}
-				</p>
+				<div class="provider-error">
+					<p class="provider-note error">
+						<Icon name="alert-circle" size={14} />
+						{llmFetchError}
+					</p>
+					{@render troubleHelp()}
+				</div>
 			{/if}
 			<input
 				type="text"
@@ -375,8 +401,11 @@
 			{#if llmProvider.isLocal}
 				<p class="provider-note">
 					<Icon name="check-circle" size={14} />
-					Local provider - no API key needed
+					Local provider, no API key needed
 				</p>
+				{#if !llmFetchError}
+					{@render troubleHelp()}
+				{/if}
 			{/if}
 		{/if}
 
@@ -737,8 +766,40 @@
 		color: var(--color-success);
 	}
 
+	.provider-note :global(svg) {
+		flex-shrink: 0;
+	}
+
 	.provider-note.error {
+		align-items: flex-start;
+		line-height: 1.45;
 		color: var(--color-error);
+	}
+
+	.provider-error {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.provider-error .provider-help {
+		margin: 0;
+	}
+
+	.provider-help {
+		margin: 0.375rem 0 0;
+		font-size: 0.75rem;
+		color: var(--text-tertiary);
+	}
+
+	.provider-help a {
+		color: var(--text-secondary);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.provider-help a:hover {
+		color: var(--text-primary);
 	}
 
 	.skip-note {

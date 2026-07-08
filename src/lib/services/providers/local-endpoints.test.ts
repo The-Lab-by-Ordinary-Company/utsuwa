@@ -74,10 +74,6 @@ test('provides local provider troubleshooting hints', () => {
 		),
 		/OLLAMA_ORIGINS="https:\/\/utsuwa-git-fix-ollama-local-provider\.vercel\.app"/
 	);
-	assert.match(
-		getLocalProviderConnectionHint('ollama', 'http://localhost:11434'),
-		/docs\.ollama\.com\/faq#how-can-i-allow-additional-web-origins-to-access-ollama/
-	);
 	assert.match(getLocalProviderConnectionHint('lmstudio', 'http://localhost:1234/v1'), /Start Server/);
 });
 

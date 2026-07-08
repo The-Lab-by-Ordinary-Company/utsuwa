@@ -4,9 +4,6 @@ const LOCAL_LLM_PROVIDERS = new Set(['ollama', 'lmstudio']);
 const LOCAL_TTS_PROVIDERS = new Set(['local-tts']);
 const LOCAL_STT_PROVIDERS = new Set(['local-stt']);
 
-const OLLAMA_ORIGINS_DOC_URL =
-	'https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama';
-
 function trimTrailingSlashes(url: string): string {
 	return url.replace(/\/+$/, '');
 }
@@ -117,14 +114,14 @@ export function getLocalProviderConnectionHint(
 
 	if (providerId === 'ollama') {
 		const originHint = siteOrigin
-			? ` For this site, restart Ollama with OLLAMA_ORIGINS="${siteOrigin}" ollama serve.`
-			: ` Set OLLAMA_ORIGINS to this site's origin before starting Ollama.`;
-		return `Could not reach Ollama at ${chatBaseUrl}. Make sure Ollama is running with "ollama serve", the model is pulled with "ollama pull <model>", and browser users allow this site's origin with OLLAMA_ORIGINS.${originHint} More help: ${OLLAMA_ORIGINS_DOC_URL}`;
+			? ` and allow this origin: OLLAMA_ORIGINS="${siteOrigin}" ollama serve`
+			: ` and allow this site's origin via OLLAMA_ORIGINS`;
+		return `Could not reach Ollama at ${chatBaseUrl}. Make sure it's running with "ollama serve"${originHint}.`;
 	}
 
 	if (providerId === 'lmstudio') {
-		return `Could not reach LM Studio at ${chatBaseUrl}. Open LM Studio, go to the Developer or Server tab, load a model, and click Start Server.`;
+		return `Could not reach LM Studio at ${chatBaseUrl}. Open it, load a model, and click Start Server.`;
 	}
 
-	return `Could not reach local provider at ${chatBaseUrl}. Make sure the local server is running and reachable from this device.`;
+	return `Could not reach the local provider at ${chatBaseUrl}. Make sure the server is running and reachable from this device.`;
 }

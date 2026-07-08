@@ -63,23 +63,45 @@ If the dropdown is empty, check your installed Ollama models with:
 ollama list
 ```
 
-If you are using the hosted website at `https://www.utsuwa.ai`, your browser connects directly to Ollama on your machine. Start Ollama with the Utsuwa origin allowed:
+### Allowing Utsuwa to reach Ollama
 
-```bash
-OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve
+Ollama only answers requests from origins on its allowlist. If it isn't allowing Utsuwa, you'll see the model list stay empty and Ollama's own log will show `403` responses on `/api/tags`. Which origin you need to allow depends on how you run Utsuwa.
+
+**Desktop app**
+
+| Your OS | Setup needed | What to do |
+|---------|--------------|------------|
+| macOS | None | Ollama already allows the macOS app's `tauri://localhost` origin. Just run `ollama serve`. |
+| Windows | Yes | Allow `http://tauri.localhost` (see below). |
+| Linux | Yes | Allow `http://tauri.localhost` (see below). |
+
+The desktop app on Windows and Linux reports its origin to Ollama as `http://tauri.localhost`, which is not on Ollama's default allowlist, so you have to add it once.
+
+On **Windows**, set it and then fully restart Ollama:
+
+```
+setx OLLAMA_ORIGINS "http://tauri.localhost"
 ```
 
-If you are testing a Vercel preview, use the exact preview origin shown in the browser address bar, without the trailing slash:
+`setx` only applies to programs started afterward, so quit Ollama from the system tray (right-click the tray icon, Quit) and start it again. If you run `ollama serve` in a terminal instead, use `set OLLAMA_ORIGINS=http://tauri.localhost` in that same window before running it.
+
+On **Linux**, start Ollama with the origin in its environment:
 
 ```bash
-OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve
+OLLAMA_ORIGINS=http://tauri.localhost ollama serve
 ```
 
-For local development, use:
+If Ollama runs as a systemd service, run `systemctl edit ollama`, add `Environment="OLLAMA_ORIGINS=http://tauri.localhost"` under `[Service]`, then `sudo systemctl restart ollama`.
+
+**Hosted website (app.utsuwa.ai)**
+
+The web app runs at `app.utsuwa.ai`, and your browser connects directly to Ollama on your machine, so allow that origin:
 
 ```bash
-OLLAMA_ORIGINS=http://localhost:5173 ollama serve
+OLLAMA_ORIGINS=https://app.utsuwa.ai ollama serve
 ```
+
+Match whatever is in your browser's address bar. For local development use `http://localhost:5173`. For a Vercel preview, use the exact origin shown in the address bar (no trailing slash), such as `https://your-preview.vercel.app`. Comma-separate multiple origins, or use `OLLAMA_ORIGINS=*` to allow any origin on your machine.
 
 ## LM Studio
 
@@ -134,24 +156,12 @@ For Ollama, either `http://localhost:11434` or `http://localhost:11434/v1` works
 
 ### "Failed to fetch models"
 
-The LLM server may not be running or your browser may not be allowed to access it. Start the server:
+The LLM server may not be running, or it may not be allowing Utsuwa's origin. Start the server:
 
 - Ollama: `ollama serve`
 - LM Studio: Go to the Server tab and click Start Server
 
-If you are using the hosted website with Ollama, restart Ollama with:
-
-```bash
-OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve
-```
-
-For a Vercel preview, use the exact preview origin:
-
-```bash
-OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve
-```
-
-Then click the refresh icon in Utsuwa's model dropdown.
+If the server is running but the list is still empty, it's almost always an origin problem. Ollama's log will show `403` on `/api/tags`. Allow Utsuwa's origin as described in [Allowing Utsuwa to reach Ollama](#allowing-utsuwa-to-reach-ollama): on the **Windows or Linux desktop app** that means `OLLAMA_ORIGINS=http://tauri.localhost`; on the **hosted website** it's `OLLAMA_ORIGINS=https://app.utsuwa.ai`. The macOS desktop app needs nothing. Restart Ollama after changing it, then click the refresh icon in Utsuwa's model dropdown.
 
 ### "model not found"
 
@@ -177,6 +187,10 @@ The port doesn't match. Default ports:
 
 Make sure the URL in Utsuwa matches the port your server is using.
 
+### Models still won't load (try 127.0.0.1)
+
+If Ollama is running and you've allowed the origin but the model list is still empty, change the base URL in Utsuwa from `http://localhost:11434` to `http://127.0.0.1:11434`. On some systems (most often Windows) `localhost` resolves to the IPv6 address `::1` first, while Ollama listens on the IPv4 address `127.0.0.1`, so the connection never reaches it. Pointing Utsuwa straight at `127.0.0.1` avoids the mismatch. This is machine-dependent, so it won't affect everyone.
+
 ### Slow responses
 
 - Try a smaller model (3B parameters instead of 7B+)
@@ -188,7 +202,7 @@ Make sure the URL in Utsuwa matches the port your server is using.
 If you're running Utsuwa in a browser and getting CORS errors with Ollama, set the origins environment variable before starting the server:
 
 ```bash
-OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve
+OLLAMA_ORIGINS=https://app.utsuwa.ai ollama serve
 ```
 
 Ollama documents this under [allowing additional web origins](https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama).
@@ -201,4 +215,4 @@ OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve
 
 If you use multiple Utsuwa origins, comma-separate them. Use `OLLAMA_ORIGINS=http://localhost:5173` for local development, or `OLLAMA_ORIGINS=*` only if you intentionally want to allow any browser origin on your machine.
 
-This isn't needed when using the desktop app.
+The **desktop app** hits the same Ollama allowlist. macOS works with no setup, but the Windows and Linux desktop apps need `OLLAMA_ORIGINS=http://tauri.localhost`. See [Allowing Utsuwa to reach Ollama](#allowing-utsuwa-to-reach-ollama).

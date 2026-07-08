@@ -136,7 +136,7 @@ If you selected **Local TTS** but hear nothing:
 2. **Voice is set** - The voice field must hold a name your server knows (e.g. `af_bella` for Kokoro)
 3. **Base URL** - It should point at the server's `/v1`; Utsuwa normalizes the trailing slash for you
 4. **Desktop app** - Just needs the server running on `localhost`; no origin or CORS setup is required
-5. **Hosted site** (`https://www.utsuwa.ai`) - The server must be on `localhost` (one on another machine is blocked as mixed content), must allow the `utsuwa.ai` origin (Kokoro-FastAPI does by default), and your browser may prompt to allow local-network access. Allow it if asked
+5. **Hosted site** (`https://app.utsuwa.ai`) - The server must be on `localhost` (one on another machine is blocked as mixed content), must allow the `app.utsuwa.ai` origin (Kokoro-FastAPI does by default), and your browser may prompt to allow local-network access. Allow it if asked
 
 See [Local TTS Setup](/docs/guides/local-tts-setup#desktop-app-vs-hosted-website) for the hosted vs desktop details.
 
@@ -178,12 +178,13 @@ See the [Desktop Guide](/docs/guides/desktop-guide) for the full install walkthr
 
 ### Local LLM or TTS won't connect (desktop)
 
-On the desktop app, local providers need **only** that the server is running. The browser origin, CORS, and local-network rules that apply on the hosted website do **not** apply here, so there's no `OLLAMA_ORIGINS` or CORS setup to do.
+On the desktop app, most local providers need only that the server is running. The one exception is **Ollama on Windows and Linux**: the desktop app's origin is `http://tauri.localhost`, which Ollama does not allow by default, so it rejects every request with a `403`. macOS is fine out of the box, and LM Studio and the common local TTS/STT servers (Kokoro-FastAPI, openedai-speech) allow all origins by default.
 
-1. **Ollama** - Start it with `ollama serve` and pull a model (`ollama pull <model>`)
-2. **LM Studio** - Load a model and click Start Server
-3. **Local TTS** - Start your TTS server (e.g. Kokoro-FastAPI on `http://localhost:8880`)
-4. **Base URL** - Confirm the port in **Settings > Character** matches the port your server is using
+1. **Ollama (macOS)** - Start it with `ollama serve` and pull a model (`ollama pull <model>`)
+2. **Ollama (Windows/Linux)** - Same, plus allow the app's origin: `setx OLLAMA_ORIGINS "http://tauri.localhost"` on Windows (then restart Ollama from the tray), or `OLLAMA_ORIGINS=http://tauri.localhost ollama serve` on Linux. Full steps: [Local LLM Setup](/docs/guides/local-llm-setup#allowing-utsuwa-to-reach-ollama)
+3. **LM Studio** - Load a model and click Start Server
+4. **Local TTS** - Start your TTS server (e.g. Kokoro-FastAPI on `http://localhost:8880`)
+5. **Base URL** - Confirm the port in **Settings > Character** matches the port your server is using
 
 ### No sound (desktop)
 
@@ -246,7 +247,7 @@ For local LLMs, the browser connects directly to your local server:
 1. **Ollama running** - Start it with `ollama serve`
 2. **LM Studio running** - Load a model and click Start Server
 3. **Correct base URL** - Use `http://localhost:11434` for Ollama or `http://localhost:1234/v1` for LM Studio
-4. **Hosted website CORS** - For Ollama on `https://www.utsuwa.ai`, start Ollama with `OLLAMA_ORIGINS=https://www.utsuwa.ai,https://utsuwa.ai ollama serve`. For Vercel previews, use the exact preview origin from the address bar, such as `OLLAMA_ORIGINS=https://your-preview.vercel.app ollama serve`. See Ollama's [additional web origins FAQ](https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama).
+4. **Ollama origin (CORS)** - Ollama rejects origins it doesn't allow with a `403` on `/api/tags`. On the **hosted website** (the app runs at `app.utsuwa.ai`) allow that origin: `OLLAMA_ORIGINS=https://app.utsuwa.ai ollama serve` (for a Vercel preview use the exact origin from the address bar). On the **Windows or Linux desktop app** allow `OLLAMA_ORIGINS=http://tauri.localhost`; the macOS desktop app needs nothing. Full per-platform steps: [Local LLM Setup](/docs/guides/local-llm-setup#allowing-utsuwa-to-reach-ollama). Background: Ollama's [additional web origins FAQ](https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama).
 5. **Installed model** - If you see `model not found`, run `ollama list`, pull or load a model, refresh the dropdown, and select an installed model
 
 ### "Page not found" after deployment

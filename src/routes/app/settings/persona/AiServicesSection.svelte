@@ -3,14 +3,37 @@
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 	import { Icon, ProviderDropdown, ModelDropdown, ContextSizeSlider } from '$lib/components/ui';
+	import { DOCS_URL } from '$lib/config/site';
+	import { isTauri } from '$lib/services/platform';
 	import type { PersonaPageState } from './persona-page.svelte';
 
 	let { page }: { page: PersonaPageState } = $props();
+
+	const LOCAL_LLM_DOCS_URL = `${DOCS_URL}/guides/local-llm-setup#allowing-utsuwa-to-reach-ollama`;
+
+	// Always open the docs subdomain; on desktop route it to the system browser.
+	function openLocalLlmDocs(e: MouseEvent) {
+		if (isTauri()) {
+			e.preventDefault();
+			import('@tauri-apps/plugin-opener').then(({ openUrl }) => openUrl(LOCAL_LLM_DOCS_URL));
+		}
+	}
 
 	function handleContextSizeChange(value: number | undefined) {
 		page.handleLLMNumberSetting('contextSize', value);
 	}
 </script>
+
+{#snippet troubleHelp()}
+	<p class="provider-help">
+		Having trouble? Click <a
+			href={LOCAL_LLM_DOCS_URL}
+			target="_blank"
+			rel="noopener"
+			onclick={openLocalLlmDocs}>here</a
+		>
+	</p>
+{/snippet}
 
 <!-- AI Services (collapsible) -->
 <div class="services-section">
@@ -62,10 +85,13 @@
 						<!-- Base URL for local providers and custom OpenAI-compatible endpoints -->
 						{#if provider?.isLocal || provider?.custom}
 							{#if page.llmFetchError}
-								<p class="provider-note error">
-									<Icon name="alert-circle" size={14} />
-									{page.llmFetchError}
-								</p>
+								<div class="provider-error">
+									<p class="provider-note error">
+										<Icon name="alert-circle" size={14} />
+										{page.llmFetchError}
+									</p>
+									{@render troubleHelp()}
+								</div>
 							{/if}
 							<div class="api-key-row">
 								<input
@@ -79,6 +105,9 @@
 									onblur={provider.custom ? undefined : page.fetchLLMModels}
 								/>
 							</div>
+							{#if provider?.isLocal && !page.llmFetchError}
+								{@render troubleHelp()}
+							{/if}
 						{/if}
 
 						<!-- Model: manual entry for custom endpoints, discovered dropdown otherwise -->
@@ -531,8 +560,40 @@
 		color: var(--text-tertiary);
 	}
 
+	.provider-note :global(svg) {
+		flex-shrink: 0;
+	}
+
 	.provider-note.error {
+		align-items: flex-start;
+		line-height: 1.45;
 		color: var(--color-error);
+	}
+
+	.provider-error {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.provider-error .provider-help {
+		margin: 0;
+	}
+
+	.provider-help {
+		margin: 0.375rem 0 0;
+		font-size: 0.75rem;
+		color: var(--text-tertiary);
+	}
+
+	.provider-help a {
+		color: var(--text-secondary);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.provider-help a:hover {
+		color: var(--text-primary);
 	}
 
 	.api-key-input {
