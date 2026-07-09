@@ -88,6 +88,17 @@
 	let sidebarOpen = $state(
 		displayStore.chatDisplayMode === 'sidebar' || displayStore.chatDisplayMode === 'both'
 	);
+
+	// In sidebar-only mode the panel is the only place a reply can appear, so a
+	// closed panel reopens when she starts responding; you should never miss
+	// her answer. In 'both' mode the 3D bubble already shows it, so a manual
+	// close is respected.
+	$effect(() => {
+		if (isTyping && displayStore.chatDisplayMode === 'sidebar' && !sidebarOpen) {
+			sidebarOpen = true;
+		}
+	});
+
 	const showBubble = $derived(
 		displayStore.chatDisplayMode === 'bubble' || displayStore.chatDisplayMode === 'both'
 	);

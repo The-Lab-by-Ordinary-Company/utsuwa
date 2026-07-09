@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Chat history sidebar**: a floating, draggable, resizable panel with the full conversation, with display modes (bubble, sidebar, both, or off) and a new Settings > Display page. Drag it by the header, resize from the corner, snap it to either edge; position and size persist. In sidebar-only mode a closed panel reopens when she starts responding so a reply is never missed. Contributed by @dezihh.
+
 ## [0.10.0] - 2026-07-09
 
 ### Added

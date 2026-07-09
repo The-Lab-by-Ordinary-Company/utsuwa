@@ -14,7 +14,116 @@
 	let { open, onClose, isTyping = false }: Props = $props();
 
 	let messagesEl: HTMLDivElement | null = $state(null);
+	let panelEl: HTMLDivElement | null = $state(null);
 	let scrollRaf: number | null = null;
+
+	// --- Floating geometry -----------------------------------------------------
+	// The panel floats: drag it by the header, resize it from the corner. Its
+	// rect persists so it comes back where you left it. Until the user drags,
+	// it anchors to the docked side from settings.
+	const GEOMETRY_KEY = 'utsuwa-chat-panel';
+	const DEFAULT_WIDTH = 320;
+	const DEFAULT_HEIGHT_VH = 0.62;
+	const MARGIN = 12;
+	const TOP_OFFSET = 68; // below the top button row
+
+	interface PanelRect {
+		x: number;
+		y: number;
+		w: number;
+		h: number;
+	}
+
+	function defaultRect(): PanelRect {
+		const vw = window.innerWidth;
+		const vh = window.innerHeight;
+		const w = DEFAULT_WIDTH;
+		const h = Math.round(vh * DEFAULT_HEIGHT_VH);
+		const x = displayStore.sidebarPosition === 'left' ? MARGIN : vw - w - MARGIN;
+		return { x, y: TOP_OFFSET, w, h };
+	}
+
+	function clampRect(r: PanelRect): PanelRect {
+		const vw = window.innerWidth;
+		const vh = window.innerHeight;
+		const w = Math.min(Math.max(r.w, 260), vw - MARGIN * 2);
+		const h = Math.min(Math.max(r.h, 220), vh - MARGIN * 2);
+		return {
+			x: Math.min(Math.max(r.x, MARGIN - w + 80), vw - 80),
+			y: Math.min(Math.max(r.y, 0), vh - 48),
+			w,
+			h
+		};
+	}
+
+	let rect = $state<PanelRect | null>(null);
+
+	$effect(() => {
+		if (!browser || rect) return;
+		try {
+			const saved = localStorage.getItem(GEOMETRY_KEY);
+			rect = saved ? clampRect(JSON.parse(saved)) : defaultRect();
+		} catch {
+			rect = defaultRect();
+		}
+	});
+
+	function persistRect() {
+		if (browser && rect) localStorage.setItem(GEOMETRY_KEY, JSON.stringify(rect));
+	}
+
+	// Dragging via the header
+	let dragging: { pointerId: number; offsetX: number; offsetY: number } | null = null;
+
+	function onHeaderDown(e: PointerEvent) {
+		// Buttons in the header keep their own behavior
+		if ((e.target as HTMLElement).closest('button') || !rect) return;
+		dragging = { pointerId: e.pointerId, offsetX: e.clientX - rect.x, offsetY: e.clientY - rect.y };
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	}
+
+	function onHeaderMove(e: PointerEvent) {
+		if (!dragging || !rect) return;
+		rect = clampRect({
+			...rect,
+			x: e.clientX - dragging.offsetX,
+			y: e.clientY - dragging.offsetY
+		});
+	}
+
+	function onHeaderUp() {
+		if (!dragging) return;
+		dragging = null;
+		persistRect();
+	}
+
+	// Resize via the native CSS handle; observe and persist the result
+	$effect(() => {
+		const el = panelEl;
+		if (!el) return;
+		const observer = new ResizeObserver(() => {
+			if (!rect) return;
+			const w = el.offsetWidth;
+			const h = el.offsetHeight;
+			if (w !== rect.w || h !== rect.h) {
+				rect = clampRect({ ...rect, w, h });
+				persistRect();
+			}
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
+
+	// The dock buttons become "snap to edge" shortcuts for the floating panel
+	function snapTo(side: 'left' | 'right') {
+		displayStore.setSidebarPosition(side);
+		if (!rect) return;
+		const vw = window.innerWidth;
+		rect = clampRect({ ...rect, x: side === 'left' ? MARGIN : vw - rect.w - MARGIN });
+		persistRect();
+	}
+
+	// --- Messages ---------------------------------------------------------------
 
 	// Auto-scroll whenever messages change or typing state changes.
 	// requestAnimationFrame collapses rapid streaming chunks into one smooth scroll.
@@ -44,37 +153,37 @@
 	// System messages are kept for LLM context but not shown in the visible history
 	const visibleMessages = $derived(chatStore.messages.filter((m) => m.role !== 'system'));
 
-	function togglePosition() {
-		displayStore.setSidebarPosition(displayStore.sidebarPosition === 'right' ? 'left' : 'right');
-	}
-
 	function handleClearHistory() {
 		if (!browser) return;
 		if (confirm('Delete all messages in this chat?')) {
 			chatStore.clearMessages();
 		}
 	}
-
 </script>
 
 <div
 	class="sidebar"
 	class:open
-	class:left={displayStore.sidebarPosition === 'left'}
-	class:right={displayStore.sidebarPosition === 'right'}
+	bind:this={panelEl}
+	style:left={rect ? `${rect.x}px` : undefined}
+	style:top={rect ? `${rect.y}px` : undefined}
+	style:width={rect ? `${rect.w}px` : undefined}
+	style:height={rect ? `${rect.h}px` : undefined}
 >
-	<div class="sidebar-header">
-		{#if displayStore.sidebarPosition === 'right'}
-			<button class="dock-btn" onclick={togglePosition} aria-label="Dock sidebar to left" title="Dock left">
-				<Icon name="chevron-left" size={16} />
-			</button>
-		{/if}
+	<div
+		class="sidebar-header"
+		onpointerdown={onHeaderDown}
+		onpointermove={onHeaderMove}
+		onpointerup={onHeaderUp}
+		onpointercancel={onHeaderUp}
+	>
+		<button class="dock-btn" onclick={() => snapTo('left')} aria-label="Snap to left edge" title="Snap left">
+			<Icon name="chevron-left" size={16} />
+		</button>
 		<span class="sidebar-title">Chat History</span>
-		{#if displayStore.sidebarPosition === 'left'}
-			<button class="dock-btn" onclick={togglePosition} aria-label="Dock sidebar to right" title="Dock right">
-				<Icon name="chevron-right" size={16} />
-			</button>
-		{/if}
+		<button class="dock-btn" onclick={() => snapTo('right')} aria-label="Snap to right edge" title="Snap right">
+			<Icon name="chevron-right" size={16} />
+		</button>
 		<button
 			class="clear-btn"
 			onclick={handleClearHistory}
@@ -113,53 +222,51 @@
 <style>
 	.sidebar {
 		position: fixed;
-		top: 0;
-		bottom: 0;
-		width: 320px;
-		max-width: 85vw;
 		display: flex;
 		flex-direction: column;
-		background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 245, 245, 0.92) 100%);
-		backdrop-filter: blur(20px);
-		-webkit-backdrop-filter: blur(20px);
+		background: color-mix(in srgb, var(--bg-primary), transparent 6%);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-lg);
 		z-index: 45;
 		pointer-events: none;
-		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	}
-
-	:global(.dark) .sidebar {
-		background: linear-gradient(180deg, rgba(30, 30, 30, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
-	}
-
-	.sidebar.right {
-		right: 0;
-		transform: translateX(100%);
-		border-left: 1px solid var(--border-light);
-	}
-
-	.sidebar.left {
-		left: 0;
-		transform: translateX(-100%);
-		border-right: 1px solid var(--border-light);
+		opacity: 0;
+		transform: translateY(6px) scale(0.985);
+		transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+		resize: both;
+		overflow: hidden;
+		min-width: 260px;
+		min-height: 220px;
 	}
 
 	.sidebar.open {
-		transform: translateX(0);
+		opacity: 1;
+		transform: translateY(0) scale(1);
 		pointer-events: auto;
 	}
 
 	.sidebar-header {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid var(--border-light);
+		gap: 0.25rem;
+		padding: 0.5rem 0.625rem;
+		border-bottom: 1px solid var(--border-subtle);
 		flex-shrink: 0;
+		cursor: grab;
+		user-select: none;
+		touch-action: none;
+	}
+
+	.sidebar-header:active {
+		cursor: grabbing;
 	}
 
 	.sidebar-title {
 		flex: 1;
-		font-size: 0.9375rem;
+		text-align: center;
+		font-size: 0.8125rem;
 		font-weight: 600;
 		color: var(--text-primary);
 	}
@@ -170,12 +277,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
+		width: 28px;
+		height: 28px;
 		background: transparent;
 		border: none;
 		border-radius: var(--radius-md);
-		color: var(--text-secondary);
+		color: var(--text-tertiary);
 		cursor: pointer;
 		transition: background 0.15s ease, color 0.15s ease;
 	}
@@ -183,7 +290,7 @@
 	.dock-btn:hover,
 	.clear-btn:hover:not(:disabled),
 	.close-btn:hover {
-		background: var(--bg-secondary);
+		background: var(--bg-tertiary);
 		color: var(--text-primary);
 	}
 
@@ -194,16 +301,16 @@
 
 	.clear-btn:hover:disabled {
 		background: transparent;
-		color: var(--text-secondary);
+		color: var(--text-tertiary);
 	}
 
 	.messages {
 		flex: 1;
 		overflow-y: auto;
-		padding: 1rem;
+		padding: 0.875rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.625rem;
 	}
 
 	.message {
@@ -221,25 +328,23 @@
 	.bubble {
 		max-width: 85%;
 		padding: 0.5rem 0.75rem;
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		font-size: 0.8125rem;
 		line-height: 1.5;
 		word-wrap: break-word;
 	}
 
 	.user .bubble {
-		background: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
-		color: var(--color-accent-foreground);
-		border-bottom-right-radius: 4px;
-		box-shadow: 0 2px 8px rgba(0, 178, 255, 0.3);
+		background: var(--accent);
+		color: white;
+		border-bottom-right-radius: var(--radius-sm);
 	}
 
 	.assistant .bubble {
-		background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+		background: var(--bg-secondary);
 		color: var(--text-primary);
 		border: 1px solid var(--border-subtle);
-		border-bottom-left-radius: 4px;
-		box-shadow: var(--shadow-sm);
+		border-bottom-left-radius: var(--radius-sm);
 	}
 
 	.bubble p {
@@ -259,22 +364,17 @@
 		font-size: 0.875em;
 		padding: 0.125rem 0.375rem;
 		border-radius: var(--radius-sm);
-		background: rgba(0, 0, 0, 0.06);
-	}
-
-	:global(.dark) .bubble :global(code) {
-		background: rgba(255, 255, 255, 0.1);
+		background: color-mix(in srgb, var(--text-primary), transparent 92%);
 	}
 
 	.empty-hint {
 		text-align: center;
 		font-size: 0.8125rem;
-		color: var(--text-secondary, #999);
+		color: var(--text-tertiary);
 		margin-top: 2rem;
 	}
 
 	.bubble.speaking {
-		border-color: rgba(0, 178, 255, 0.35);
-		box-shadow: 0 2px 8px rgba(0, 178, 255, 0.15);
+		border-color: color-mix(in srgb, var(--accent), transparent 55%);
 	}
 </style>
