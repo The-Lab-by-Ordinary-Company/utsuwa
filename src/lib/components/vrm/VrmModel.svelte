@@ -878,6 +878,18 @@
 	const scratchWorld = new THREE.Vector3();
 	const scratchProjected = new THREE.Vector3();
 
+	// === Photo-mode head tracking ===
+	// Weight eases in/out so toggling never snaps the neck. The look rotation
+	// is slerped over whatever the animation wrote this frame, clamped to a
+	// natural range. Normalized humanoid bones face +Z in every VRM version.
+	let headTrackWeight = 0;
+	const headWorld = new THREE.Vector3();
+	const camWorld = new THREE.Vector3();
+	const lookDir = new THREE.Vector3();
+	const parentQuat = new THREE.Quaternion();
+	const lookQuat = new THREE.Quaternion();
+	const lookEuler = new THREE.Euler();
+
 	// Update VRM each frame
 	useTask((delta) => {
 		if (!vrm) return;
@@ -933,6 +945,29 @@
 				const shape =
 					progress < 0.3 ? progress / 0.3 : 1 - Math.max(0, (progress - 0.5) / 0.5);
 				em.setValue(reactionFace.name, Math.max(0, Math.min(1, reactionFace.weight * shape)));
+			}
+		}
+
+		// Photo-mode head tracking toward the scene camera
+		const trackTarget = photomodeStore.active && photomodeStore.headTracking ? 1 : 0;
+		headTrackWeight += (trackTarget - headTrackWeight) * Math.min(1, delta * 5);
+		if (headTrackWeight > 0.001 && camera.current) {
+			const head = vrm.humanoid.getNormalizedBoneNode('head');
+			if (head?.parent) {
+				head.getWorldPosition(headWorld);
+				camera.current.getWorldPosition(camWorld);
+				lookDir.subVectors(camWorld, headWorld);
+				head.parent.getWorldQuaternion(parentQuat).invert();
+				lookDir.applyQuaternion(parentQuat).normalize();
+				const yaw = THREE.MathUtils.clamp(Math.atan2(lookDir.x, lookDir.z), -0.65, 0.65);
+				const pitch = THREE.MathUtils.clamp(
+					-Math.asin(THREE.MathUtils.clamp(lookDir.y, -1, 1)),
+					-0.35,
+					0.3
+				);
+				lookEuler.set(pitch, yaw, 0, 'YXZ');
+				lookQuat.setFromEuler(lookEuler);
+				head.quaternion.slerp(lookQuat, headTrackWeight);
 			}
 		}
 

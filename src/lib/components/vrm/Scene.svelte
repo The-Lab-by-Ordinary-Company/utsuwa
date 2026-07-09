@@ -22,7 +22,13 @@
 	import { displayStore } from '$lib/stores/display.svelte';
 	import { photomodeStore, type CaptureOptions } from '$lib/stores/photomode.svelte';
 	import { bucketTouchZone } from '$lib/services/photo-touch';
-	import { drawPhotoFrame, drawPhotoBackground } from '$lib/services/photo-capture';
+	import {
+		drawPhotoFrame,
+		drawPhotoBackground,
+		drawPhotoVignette,
+		drawPhotoStickers
+	} from '$lib/services/photo-capture';
+	import { PHOTO_FILTERS } from '$lib/stores/photomode.svelte';
 	import { onMount } from 'svelte';
 
 	// Backdrop colors per theme
@@ -103,8 +109,15 @@
 				out.height = glCanvas.height;
 				const ctx = out.getContext('2d');
 				if (!ctx) return null;
+				// The color filter covers the scene and background; stickers and
+				// frames sit on top unfiltered, like real stickers would
+				const filterCss = PHOTO_FILTERS[options.filter]?.css ?? 'none';
+				ctx.filter = filterCss;
 				drawPhotoBackground(ctx, out.width, out.height, options.background);
 				ctx.drawImage(glCanvas, 0, 0);
+				ctx.filter = 'none';
+				if (options.vignette) drawPhotoVignette(ctx, out.width, out.height);
+				await drawPhotoStickers(ctx, out.width, out.height, options.stickers);
 				drawPhotoFrame(ctx, out.width, out.height, options.frame);
 
 				return await new Promise<Blob | null>((resolve) =>

@@ -1,4 +1,4 @@
-import type { PhotoBackground, PhotoFrameId } from '$lib/stores/photomode.svelte';
+import type { PhotoBackground, PhotoFrameId, PhotoSticker } from '$lib/stores/photomode.svelte';
 
 // Composite-step drawing for photo captures. Frames are drawn programmatically
 // so they stay crisp at any resolution and aspect ratio; no bitmap assets.
@@ -53,6 +53,68 @@ export function drawPhotoFrame(
 			const y2 = height - bar + y1;
 			ctx.fillRect(Math.round(x), Math.round(y1), hole, hole);
 			ctx.fillRect(Math.round(x), Math.round(y2), hole, hole);
+		}
+	}
+}
+
+export function drawPhotoVignette(
+	ctx: CanvasRenderingContext2D,
+	width: number,
+	height: number
+): void {
+	const gradient = ctx.createRadialGradient(
+		width / 2,
+		height / 2,
+		Math.min(width, height) * 0.45,
+		width / 2,
+		height / 2,
+		Math.hypot(width, height) / 2
+	);
+	gradient.addColorStop(0, 'rgba(0,0,0,0)');
+	gradient.addColorStop(1, 'rgba(0,0,0,0.38)');
+	ctx.fillStyle = gradient;
+	ctx.fillRect(0, 0, width, height);
+}
+
+const stickerImageCache = new Map<string, Promise<HTMLImageElement>>();
+
+function loadStickerImage(src: string): Promise<HTMLImageElement> {
+	let cached = stickerImageCache.get(src);
+	if (!cached) {
+		cached = new Promise((resolve, reject) => {
+			const img = new Image();
+			img.onload = () => resolve(img);
+			img.onerror = () => reject(new Error(`Sticker failed to load: ${src}`));
+			img.src = src;
+		});
+		cached.catch(() => stickerImageCache.delete(src));
+		stickerImageCache.set(src, cached);
+	}
+	return cached;
+}
+
+// Stickers store their center and width as viewport fractions, so drawing is
+// a straight remap onto the (possibly supersampled) output canvas.
+export async function drawPhotoStickers(
+	ctx: CanvasRenderingContext2D,
+	width: number,
+	height: number,
+	stickers: PhotoSticker[]
+): Promise<void> {
+	for (const sticker of stickers) {
+		try {
+			const img = await loadStickerImage(sticker.src);
+			const drawWidth = sticker.width * width;
+			const drawHeight = drawWidth * (img.naturalHeight / img.naturalWidth || 1);
+			ctx.drawImage(
+				img,
+				sticker.x * width - drawWidth / 2,
+				sticker.y * height - drawHeight / 2,
+				drawWidth,
+				drawHeight
+			);
+		} catch (e) {
+			console.error('[PhotoMode] Sticker skipped in capture:', e);
 		}
 	}
 }

@@ -4,7 +4,15 @@
 	import { TopRightButtons, TopLeftButtons, InfoModal } from '$lib/components/ui';
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
 	import PhotoModeDock from '$lib/components/photomode/PhotoModeDock.svelte';
-	import { photomodeStore } from '$lib/stores/photomode.svelte';
+	import PhotoStickerLayer from '$lib/components/photomode/PhotoStickerLayer.svelte';
+	import { photomodeStore, PHOTO_FILTERS } from '$lib/stores/photomode.svelte';
+
+	// Live preview filter shared with the capture composite
+	const photoFilterCss = $derived(
+		photomodeStore.active && photomodeStore.filterId !== 'none'
+			? PHOTO_FILTERS[photomodeStore.filterId].css
+			: undefined
+	);
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
 	import Photoboard from '$lib/components/chat/Photoboard.svelte';
@@ -262,6 +270,7 @@
 				{@const bg = photomodeStore.background}
 				<div
 					class="photo-bg-layer"
+					style:filter={photoFilterCss}
 					style:background={bg.type === 'solid'
 						? bg.value
 						: bg.type === 'gradient'
@@ -271,9 +280,25 @@
 			{/if}
 
 			<!-- The avatar resolves into focus once the model is ready -->
-			<div class="vrm-stage" class:is-loading={vrmStore.isLoading || !vrmStore.modelUrl}>
+			<div
+				class="vrm-stage"
+				class:is-loading={vrmStore.isLoading || !vrmStore.modelUrl}
+				style:filter={photoFilterCss}
+			>
 				<VrmScene />
 			</div>
+
+			{#if photomodeStore.active && photomodeStore.vignette}
+				<div class="photo-vignette" aria-hidden="true"></div>
+			{/if}
+
+			{#if photomodeStore.active}
+				<PhotoStickerLayer />
+			{/if}
+
+			{#if photomodeStore.active && photomodeStore.showGrid}
+				<div class="photo-grid" aria-hidden="true"></div>
+			{/if}
 		</div>
 
 		{#if !photomodeStore.active}
@@ -365,6 +390,29 @@
 		position: absolute;
 		inset: 0;
 		z-index: 0;
+	}
+
+	/* Vignette preview matching the capture composite */
+	.photo-vignette {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
+		background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
+	}
+
+	/* Rule-of-thirds composition guide (preview only, never captured) */
+	.photo-grid {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		pointer-events: none;
+		background:
+			linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) 33.33%, transparent calc(33.33% + 0.5px)),
+			linear-gradient(to right, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) 66.66%, transparent calc(66.66% + 0.5px)),
+			linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) 33.33%, transparent calc(33.33% + 0.5px)),
+			linear-gradient(to bottom, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) 66.66%, transparent calc(66.66% + 0.5px));
+		mix-blend-mode: difference;
 	}
 
 	/* The scene sits blurred and dimmed while the model loads, then resolves

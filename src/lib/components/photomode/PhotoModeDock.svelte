@@ -1,18 +1,36 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
-	import { photomodeStore, type PhotoBackground, type PhotoFrameId } from '$lib/stores/photomode.svelte';
+	import {
+		photomodeStore,
+		PHOTO_FILTERS,
+		type PhotoBackground,
+		type PhotoFilterId,
+		type PhotoFrameId
+	} from '$lib/stores/photomode.svelte';
 	import { displayStore, CAMERA_LIMITS } from '$lib/stores/display.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { loadPoseManifest, type PoseEntry } from '$lib/services/poses';
 	import { keepImage } from '$lib/services/storage/keepsakes';
 	import { isTauri } from '$lib/services/platform';
 
+	type Tab = 'pose' | 'face' | 'scene' | 'camera' | 'sticker';
+	const TABS: Array<{ id: Tab; label: string }> = [
+		{ id: 'pose', label: 'Pose' },
+		{ id: 'face', label: 'Face' },
+		{ id: 'scene', label: 'Scene' },
+		{ id: 'camera', label: 'Camera' },
+		{ id: 'sticker', label: 'Sticker' }
+	];
+
+	let tab = $state<Tab>('pose');
+	let collapsed = $state(false);
 	let poses = $state<PoseEntry[]>([]);
 	let capturing = $state(false);
 	let flash = $state(false);
 	let savedTick = $state(false);
+	let timerOn = $state(false);
+	let countdown = $state(0);
 
-	// Visemes, blinks, and gaze presets are animation channels, not moods
 	const HIDDEN_EXPRESSIONS = new Set([
 		'aa', 'ih', 'ou', 'ee', 'oh',
 		'blink', 'blinkLeft', 'blinkRight',
@@ -29,8 +47,7 @@
 			id: 'transparent',
 			label: 'Clear',
 			bg: { type: 'transparent' },
-			swatch:
-				'repeating-conic-gradient(#d9d9d9 0% 25%, #ffffff 0% 50%) 0 0 / 10px 10px'
+			swatch: 'repeating-conic-gradient(#d9d9d9 0% 25%, #ffffff 0% 50%) 0 0 / 10px 10px'
 		},
 		{ id: 'white', label: 'White', bg: { type: 'solid', value: '#ffffff' }, swatch: '#ffffff' },
 		{ id: 'black', label: 'Black', bg: { type: 'solid', value: '#0b0b0d' }, swatch: '#0b0b0d' },
@@ -58,6 +75,12 @@
 		{ id: 'none', label: 'None' },
 		{ id: 'polaroid', label: 'Polaroid' },
 		{ id: 'film', label: 'Film' }
+	];
+
+	const FILTER_IDS = Object.keys(PHOTO_FILTERS) as PhotoFilterId[];
+
+	const STICKERS: Array<{ id: string; label: string; src: string }> = [
+		{ id: 'utsuwa-logo', label: 'Utsuwa logo', src: '/brand-assets/logo.svg' }
 	];
 
 	const activeBackgroundId = $derived(
@@ -91,21 +114,24 @@
 		if (capturing) return;
 		capturing = true;
 		try {
+			if (timerOn) {
+				for (countdown = 3; countdown > 0; countdown--) {
+					await new Promise((r) => setTimeout(r, 1000));
+				}
+			}
 			const blob = await photomodeStore.capture(scale);
 			if (!blob) return;
 
 			flash = true;
 			setTimeout(() => (flash = false), 220);
 
-			// Photoboard pickup via the existing keepsake store
 			await keepImage(crypto.randomUUID(), blob, {
 				mimeType: 'image/png',
 				note: 'Photo mode'
 			});
 
-			// File export: browser download on web. The desktop build keeps the
-			// photoboard copy; a native save dialog needs the dialog plugin and is
-			// tracked as a follow-up.
+			// Browser download on web; the desktop build keeps the photoboard copy
+			// (native save dialog is a follow-up needing the Tauri dialog plugin)
 			if (!isTauri()) {
 				const url = URL.createObjectURL(blob);
 				const link = document.createElement('a');
@@ -120,6 +146,7 @@
 		} catch (e) {
 			console.error('[PhotoMode] Capture failed:', e);
 		} finally {
+			countdown = 0;
 			capturing = false;
 		}
 	}
@@ -131,120 +158,193 @@
 	<div class="shutter-flash" aria-hidden="true"></div>
 {/if}
 
-<div class="photo-dock" role="toolbar" aria-label="Photo mode">
-	<div class="dock-header">
-		<span class="dock-title">Photo Mode</span>
-		{#if savedTick}
-			<span class="saved-tick">Saved to photoboard</span>
-		{/if}
-		<button class="dock-close" onclick={() => photomodeStore.exit()} aria-label="Exit photo mode">
-			<Icon name="x" size={16} />
-		</button>
-	</div>
+{#if countdown > 0}
+	<div class="countdown" aria-hidden="true">{countdown}</div>
+{/if}
 
-	<div class="dock-row">
-		<span class="row-label">Pose</span>
-		<div class="chip-carousel">
-			<button
-				class="chip"
-				class:selected={photomodeStore.selectedPoseId === null}
-				onclick={() => photomodeStore.setPose(null)}
-			>
-				Natural
+{#if collapsed}
+	<button class="panel-pill" onclick={() => (collapsed = false)} aria-label="Open photo controls">
+		<Icon name="camera" size={16} />
+	</button>
+{:else}
+	<div class="photo-panel" role="toolbar" aria-label="Photo mode">
+		<div class="panel-header">
+			<span class="panel-title">Photo Mode</span>
+			{#if savedTick}
+				<span class="saved-tick">Saved</span>
+			{/if}
+			<button class="header-btn" onclick={() => (collapsed = true)} aria-label="Collapse panel">
+				<Icon name="chevron-up" size={14} />
 			</button>
-			{#each poses as pose (pose.id)}
+			<button class="header-btn" onclick={() => photomodeStore.exit()} aria-label="Exit photo mode">
+				<Icon name="x" size={14} />
+			</button>
+		</div>
+
+		<div class="tab-strip" role="tablist">
+			{#each TABS as t (t.id)}
 				<button
-					class="chip"
-					class:selected={photomodeStore.selectedPoseId === pose.id}
-					onclick={() => photomodeStore.setPose(pose.id)}
+					class="tab"
+					class:active={tab === t.id}
+					role="tab"
+					aria-selected={tab === t.id}
+					onclick={() => (tab = t.id)}
 				>
-					{pose.name}
+					{t.label}
 				</button>
 			{/each}
 		</div>
-	</div>
 
-	{#if expressions.length > 0}
-		<div class="dock-row">
-			<span class="row-label">Expression</span>
-			<div class="chip-carousel">
-				<button
-					class="chip"
-					class:selected={photomodeStore.selectedExpression === null}
-					onclick={() => photomodeStore.setExpression(null)}
-				>
-					Mood
-				</button>
-				{#each expressions as name (name)}
-					<button
-						class="chip chip-cap"
-						class:selected={photomodeStore.selectedExpression === name}
-						onclick={() => photomodeStore.setExpression(name)}
-					>
-						{name}
-					</button>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
-	<div class="dock-row">
-		<span class="row-label">Background</span>
-		<div class="chip-carousel">
-			{#each BACKGROUNDS as bg (bg.id)}
-				<button
-					class="swatch"
-					class:selected={activeBackgroundId === bg.id}
-					style:background={bg.swatch}
-					title={bg.label}
-					aria-label={`Background: ${bg.label}`}
-					onclick={() => photomodeStore.setBackground(bg.bg)}
-				></button>
-			{/each}
-		</div>
-	</div>
-
-	<div class="dock-row split">
-		<div class="split-col">
-			<span class="row-label">Frame</span>
-			<div class="chip-carousel">
-				{#each FRAMES as frame (frame.id)}
+		<div class="tab-content">
+			{#if tab === 'pose'}
+				<div class="chip-wrap">
 					<button
 						class="chip"
-						class:selected={photomodeStore.frameId === frame.id}
-						onclick={() => photomodeStore.setFrame(frame.id)}
+						class:selected={photomodeStore.selectedPoseId === null}
+						onclick={() => photomodeStore.setPose(null)}
 					>
-						{frame.label}
+						Natural
 					</button>
-				{/each}
-			</div>
+					{#each poses as pose (pose.id)}
+						<button
+							class="chip"
+							class:selected={photomodeStore.selectedPoseId === pose.id}
+							onclick={() => photomodeStore.setPose(pose.id)}
+						>
+							{pose.name}
+						</button>
+					{/each}
+				</div>
+			{:else if tab === 'face'}
+				<div class="chip-wrap">
+					<button
+						class="chip"
+						class:selected={photomodeStore.selectedExpression === null}
+						onclick={() => photomodeStore.setExpression(null)}
+					>
+						Mood
+					</button>
+					{#each expressions as name (name)}
+						<button
+							class="chip chip-cap"
+							class:selected={photomodeStore.selectedExpression === name}
+							onclick={() => photomodeStore.setExpression(name)}
+						>
+							{name}
+						</button>
+					{/each}
+				</div>
+			{:else if tab === 'scene'}
+				<span class="mini-label">Background</span>
+				<div class="chip-wrap">
+					{#each BACKGROUNDS as bg (bg.id)}
+						<button
+							class="swatch"
+							class:selected={activeBackgroundId === bg.id}
+							style:background={bg.swatch}
+							title={bg.label}
+							aria-label={`Background: ${bg.label}`}
+							onclick={() => photomodeStore.setBackground(bg.bg)}
+						></button>
+					{/each}
+				</div>
+				<span class="mini-label">Filter</span>
+				<div class="chip-wrap">
+					{#each FILTER_IDS as id (id)}
+						<button
+							class="chip"
+							class:selected={photomodeStore.filterId === id}
+							onclick={() => photomodeStore.setFilter(id)}
+						>
+							{PHOTO_FILTERS[id].label}
+						</button>
+					{/each}
+				</div>
+				<span class="mini-label">Frame</span>
+				<div class="chip-wrap">
+					{#each FRAMES as frame (frame.id)}
+						<button
+							class="chip"
+							class:selected={photomodeStore.frameId === frame.id}
+							onclick={() => photomodeStore.setFrame(frame.id)}
+						>
+							{frame.label}
+						</button>
+					{/each}
+				</div>
+				<label class="toggle-row">
+					<span>Vignette</span>
+					<input
+						type="checkbox"
+						checked={photomodeStore.vignette}
+						onchange={(e) => photomodeStore.setVignette(e.currentTarget.checked)}
+					/>
+				</label>
+			{:else if tab === 'camera'}
+				<span class="mini-label">
+					Lens
+					<span class="mini-value">{displayStore.camera.fov.toFixed(0)} deg</span>
+				</span>
+				<input
+					class="slider"
+					type="range"
+					min={CAMERA_LIMITS.fov.min}
+					max={CAMERA_LIMITS.fov.max}
+					step="1"
+					value={displayStore.camera.fov}
+					oninput={(e) => displayStore.setCamera({ fov: parseFloat(e.currentTarget.value) })}
+					aria-label="Field of view"
+				/>
+				<label class="toggle-row">
+					<span>Look at camera</span>
+					<input
+						type="checkbox"
+						checked={photomodeStore.headTracking}
+						onchange={(e) => photomodeStore.setHeadTracking(e.currentTarget.checked)}
+					/>
+				</label>
+				<label class="toggle-row">
+					<span>Thirds grid</span>
+					<input
+						type="checkbox"
+						checked={photomodeStore.showGrid}
+						onchange={(e) => photomodeStore.setGrid(e.currentTarget.checked)}
+					/>
+				</label>
+				<button class="panel-btn" onclick={resetFraming}>Reset framing</button>
+			{:else if tab === 'sticker'}
+				<div class="chip-wrap">
+					{#each STICKERS as sticker (sticker.id)}
+						<button class="chip" onclick={() => photomodeStore.addSticker(sticker.src)}>
+							{sticker.label}
+						</button>
+					{/each}
+				</div>
+				{#if photomodeStore.stickers.length > 0}
+					<span class="hint">Drag to move. Scroll to resize. Double-click to remove.</span>
+				{:else}
+					<span class="hint">Add a sticker, then drag it anywhere on the shot.</span>
+				{/if}
+			{/if}
 		</div>
-		<div class="split-col">
-			<span class="row-label">
-				Lens
-				<span class="row-value">{displayStore.camera.fov.toFixed(0)} deg</span>
-			</span>
-			<input
-				type="range"
-				min={CAMERA_LIMITS.fov.min}
-				max={CAMERA_LIMITS.fov.max}
-				step="1"
-				value={displayStore.camera.fov}
-				oninput={(e) => displayStore.setCamera({ fov: parseFloat(e.currentTarget.value) })}
-				aria-label="Field of view"
-			/>
-		</div>
-	</div>
 
-	<div class="dock-actions">
-		<button class="dock-btn" onclick={resetFraming}>Reset framing</button>
-		<button class="dock-btn" onclick={() => takePhoto(1)} disabled={capturing}>Quick snap</button>
-		<button class="dock-btn primary" onclick={() => takePhoto(2)} disabled={capturing}>
-			<Icon name="camera" size={14} />
-			{capturing ? 'Capturing' : 'Capture'}
-		</button>
+		<div class="capture-row">
+			<button
+				class="panel-btn timer"
+				class:selected={timerOn}
+				onclick={() => (timerOn = !timerOn)}
+				title="3 second self-timer"
+			>
+				3s
+			</button>
+			<button class="panel-btn" onclick={() => takePhoto(1)} disabled={capturing}>Snap</button>
+			<button class="panel-btn primary" onclick={() => takePhoto(2)} disabled={capturing}>
+				<Icon name="camera" size={14} />
+				{capturing ? (countdown > 0 ? String(countdown) : '...') : 'Capture'}
+			</button>
+		</div>
 	</div>
-</div>
+{/if}
 
 <style>
 	.shutter-flash {
@@ -265,14 +365,63 @@
 		}
 	}
 
-	.photo-dock {
+	.countdown {
 		position: fixed;
-		bottom: 1rem;
+		top: 50%;
 		left: 50%;
-		transform: translateX(-50%);
+		transform: translate(-50%, -50%);
+		z-index: 55;
+		font-size: 6rem;
+		font-weight: 700;
+		color: white;
+		text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+		pointer-events: none;
+		animation: countPop 1s ease-out infinite;
+	}
+
+	@keyframes countPop {
+		from {
+			opacity: 1;
+			transform: translate(-50%, -50%) scale(1);
+		}
+		to {
+			opacity: 0.2;
+			transform: translate(-50%, -50%) scale(1.25);
+		}
+	}
+
+	.panel-pill {
+		position: fixed;
+		top: 1rem;
+		right: 1rem;
 		z-index: 45;
-		width: min(640px, calc(100vw - 2rem));
-		padding: 0.875rem 1rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--bg-primary), transparent 8%);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		color: var(--text-secondary);
+		cursor: pointer;
+		box-shadow: var(--shadow-md);
+	}
+
+	.panel-pill:hover {
+		color: var(--text-primary);
+	}
+
+	.photo-panel {
+		position: fixed;
+		top: 1rem;
+		right: 1rem;
+		z-index: 45;
+		width: 272px;
+		max-height: calc(100vh - 2rem);
+		padding: 0.75rem;
 		background: color-mix(in srgb, var(--bg-primary), transparent 8%);
 		backdrop-filter: blur(14px);
 		-webkit-backdrop-filter: blur(14px);
@@ -281,28 +430,28 @@
 		box-shadow: var(--shadow-lg);
 		display: flex;
 		flex-direction: column;
-		gap: 0.625rem;
-		animation: dockIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+		gap: 0.6rem;
+		animation: panelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
-	@keyframes dockIn {
+	@keyframes panelIn {
 		from {
 			opacity: 0;
-			transform: translateX(-50%) translateY(10px);
+			transform: translateY(-6px) scale(0.98);
 		}
 		to {
 			opacity: 1;
-			transform: translateX(-50%) translateY(0);
+			transform: translateY(0) scale(1);
 		}
 	}
 
-	.dock-header {
+	.panel-header {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.375rem;
 	}
 
-	.dock-title {
+	.panel-title {
 		font-size: 0.8125rem;
 		font-weight: 600;
 		color: var(--text-primary);
@@ -312,15 +461,14 @@
 	.saved-tick {
 		font-size: 0.6875rem;
 		color: var(--color-success);
-		animation: dockIn 0.2s ease both;
 	}
 
-	.dock-close {
+	.header-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 26px;
-		height: 26px;
+		width: 24px;
+		height: 24px;
 		border: none;
 		border-radius: var(--radius-full);
 		background: transparent;
@@ -329,59 +477,78 @@
 		transition: color 0.15s ease, background 0.15s ease;
 	}
 
-	.dock-close:hover {
+	.header-btn:hover {
 		color: var(--text-primary);
 		background: var(--bg-tertiary);
 	}
 
-	.dock-row {
+	.tab-strip {
 		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
+		gap: 0.125rem;
+		padding: 0.125rem;
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-md);
 	}
 
-	.dock-row.split {
-		flex-direction: row;
-		gap: 1rem;
-	}
-
-	.split-col {
+	.tab {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-		min-width: 0;
+		padding: 0.3rem 0;
+		border: none;
+		border-radius: calc(var(--radius-md) - 2px);
+		background: transparent;
+		color: var(--text-tertiary);
+		font-size: 0.66rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
 
-	.row-label {
+	.tab:hover {
+		color: var(--text-primary);
+	}
+
+	.tab.active {
+		background: var(--bg-primary);
+		color: var(--text-primary);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.tab-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+		overflow-y: auto;
+		min-height: 96px;
+	}
+
+	.mini-label {
 		display: flex;
 		justify-content: space-between;
-		font-size: 0.7rem;
-		font-weight: 500;
-		color: var(--text-secondary);
-	}
-
-	.row-value {
+		font-size: 0.66rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 		color: var(--text-tertiary);
-		font-variant-numeric: tabular-nums;
 	}
 
-	.chip-carousel {
+	.mini-value {
+		font-variant-numeric: tabular-nums;
+		text-transform: none;
+	}
+
+	.chip-wrap {
 		display: flex;
-		gap: 0.375rem;
-		overflow-x: auto;
-		padding-bottom: 0.125rem;
-		scrollbar-width: thin;
+		flex-wrap: wrap;
+		gap: 0.3rem;
 	}
 
 	.chip {
-		flex-shrink: 0;
-		padding: 0.3rem 0.7rem;
+		padding: 0.28rem 0.6rem;
 		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-full);
 		background: var(--bg-secondary);
 		color: var(--text-secondary);
-		font-size: 0.72rem;
+		font-size: 0.7rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
@@ -402,9 +569,8 @@
 	}
 
 	.swatch {
-		flex-shrink: 0;
-		width: 30px;
-		height: 30px;
+		width: 26px;
+		height: 26px;
 		border-radius: var(--radius-full);
 		border: 2px solid var(--border-subtle);
 		cursor: pointer;
@@ -419,7 +585,7 @@
 		border-color: var(--accent);
 	}
 
-	.dock-row input[type='range'] {
+	.slider {
 		-webkit-appearance: none;
 		appearance: none;
 		width: 100%;
@@ -428,66 +594,94 @@
 		background: var(--bg-tertiary);
 		outline: none;
 		cursor: pointer;
-		margin-top: 0.55rem;
 	}
 
-	.dock-row input[type='range']::-webkit-slider-thumb {
+	.slider::-webkit-slider-thumb {
 		-webkit-appearance: none;
 		appearance: none;
-		width: 16px;
-		height: 16px;
+		width: 15px;
+		height: 15px;
 		border-radius: 50%;
 		background: var(--accent);
 		border: none;
 		cursor: pointer;
 	}
 
-	.dock-row input[type='range']::-moz-range-thumb {
-		width: 16px;
-		height: 16px;
+	.slider::-moz-range-thumb {
+		width: 15px;
+		height: 15px;
 		border-radius: 50%;
 		background: var(--accent);
 		border: none;
 		cursor: pointer;
 	}
 
-	.dock-actions {
+	.toggle-row {
 		display: flex;
-		gap: 0.5rem;
+		align-items: center;
+		justify-content: space-between;
+		font-size: 0.75rem;
+		color: var(--text-secondary);
+		cursor: pointer;
 	}
 
-	.dock-btn {
+	.toggle-row input {
+		accent-color: var(--accent);
+		cursor: pointer;
+	}
+
+	.hint {
+		font-size: 0.66rem;
+		color: var(--text-tertiary);
+		line-height: 1.4;
+	}
+
+	.capture-row {
+		display: flex;
+		gap: 0.375rem;
+	}
+
+	.panel-btn {
 		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.35rem;
-		padding: 0.5rem;
+		gap: 0.3rem;
+		padding: 0.45rem 0.5rem;
 		border: none;
 		border-radius: var(--radius-md);
 		background: var(--bg-tertiary);
 		color: var(--text-secondary);
-		font-size: 0.75rem;
+		font-size: 0.72rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: color 0.15s ease, background 0.15s ease;
 	}
 
-	.dock-btn:hover:not(:disabled) {
+	.panel-btn:hover:not(:disabled) {
 		color: var(--text-primary);
 	}
 
-	.dock-btn.primary {
+	.panel-btn.timer {
+		flex: 0 0 40px;
+	}
+
+	.panel-btn.selected {
 		background: var(--accent);
 		color: white;
 	}
 
-	.dock-btn.primary:hover:not(:disabled) {
+	.panel-btn.primary {
+		background: var(--accent);
 		color: white;
+		flex: 1.4;
+	}
+
+	.panel-btn.primary:hover:not(:disabled) {
 		filter: brightness(1.06);
 	}
 
-	.dock-btn:disabled {
+	.panel-btn:disabled {
 		opacity: 0.55;
 		cursor: default;
 	}
