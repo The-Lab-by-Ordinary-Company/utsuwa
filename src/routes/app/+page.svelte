@@ -4,6 +4,7 @@
 	import { TopRightButtons, TopLeftButtons, InfoModal } from '$lib/components/ui';
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
+	import ChatSidebar from '$lib/components/chat/ChatSidebar.svelte';
 	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
 	import Photoboard from '$lib/components/chat/Photoboard.svelte';
 	import { EventScene } from '$lib/components/events';
@@ -14,6 +15,7 @@
 	import { modulesStore } from '$lib/stores/modules.svelte';
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { personaStore } from '$lib/stores/persona.svelte';
+	import { displayStore } from '$lib/stores/display.svelte';
 	import { debugEventsStore } from '$lib/stores/debugEvents.svelte';
 	import { getLLMProvider, providerSupportsVision } from '$lib/services/providers/registry';
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
@@ -60,6 +62,14 @@
 	// Speech bubble state
 	let latestResponse = $state('');
 	let isTyping = $state(false);
+	// Chat sidebar state
+	let sidebarOpen = $state(false);
+	const showBubble = $derived(
+		displayStore.chatDisplayMode === 'bubble' || displayStore.chatDisplayMode === 'both'
+	);
+	const showSidebarTrigger = $derived(
+		displayStore.chatDisplayMode === 'sidebar' || displayStore.chatDisplayMode === 'both'
+	);
 	// Images she's currently being shown, floated above her head while she thinks
 	let thinkingImages = $state<{ id: string; url: string }[]>([]);
 
@@ -216,6 +226,8 @@
 		onDeleteReminder={reminderStore.deleteReminder}
 		recentFired={reminderStore.recentFired}
 		onDismissRecentFired={reminderStore.dismissRecentFired}
+		sidebarOpen={sidebarOpen && showSidebarTrigger}
+		onSidebarToggle={() => sidebarOpen = !sidebarOpen}
 	/>
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />
@@ -262,10 +274,19 @@
 		<FloatingStatIndicators />
 
 		<!-- Speech Bubble (shows latest response, click to dismiss) -->
-		<SpeechBubble
-			message={latestResponse}
-			isTyping={isTyping}
-			onHide={handleBubbleHide}
+		{#if showBubble}
+			<SpeechBubble
+				message={latestResponse}
+				isTyping={isTyping}
+				onHide={handleBubbleHide}
+			/>
+		{/if}
+
+		<!-- Chat History Sidebar -->
+		<ChatSidebar
+			open={sidebarOpen && showSidebarTrigger}
+			onClose={() => sidebarOpen = false}
+			{isTyping}
 		/>
 
 		<!-- The image she's being shown, floated above her head while she considers it -->

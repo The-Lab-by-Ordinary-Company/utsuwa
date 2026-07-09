@@ -1,29 +1,21 @@
 import { browser } from '$app/environment';
+import { clampPhysicsIntensity, PHYSICS_INTENSITY_DEFAULT } from '$lib/engine/spring-physics';
 import {
-	clampPhysicsIntensity,
-	PHYSICS_INTENSITY_DEFAULT
-} from '$lib/engine/spring-physics';
+	CAMERA_DEFAULTS,
+	CAMERA_LIMITS,
+	DEFAULT_CHAT_DISPLAY_MODE,
+	DEFAULT_SIDEBAR_POSITION,
+	type CameraSettings,
+	type CameraProfile,
+	type ChatDisplayMode,
+	type SidebarPosition
+} from './display-types';
+import { parseDisplaySettings } from './display-parser';
 
 const STORAGE_KEY = 'utsuwa-display';
 
-export interface CameraSettings {
-	/** Vertical field of view in degrees */
-	fov: number;
-	/** Multiplier on the auto-fitted distance: >1 is closer, <1 is farther */
-	zoom: number;
-	/** Vertical offset in meters added to the auto-fitted look-at target */
-	height: number;
-}
-
-export type CameraProfile = 'main' | 'overlay';
-
-export const CAMERA_DEFAULTS: CameraSettings = { fov: 35, zoom: 1, height: 0 };
-
-export const CAMERA_LIMITS = {
-	fov: { min: 20, max: 60 },
-	zoom: { min: 0.5, max: 2.5 },
-	height: { min: -0.5, max: 0.5 }
-} as const;
+export type { CameraSettings, CameraProfile, ChatDisplayMode, SidebarPosition };
+export { CAMERA_DEFAULTS, CAMERA_LIMITS, DEFAULT_CHAT_DISPLAY_MODE, DEFAULT_SIDEBAR_POSITION };
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
@@ -47,22 +39,20 @@ function createDisplayStore() {
 	// One physics intensity for both surfaces: it's a model-feel setting, not framing
 	let physicsIntensity = $state(PHYSICS_INTENSITY_DEFAULT);
 
+	// Chat display mode and sidebar docking
+	let chatDisplayMode = $state<ChatDisplayMode>(DEFAULT_CHAT_DISPLAY_MODE);
+	let sidebarPosition = $state<SidebarPosition>(DEFAULT_SIDEBAR_POSITION);
+
 	if (browser) {
 		const saved = localStorage.getItem(STORAGE_KEY);
 		if (saved) {
 			try {
-				const parsed = JSON.parse(saved);
-				if (parsed.camera) {
-					camera = sanitize(parsed.camera);
-					overlayCamera = sanitize(parsed.overlayCamera);
-				}
-				// Legacy setting predating auto-fit: old default distance was 2.0
-				else if (typeof parsed.cameraDistance === 'number') {
-					camera = sanitize({ zoom: 2.0 / parsed.cameraDistance });
-				}
-				if (typeof parsed.physicsIntensity === 'number') {
-					physicsIntensity = clampPhysicsIntensity(parsed.physicsIntensity);
-				}
+				const parsed = parseDisplaySettings(saved);
+				camera = parsed.camera;
+				overlayCamera = parsed.overlayCamera;
+				physicsIntensity = parsed.physicsIntensity;
+				chatDisplayMode = parsed.chatDisplayMode;
+				sidebarPosition = parsed.sidebarPosition;
 			} catch (e) {
 				console.error('Failed to load display settings:', e);
 			}
@@ -76,7 +66,9 @@ function createDisplayStore() {
 				JSON.stringify({
 					camera: $state.snapshot(camera),
 					overlayCamera: $state.snapshot(overlayCamera),
-					physicsIntensity
+					physicsIntensity,
+					chatDisplayMode,
+					sidebarPosition
 				})
 			);
 		}
@@ -107,6 +99,22 @@ function createDisplayStore() {
 		save();
 	}
 
+	function setChatDisplayMode(mode: ChatDisplayMode) {
+		chatDisplayMode = mode;
+		save();
+	}
+
+	function setSidebarPosition(pos: SidebarPosition) {
+		sidebarPosition = pos;
+		save();
+	}
+
+	function resetChatDisplay() {
+		chatDisplayMode = DEFAULT_CHAT_DISPLAY_MODE;
+		sidebarPosition = DEFAULT_SIDEBAR_POSITION;
+		save();
+	}
+
 	return {
 		get camera() {
 			return camera;
@@ -117,9 +125,18 @@ function createDisplayStore() {
 		get physicsIntensity() {
 			return physicsIntensity;
 		},
+		get chatDisplayMode() {
+			return chatDisplayMode;
+		},
+		get sidebarPosition() {
+			return sidebarPosition;
+		},
 		setCamera,
 		resetCamera,
-		setPhysicsIntensity
+		setPhysicsIntensity,
+		setChatDisplayMode,
+		setSidebarPosition,
+		resetChatDisplay
 	};
 }
 
