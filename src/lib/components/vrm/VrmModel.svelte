@@ -501,11 +501,11 @@
 	const REACTION_REPEAT_WINDOW_MS = 4000;
 
 	$effect(() => {
-		const request = photomodeStore.reactionRequest;
+		const request = vrmStore.reactionRequest;
 		if (!request) return;
 		untrack(() => {
 			const targetVrm = vrm;
-			if (!targetVrm || !photomodeStore.active) return;
+			if (!targetVrm) return;
 
 			const now = performance.now();
 			if (recentTaps.zone === request.zone && now - recentTaps.at < REACTION_REPEAT_WINDOW_MS) {

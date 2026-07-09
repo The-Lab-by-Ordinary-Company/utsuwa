@@ -118,16 +118,18 @@
 			}
 		});
 
-		// Tap reactions: commit the raycast target at pointerdown (the camera can
-		// drift before pointerup), fire only if the gesture stays a tap so orbit
-		// drags never trigger her.
+		// Tap reactions (universal, chat view and photo mode alike): commit the
+		// raycast target at pointerdown (the camera can drift before pointerup),
+		// fire only if the gesture stays a tap so orbit drags never trigger her.
 		const canvas = renderer?.domElement;
 		let tapCandidate: { zone: ReturnType<typeof bucketTouchZone>; x: number; y: number; at: number } | null = null;
 		const raycaster = new Raycaster();
 		const pointerNdc = new Vector2();
 
 		function onPointerDown(e: PointerEvent) {
-			if (!photomodeStore.active || !renderer || !camera.current) return;
+			// The overlay window has its own pointer/click-through handling, and
+			// XR sessions own their input
+			if (overlay || renderer?.xr.isPresenting || !renderer || !camera.current) return;
 			const vrm = vrmStore.vrm;
 			if (!vrm) return;
 			const rect = renderer.domElement.getBoundingClientRect();
@@ -154,7 +156,7 @@
 			const moved = Math.hypot(e.clientX - tapCandidate.x, e.clientY - tapCandidate.y);
 			const elapsed = performance.now() - tapCandidate.at;
 			if (tapCandidate.zone && moved < 8 && elapsed < 450) {
-				photomodeStore.requestReaction(tapCandidate.zone);
+				vrmStore.requestReaction(tapCandidate.zone);
 			}
 			tapCandidate = null;
 		}

@@ -3,8 +3,6 @@
 // switches the camera to the free photo profile (Scene), and hides the chat
 // UI behind the dock (app page). Exiting restores the live-companion loop.
 
-import type { TouchZone } from '$lib/engine/photo-reactions';
-
 export interface PhotoBackground {
 	type: 'room' | 'transparent' | 'solid' | 'gradient';
 	// Solid: a CSS color. Gradient: a CSS linear-gradient string (also drawn
@@ -31,9 +29,6 @@ let frameId = $state<PhotoFrameId>('none');
 // Bumped when the dock asks the scene to re-fit the camera (photo mode
 // otherwise leaves the framing entirely to the user)
 let reframeCounter = $state(0);
-// Tap-reaction requests flow Scene (raycast) -> store -> VrmModel (applier)
-let reactionRequest = $state<{ zone: TouchZone; seq: number } | null>(null);
-let reactionSeq = 0;
 
 // The scene owns the renderer, so it registers the capture implementation
 let captureHandler: ((options: CaptureOptions) => Promise<Blob | null>) | null = null;
@@ -52,7 +47,6 @@ function exit() {
 	selectedExpression = null;
 	background = { type: 'room' };
 	frameId = 'none';
-	reactionRequest = null;
 }
 
 function setPose(id: string | null) {
@@ -73,10 +67,6 @@ function setFrame(id: PhotoFrameId) {
 
 function requestReframe() {
 	reframeCounter++;
-}
-
-function requestReaction(zone: TouchZone) {
-	reactionRequest = { zone, seq: ++reactionSeq };
 }
 
 function registerCapture(handler: (options: CaptureOptions) => Promise<Blob | null>) {
@@ -110,9 +100,6 @@ export const photomodeStore = {
 	get reframeCounter() {
 		return reframeCounter;
 	},
-	get reactionRequest() {
-		return reactionRequest;
-	},
 	enter,
 	exit,
 	setPose,
@@ -120,7 +107,6 @@ export const photomodeStore = {
 	setBackground,
 	setFrame,
 	requestReframe,
-	requestReaction,
 	registerCapture,
 	capture
 };
