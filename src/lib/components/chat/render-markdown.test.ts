@@ -28,6 +28,16 @@ test('renders inline code', () => {
 	assert.equal(renderMarkdown('use `code` here'), 'use <code>code</code> here');
 });
 
+test('renders inline code before bold/italic so code contents stay literal', () => {
+	assert.equal(renderMarkdown('`**bold**`'), '<code>**bold**</code>');
+	assert.equal(renderMarkdown('`10*5*2`'), '<code>10*5*2</code>');
+});
+
+test('does not parse asterisks inside math or identifiers as italic', () => {
+	assert.equal(renderMarkdown('10*5*2'), '10*5*2');
+	assert.equal(renderMarkdown('a*b*c'), 'a*b*c');
+});
+
 test('renders mixed formatting in one line', () => {
 	const input = '**bold**, *italic*, `code` and <html>';
 	const result = renderMarkdown(input);

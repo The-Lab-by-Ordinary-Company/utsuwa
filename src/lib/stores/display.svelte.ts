@@ -37,16 +37,12 @@ function createDisplayStore() {
 	if (browser) {
 		const saved = localStorage.getItem(STORAGE_KEY);
 		if (saved) {
-			try {
-				const parsed = parseDisplaySettings(saved);
-				camera = parsed.camera;
-				overlayCamera = parsed.overlayCamera;
-				physicsIntensity = parsed.physicsIntensity;
-				chatDisplayMode = parsed.chatDisplayMode;
-				sidebarPosition = parsed.sidebarPosition;
-			} catch (e) {
-				console.error('Failed to load display settings:', e);
-			}
+			const parsed = parseDisplaySettings(saved);
+			camera = parsed.camera;
+			overlayCamera = parsed.overlayCamera;
+			physicsIntensity = parsed.physicsIntensity;
+			chatDisplayMode = parsed.chatDisplayMode;
+			sidebarPosition = parsed.sidebarPosition;
 		}
 	}
 
