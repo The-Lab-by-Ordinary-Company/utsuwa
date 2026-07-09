@@ -6,6 +6,11 @@
 		CAMERA_LIMITS,
 		type CameraProfile
 	} from '$lib/stores/display.svelte';
+	import {
+		PHYSICS_INTENSITY_MIN,
+		PHYSICS_INTENSITY_MAX,
+		PHYSICS_INTENSITY_DEFAULT
+	} from '$lib/engine/spring-physics';
 
 	interface Props {
 		onclose: () => void;
@@ -78,6 +83,33 @@
 	<button class="reset-btn" onclick={() => displayStore.resetCamera(profile)} disabled={isDefault}>
 		Reset camera
 	</button>
+
+	<div class="section-divider">
+		<span class="section-label">Physics</span>
+	</div>
+
+	<label class="control">
+		<span class="control-label">
+			Movement intensity
+			<span class="control-value">
+				{displayStore.physicsIntensity === PHYSICS_INTENSITY_DEFAULT
+					? 'Default'
+					: `${displayStore.physicsIntensity.toFixed(2)}x`}
+			</span>
+		</span>
+		<input
+			type="range"
+			min={PHYSICS_INTENSITY_MIN}
+			max={PHYSICS_INTENSITY_MAX}
+			step="0.05"
+			value={displayStore.physicsIntensity}
+			oninput={(e) => displayStore.setPhysicsIntensity(parseFloat(e.currentTarget.value))}
+		/>
+		<span class="range-ends" aria-hidden="true">
+			<span>Subtle</span>
+			<span>Lively</span>
+		</span>
+	</label>
 </div>
 
 <style>
@@ -212,5 +244,34 @@
 	.reset-btn:disabled {
 		opacity: 0.45;
 		cursor: default;
+	}
+
+	.section-divider {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.125rem;
+	}
+
+	.section-divider::after {
+		content: '';
+		flex: 1;
+		height: 1px;
+		background: var(--border-subtle);
+	}
+
+	.section-label {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--text-tertiary);
+	}
+
+	.range-ends {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.6875rem;
+		color: var(--text-tertiary);
 	}
 </style>

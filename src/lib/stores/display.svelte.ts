@@ -1,4 +1,8 @@
 import { browser } from '$app/environment';
+import {
+	clampPhysicsIntensity,
+	PHYSICS_INTENSITY_DEFAULT
+} from '$lib/engine/spring-physics';
 
 const STORAGE_KEY = 'utsuwa-display';
 
@@ -40,6 +44,8 @@ function createDisplayStore() {
 	// so each keeps its own camera profile
 	let camera = $state<CameraSettings>({ ...CAMERA_DEFAULTS });
 	let overlayCamera = $state<CameraSettings>({ ...CAMERA_DEFAULTS });
+	// One physics intensity for both surfaces: it's a model-feel setting, not framing
+	let physicsIntensity = $state(PHYSICS_INTENSITY_DEFAULT);
 
 	if (browser) {
 		const saved = localStorage.getItem(STORAGE_KEY);
@@ -54,6 +60,9 @@ function createDisplayStore() {
 				else if (typeof parsed.cameraDistance === 'number') {
 					camera = sanitize({ zoom: 2.0 / parsed.cameraDistance });
 				}
+				if (typeof parsed.physicsIntensity === 'number') {
+					physicsIntensity = clampPhysicsIntensity(parsed.physicsIntensity);
+				}
 			} catch (e) {
 				console.error('Failed to load display settings:', e);
 			}
@@ -66,7 +75,8 @@ function createDisplayStore() {
 				STORAGE_KEY,
 				JSON.stringify({
 					camera: $state.snapshot(camera),
-					overlayCamera: $state.snapshot(overlayCamera)
+					overlayCamera: $state.snapshot(overlayCamera),
+					physicsIntensity
 				})
 			);
 		}
@@ -92,6 +102,11 @@ function createDisplayStore() {
 		save();
 	}
 
+	function setPhysicsIntensity(value: number) {
+		physicsIntensity = clampPhysicsIntensity(value);
+		save();
+	}
+
 	return {
 		get camera() {
 			return camera;
@@ -99,8 +114,12 @@ function createDisplayStore() {
 		get overlayCamera() {
 			return overlayCamera;
 		},
+		get physicsIntensity() {
+			return physicsIntensity;
+		},
 		setCamera,
-		resetCamera
+		resetCamera,
+		setPhysicsIntensity
 	};
 }
 

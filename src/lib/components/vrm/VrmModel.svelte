@@ -5,6 +5,12 @@
 	import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { ttsStore } from '$lib/stores/tts.svelte';
+	import { displayStore } from '$lib/stores/display.svelte';
+	import {
+		computeSpringJointParams,
+		clampFrameDelta,
+		type SpringJointParams
+	} from '$lib/engine/spring-physics';
 	import { lipSyncAnalyzer } from '$lib/services/lipsync/analyzer';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
@@ -52,6 +58,44 @@
 	let { url }: Props = $props();
 	let vrm = $state<VRM | null>(null);
 	let group = $state<THREE.Group | null>(null);
+
+	// === Spring-bone physics ===
+	// Authored per-joint values captured at load. The intensity setting always
+	// multiplies these bases (never the current values), so re-applying is
+	// idempotent and a model switch starts clean from its own rig tuning.
+	let springBase: Array<{
+		settings: { stiffness: number; gravityPower: number; dragForce: number };
+		base: SpringJointParams;
+	}> = [];
+
+	function snapshotSpringBase(target: VRM) {
+		springBase = [];
+		const joints = target.springBoneManager?.joints;
+		if (!joints) return;
+		for (const joint of joints) {
+			springBase.push({
+				settings: joint.settings,
+				base: {
+					stiffness: joint.settings.stiffness,
+					gravityPower: joint.settings.gravityPower,
+					dragForce: joint.settings.dragForce
+				}
+			});
+		}
+	}
+
+	// Applied live so slider tuning is immediate; re-runs on model switch since
+	// the load path re-assigns `vrm` after rebuilding the snapshot.
+	$effect(() => {
+		const intensity = displayStore.physicsIntensity;
+		if (!vrm) return;
+		for (const { settings, base } of springBase) {
+			const next = computeSpringJointParams(base, intensity);
+			settings.stiffness = next.stiffness;
+			settings.gravityPower = next.gravityPower;
+			settings.dragForce = next.dragForce;
+		}
+	});
 
 	// === Animation State ===
 	let mixer = $state<THREE.AnimationMixer | null>(null);
@@ -507,6 +551,10 @@
 				// Set a natural idle pose (arms down instead of T-pose)
 				setIdlePose(loadedVrm);
 
+				// Capture this rig's authored spring values before `vrm` flips the
+				// physics-intensity effect, so it applies over fresh bases.
+				snapshotSpringBase(loadedVrm);
+
 				vrm = loadedVrm;
 				group = loadedVrm.scene;
 				const newMixer = new THREE.AnimationMixer(loadedVrm.scene);
@@ -605,6 +653,7 @@
 				vrmStore.setVrm(null);
 				vrm = null;
 				group = null;
+				springBase = [];
 			}
 		};
 	});
@@ -621,8 +670,9 @@
 		// Update animation mixer
 		mixer?.update(delta);
 
-		// Update VRM core
-		vrm.update(delta);
+		// Update VRM core. The delta is clamped because a huge frame gap (tab
+		// refocus, window drag) otherwise launches the spring bones violently.
+		vrm.update(clampFrameDelta(delta));
 
 		// Track head position for 3D speech bubble
 		const headBone = vrm.humanoid.getNormalizedBoneNode('head');
