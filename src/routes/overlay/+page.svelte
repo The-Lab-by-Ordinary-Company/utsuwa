@@ -22,7 +22,7 @@
 	import { overlayStore } from '$lib/stores/overlay.svelte';
 	import { isTauri, startDragging } from '$lib/services/platform';
 	import { sendCompanionMessage, type SendCompanionMessageOptions } from '$lib/services/chat/companion-chat';
-	import { sendReminderMessage } from '$lib/services/chat/reminder-chat';
+	import { createReminderFiredHandler } from '$lib/services/chat/reminder-chat';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { eventsApi } from '$lib/engine/events';
 	import { completionMarkers } from '$lib/engine/event-completion';
@@ -175,10 +175,9 @@
 	// main app window is hidden. Fired reminders are sent back through the LLM
 	// so the companion can react (speech, search, etc.).
 	$effect(() => {
-		const unsubscribeReminder = reminderStore.addReminderFiredListener((reminder) => {
-			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it NOW by performing the described action or saying something enthusiastic and fitting.`;
-			sendReminderMessage((content, options) => handleReminderSend(content, options), msg);
-		});
+		const unsubscribeReminder = reminderStore.addReminderFiredListener(
+			createReminderFiredHandler(handleReminderSend)
+		);
 		reminderStore.startPolling();
 		return () => {
 			reminderStore.stopPolling();

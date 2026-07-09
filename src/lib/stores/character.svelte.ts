@@ -175,8 +175,12 @@ function createCharacterStore() {
 		save();
 	}
 
-	// Apply state updates
-	function applyUpdates(updates: StateUpdates): void {
+	// Apply state updates. countInteraction is false for system events (e.g.
+	// fired reminders): the model's own mood/stat deltas still apply, but the
+	// turn must not count as the user interacting (totalInteractions gates stage
+	// transitions and events; lastInteraction drives decay timing).
+	function applyUpdates(updates: StateUpdates, options: { countInteraction?: boolean } = {}): void {
+		const { countInteraction = true } = options;
 		const newState = { ...state };
 		const isCompanionMode = state.appMode === 'companion';
 
@@ -225,9 +229,12 @@ function createCharacterStore() {
 			}
 		}
 
-		// Update timestamp and interaction count
-		newState.lastInteraction = new Date();
-		newState.totalInteractions++;
+		// Update timestamp and interaction count. System events keep both frozen
+		// so machine-generated turns can't advance progression or reset decay.
+		if (countInteraction) {
+			newState.lastInteraction = new Date();
+			newState.totalInteractions++;
+		}
 		newState.updatedAt = new Date();
 
 		// Update state with reactive assignment

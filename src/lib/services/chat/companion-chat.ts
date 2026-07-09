@@ -19,7 +19,7 @@ import { buildSystemPrompt, truncateChatHistory, type PromptContext } from '$lib
 import { keepImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 import { extractReminderTags, tryExtractReminderFromUserMessage } from '$lib/utils/reminders';
 import { reminderStore } from '$lib/stores/reminders.svelte';
-import { getWorkingMemory } from '$lib/engine/memory';
+import { getWorkingMemory, ensureSession } from '$lib/engine/memory';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
 import { isTauri } from '$lib/services/platform';
 import type { LLMProvider, TTSProvider } from '$lib/types';
@@ -283,7 +283,9 @@ export async function sendCompanionMessage(
 		if (directReminder) {
 			const { reminders: llmReminders } = extractReminderTags(fullContent);
 			if (llmReminders.length === 0) {
-				const sessionId = getWorkingMemory().currentSessionId;
+				// ensureSession creates a session on demand, so a reminder phrased right
+				// after a reload still gets scheduled without resuming stale sessions.
+				const sessionId = await ensureSession();
 				if (sessionId) {
 					try {
 						await reminderStore.addReminder(

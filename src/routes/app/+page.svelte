@@ -20,7 +20,7 @@
 	import { canShowImages } from '$lib/services/providers/vision';
 	import { onDestroy } from 'svelte';
 	import { sendCompanionMessage, type SendCompanionMessageOptions } from '$lib/services/chat/companion-chat';
-	import { sendReminderMessage } from '$lib/services/chat/reminder-chat';
+	import { createReminderFiredHandler } from '$lib/services/chat/reminder-chat';
 	import { reminderStore } from '$lib/stores/reminders.svelte';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { isTauri } from '$lib/services/platform';
@@ -128,10 +128,9 @@
 	// through the companion pipeline. This lets the LLM decide the action
 	// (speech, web search, etc.) instead of showing a passive toast.
 	$effect(() => {
-		const unsubscribeReminder = reminderStore.addReminderFiredListener((reminder) => {
-			const msg = `⏰ REMINDER TRIGGERED: "${reminder.content}" — This is your reminder. React to it NOW by performing the described action or saying something enthusiastic and fitting.`;
-			sendReminderMessage((content) => handleSend(content), msg);
-		});
+		const unsubscribeReminder = reminderStore.addReminderFiredListener(
+			createReminderFiredHandler((content, options) => handleSend(content, [], options))
+		);
 		reminderStore.startPolling();
 		return () => {
 			reminderStore.stopPolling();

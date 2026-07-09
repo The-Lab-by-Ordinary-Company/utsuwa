@@ -243,17 +243,6 @@ export function removeReminderFiredListener(callback: (reminder: Reminder) => vo
 	onReminderFiredCallbacks.delete(callback);
 }
 
-/**
- * @deprecated Use addReminderFiredListener instead. This setter replaces any
- * previously registered callback and is kept only for quick backward compatibility.
- */
-export function setOnReminderFired(callback: ((reminder: Reminder) => void) | null) {
-	onReminderFiredCallbacks.clear();
-	if (callback) {
-		onReminderFiredCallbacks.add(callback);
-	}
-}
-
 export const reminderStore = {
 	get upcoming() {
 		return upcoming;
@@ -267,6 +256,5 @@ export const reminderStore = {
 	deleteReminder,
 	dismissRecentFired,
 	addReminderFiredListener,
-	removeReminderFiredListener,
-	setOnReminderFired
+	removeReminderFiredListener
 };

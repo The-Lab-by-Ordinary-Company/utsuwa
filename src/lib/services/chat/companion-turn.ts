@@ -123,7 +123,7 @@ export async function processCompanionTurn(input: CompanionTurnInput): Promise<C
 		: mergeUpdates(baselineUpdates || {}, validatedLLMUpdates || {}, {
 				trustLLMDeltas: userAnalysis?.nonLatinDominant ?? false
 			});
-	characterStore.applyUpdates(finalUpdates);
+	characterStore.applyUpdates(finalUpdates, { countInteraction: !systemEvent });
 
 	// Save the model's memory observation
 	if (finalUpdates.newMemory) {

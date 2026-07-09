@@ -104,14 +104,6 @@ export async function hydrateWorkingMemory(): Promise<void> {
 	workingMemory.turns = recentTurns;
 	workingMemory.messageCount = recentTurns.length;
 
-	// Restore the current session from the most recent turn so reminders and
-	// other session-scoped state survive a browser restart.
-	const latestTurn = recentTurns[recentTurns.length - 1];
-	if (latestTurn?.sessionId !== undefined) {
-		workingMemory.currentSessionId = latestTurn.sessionId;
-		workingMemory.sessionStartedAt = latestTurn.createdAt;
-	}
-
 	// Backfill summaries for past sessions that ended without one, so the
 	// "last time you talked" prompt context actually has something to read.
 	await finalizeStaleSessions();
