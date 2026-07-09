@@ -970,7 +970,7 @@
 				// looking down starts to double the chin
 				const pitch = THREE.MathUtils.clamp(
 					-Math.asin(THREE.MathUtils.clamp(lookDir.y, -1, 1)),
-					-0.62,
+					-0.85,
 					0.32
 				);
 				lookEuler.set(pitch, yaw, 0, 'YXZ');
