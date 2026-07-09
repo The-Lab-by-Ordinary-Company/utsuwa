@@ -960,11 +960,10 @@
 				head.parent.getWorldQuaternion(parentQuat).invert();
 				lookDir.applyQuaternion(parentQuat).normalize();
 				// VRM 0.x rigs face -Z where 1.0 faces +Z (the same split
-				// VRM_POSE_CONFIG handles for the scene), so the look direction
-				// mirrors on v0 models without this flip
+				// VRM_POSE_CONFIG handles for the scene), so the whole look
+				// direction mirrors on v0 models: horizontal AND vertical
 				if (vrm.meta?.metaVersion !== '1') {
-					lookDir.x *= -1;
-					lookDir.z *= -1;
+					lookDir.negate();
 				}
 				const yaw = THREE.MathUtils.clamp(Math.atan2(lookDir.x, lookDir.z), -0.65, 0.65);
 				const pitch = THREE.MathUtils.clamp(
