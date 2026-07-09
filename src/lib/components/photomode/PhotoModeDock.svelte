@@ -275,10 +275,12 @@
 				<label class="toggle-row">
 					<span>Vignette</span>
 					<input
+						class="switch-input"
 						type="checkbox"
 						checked={photomodeStore.vignette}
 						onchange={(e) => photomodeStore.setVignette(e.currentTarget.checked)}
 					/>
+					<span class="switch" aria-hidden="true"><span class="switch-thumb"></span></span>
 				</label>
 			{:else if tab === 'camera'}
 				<span class="mini-label">
@@ -298,18 +300,22 @@
 				<label class="toggle-row">
 					<span>Look at camera</span>
 					<input
+						class="switch-input"
 						type="checkbox"
 						checked={photomodeStore.headTracking}
 						onchange={(e) => photomodeStore.setHeadTracking(e.currentTarget.checked)}
 					/>
+					<span class="switch" aria-hidden="true"><span class="switch-thumb"></span></span>
 				</label>
 				<label class="toggle-row">
 					<span>Thirds grid</span>
 					<input
+						class="switch-input"
 						type="checkbox"
 						checked={photomodeStore.showGrid}
 						onchange={(e) => photomodeStore.setGrid(e.currentTarget.checked)}
 					/>
+					<span class="switch" aria-hidden="true"><span class="switch-thumb"></span></span>
 				</label>
 				<button class="panel-btn" onclick={resetFraming}>Reset framing</button>
 			{:else if tab === 'sticker'}
@@ -639,9 +645,51 @@
 		cursor: pointer;
 	}
 
-	.toggle-row input {
-		accent-color: var(--accent);
-		cursor: pointer;
+	/* Pill switch in the same style as the settings service toggles */
+	.switch-input {
+		position: absolute;
+		opacity: 0;
+		width: 0;
+		height: 0;
+		pointer-events: none;
+	}
+
+	.switch {
+		position: relative;
+		width: 34px;
+		height: 20px;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border-subtle);
+		transition: background 0.18s ease, border-color 0.18s ease;
+		flex-shrink: 0;
+	}
+
+	.switch-thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 14px;
+		height: 14px;
+		border-radius: var(--radius-full);
+		background: var(--text-tertiary);
+		box-shadow: var(--shadow-xs);
+		transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s ease;
+	}
+
+	.switch-input:checked + .switch {
+		background: var(--accent);
+		border-color: var(--accent);
+	}
+
+	.switch-input:checked + .switch .switch-thumb {
+		background: white;
+		transform: translateX(14px);
+	}
+
+	.switch-input:focus-visible + .switch {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 
 	.hint {
