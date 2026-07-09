@@ -24,7 +24,7 @@ export interface ProviderMetadata {
 }
 
 // ============================================
-// LLM PROVIDERS (7 total)
+// LLM PROVIDERS (8 total)
 // ============================================
 
 export const LLM_PROVIDERS: ProviderMetadata[] = [

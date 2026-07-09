@@ -163,7 +163,7 @@ Text-to-speech converts LLM responses to audio with lip-sync.
 
 ### Speech-to-Text (STT)
 
-Voice input converts microphone audio to text through one of three providers, chosen automatically by priority.
+Voice input converts microphone audio to text through one of four providers, chosen automatically by priority.
 
 **Key files:**
 - `src/lib/services/stt/openai-stt.ts` — OpenAI-compatible transcription client (Groq and local Whisper servers via `/v1/audio/transcriptions`)
@@ -173,9 +173,10 @@ Voice input converts microphone audio to text through one of three providers, ch
 **Supported providers (priority order):**
 - **Local STT** — any OpenAI-compatible Whisper server (Speaches, faster-whisper-server, whisper.cpp). No key; defaults to `http://localhost:8000/v1`
 - **Groq (Whisper)** — cloud transcription, requires an API key
+- **OpenAI (Whisper)** — cloud transcription via the OpenAI API, requires an API key
 - **Web Speech API** — browser built-in, no key, unavailable in the desktop webview
 
-Selection: a configured local server wins, then Groq, then Web Speech.
+Selection: a configured local server wins, then Groq, then OpenAI, then Web Speech.
 
 ### Memory System
 
@@ -192,7 +193,7 @@ Three-tier memory architecture for context and recall.
 3. **Sessions** — Conversation summaries for long-term context
 
 **Semantic search:**
-Uses `@xenova/transformers` to run the `all-MiniLM-L6-v2` embedding model locally on the user's device. Facts are embedded as 384-dimensional vectors and can be retrieved by cosine similarity to the current conversation.
+Uses `@xenova/transformers` to run the multilingual `paraphrase-multilingual-MiniLM-L12-v2` embedding model locally on the user's device. Facts are embedded as 384-dimensional vectors and can be retrieved by cosine similarity to the current conversation.
 
 See [Companion System](/docs/technology/companion-system) and [Memory Graph](/docs/technology/memory-graph) for detailed memory documentation.
 
@@ -232,6 +233,7 @@ All data persists client-side via IndexedDB using Dexie.js.
 - `sessions` — Conversation session summaries
 - `conversationTurns` — Conversation history
 - `completedEvents` — Milestone events that have fired
+- `reminders` — Scheduled tasks and timers with their fired/dismissed state
 
 **Key file:** `src/lib/db/index.ts`
 
@@ -252,12 +254,14 @@ src/
 │   │   ├── docs/          # Documentation site components
 │   │   ├── events/        # Event scene and choice UI
 │   │   ├── icons/         # Icon components
-│   │   ├── layout/        # App layout components
+│   │   ├── marketing/     # Landing page components
 │   │   ├── memory/        # Memory graph visualization
 │   │   ├── onboarding/    # First-run setup
 │   │   ├── overlay/       # Desktop overlay UI
+│   │   ├── photomode/     # Photo mode panel, stickers, frame preview
 │   │   ├── settings/      # Settings page components
 │   │   ├── ui/            # Shared UI primitives
+│   │   ├── updater/       # Desktop auto-update UI
 │   │   └── vrm/           # 3D scene and model
 │   ├── config/            # App and docs configuration
 │   ├── data/              # Static data (event definitions)

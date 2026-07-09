@@ -155,7 +155,7 @@ If the mic button shows an error in the browser:
 
 1. **Check browser support** - Web Speech API works in Chrome, Edge, and Safari. Firefox has limited support.
 2. **Allow microphone access** - Your browser may be blocking the microphone permission.
-3. **Use a local Whisper server or Groq** - For better quality or broader browser support, configure Local STT (a self-hosted OpenAI-compatible Whisper server) or add a Groq API key in **Settings > Character** under Voice Input (STT). A configured local server takes top priority, then Groq, then Web Speech API.
+3. **Use a local Whisper server or Groq** - For better quality or broader browser support, configure Local STT (a self-hosted OpenAI-compatible Whisper server) or add a Groq API key in **Settings > Character** under Voice Input (STT). A configured local server takes top priority, then Groq, then OpenAI, then Web Speech API.
 
 ### "Microphone access denied"
 
@@ -190,7 +190,7 @@ On the desktop app, most local providers need only that the server is running. T
 
 1. **System audio** - Check your OS volume and that Utsuwa isn't muted in the system mixer
 2. **TTS configured** - Confirm a TTS provider is set up and a voice is selected (see Text-to-Speech Issues above)
-3. **Microphone/voice input** - The desktop webview has no Web Speech API, so the mic needs a Groq key; see [Mic button not responding (desktop)](#mic-button-not-responding-desktop)
+3. **Microphone/voice input** - The desktop webview has no Web Speech API, so the mic needs a Groq or OpenAI key; see [Mic button not responding (desktop)](#mic-button-not-responding-desktop)
 
 ### Updates not installing
 

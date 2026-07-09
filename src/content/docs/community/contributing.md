@@ -57,9 +57,10 @@ Feature requests are welcome. Create an issue with:
    git checkout -b feature/your-feature-name
    ```
 2. Make your changes
-3. Ensure your code follows the project's style:
+3. Run the quality gates; both must pass clean:
    ```bash
-   pnpm lint
+   pnpm test    # test suite (node --test)
+   pnpm check   # type checking (svelte-check)
    ```
 4. Test your changes thoroughly
 5. Commit your changes with a clear message

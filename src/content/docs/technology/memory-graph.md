@@ -49,7 +49,7 @@ Click "Reset View" to zoom out and see the full graph, clearing any selection.
 
 ## Technical Details
 
-The Memory Graph uses **384-dimensional embeddings** (via Transformers.js with the all-MiniLM-L6-v2 model) to compute semantic relationships between memories. Memories with a **cosine similarity >= 0.5** are connected.
+The Memory Graph uses **384-dimensional embeddings** (via Transformers.js with the multilingual paraphrase-multilingual-MiniLM-L12-v2 model) to compute semantic relationships between memories. Memories with a **cosine similarity >= 0.5** are connected.
 
 **Reference Count** tracks how many times a memory has been retrieved during conversations — higher counts indicate memories that frequently inform responses.
 

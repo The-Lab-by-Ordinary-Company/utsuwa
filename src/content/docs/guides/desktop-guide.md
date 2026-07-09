@@ -86,7 +86,7 @@ Overlay mode detaches your companion into a transparent, always-on-top window:
 - **Always on Top**: The companion stays visible over all other windows
 - **Draggable**: Click and drag anywhere on the character to reposition
 - **Floating Chat**: Click the chat icon at the bottom to expand a chat input
-- **Speech Bubbles**: Responses appear as speech bubbles near the character
+- **Speech Bubbles**: Responses appear in a docked dialog bubble above the bottom controls (the window moves around, so a head-tracking bubble would be unreadable)
 - **Status Indicator**: The mood/relationship status pill appears above the chat icon
 
 #### Controls
@@ -121,7 +121,7 @@ Some features are still being worked on:
 | Click-through transparency | ❌ Disabled (blocks UI) |
 | Global hotkeys | ✅ Available |
 | In-app auto-updates | ✅ Available |
-| Position persistence | ⏳ Planned |
+| Size and lock persistence | ✅ Available (window position across relaunch still planned) |
 | System tray | ⏳ Planned |
 
 ## Troubleshooting
@@ -155,7 +155,7 @@ The camera is locked in overlay mode. If the character appears rotated, exit ove
 
 ### Voice input not working
 
-The desktop app uses Tauri's webview, which does not support the browser's Web Speech API. For voice input on desktop, configure either a local Whisper server or a Groq API key in **Settings > Character** under the Voice Input (STT) section.
+The desktop app uses Tauri's webview, which does not support the browser's Web Speech API. For voice input on desktop, configure a local Whisper server, a Groq API key, or an OpenAI API key in **Settings > Character** under the Voice Input (STT) section.
 
 ### Can't interact with overlay UI
 

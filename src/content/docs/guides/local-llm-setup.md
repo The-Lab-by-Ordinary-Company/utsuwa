@@ -49,9 +49,9 @@ This starts the Ollama API on `http://localhost:11434`.
 
 ### Connecting to Utsuwa
 
-1. Open **Settings** (gear icon)
-2. Navigate to the **Character** tab
-3. Enable the LLM toggle, then select **Ollama** from the provider dropdown
+1. Open the **Controls** panel (sliders icon, top right) and click **Settings** (gear)
+2. Navigate to the **Character** tab and open the **AI Services** section
+3. Enable the Chat (LLM) toggle, then select **Ollama** from the provider dropdown
 4. Leave the base URL as `http://localhost:11434` unless you changed Ollama's port
 5. Utsuwa will fetch models installed on your machine. Click the refresh icon if you just pulled a new model.
 6. Select an installed model from the dropdown
@@ -124,9 +124,9 @@ This starts an OpenAI-compatible API on `http://localhost:1234`.
 
 ### Connecting to Utsuwa
 
-1. Open **Settings** (gear icon)
-2. Navigate to the **Character** tab
-3. Enable the LLM toggle, then select **LM Studio** from the provider dropdown
+1. Open the **Controls** panel (sliders icon, top right) and click **Settings** (gear)
+2. Navigate to the **Character** tab and open the **AI Services** section
+3. Enable the Chat (LLM) toggle, then select **LM Studio** from the provider dropdown
 4. Leave the base URL as `http://localhost:1234/v1` unless you changed LM Studio's port
 5. Utsuwa will fetch models from the running LM Studio server. Click the refresh icon if you load a different model.
 6. Select the loaded model from the dropdown

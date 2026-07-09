@@ -34,7 +34,7 @@ This serves the API at `http://localhost:8000/v1`.
 5. Set the **Model** field to a model your server exposes (e.g. `Systran/faster-whisper-large-v3`)
 6. Click the microphone button in the chat bar and speak
 
-A configured local server takes priority over Groq and the browser's Web Speech API automatically — there's no separate toggle.
+A configured local server takes priority over Groq, OpenAI, and the browser's Web Speech API automatically — there's no separate toggle.
 
 ### Models
 

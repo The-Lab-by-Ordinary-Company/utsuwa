@@ -59,8 +59,8 @@
 - **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
 - **Chat Interface**: Bottom-centered input bar with streaming responses
 - **Voice Input**: Speech-to-text via a local Whisper server (Speaches, faster-whisper-server, whisper.cpp), Groq (Whisper), or the browser's Web Speech API, with real-time audio visualization
-- **Show Her Photos**: Show your companion an image via the camera button or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
-- **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, and LM Studio
+- **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
+- **LLM Integration**: Support for 8 LLM providers: OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, ...)
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
 - **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech)
 - **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
@@ -284,6 +284,7 @@ utsuwa/
 
 ```bash
 pnpm dev          # Start web development server
+pnpm test         # Run the test suite (node --test)
 pnpm build        # Build web app for production
 pnpm preview      # Preview production build
 pnpm lint         # Type-check the project (svelte-check)
@@ -299,7 +300,7 @@ pnpm tauri build  # Build desktop app installer
 
 - [x] VRM model loading and display with orbit controls
 - [x] 3D speech bubbles tracking model head position
-- [x] Multi-provider LLM support (7 providers)
+- [x] Multi-provider LLM support (8 providers)
 - [x] Multi-provider TTS support (3 providers)
 - [x] Audio-driven lip-sync
 - [x] VRMA-based animations (idle, talking, blinking)
@@ -361,11 +362,6 @@ Utsuwa is built on the shoulders of these excellent projects:
 - **[Dexie.js](https://github.com/dexie/Dexie.js)** - IndexedDB wrapper for local storage
 - **[force-graph](https://github.com/vasturiano/force-graph)** - Force-directed graph visualization for memory graph
 - **[simple-icons](https://github.com/simple-icons/simple-icons)** - SVG icons for provider logos
-
-### 3D Effects
-
-- **[n8ao](https://github.com/N8python/n8ao)** - Ambient occlusion for Three.js
-- **[postprocessing](https://github.com/pmndrs/postprocessing)** - Post-processing effects
 
 ## License
 
