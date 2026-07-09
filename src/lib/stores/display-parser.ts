@@ -53,7 +53,8 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 		try {
 			const parsedValue = JSON.parse(raw);
 			parsed = isPlainObject(parsedValue) ? parsedValue : null;
-		} catch {
+		} catch (e) {
+			console.warn('Failed to parse display settings, falling back to defaults:', e);
 			parsed = null;
 		}
 	} else if (isPlainObject(raw)) {
@@ -75,6 +76,8 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 
 	if (parsed.camera && typeof parsed.camera === 'object') {
 		camera = sanitizeCamera(parsed.camera as Partial<CameraSettings>);
+		// If only the main camera is stored, mirror it to the overlay so both
+		// surfaces start with the same look instead of silently resetting one.
 		overlayCamera =
 			parsed.overlayCamera && typeof parsed.overlayCamera === 'object'
 				? sanitizeCamera(parsed.overlayCamera as Partial<CameraSettings>)

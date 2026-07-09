@@ -20,9 +20,15 @@ test('returns defaults for null input', () => {
 });
 
 test('returns defaults for invalid JSON string', () => {
-	const result = parseDisplaySettings('not-json');
-	assert.equal(result.chatDisplayMode, DEFAULT_CHAT_DISPLAY_MODE);
-	assert.equal(result.sidebarPosition, DEFAULT_SIDEBAR_POSITION);
+	const originalWarn = console.warn;
+	console.warn = () => {};
+	try {
+		const result = parseDisplaySettings('not-json');
+		assert.equal(result.chatDisplayMode, DEFAULT_CHAT_DISPLAY_MODE);
+		assert.equal(result.sidebarPosition, DEFAULT_SIDEBAR_POSITION);
+	} finally {
+		console.warn = originalWarn;
+	}
 });
 
 test('returns defaults for JSON null', () => {
