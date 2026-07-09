@@ -105,6 +105,10 @@ export interface KeepsakeRecord {
 	createdAt: number; // epoch ms
 	note?: string; // optional: what she remembered about it
 	thumb?: string; // small cover-cropped data URL so the board renders without loading full blobs
+	// 'shown' (default): an image the user showed her, displayed on the
+	// photoboard. 'photo': a photo-mode capture, persisted but kept off the
+	// "things you've shown her" wall.
+	kind?: 'shown' | 'photo';
 }
 
 const INDEX_KEY = 'keepsake-index';
@@ -141,7 +145,7 @@ async function makeThumbnail(blob: Blob, size = 220): Promise<string | undefined
 export async function keepImage(
 	id: string,
 	blob: Blob,
-	meta?: { mimeType?: string; note?: string }
+	meta?: { mimeType?: string; note?: string; kind?: 'shown' | 'photo' }
 ): Promise<void> {
 	await keepsakeStorage?.setItem(`keepsake-blob-${id}`, blob);
 	const list = await readIndex();
@@ -151,7 +155,8 @@ export async function keepImage(
 			mimeType: meta?.mimeType || blob.type || 'image/jpeg',
 			createdAt: Date.now(),
 			note: meta?.note,
-			thumb: await makeThumbnail(blob)
+			thumb: await makeThumbnail(blob),
+			kind: meta?.kind ?? 'shown'
 		});
 		await keepsakeStorage?.setItem(INDEX_KEY, list);
 	}

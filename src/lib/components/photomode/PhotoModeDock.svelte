@@ -112,7 +112,8 @@
 
 			await keepImage(crypto.randomUUID(), blob, {
 				mimeType: 'image/png',
-				note: 'Photo mode'
+				note: 'Photo mode',
+				kind: 'photo'
 			});
 
 			// Browser download on web; the desktop build keeps the photoboard copy
