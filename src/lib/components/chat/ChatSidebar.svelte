@@ -14,18 +14,26 @@
 	let { open, onClose, isTyping = false }: Props = $props();
 
 	let messagesEl: HTMLDivElement | null = $state(null);
+	let scrollRaf: number | null = null;
 
-	// Auto-scroll whenever messages change or typing state changes
+	// Auto-scroll whenever messages change or typing state changes.
+	// requestAnimationFrame collapses rapid streaming chunks into one smooth scroll.
 	$effect(() => {
 		const _msgs = chatStore.messages.length;
 		const _typing = isTyping;
 		if (open && messagesEl) {
-			tick().then(() => {
-				if (messagesEl) {
-					messagesEl.scrollTop = messagesEl.scrollHeight;
-				}
+			if (scrollRaf) cancelAnimationFrame(scrollRaf);
+			scrollRaf = requestAnimationFrame(() => {
+				scrollRaf = null;
+				messagesEl!.scrollTop = messagesEl!.scrollHeight;
 			});
 		}
+		return () => {
+			if (scrollRaf) {
+				cancelAnimationFrame(scrollRaf);
+				scrollRaf = null;
+			}
+		};
 	});
 
 	// The last assistant message id – used to highlight while typing
@@ -34,7 +42,7 @@
 	);
 
 	// System messages are kept for LLM context but not shown in the visible history
-	const visibleMessages = $derived(chatStore.messages.filter((m) => (m.role as string) !== 'system'));
+	const visibleMessages = $derived(chatStore.messages.filter((m) => m.role !== 'system'));
 
 	function togglePosition() {
 		displayStore.setSidebarPosition(displayStore.sidebarPosition === 'right' ? 'left' : 'right');
@@ -75,7 +83,14 @@
 		>
 			<Icon name="trash" size={14} />
 		</button>
-		<button class="close-btn" onclick={onClose} aria-label="Close chat history">✕</button>
+		<button
+			class="close-btn"
+			onclick={onClose}
+			aria-label="Close chat history"
+			title="Close chat history"
+		>
+			<Icon name="x" size={16} />
+		</button>
 	</div>
 
 	<div class="messages" bind:this={messagesEl}>
@@ -83,7 +98,7 @@
 			<p class="empty-hint">No messages yet.</p>
 		{:else}
 			{#each visibleMessages as msg (msg.id)}
-				{@const isLastAssistant = msg.id === lastAssistantId && msg.role === 'assistant'}
+				{@const isLastAssistant = msg.id === lastAssistantId}
 				<div class="message" class:user={msg.role === 'user'} class:assistant={msg.role === 'assistant'}>
 					<div class="bubble" class:speaking={isLastAssistant && isTyping}>
 						<p>{msg.content}</p>

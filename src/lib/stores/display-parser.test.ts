@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseDisplaySettings } from './display-parser.ts';
+import { parseDisplaySettings, sanitizeCamera } from './display-parser.ts';
 import { PHYSICS_INTENSITY_DEFAULT } from '../engine/spring-physics.ts';
 import {
 	CAMERA_DEFAULTS,
+	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
 	DEFAULT_SIDEBAR_POSITION
 } from './display-types.ts';
@@ -89,4 +90,32 @@ test('uses main camera for overlay camera when overlay camera is missing', () =>
 		camera: { fov: 45, zoom: 1.5, height: 0.1 }
 	});
 	assert.deepEqual(result.overlayCamera, { fov: 45, zoom: 1.5, height: 0.1 });
+});
+
+test('returns defaults for undefined input', () => {
+	const result = parseDisplaySettings(undefined);
+	assert.deepEqual(result.camera, CAMERA_DEFAULTS);
+	assert.deepEqual(result.overlayCamera, CAMERA_DEFAULTS);
+	assert.equal(result.physicsIntensity, PHYSICS_INTENSITY_DEFAULT);
+	assert.equal(result.chatDisplayMode, DEFAULT_CHAT_DISPLAY_MODE);
+	assert.equal(result.sidebarPosition, DEFAULT_SIDEBAR_POSITION);
+});
+
+test('sanitizeCamera isolates and clamps camera values independently', () => {
+	const raw = { fov: 999, zoom: -10, height: 2 };
+	const sanitized = sanitizeCamera(raw);
+	assert.deepEqual(sanitized, {
+		fov: CAMERA_LIMITS.fov.max,
+		zoom: CAMERA_LIMITS.zoom.min,
+		height: CAMERA_LIMITS.height.max
+	});
+	// Original object must not be mutated
+	assert.deepEqual(raw, { fov: 999, zoom: -10, height: 2 });
+});
+
+test('sanitizeCamera fills missing values from defaults', () => {
+	const sanitized = sanitizeCamera({ zoom: 2.0 });
+	assert.equal(sanitized.fov, CAMERA_DEFAULTS.fov);
+	assert.equal(sanitized.zoom, 2.0);
+	assert.equal(sanitized.height, CAMERA_DEFAULTS.height);
 });
