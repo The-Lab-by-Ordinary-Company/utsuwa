@@ -62,18 +62,17 @@ export function drawPhotoVignette(
 	width: number,
 	height: number
 ): void {
-	const gradient = ctx.createRadialGradient(
-		width / 2,
-		height / 2,
-		Math.min(width, height) * 0.45,
-		width / 2,
-		height / 2,
-		Math.hypot(width, height) / 2
-	);
+	// Elliptical falloff drawn in a scaled unit space, matching the CSS
+	// radial-gradient ellipse the live preview uses
+	ctx.save();
+	ctx.translate(width / 2, height / 2);
+	ctx.scale(width / 2, height / 2);
+	const gradient = ctx.createRadialGradient(0, 0, 0.55, 0, 0, 1);
 	gradient.addColorStop(0, 'rgba(0,0,0,0)');
 	gradient.addColorStop(1, 'rgba(0,0,0,0.38)');
 	ctx.fillStyle = gradient;
-	ctx.fillRect(0, 0, width, height);
+	ctx.fillRect(-1, -1, 2, 2);
+	ctx.restore();
 }
 
 const stickerImageCache = new Map<string, Promise<HTMLImageElement>>();

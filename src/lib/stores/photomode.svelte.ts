@@ -53,6 +53,9 @@ let selectedExpression = $state<string | null>(null);
 let background = $state<PhotoBackground>({ type: 'room' });
 let frameId = $state<PhotoFrameId>('none');
 let filterId = $state<PhotoFilterId>('none');
+// Session-only lens override; null = the saved camera profile's FOV. Kept out
+// of displayStore so photo experiments never touch the persisted chat camera.
+let photoFov = $state<number | null>(null);
 let vignette = $state(false);
 let showGrid = $state(false);
 // Head tracking: the head turns toward the scene camera while posing
@@ -67,6 +70,7 @@ let reframeCounter = $state(0);
 let captureHandler: ((options: CaptureOptions) => Promise<Blob | null>) | null = null;
 
 function reset() {
+	photoFov = null;
 	selectedPoseId = null;
 	selectedExpression = null;
 	background = { type: 'room' };
@@ -106,6 +110,10 @@ function setFrame(id: PhotoFrameId) {
 
 function setFilter(id: PhotoFilterId) {
 	filterId = id;
+}
+
+function setPhotoFov(fov: number | null) {
+	photoFov = fov;
 }
 
 function setVignette(on: boolean) {
@@ -180,6 +188,9 @@ export const photomodeStore = {
 	get filterId() {
 		return filterId;
 	},
+	get photoFov() {
+		return photoFov;
+	},
 	get vignette() {
 		return vignette;
 	},
@@ -199,6 +210,7 @@ export const photomodeStore = {
 	setBackground,
 	setFrame,
 	setFilter,
+	setPhotoFov,
 	setVignette,
 	setGrid,
 	setHeadTracking,

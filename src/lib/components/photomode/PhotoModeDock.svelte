@@ -106,7 +106,9 @@
 	}
 
 	function resetFraming() {
-		displayStore.resetCamera();
+		// Clear the session lens and re-fit; the user's saved camera profile is
+		// never touched from photo mode
+		photomodeStore.setPhotoFov(null);
 		photomodeStore.requestReframe();
 	}
 
@@ -116,11 +118,14 @@
 		try {
 			if (timerOn) {
 				for (countdown = 3; countdown > 0; countdown--) {
+					// Exiting photo mode during the countdown cancels the capture
+					if (!photomodeStore.active) return;
 					await new Promise((r) => setTimeout(r, 1000));
 				}
 			}
+			if (!photomodeStore.active) return;
 			const blob = await photomodeStore.capture(scale);
-			if (!blob) return;
+			if (!blob || !photomodeStore.active) return;
 
 			flash = true;
 			setTimeout(() => (flash = false), 220);
@@ -285,7 +290,7 @@
 			{:else if tab === 'camera'}
 				<span class="mini-label">
 					Lens
-					<span class="mini-value">{displayStore.camera.fov.toFixed(0)} deg</span>
+					<span class="mini-value">{(photomodeStore.photoFov ?? displayStore.camera.fov).toFixed(0)} deg</span>
 				</span>
 				<input
 					class="slider"
@@ -293,8 +298,8 @@
 					min={CAMERA_LIMITS.fov.min}
 					max={CAMERA_LIMITS.fov.max}
 					step="1"
-					value={displayStore.camera.fov}
-					oninput={(e) => displayStore.setCamera({ fov: parseFloat(e.currentTarget.value) })}
+					value={photomodeStore.photoFov ?? displayStore.camera.fov}
+					oninput={(e) => photomodeStore.setPhotoFov(parseFloat(e.currentTarget.value))}
 					aria-label="Field of view"
 				/>
 				<label class="toggle-row">

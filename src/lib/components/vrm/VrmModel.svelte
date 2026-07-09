@@ -253,6 +253,9 @@
 				const action = targetMixer.clipAction(clip);
 				action.setLoop(THREE.LoopRepeat, Infinity);
 				action.play();
+				// A model that finishes loading while photo mode is already open
+				// holds its stance instead of idling through the shot
+				if (photomodeStore.active) action.paused = true;
 				idleAction = action;
 
 
@@ -364,6 +367,9 @@
 	let poseAction: THREE.AnimationAction | null = null;
 	// Rapid pose taps race their async loads; only the latest application wins.
 	let poseToken = 0;
+	// Clips are per-model; caching them means repeat selections reuse the same
+	// mixer action instead of accumulating new clips. Cleared on model switch.
+	const poseClipCache = new Map<string, THREE.AnimationClip>();
 
 	async function applyPhotoPose(poseId: string | null) {
 		const targetVrm = vrm;
@@ -397,7 +403,11 @@
 			if (mixer !== targetMixer || token !== poseToken) return;
 			if (!photomodeStore.active) return;
 
-			const clip = createVRMAnimationClip(animation, targetVrm);
+			let clip = poseClipCache.get(poseId);
+			if (!clip) {
+				clip = createVRMAnimationClip(animation, targetVrm);
+				poseClipCache.set(poseId, clip);
+			}
 			const previous = poseAction ?? idleAction;
 			if (previous) previous.fadeOut(POSE_FADE);
 
@@ -447,9 +457,13 @@
 				// from, then hand back to the cycler, which fades it out against a
 				// fresh idle clip and reschedules cycling. Starting a second idle at
 				// full weight here (the old path) blended two idles at once and made
-				// the resumed animation drift strangely.
+				// the resumed animation drift strangely. When TTS is still speaking,
+				// the talking-switch effect fades the talking action back in instead;
+				// starting an idle at the same time would blend both at half weight.
 				if (idleAction) idleAction.paused = false;
-				playNextIdleAnimation(targetVrm, targetMixer);
+				if (!shouldTalk) {
+					playNextIdleAnimation(targetVrm, targetMixer);
+				}
 			}
 			wasPhotoActive = active;
 		});
@@ -461,8 +475,12 @@
 		const poseId = photomodeStore.selectedPoseId;
 		if (!active) return;
 		untrack(() => {
-			// Entering starts on Natural, which the enter lifecycle already froze
-			if (poseId === null && !poseAction) return;
+			// Entering starts on Natural, which the enter lifecycle already froze,
+			// but the token still bumps so an in-flight pose load can't land stale
+			if (poseId === null && !poseAction) {
+				poseToken++;
+				return;
+			}
 			applyPhotoPose(poseId);
 		});
 	});
@@ -865,6 +883,7 @@
 				group = null;
 				springBase = [];
 				poseAction = null;
+				poseClipCache.clear();
 				activePulses = [];
 				appliedNudges = [];
 				reactionFace = null;
@@ -935,9 +954,12 @@
 			const progress = reactionFace.t / reactionFace.duration;
 			const em = vrm.expressionManager;
 			if (progress >= 1) {
-				em.setValue(reactionFace.name, 0);
-				if (heldExpression && heldExpression !== reactionFace.name) {
+				if (heldExpression === reactionFace.name) {
+					// The reaction borrowed the held expression; hand it back whole
 					em.setValue(heldExpression, 1);
+				} else {
+					em.setValue(reactionFace.name, 0);
+					if (heldExpression) em.setValue(heldExpression, 1);
 				}
 				reactionFace = null;
 			} else {
@@ -967,12 +989,12 @@
 				}
 				const yaw = THREE.MathUtils.clamp(Math.atan2(lookDir.x, lookDir.z), -0.65, 0.65);
 				// Asymmetric pitch range: looking up reads charming well past where
-				// looking down starts to double the chin
-				const pitch = THREE.MathUtils.clamp(
-					-Math.asin(THREE.MathUtils.clamp(lookDir.y, -1, 1)),
-					-0.85,
-					0.32
-				);
+				// looking down starts to double the chin. The wide bound is chosen
+				// by world-space geometry (is the camera above her head), which is
+				// immune to the v0/v1 sign-convention differences.
+				const rawPitch = -Math.asin(THREE.MathUtils.clamp(lookDir.y, -1, 1));
+				const pitchLimit = camWorld.y >= headWorld.y ? 0.85 : 0.32;
+				const pitch = THREE.MathUtils.clamp(rawPitch, -pitchLimit, pitchLimit);
 				lookEuler.set(pitch, yaw, 0, 'YXZ');
 				lookQuat.setFromEuler(lookEuler);
 				head.quaternion.slerp(lookQuat, headTrackWeight);

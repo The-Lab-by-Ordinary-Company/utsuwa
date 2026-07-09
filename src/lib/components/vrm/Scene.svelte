@@ -117,8 +117,8 @@
 				ctx.drawImage(glCanvas, 0, 0);
 				ctx.filter = 'none';
 				if (options.vignette) drawPhotoVignette(ctx, out.width, out.height);
-				await drawPhotoStickers(ctx, out.width, out.height, options.stickers);
 				drawPhotoFrame(ctx, out.width, out.height, options.frame);
+				await drawPhotoStickers(ctx, out.width, out.height, options.stickers);
 
 				return await new Promise<Blob | null>((resolve) =>
 					out.toBlob((blob) => resolve(blob), 'image/png')
@@ -208,7 +208,9 @@
 		if (photoTransparent) {
 			renderer.setClearColor(0x000000, 0);
 			return () => {
-				renderer.setClearColor(0x000000, 1);
+				// The renderer is created with alpha:true and never had an opaque
+				// clear color; restoring alpha 1 here would break AR passthrough
+				renderer.setClearColor(0x000000, 0);
 			};
 		}
 	});
@@ -302,7 +304,7 @@
 		if (photomodeStore.active) {
 			const cam = camera.current;
 			if (cam instanceof PerspectiveCamera) {
-				cam.fov = camSettings.fov;
+				cam.fov = photomodeStore.photoFov ?? camSettings.fov;
 				cam.updateProjectionMatrix();
 			}
 			return;

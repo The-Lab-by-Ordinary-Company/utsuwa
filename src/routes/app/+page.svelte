@@ -5,6 +5,7 @@
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
 	import PhotoModeDock from '$lib/components/photomode/PhotoModeDock.svelte';
 	import PhotoStickerLayer from '$lib/components/photomode/PhotoStickerLayer.svelte';
+	import PhotoFramePreview from '$lib/components/photomode/PhotoFramePreview.svelte';
 	import { photomodeStore, PHOTO_FILTERS } from '$lib/stores/photomode.svelte';
 
 	// Live preview filter shared with the capture composite
@@ -292,6 +293,10 @@
 				<div class="photo-vignette" aria-hidden="true"></div>
 			{/if}
 
+			{#if photomodeStore.active && photomodeStore.frameId !== 'none'}
+				<PhotoFramePreview />
+			{/if}
+
 			{#if photomodeStore.active}
 				<PhotoStickerLayer />
 			{/if}
@@ -301,7 +306,9 @@
 			{/if}
 		</div>
 
-		{#if !photomodeStore.active}
+		<!-- Hidden (not unmounted) during photo mode so component-local state
+		     like a typed chat draft survives the session -->
+		<div style:display={photomodeStore.active ? 'none' : 'contents'}>
 			<!-- Floating Stat Indicators -->
 			<FloatingStatIndicators />
 
@@ -323,7 +330,8 @@
 				providerLabel={imageProvider.label}
 				providerIsLocal={imageProvider.isLocal}
 			/>
-		{:else}
+		</div>
+		{#if photomodeStore.active}
 			<PhotoModeDock />
 		{/if}
 
@@ -405,7 +413,7 @@
 	.photo-grid {
 		position: absolute;
 		inset: 0;
-		z-index: 3;
+		z-index: 4;
 		pointer-events: none;
 		background:
 			linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) 33.33%, transparent calc(33.33% + 0.5px)),

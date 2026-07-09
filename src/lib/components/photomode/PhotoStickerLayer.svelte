@@ -60,6 +60,8 @@
 			onpointerdown={(e) => onStickerDown(e, sticker.id)}
 			onpointermove={onStickerMove}
 			onpointerup={onStickerUp}
+			onpointercancel={onStickerUp}
+			onlostpointercapture={onStickerUp}
 			onwheel={(e) => onStickerWheel(e, sticker.id)}
 			ondblclick={() => photomodeStore.removeSticker(sticker.id)}
 			title="Drag to move, scroll to resize, double-click to remove"
@@ -71,7 +73,7 @@
 	.sticker-layer {
 		position: absolute;
 		inset: 0;
-		z-index: 2; /* above the scene canvas, below the panel */
+		z-index: 3; /* above frame and vignette, below the panel */
 		pointer-events: none;
 		overflow: hidden;
 	}
