@@ -196,6 +196,21 @@
 		};
 	});
 
+	// Photo mode is a plain-screen feature: entering it during an AR/XR
+	// session ends the session first, so the shot always composes against the
+	// regular scene and never AR passthrough. The existing isPresenting effect
+	// then re-enables the orbit controls and re-applies the framing.
+	$effect(() => {
+		if (photomodeStore.active && $isPresenting) {
+			renderer?.xr
+				.getSession()
+				?.end()
+				.catch(() => {
+					// Session may already be winding down; nothing to do
+				});
+		}
+	});
+
 	// Any non-room photo background clears the GL canvas to transparent; the
 	// page shows a CSS preview behind it and the capture composites the real
 	// background, so what you see is what you save.
