@@ -3,6 +3,7 @@ import {
 	clampPhysicsIntensity,
 	PHYSICS_INTENSITY_DEFAULT
 } from '$lib/engine/spring-physics';
+import { sanitizeSceneBackground, type SceneBackground } from '$lib/services/scene-backgrounds';
 
 const STORAGE_KEY = 'utsuwa-display';
 
@@ -46,6 +47,8 @@ function createDisplayStore() {
 	let overlayCamera = $state<CameraSettings>({ ...CAMERA_DEFAULTS });
 	// One physics intensity for both surfaces: it's a model-feel setting, not framing
 	let physicsIntensity = $state(PHYSICS_INTENSITY_DEFAULT);
+	// Persistent backdrop for the regular scene ('default' = the theme backdrop)
+	let sceneBackground = $state<SceneBackground>({ type: 'default' });
 
 	if (browser) {
 		const saved = localStorage.getItem(STORAGE_KEY);
@@ -63,6 +66,9 @@ function createDisplayStore() {
 				if (typeof parsed.physicsIntensity === 'number') {
 					physicsIntensity = clampPhysicsIntensity(parsed.physicsIntensity);
 				}
+				if (parsed.sceneBackground) {
+					sceneBackground = sanitizeSceneBackground(parsed.sceneBackground);
+				}
 			} catch (e) {
 				console.error('Failed to load display settings:', e);
 			}
@@ -73,10 +79,11 @@ function createDisplayStore() {
 		if (browser) {
 			localStorage.setItem(
 				STORAGE_KEY,
-				JSON.stringify({
+			JSON.stringify({
 					camera: $state.snapshot(camera),
 					overlayCamera: $state.snapshot(overlayCamera),
-					physicsIntensity
+					physicsIntensity,
+					sceneBackground: $state.snapshot(sceneBackground)
 				})
 			);
 		}
@@ -107,6 +114,11 @@ function createDisplayStore() {
 		save();
 	}
 
+	function setSceneBackground(bg: SceneBackground) {
+		sceneBackground = sanitizeSceneBackground(bg);
+		save();
+	}
+
 	return {
 		get camera() {
 			return camera;
@@ -117,9 +129,13 @@ function createDisplayStore() {
 		get physicsIntensity() {
 			return physicsIntensity;
 		},
+		get sceneBackground() {
+			return sceneBackground;
+		},
 		setCamera,
 		resetCamera,
-		setPhysicsIntensity
+		setPhysicsIntensity,
+		setSceneBackground
 	};
 }
 

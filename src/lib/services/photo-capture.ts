@@ -1,4 +1,5 @@
 import type { PhotoBackground, PhotoFrameId, PhotoSticker } from '$lib/stores/photomode.svelte';
+import { drawSceneBackground, type SceneBackground } from '$lib/services/scene-backgrounds';
 
 // Composite-step drawing for photo captures. Frames are drawn programmatically
 // so they stay crisp at any resolution and aspect ratio; no bitmap assets.
@@ -7,21 +8,13 @@ export function drawPhotoBackground(
 	ctx: CanvasRenderingContext2D,
 	width: number,
 	height: number,
-	background: PhotoBackground
+	background: PhotoBackground,
+	pixelScale = 1
 ): void {
-	if (background.type === 'solid' && background.value) {
-		ctx.fillStyle = background.value;
-		ctx.fillRect(0, 0, width, height);
-	} else if (background.type === 'gradient' && background.value) {
-		// Gradient value is "colorA,colorB", rendered top to bottom
-		const [from, to] = background.value.split(',');
-		const gradient = ctx.createLinearGradient(0, 0, 0, height);
-		gradient.addColorStop(0, from?.trim() || '#ffffff');
-		gradient.addColorStop(1, to?.trim() || '#ffffff');
-		ctx.fillStyle = gradient;
-		ctx.fillRect(0, 0, width, height);
-	}
-	// 'room' captures the opaque scene as-is; 'transparent' leaves alpha alone
+	// 'room' composites nothing here (the caller substitutes the scene's own
+	// background when it is customized); 'transparent' leaves alpha alone.
+	if (background.type === 'room' || background.type === 'transparent') return;
+	drawSceneBackground(ctx, width, height, background as SceneBackground, pixelScale);
 }
 
 export function drawPhotoFrame(

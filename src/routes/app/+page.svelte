@@ -7,6 +7,8 @@
 	import PhotoStickerLayer from '$lib/components/photomode/PhotoStickerLayer.svelte';
 	import PhotoFramePreview from '$lib/components/photomode/PhotoFramePreview.svelte';
 	import { photomodeStore, PHOTO_FILTERS } from '$lib/stores/photomode.svelte';
+	import { backgroundToCss, type SceneBackground } from '$lib/services/scene-backgrounds';
+	import { displayStore } from '$lib/stores/display.svelte';
 
 	// Live preview filter shared with the capture composite
 	const photoFilterCss = $derived(
@@ -14,6 +16,16 @@
 			? PHOTO_FILTERS[photomodeStore.filterId].css
 			: undefined
 	);
+
+	// The backdrop behind the (then transparent) GL canvas: a photo-mode
+	// override wins while posing; otherwise the persistent scene background.
+	const effectiveBackdrop = $derived.by((): SceneBackground | null => {
+		if (photomodeStore.active && photomodeStore.background.type !== 'room') {
+			return photomodeStore.background as SceneBackground;
+		}
+		if (displayStore.sceneBackground.type !== 'default') return displayStore.sceneBackground;
+		return null;
+	});
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
 	import Photoboard from '$lib/components/chat/Photoboard.svelte';
@@ -265,18 +277,14 @@
 				</div>
 			{/if}
 
-			<!-- Photo-mode background preview: the GL canvas goes transparent and
-			     this layer shows what the capture will composite behind her -->
-			{#if photomodeStore.active && photomodeStore.background.type !== 'room'}
-				{@const bg = photomodeStore.background}
+			<!-- Backdrop behind the transparent GL canvas: the persistent scene
+			     background in daily use, or the photo-mode override while posing.
+			     Captures composite the identical background. -->
+			{#if effectiveBackdrop}
 				<div
 					class="photo-bg-layer"
 					style:filter={photoFilterCss}
-					style:background={bg.type === 'solid'
-						? bg.value
-						: bg.type === 'gradient'
-							? `linear-gradient(180deg, ${bg.value})`
-							: 'repeating-conic-gradient(#d4d4d4 0% 25%, #f5f5f5 0% 50%) 0 0 / 22px 22px'}
+					style:background={backgroundToCss(effectiveBackdrop)}
 				></div>
 			{/if}
 

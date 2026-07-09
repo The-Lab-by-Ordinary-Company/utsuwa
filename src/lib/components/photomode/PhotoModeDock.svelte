@@ -12,6 +12,7 @@
 	import { loadPoseManifest, type PoseEntry } from '$lib/services/poses';
 	import { keepImage } from '$lib/services/storage/keepsakes';
 	import { isTauri } from '$lib/services/platform';
+	import { BACKGROUND_PRESETS, presetSwatch } from '$lib/services/scene-backgrounds';
 
 	type Tab = 'pose' | 'face' | 'scene' | 'camera' | 'sticker';
 	const TABS: Array<{ id: Tab; label: string }> = [
@@ -41,35 +42,14 @@
 		(vrmStore.availableExpressions ?? []).filter((name) => !HIDDEN_EXPRESSIONS.has(name))
 	);
 
-	const BACKGROUNDS: Array<{ id: string; label: string; bg: PhotoBackground; swatch: string }> = [
-		{ id: 'room', label: 'Room', bg: { type: 'room' }, swatch: 'var(--bg-tertiary)' },
-		{
-			id: 'transparent',
-			label: 'Clear',
-			bg: { type: 'transparent' },
-			swatch: 'repeating-conic-gradient(#d9d9d9 0% 25%, #ffffff 0% 50%) 0 0 / 10px 10px'
-		},
-		{ id: 'white', label: 'White', bg: { type: 'solid', value: '#ffffff' }, swatch: '#ffffff' },
-		{ id: 'black', label: 'Black', bg: { type: 'solid', value: '#0b0b0d' }, swatch: '#0b0b0d' },
-		{
-			id: 'mist',
-			label: 'Mist',
-			bg: { type: 'gradient', value: '#dfe9f3,#ffffff' },
-			swatch: 'linear-gradient(180deg, #dfe9f3, #ffffff)'
-		},
-		{
-			id: 'blossom',
-			label: 'Blossom',
-			bg: { type: 'gradient', value: '#fbd3e0,#fde8d7' },
-			swatch: 'linear-gradient(180deg, #fbd3e0, #fde8d7)'
-		},
-		{
-			id: 'lagoon',
-			label: 'Lagoon',
-			bg: { type: 'gradient', value: '#c2e9fb,#e0f7e9' },
-			swatch: 'linear-gradient(180deg, #c2e9fb, #e0f7e9)'
-		}
-	];
+	// Shared preset library; 'default' means "the scene as it is", which in
+	// photo terms is the room. Patterns and pastels included.
+	const BACKGROUNDS = BACKGROUND_PRESETS.map((preset) => ({
+		id: preset.id,
+		label: preset.id === 'default' ? 'Room' : preset.label,
+		bg: (preset.bg.type === 'default' ? { type: 'room' } : preset.bg) as PhotoBackground,
+		swatch: presetSwatch(preset)
+	}));
 
 	const FRAMES: Array<{ id: PhotoFrameId; label: string }> = [
 		{ id: 'none', label: 'None' },

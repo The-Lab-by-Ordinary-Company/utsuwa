@@ -28,6 +28,7 @@
 		drawPhotoVignette,
 		drawPhotoStickers
 	} from '$lib/services/photo-capture';
+	import { drawSceneBackground } from '$lib/services/scene-backgrounds';
 	import { PHOTO_FILTERS } from '$lib/stores/photomode.svelte';
 	import { onMount } from 'svelte';
 
@@ -113,7 +114,22 @@
 				// frames sit on top unfiltered, like real stickers would
 				const filterCss = PHOTO_FILTERS[options.filter]?.css ?? 'none';
 				ctx.filter = filterCss;
-				drawPhotoBackground(ctx, out.width, out.height, options.background);
+				// Patterns scale by CSS-to-capture pixel ratio so they bake at the
+				// same visual size the preview shows
+				const pixelScale = out.width / (glCanvas.clientWidth || out.width);
+				if (options.background.type === 'room' && displayStore.sceneBackground.type !== 'default') {
+					// Photo 'room' over a customized scene: composite the scene's own
+					// background, which the transparent GL canvas does not carry
+					drawSceneBackground(
+						ctx,
+						out.width,
+						out.height,
+						displayStore.sceneBackground,
+						pixelScale
+					);
+				} else {
+					drawPhotoBackground(ctx, out.width, out.height, options.background, pixelScale);
+				}
 				ctx.drawImage(glCanvas, 0, 0);
 				ctx.filter = 'none';
 				if (options.vignette) drawPhotoVignette(ctx, out.width, out.height);
@@ -211,11 +227,14 @@
 		}
 	});
 
-	// Any non-room photo background clears the GL canvas to transparent; the
-	// page shows a CSS preview behind it and the capture composites the real
-	// background, so what you see is what you save.
+	// Any custom backdrop (photo override, or the persistent scene background)
+	// clears the GL canvas to transparent; the page shows a CSS preview behind
+	// it and captures composite the same background, so what you see is what
+	// you save. Photo 'room' means "whatever the scene shows", including a
+	// customized scene background.
+	const sceneBgActive = $derived(!overlay && displayStore.sceneBackground.type !== 'default');
 	const photoTransparent = $derived(
-		photomodeStore.active && photomodeStore.background.type !== 'room'
+		(photomodeStore.active && photomodeStore.background.type !== 'room') || sceneBgActive
 	);
 
 	$effect(() => {
@@ -400,6 +419,8 @@
 	<T.Color attach="background" args={[backgroundColor]} />
 {/if}
 {#if !overlay && !$isPresenting && !(photomodeStore.active && photomodeStore.background.type !== 'room')}
+	<!-- The floor disc stays over the persistent scene background so she keeps
+	     her grounding in daily use; photo overrides hide it for clean shots -->
 	<T.Mesh rotation.x={-Math.PI / 2} position.y={0}>
 		<T.CircleGeometry args={[2.5, 64]} />
 		<T is={floorMaterial} />

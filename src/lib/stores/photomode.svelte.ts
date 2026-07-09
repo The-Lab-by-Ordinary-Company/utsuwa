@@ -4,9 +4,10 @@
 // UI behind the dock (app page). Exiting restores the live-companion loop.
 
 export interface PhotoBackground {
-	type: 'room' | 'transparent' | 'solid' | 'gradient';
-	// Solid: a CSS color. Gradient: a CSS linear-gradient string (also drawn
-	// into captures by the composite step).
+	type: 'room' | 'transparent' | 'solid' | 'gradient' | 'pattern';
+	// Solid: a CSS color. Gradient: "colorA,colorB". Pattern: a tile id from
+	// the shared scene-backgrounds preset library. All drawn into captures by
+	// the composite step exactly as previewed.
 	value?: string;
 }
 
