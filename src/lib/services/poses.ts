@@ -11,6 +11,9 @@ export interface PoseEntry {
 	id: string;
 	name: string;
 	file: string;
+	// Where in the clip to freeze, as a fraction of its duration (default 0).
+	// Motion clips read best held mid-gesture, not at their neutral first frame.
+	hold?: number;
 	thumbnail?: string;
 }
 

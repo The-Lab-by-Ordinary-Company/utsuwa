@@ -371,14 +371,17 @@
 		if (!targetVrm || !targetMixer) return;
 		const token = ++poseToken;
 
+		// A slower fade reads as easing into the pose rather than a hard cut
+		const POSE_FADE = 0.6;
+
 		if (poseId === null) {
 			// Natural: fade any pose out and hold the idle stance
 			if (poseAction) {
-				poseAction.fadeOut(0.3);
+				poseAction.fadeOut(POSE_FADE);
 				poseAction = null;
 			}
 			if (idleAction) {
-				idleAction.reset().fadeIn(0.3).play();
+				idleAction.reset().fadeIn(POSE_FADE).play();
 				idleAction.paused = true;
 			}
 			return;
@@ -396,16 +399,18 @@
 
 			const clip = createVRMAnimationClip(animation, targetVrm);
 			const previous = poseAction ?? idleAction;
-			if (previous) previous.fadeOut(0.3);
+			if (previous) previous.fadeOut(POSE_FADE);
 
 			const action = targetMixer.clipAction(clip);
 			action.reset();
 			action.setLoop(THREE.LoopOnce, 1);
 			action.clampWhenFinished = true;
-			action.fadeIn(0.3).play();
-			// Freeze on the first frame; the fade still blends the held pose in
+			action.fadeIn(POSE_FADE).play();
+			// Freeze at the clip's expressive moment (manifest hold, fraction of
+			// duration). Frame zero is a neutral stance on most motion clips, which
+			// made every placeholder pose look identical.
 			action.paused = true;
-			action.time = 0;
+			action.time = clip.duration * Math.min(Math.max(entry.hold ?? 0, 0), 0.99);
 			poseAction = action;
 		} catch (e) {
 			console.error('[PhotoMode] Failed to apply pose:', e);
@@ -435,11 +440,16 @@
 				}
 			} else if (!active && wasPhotoActive) {
 				if (poseAction) {
-					poseAction.fadeOut(0.3);
+					poseAction.fadeOut(0.6);
 					poseAction = null;
 				}
+				// Resume the frozen idle so the crossfade has live motion to blend
+				// from, then hand back to the cycler, which fades it out against a
+				// fresh idle clip and reschedules cycling. Starting a second idle at
+				// full weight here (the old path) blended two idles at once and made
+				// the resumed animation drift strangely.
 				if (idleAction) idleAction.paused = false;
-				startIdleAnimation(targetVrm, targetMixer);
+				playNextIdleAnimation(targetVrm, targetMixer);
 			}
 			wasPhotoActive = active;
 		});
@@ -516,7 +526,7 @@
 				);
 				if (name) {
 					if (reactionFace && reactionFace.name !== name) em.setValue(reactionFace.name, 0);
-					reactionFace = { name, weight: spec.weight, t: 0, duration: 1.4 };
+					reactionFace = { name, weight: spec.weight, t: 0, duration: 1.8 };
 				}
 			}
 
@@ -535,7 +545,7 @@
 				reactionPulse = {
 					bone: target,
 					t: 0,
-					duration: 0.55,
+					duration: 0.9,
 					magnitude: spec.impulse,
 					direction: Math.random() > 0.5 ? 1 : -1
 				};
@@ -877,7 +887,10 @@
 			if (progress >= 1) {
 				reactionPulse = null;
 			} else {
-				const envelope = Math.sin(progress * Math.PI) * Math.exp(-2.2 * progress);
+				// sin^2 has zero slope at both ends: the impulse eases in and out
+				// instead of clipping on
+				const wave = Math.sin(progress * Math.PI);
+				const envelope = wave * wave * Math.exp(-1.6 * progress);
 				const angle = reactionPulse.magnitude * 0.07 * envelope;
 				pulseRestore = {
 					bone: reactionPulse.bone,
@@ -900,7 +913,7 @@
 			} else {
 				// Quick attack, long release
 				const shape =
-					progress < 0.15 ? progress / 0.15 : 1 - Math.max(0, (progress - 0.55) / 0.45);
+					progress < 0.3 ? progress / 0.3 : 1 - Math.max(0, (progress - 0.5) / 0.5);
 				em.setValue(reactionFace.name, Math.max(0, Math.min(1, reactionFace.weight * shape)));
 			}
 		}
