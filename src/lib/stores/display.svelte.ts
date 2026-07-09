@@ -11,6 +11,11 @@ import {
 	type SidebarPosition
 } from './display-types';
 import { parseDisplaySettings, sanitizeCamera } from './display-parser';
+import {
+	resetChatDisplay as computeResetChatDisplay,
+	setChatDisplayMode as computeSetChatDisplayMode,
+	setSidebarPosition as computeSetSidebarPosition
+} from './display-store-logic';
 
 const STORAGE_KEY = 'utsuwa-display';
 
@@ -86,18 +91,23 @@ function createDisplayStore() {
 	}
 
 	function setChatDisplayMode(mode: ChatDisplayMode) {
-		chatDisplayMode = mode;
+		const next = computeSetChatDisplayMode({ chatDisplayMode, sidebarPosition }, mode);
+		chatDisplayMode = next.chatDisplayMode;
+		sidebarPosition = next.sidebarPosition;
 		save();
 	}
 
 	function setSidebarPosition(pos: SidebarPosition) {
-		sidebarPosition = pos;
+		const next = computeSetSidebarPosition({ chatDisplayMode, sidebarPosition }, pos);
+		chatDisplayMode = next.chatDisplayMode;
+		sidebarPosition = next.sidebarPosition;
 		save();
 	}
 
 	function resetChatDisplay() {
-		chatDisplayMode = DEFAULT_CHAT_DISPLAY_MODE;
-		sidebarPosition = DEFAULT_SIDEBAR_POSITION;
+		const next = computeResetChatDisplay();
+		chatDisplayMode = next.chatDisplayMode;
+		sidebarPosition = next.sidebarPosition;
 		save();
 	}
 

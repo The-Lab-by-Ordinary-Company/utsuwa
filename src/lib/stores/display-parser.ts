@@ -9,7 +9,7 @@ import {
 	type SidebarPosition
 } from './display-types.ts';
 
-export const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 export function sanitizeCamera(raw: Partial<CameraSettings> | undefined): CameraSettings {
 	return {

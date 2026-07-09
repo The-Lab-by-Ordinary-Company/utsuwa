@@ -53,6 +53,27 @@
 			chatStore.clearMessages();
 		}
 	}
+
+	// Light markdown rendering for the most common LLM formatting.
+	// HTML is escaped first, so only the whitelisted inline tags are injected.
+	function renderMarkdown(text: string): string {
+		let html = text
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
+
+		html = html
+			.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+			.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+			.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+			.replace(/___([^_]+)___/g, '<strong><em>$1</em></strong>')
+			.replace(/__([^_]+)__/g, '<strong>$1</strong>')
+			.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+		html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+		return html;
+	}
 </script>
 
 <div
@@ -100,7 +121,7 @@
 				{@const isLastAssistant = msg.id === lastAssistantId}
 				<div class="message" class:user={msg.role === 'user'} class:assistant={msg.role === 'assistant'}>
 					<div class="bubble" class:speaking={isLastAssistant && isTyping}>
-						<p>{msg.content}</p>
+						<p>{@html renderMarkdown(msg.content)}</p>
 					</div>
 				</div>
 			{/each}
@@ -242,6 +263,26 @@
 
 	.bubble p {
 		margin: 0;
+	}
+
+	.bubble :global(strong) {
+		font-weight: 600;
+	}
+
+	.bubble :global(em) {
+		font-style: italic;
+	}
+
+	.bubble :global(code) {
+		font-family: var(--font-mono);
+		font-size: 0.875em;
+		padding: 0.125rem 0.375rem;
+		border-radius: var(--radius-sm);
+		background: rgba(0, 0, 0, 0.06);
+	}
+
+	:global(.dark) .bubble :global(code) {
+		background: rgba(255, 255, 255, 0.1);
 	}
 
 	.empty-hint {
