@@ -62,8 +62,10 @@
 	// Speech bubble state
 	let latestResponse = $state('');
 	let isTyping = $state(false);
-	// Chat sidebar state
-	let sidebarOpen = $state(false);
+	// Chat sidebar state — start open when sidebar mode is enabled
+	let sidebarOpen = $state(
+		displayStore.chatDisplayMode === 'sidebar' || displayStore.chatDisplayMode === 'both'
+	);
 	const showBubble = $derived(
 		displayStore.chatDisplayMode === 'bubble' || displayStore.chatDisplayMode === 'both'
 	);
