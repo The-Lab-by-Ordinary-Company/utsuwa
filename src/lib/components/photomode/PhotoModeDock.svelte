@@ -15,14 +15,14 @@
 
 	type Tab = 'pose' | 'face' | 'scene' | 'camera' | 'sticker';
 	const TABS: Array<{ id: Tab; label: string }> = [
+		{ id: 'camera', label: 'Camera' },
 		{ id: 'pose', label: 'Pose' },
 		{ id: 'face', label: 'Face' },
 		{ id: 'scene', label: 'Scene' },
-		{ id: 'camera', label: 'Camera' },
 		{ id: 'sticker', label: 'Sticker' }
 	];
 
-	let tab = $state<Tab>('pose');
+	let tab = $state<Tab>('camera');
 	let collapsed = $state(false);
 	let poses = $state<PoseEntry[]>([]);
 	let capturing = $state(false);
@@ -321,7 +321,21 @@
 					{/each}
 				</div>
 				{#if photomodeStore.stickers.length > 0}
-					<span class="hint">Drag to move. Scroll to resize. Double-click to remove.</span>
+					<span class="mini-label">On the shot</span>
+					{#each photomodeStore.stickers as active, i (active.id)}
+						<div class="sticker-row">
+							<img class="sticker-thumb" src={active.src} alt="" />
+							<span class="sticker-name">Sticker {i + 1}</span>
+							<button
+								class="header-btn"
+								aria-label="Remove sticker"
+								onclick={() => photomodeStore.removeSticker(active.id)}
+							>
+								<Icon name="x" size={13} />
+							</button>
+						</div>
+					{/each}
+					<span class="hint">Drag to move. Scroll to resize. Double-click also removes.</span>
 				{:else}
 					<span class="hint">Add a sticker, then drag it anywhere on the shot.</span>
 				{/if}
@@ -393,7 +407,7 @@
 	.panel-pill {
 		position: fixed;
 		top: 1rem;
-		right: 1rem;
+		left: 1rem;
 		z-index: 45;
 		display: flex;
 		align-items: center;
@@ -417,7 +431,7 @@
 	.photo-panel {
 		position: fixed;
 		top: 1rem;
-		right: 1rem;
+		left: 1rem;
 		z-index: 45;
 		width: 272px;
 		max-height: calc(100vh - 2rem);
@@ -634,6 +648,28 @@
 		font-size: 0.66rem;
 		color: var(--text-tertiary);
 		line-height: 1.4;
+	}
+
+	.sticker-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.25rem 0.375rem;
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-md);
+		background: var(--bg-secondary);
+	}
+
+	.sticker-thumb {
+		width: 34px;
+		height: 18px;
+		object-fit: contain;
+	}
+
+	.sticker-name {
+		flex: 1;
+		font-size: 0.7rem;
+		color: var(--text-secondary);
 	}
 
 	.capture-row {
