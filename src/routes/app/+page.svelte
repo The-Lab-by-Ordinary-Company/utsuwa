@@ -256,6 +256,20 @@
 				</div>
 			{/if}
 
+			<!-- Photo-mode background preview: the GL canvas goes transparent and
+			     this layer shows what the capture will composite behind her -->
+			{#if photomodeStore.active && photomodeStore.background.type !== 'room'}
+				{@const bg = photomodeStore.background}
+				<div
+					class="photo-bg-layer"
+					style:background={bg.type === 'solid'
+						? bg.value
+						: bg.type === 'gradient'
+							? `linear-gradient(180deg, ${bg.value})`
+							: 'repeating-conic-gradient(#d4d4d4 0% 25%, #f5f5f5 0% 50%) 0 0 / 22px 22px'}
+				></div>
+			{/if}
+
 			<!-- The avatar resolves into focus once the model is ready -->
 			<div class="vrm-stage" class:is-loading={vrmStore.isLoading || !vrmStore.modelUrl}>
 				<VrmScene />
@@ -346,9 +360,18 @@
 		z-index: 0;
 	}
 
+	/* Photo-mode background preview sits behind the transparent GL canvas */
+	.photo-bg-layer {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+	}
+
 	/* The scene sits blurred and dimmed while the model loads, then resolves
 	   into focus. Base state carries no filter so nothing lingers after. */
 	.vrm-stage {
+		position: relative;
+		z-index: 1; /* above the photo background layer */
 		height: 100%;
 		transition:
 			opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),

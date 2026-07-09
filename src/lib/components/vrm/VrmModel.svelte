@@ -8,6 +8,8 @@
 	import { displayStore } from '$lib/stores/display.svelte';
 	import { photomodeStore } from '$lib/stores/photomode.svelte';
 	import { loadPoseAnimation, loadPoseManifest } from '$lib/services/poses';
+	import { pickReaction, stageTier, type TouchZone } from '$lib/engine/photo-reactions';
+	import { characterStore } from '$lib/stores/character.svelte';
 	import {
 		computeSpringJointParams,
 		clampFrameDelta,
@@ -449,6 +451,92 @@
 		});
 	});
 
+	// Held photo expression: applied exclusively, cleared on change and exit.
+	// Tap reactions layer a transient expression on top and restore this one.
+	let heldExpression: string | null = null;
+	$effect(() => {
+		const active = photomodeStore.active;
+		const name = photomodeStore.selectedExpression;
+		untrack(() => {
+			const em = vrm?.expressionManager;
+			if (!em) return;
+			if (heldExpression && heldExpression !== name) {
+				em.setValue(heldExpression, 0);
+				heldExpression = null;
+			}
+			if (active && name) {
+				em.setValue(name, 1);
+				heldExpression = name;
+			}
+		});
+	});
+
+	// Tap reactions: an expression flash plus a decaying rotation nudge whose
+	// motion the spring bones inherit. Repeat taps inside the window escalate.
+	let reactionPulse: {
+		bone: THREE.Object3D;
+		t: number;
+		duration: number;
+		magnitude: number;
+		direction: number;
+	} | null = null;
+	let reactionFace: { name: string; weight: number; t: number; duration: number } | null = null;
+	const recentTaps = { zone: null as TouchZone | null, at: 0, count: 0 };
+	const REACTION_REPEAT_WINDOW_MS = 4000;
+
+	$effect(() => {
+		const request = photomodeStore.reactionRequest;
+		if (!request) return;
+		untrack(() => {
+			const targetVrm = vrm;
+			if (!targetVrm || !photomodeStore.active) return;
+
+			const now = performance.now();
+			if (recentTaps.zone === request.zone && now - recentTaps.at < REACTION_REPEAT_WINDOW_MS) {
+				recentTaps.count += 1;
+			} else {
+				recentTaps.count = 0;
+			}
+			recentTaps.zone = request.zone;
+			recentTaps.at = now;
+
+			const tier = stageTier(characterStore.state.relationshipStage);
+			const spec = pickReaction(request.zone, tier, recentTaps.count);
+
+			const em = targetVrm.expressionManager;
+			if (em) {
+				const name = spec.expressions.find((candidate) =>
+					em.expressions.some((e) => e.expressionName === candidate)
+				);
+				if (name) {
+					if (reactionFace && reactionFace.name !== name) em.setValue(reactionFace.name, 0);
+					reactionFace = { name, weight: spec.weight, t: 0, duration: 1.4 };
+				}
+			}
+
+			const bone =
+				request.zone === 'head' || request.zone === 'face'
+					? targetVrm.humanoid.getNormalizedBoneNode('head')
+					: request.zone === 'shoulder'
+						? (targetVrm.humanoid.getNormalizedBoneNode('upperChest') ??
+							targetVrm.humanoid.getNormalizedBoneNode('chest'))
+						: request.zone === 'torso'
+							? targetVrm.humanoid.getNormalizedBoneNode('spine')
+							: targetVrm.humanoid.getNormalizedBoneNode('hips');
+			const fallback = targetVrm.humanoid.getNormalizedBoneNode('spine');
+			const target = bone ?? fallback;
+			if (target) {
+				reactionPulse = {
+					bone: target,
+					t: 0,
+					duration: 0.55,
+					magnitude: spec.impulse,
+					direction: Math.random() > 0.5 ? 1 : -1
+				};
+			}
+		});
+	});
+
 	// Update lip-sync analyser when TTS state changes
 	$effect(() => {
 		lipSyncAnalyzer.setAnalyser(ttsStore.currentAnalyser);
@@ -751,6 +839,10 @@
 				vrm = null;
 				group = null;
 				springBase = [];
+				poseAction = null;
+				reactionPulse = null;
+				reactionFace = null;
+				heldExpression = null;
 			}
 		};
 	});
@@ -766,6 +858,40 @@
 
 		// Update animation mixer
 		mixer?.update(delta);
+
+		// Photo-mode tap reaction: a decaying additive nudge layered on top of
+		// the mixer's held pose each frame (the mixer rewrites transforms, so
+		// this never accumulates), applied before vrm.update so the spring
+		// bones inherit the motion.
+		if (reactionPulse) {
+			reactionPulse.t += delta;
+			const progress = reactionPulse.t / reactionPulse.duration;
+			if (progress >= 1) {
+				reactionPulse = null;
+			} else {
+				const envelope = Math.sin(progress * Math.PI) * Math.exp(-2.2 * progress);
+				const angle = reactionPulse.magnitude * 0.14 * envelope;
+				reactionPulse.bone.rotation.z += angle * reactionPulse.direction;
+				reactionPulse.bone.rotation.x -= angle * 0.6;
+			}
+		}
+		if (reactionFace && vrm.expressionManager) {
+			reactionFace.t += delta;
+			const progress = reactionFace.t / reactionFace.duration;
+			const em = vrm.expressionManager;
+			if (progress >= 1) {
+				em.setValue(reactionFace.name, 0);
+				if (heldExpression && heldExpression !== reactionFace.name) {
+					em.setValue(heldExpression, 1);
+				}
+				reactionFace = null;
+			} else {
+				// Quick attack, long release
+				const shape =
+					progress < 0.15 ? progress / 0.15 : 1 - Math.max(0, (progress - 0.55) / 0.45);
+				em.setValue(reactionFace.name, Math.max(0, Math.min(1, reactionFace.weight * shape)));
+			}
+		}
 
 		// Update VRM core. The delta is clamped because a huge frame gap (tab
 		// refocus, window drag) otherwise launches the spring bones violently.

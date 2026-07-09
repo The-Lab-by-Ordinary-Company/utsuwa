@@ -4,15 +4,25 @@
 	import { T, useThrelte, useTask } from '@threlte/core';
 	import { useXR } from '@threlte/xr';
 	import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-	import { ShaderMaterial, Color, Box3, Vector3, PerspectiveCamera, Group } from 'three';
+	import {
+		ShaderMaterial,
+		Color,
+		Box3,
+		Vector3,
+		Vector2,
+		Raycaster,
+		PerspectiveCamera,
+		Group
+	} from 'three';
 	import type { VRM } from '@pixiv/three-vrm';
 	import ArPlacement from './ArPlacement.svelte';
 	import VrmModel from './VrmModel.svelte';
 	import OverlayRaycastHandler from '$lib/components/overlay/OverlayRaycastHandler.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
-	import { photomodeStore } from '$lib/stores/photomode.svelte';
-	import { screenshotStore } from '$lib/stores/screenshot.svelte';
+	import { photomodeStore, type CaptureOptions } from '$lib/stores/photomode.svelte';
+	import { bucketTouchZone } from '$lib/services/photo-touch';
+	import { drawPhotoFrame, drawPhotoBackground } from '$lib/services/photo-capture';
 	import { onMount } from 'svelte';
 
 	// Backdrop colors per theme
@@ -68,17 +78,89 @@
 		const observer = new MutationObserver(checkDarkMode);
 		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-		// Register screenshot handler
-		screenshotStore.register(() => {
-			if (renderer && scene && camera.current) {
+		// Photo-mode capture: render one supersampled frame in place (the canvas
+		// has preserveDrawingBuffer), composite background and frame on a 2D
+		// canvas, and hand back a PNG blob. Restores the live pixel ratio after.
+		const unregisterCapture = photomodeStore.registerCapture(async (options: CaptureOptions) => {
+			if (!renderer || !scene || !camera.current) return null;
+			const glCanvas = renderer.domElement;
+			const prevRatio = renderer.getPixelRatio();
+			// Cap the supersample so width/height never exceed the GPU texture limit
+			const maxTex = renderer.capabilities.maxTextureSize;
+			const scale = Math.min(
+				options.scale,
+				maxTex / glCanvas.width || 1,
+				maxTex / glCanvas.height || 1
+			);
+			try {
+				if (scale !== 1) {
+					renderer.setPixelRatio(prevRatio * scale);
+				}
 				renderer.render(scene, camera.current);
-				const dataUrl = renderer.domElement.toDataURL('image/png');
-				const link = document.createElement('a');
-				link.download = `utsuwa-screenshot-${Date.now()}.png`;
-				link.href = dataUrl;
-				link.click();
+
+				const out = document.createElement('canvas');
+				out.width = glCanvas.width;
+				out.height = glCanvas.height;
+				const ctx = out.getContext('2d');
+				if (!ctx) return null;
+				drawPhotoBackground(ctx, out.width, out.height, options.background);
+				ctx.drawImage(glCanvas, 0, 0);
+				drawPhotoFrame(ctx, out.width, out.height, options.frame);
+
+				return await new Promise<Blob | null>((resolve) =>
+					out.toBlob((blob) => resolve(blob), 'image/png')
+				);
+			} finally {
+				if (scale !== 1) {
+					renderer.setPixelRatio(prevRatio);
+					renderer.render(scene, camera.current);
+				}
 			}
 		});
+
+		// Tap reactions: commit the raycast target at pointerdown (the camera can
+		// drift before pointerup), fire only if the gesture stays a tap so orbit
+		// drags never trigger her.
+		const canvas = renderer?.domElement;
+		let tapCandidate: { zone: ReturnType<typeof bucketTouchZone>; x: number; y: number; at: number } | null = null;
+		const raycaster = new Raycaster();
+		const pointerNdc = new Vector2();
+
+		function onPointerDown(e: PointerEvent) {
+			if (!photomodeStore.active || !renderer || !camera.current) return;
+			const vrm = vrmStore.vrm;
+			if (!vrm) return;
+			const rect = renderer.domElement.getBoundingClientRect();
+			pointerNdc.set(
+				((e.clientX - rect.left) / rect.width) * 2 - 1,
+				-((e.clientY - rect.top) / rect.height) * 2 + 1
+			);
+			raycaster.setFromCamera(pointerNdc, camera.current);
+			const hits = raycaster.intersectObject(vrm.scene, true);
+			if (hits.length === 0) {
+				tapCandidate = null;
+				return;
+			}
+			tapCandidate = {
+				zone: bucketTouchZone(vrm, hits[0].point),
+				x: e.clientX,
+				y: e.clientY,
+				at: performance.now()
+			};
+		}
+
+		function onPointerUp(e: PointerEvent) {
+			if (!tapCandidate) return;
+			const moved = Math.hypot(e.clientX - tapCandidate.x, e.clientY - tapCandidate.y);
+			const elapsed = performance.now() - tapCandidate.at;
+			if (tapCandidate.zone && moved < 8 && elapsed < 450) {
+				photomodeStore.requestReaction(tapCandidate.zone);
+			}
+			tapCandidate = null;
+		}
+
+		canvas?.addEventListener('pointerdown', onPointerDown);
+		canvas?.addEventListener('pointerup', onPointerUp);
 
 		// Set transparent background for overlay mode
 		if (overlay) {
@@ -93,8 +175,27 @@
 
 		return () => {
 			observer.disconnect();
-			screenshotStore.unregister();
+			unregisterCapture();
+			canvas?.removeEventListener('pointerdown', onPointerDown);
+			canvas?.removeEventListener('pointerup', onPointerUp);
 		};
+	});
+
+	// Any non-room photo background clears the GL canvas to transparent; the
+	// page shows a CSS preview behind it and the capture composites the real
+	// background, so what you see is what you save.
+	const photoTransparent = $derived(
+		photomodeStore.active && photomodeStore.background.type !== 'room'
+	);
+
+	$effect(() => {
+		if (!renderer || overlay) return;
+		if (photoTransparent) {
+			renderer.setClearColor(0x000000, 0);
+			return () => {
+				renderer.setClearColor(0x000000, 1);
+			};
+		}
 	});
 
 	const backgroundColor = $derived(
@@ -261,9 +362,12 @@
 	<OverlayRaycastHandler />
 {/if}
 
-<!-- Backdrop + floor (hidden in overlay mode and AR passthrough) -->
-{#if !overlay && !$isPresenting}
+<!-- Backdrop + floor (hidden in overlay mode, AR passthrough, and photo
+     backgrounds, which render through a transparent canvas + composite) -->
+{#if !overlay && !$isPresenting && !photoTransparent}
 	<T.Color attach="background" args={[backgroundColor]} />
+{/if}
+{#if !overlay && !$isPresenting && !(photomodeStore.active && photomodeStore.background.type !== 'room')}
 	<T.Mesh rotation.x={-Math.PI / 2} position.y={0}>
 		<T.CircleGeometry args={[2.5, 64]} />
 		<T is={floorMaterial} />
