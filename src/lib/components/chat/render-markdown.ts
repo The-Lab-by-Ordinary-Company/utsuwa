@@ -17,7 +17,7 @@ export function renderMarkdown(text: string): string {
 		.replace(/\*([^*]+)\*/g, '<em>$1</em>')
 		.replace(/___([^_]+)___/g, '<strong><em>$1</em></strong>')
 		.replace(/__([^_]+)__/g, '<strong>$1</strong>')
-		.replace(/_([^_]+)_/g, '<em>$1</em>');
+		.replace(/\b_(?!\s)([^_]*(?:_[^_]+)*)_(?<!\s)\b/g, '<em>$1</em>');
 
 	html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 

@@ -31,6 +31,10 @@ function isSidebarPosition(value: unknown): value is SidebarPosition {
 	return value === 'left' || value === 'right';
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 export interface ParsedDisplaySettings {
 	camera: CameraSettings;
 	overlayCamera: CameraSettings;
@@ -47,12 +51,13 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 	let parsed: Record<string, unknown> | null = null;
 	if (typeof raw === 'string') {
 		try {
-			parsed = JSON.parse(raw) as Record<string, unknown>;
+			const parsedValue = JSON.parse(raw);
+			parsed = isPlainObject(parsedValue) ? parsedValue : null;
 		} catch {
 			parsed = null;
 		}
-	} else if (raw && typeof raw === 'object') {
-		parsed = raw as Record<string, unknown>;
+	} else if (isPlainObject(raw)) {
+		parsed = raw;
 	}
 
 	if (!parsed) {
@@ -76,8 +81,9 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 				: { ...camera };
 	} else if (typeof parsed.cameraDistance === 'number') {
 		// Legacy setting predating auto-fit: old default distance was 2.0
-		camera = sanitizeCamera({ zoom: 2.0 / parsed.cameraDistance });
-		overlayCamera = { ...CAMERA_DEFAULTS };
+		const legacyCamera = sanitizeCamera({ zoom: 2.0 / parsed.cameraDistance });
+		camera = legacyCamera;
+		overlayCamera = { ...legacyCamera };
 	} else {
 		camera = { ...CAMERA_DEFAULTS };
 		overlayCamera = { ...CAMERA_DEFAULTS };

@@ -45,6 +45,10 @@ test('leaves underscores inside words untouched', () => {
 	assert.equal(renderMarkdown('hello_world'), 'hello_world');
 });
 
+test('renders a phrase with internal underscores as italic', () => {
+	assert.equal(renderMarkdown('_hello_world_'), '<em>hello_world</em>');
+});
+
 test('leaves plain text untouched', () => {
 	const input = 'Just a normal sentence.';
 	assert.equal(renderMarkdown(input), input);

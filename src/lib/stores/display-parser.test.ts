@@ -25,6 +25,18 @@ test('returns defaults for invalid JSON string', () => {
 	assert.equal(result.sidebarPosition, DEFAULT_SIDEBAR_POSITION);
 });
 
+test('returns defaults for JSON null', () => {
+	const result = parseDisplaySettings('null');
+	assert.deepEqual(result.camera, CAMERA_DEFAULTS);
+	assert.deepEqual(result.overlayCamera, CAMERA_DEFAULTS);
+});
+
+test('returns defaults for JSON array', () => {
+	const result = parseDisplaySettings('[1,2,3]');
+	assert.deepEqual(result.camera, CAMERA_DEFAULTS);
+	assert.deepEqual(result.overlayCamera, CAMERA_DEFAULTS);
+});
+
 test('parses valid settings object', () => {
 	const result = parseDisplaySettings({
 		camera: { fov: 45, zoom: 1.5, height: 0.1 },
@@ -82,7 +94,7 @@ test('clamps out-of-range camera values', () => {
 test('migrates legacy cameraDistance setting', () => {
 	const result = parseDisplaySettings({ cameraDistance: 2.0 });
 	assert.equal(result.camera.zoom, 1);
-	assert.deepEqual(result.overlayCamera, CAMERA_DEFAULTS);
+	assert.deepEqual(result.overlayCamera, result.camera);
 });
 
 test('uses main camera for overlay camera when overlay camera is missing', () => {
