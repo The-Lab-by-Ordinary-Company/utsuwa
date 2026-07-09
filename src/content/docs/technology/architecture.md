@@ -223,6 +223,38 @@ $effect(() => {
 });
 ```
 
+### Photo Mode
+
+A studio inside the scene: poses, expressions, backgrounds, filters, frames, stickers, head tracking, and high-resolution capture.
+
+**Key files:**
+- `src/lib/stores/photomode.svelte.ts` — mode state, session-only lens override, capture options
+- `src/lib/services/poses.ts` — pose manifest loading (`/static/poses/manifest.json`) with cached VRMA animations; adding a pose is a data change
+- `src/lib/services/scene-backgrounds.ts` — shared background preset library: gradients as CSS values, patterns as procedurally drawn canvas tiles reused for the live preview and capture compositing
+- `src/lib/services/photo-capture.ts` — capture composite helpers (backgrounds, frames, vignette, stickers)
+- `src/lib/components/photomode/` — the tabbed panel, draggable sticker layer, and frame preview
+
+Captures render one supersampled frame in place (the canvas keeps its drawing buffer), then composite the background, filter, vignette, frame, and stickers on a 2D canvas so the saved PNG matches the preview exactly. Photo captures are stored under a separate keepsake kind and never appear on the photoboard.
+
+### Tap Reactions and Physics
+
+- `src/lib/services/photo-touch.ts` — buckets a raycast tap into a coarse touch zone by nearest humanoid bone
+- `src/lib/engine/photo-reactions.ts` — the data-driven reaction table keyed on zone and relationship tier; repeat taps escalate and cool down. This file is the single knob for tone tuning
+- `src/lib/engine/spring-physics.ts` — the physics intensity mapping (multipliers over each rig's authored spring values, clamped to stable ranges) and the frame-delta clamp that prevents spring-bone blowups after tab refocus
+
+Reactions work in the chat view and photo mode alike: an expression flash plus a decaying bone nudge that only the spring physics inherits.
+
+### Reminders and Scheduling
+
+Companion-scheduled tasks and timers, multi-window aware.
+
+**Key files:**
+- `src/lib/utils/reminders.ts` — reminder tag parsing (`[reminder:5min]...[/reminder]`), natural-language fallback extraction, and pure policy helpers
+- `src/lib/stores/reminders.svelte.ts` — the poll loop: fires due reminders, reports missed ones, coordinates across windows via `BroadcastChannel` with an atomic claim so the LLM reacts exactly once
+- `src/lib/services/chat/reminder-chat.ts` — delivers fired reminders through the chat pipeline as system events
+
+Fired reminders enter the prompt as an `<event>` layer rather than a user turn and skip all relationship-state mutation. See the Companion System doc for the systemEvent turn path.
+
 ### Storage Layer
 
 All data persists client-side via IndexedDB using Dexie.js.

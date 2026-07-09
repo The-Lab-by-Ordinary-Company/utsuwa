@@ -88,6 +88,9 @@ Overlay mode detaches your companion into a transparent, always-on-top window:
 - **Floating Chat**: Click the chat icon at the bottom to expand a chat input
 - **Speech Bubbles**: Responses appear in a docked dialog bubble above the bottom controls (the window moves around, so a head-tracking bubble would be unreadable)
 - **Status Indicator**: The mood/relationship status pill appears above the chat icon
+- **Resizable**: Drag the top-left corner tab to resize the overlay; the size is remembered across launches
+- **Lockable**: The lock button in the hover controls pins the overlay in place so clicks cannot drag it
+- **Overlay Camera**: The hover controls include a camera panel with zoom, height, and field-of-view sliders independent from the main window's framing
 
 #### Controls
 

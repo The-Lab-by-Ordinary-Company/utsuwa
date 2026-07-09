@@ -55,6 +55,10 @@
 - **VRM Model Viewer**: Load and display VRM 3D avatar models with orbit controls, automatic camera framing per model, and live camera settings (zoom, height, field of view)
 - **Developer Tools**: Test VRM facial expressions and animations, or upload a temporary `.vrm` file for a non-persistent preview that reverts when you leave the page
 - **AR Mode**: On WebXR-capable devices (Android Chrome, headset browsers), place your companion on your real floor, drag her around, and pinch to resize
+- **Photo Mode**: Pose her from a pose library, set her expression, pick a background, add a color filter, vignette, or frame, drop draggable stickers on the shot, and capture in high resolution with a quick snap or self-timer. Head tracking keeps her eyes on your camera while she holds the pose
+- **Touch Reactions**: Tap her and she reacts with an expression and a physics ripple through hair and clothes. Reactions depend on where you tap and how close the two of you are
+- **Scene Backgrounds**: Swap the backdrop behind her for pastel gradients or cute patterns (dots, hearts, sparkles, stripes, gingham) right from the Controls panel; your pick persists
+- **Physics Intensity**: A Movement slider from Subtle to Lively scales how much her hair and outfit respond to motion, respecting each model's own rig tuning
 - **Model-Centric UI**: Full-screen 3D model with unobtrusive overlay controls
 - **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
 - **Chat Interface**: Bottom-centered input bar with streaming responses
@@ -317,6 +321,14 @@ pnpm tauri build  # Build desktop app installer
 - [x] In-app auto-updates for the desktop app
 - [x] Show companion images (multimodal vision) with a keepsake photo board
 - [x] Custom OpenAI-compatible LLM endpoint (OpenRouter, Together, Mistral, vLLM, LiteLLM, ...)
+- [x] AR mode on WebXR-capable devices
+- [x] Live camera settings (zoom, height, field of view) with per-overlay profiles
+- [x] Context window control with memory scaling and history truncation
+- [x] Reminders and timers with an alarm dropdown, multi-window aware
+- [x] Photo mode: poses, expressions, backgrounds, filters, frames, stickers, head tracking, high-res capture
+- [x] Relationship-staged touch reactions
+- [x] Persistent scene backgrounds (pastel gradients and patterns)
+- [x] Spring-bone physics intensity slider
 
 ### In Progress / Planned
 
