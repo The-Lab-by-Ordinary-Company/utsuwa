@@ -966,10 +966,12 @@
 					lookDir.negate();
 				}
 				const yaw = THREE.MathUtils.clamp(Math.atan2(lookDir.x, lookDir.z), -0.65, 0.65);
+				// Asymmetric pitch range: looking up reads charming well past where
+				// looking down starts to double the chin
 				const pitch = THREE.MathUtils.clamp(
 					-Math.asin(THREE.MathUtils.clamp(lookDir.y, -1, 1)),
-					-0.35,
-					0.3
+					-0.62,
+					0.32
 				);
 				lookEuler.set(pitch, yaw, 0, 'YXZ');
 				lookQuat.setFromEuler(lookEuler);
