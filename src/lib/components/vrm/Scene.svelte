@@ -11,6 +11,7 @@
 	import OverlayRaycastHandler from '$lib/components/overlay/OverlayRaycastHandler.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
+	import { photomodeStore } from '$lib/stores/photomode.svelte';
 	import { screenshotStore } from '$lib/stores/screenshot.svelte';
 	import { onMount } from 'svelte';
 
@@ -174,13 +175,54 @@
 		}
 	}
 
-	// Re-frame when the model or the camera settings change
+	// Re-frame when the model or the camera settings change. In photo mode the
+	// user owns the framing, so FOV changes only adjust the lens in place
+	// instead of snapping the camera back to the fitted position.
 	$effect(() => {
 		void vrmStore.vrm;
 		void camSettings.fov;
 		void camSettings.zoom;
 		void camSettings.height;
+		if (photomodeStore.active) {
+			const cam = camera.current;
+			if (cam instanceof PerspectiveCamera) {
+				cam.fov = camSettings.fov;
+				cam.updateProjectionMatrix();
+			}
+			return;
+		}
 		applyCamera();
+	});
+
+	// The dock's reset chip explicitly asks for the fitted framing back
+	$effect(() => {
+		void photomodeStore.reframeCounter;
+		if (photomodeStore.active) applyCamera();
+	});
+
+	// Photo-mode camera profile: damping for deliberate motion, a wider zoom
+	// range for close portraits and full-body shots, and a polar clamp that
+	// keeps the camera above the floor. Exiting restores the chat profile and
+	// re-applies the fitted framing.
+	$effect(() => {
+		if (!controls) return;
+		if (photomodeStore.active) {
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.08;
+			controls.minDistance = 0.3;
+			controls.maxDistance = 8;
+			controls.minPolarAngle = 0.05;
+			controls.maxPolarAngle = Math.PI * 0.6;
+			return () => {
+				if (!controls) return;
+				controls.enableDamping = false;
+				controls.minDistance = 0;
+				controls.maxDistance = Infinity;
+				controls.minPolarAngle = 0;
+				controls.maxPolarAngle = Math.PI;
+				applyCamera();
+			};
+		}
 	});
 
 	// Setup OrbitControls (skip when locked)

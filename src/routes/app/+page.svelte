@@ -3,6 +3,8 @@
 	import FloatingStatIndicators from '$lib/components/ui/FloatingStatIndicators.svelte';
 	import { TopRightButtons, TopLeftButtons, InfoModal } from '$lib/components/ui';
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
+	import PhotoModeDock from '$lib/components/photomode/PhotoModeDock.svelte';
+	import { photomodeStore } from '$lib/stores/photomode.svelte';
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
 	import Photoboard from '$lib/components/chat/Photoboard.svelte';
@@ -209,14 +211,16 @@
 </script>
 
 <div class="app-container">
-	<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} onBoardClick={() => showBoard = true} />
-	<TopRightButtons
-		onInfoClick={() => showInfoModal = true}
-		upcomingReminders={reminderStore.upcoming}
-		onDeleteReminder={reminderStore.deleteReminder}
-		recentFired={reminderStore.recentFired}
-		onDismissRecentFired={reminderStore.dismissRecentFired}
-	/>
+	{#if !photomodeStore.active}
+		<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} onBoardClick={() => showBoard = true} />
+		<TopRightButtons
+			onInfoClick={() => showInfoModal = true}
+			upcomingReminders={reminderStore.upcoming}
+			onDeleteReminder={reminderStore.deleteReminder}
+			recentFired={reminderStore.recentFired}
+			onDismissRecentFired={reminderStore.dismissRecentFired}
+		/>
+	{/if}
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />
 	{/if}
@@ -258,27 +262,31 @@
 			</div>
 		</div>
 
-		<!-- Floating Stat Indicators -->
-		<FloatingStatIndicators />
+		{#if !photomodeStore.active}
+			<!-- Floating Stat Indicators -->
+			<FloatingStatIndicators />
 
-		<!-- Speech Bubble (shows latest response, click to dismiss) -->
-		<SpeechBubble
-			message={latestResponse}
-			isTyping={isTyping}
-			onHide={handleBubbleHide}
-		/>
+			<!-- Speech Bubble (shows latest response, click to dismiss) -->
+			<SpeechBubble
+				message={latestResponse}
+				isTyping={isTyping}
+				onHide={handleBubbleHide}
+			/>
 
-		<!-- The image she's being shown, floated above her head while she considers it -->
-		<ThinkingImages images={thinkingImages} show={isTyping} />
+			<!-- The image she's being shown, floated above her head while she considers it -->
+			<ThinkingImages images={thinkingImages} show={isTyping} />
 
-		<!-- Bottom Chat Bar -->
-		<BottomChatBar
-			onSend={handleSend}
-			disabled={chatStore.isLoading}
-			{visionCapable}
-			providerLabel={imageProvider.label}
-			providerIsLocal={imageProvider.isLocal}
-		/>
+			<!-- Bottom Chat Bar -->
+			<BottomChatBar
+				onSend={handleSend}
+				disabled={chatStore.isLoading}
+				{visionCapable}
+				providerLabel={imageProvider.label}
+				providerIsLocal={imageProvider.isLocal}
+			/>
+		{:else}
+			<PhotoModeDock />
+		{/if}
 
 		<!-- Error toast for chat errors -->
 		{#if chatStore.error}
@@ -295,8 +303,8 @@
 			</div>
 		{/if}
 
-		<!-- Event Scene Overlay -->
-		{#if activeEvent?.scene}
+		<!-- Event Scene Overlay (deferred while posing; renders on exit) -->
+		{#if activeEvent?.scene && !photomodeStore.active}
 			<EventScene
 				scene={activeEvent?.scene}
 				eventName={activeEvent?.name}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Icon } from '$lib/components/ui';
-	import { screenshotStore } from '$lib/stores/screenshot.svelte';
+	import { photomodeStore } from '$lib/stores/photomode.svelte';
 
 	interface Props {
 		onOpenMemoryGraph?: () => void;
@@ -8,14 +8,10 @@
 	}
 
 	let { onOpenMemoryGraph, onBoardClick }: Props = $props();
-
-	function takeScreenshot() {
-		screenshotStore.take();
-	}
 </script>
 
 <div class="top-left-buttons">
-	<button class="icon-btn" onclick={takeScreenshot} aria-label="Take screenshot">
+	<button class="icon-btn" onclick={() => photomodeStore.enter()} aria-label="Open photo mode">
 		<Icon name="camera" size={20} />
 	</button>
 	{#if onOpenMemoryGraph}

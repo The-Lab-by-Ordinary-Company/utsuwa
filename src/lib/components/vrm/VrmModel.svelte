@@ -6,6 +6,8 @@
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { ttsStore } from '$lib/stores/tts.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
+	import { photomodeStore } from '$lib/stores/photomode.svelte';
+	import { loadPoseAnimation, loadPoseManifest } from '$lib/services/poses';
 	import {
 		computeSpringJointParams,
 		clampFrameDelta,
@@ -271,10 +273,10 @@
 		const loops = 1 + Math.random();
 		const delay = duration * loops * 1000;
 		idleCycleTimeout = setTimeout(() => {
-			if (!shouldTalk && !isEmotePlaying) {
+			if (!shouldTalk && !isEmotePlaying && !photomodeStore.active) {
 				playNextIdleAnimation(targetVrm, targetMixer);
 			} else {
-				// Retry later if we're busy
+				// Retry later if we're busy (talking, emoting, or posing for a photo)
 				scheduleIdleCycle(targetVrm, targetMixer, duration);
 			}
 		}, delay);
@@ -353,6 +355,100 @@
 		);
 	}
 
+	// === Photo mode ===
+	// A held pose is a single-frame clip: play, pause at t=0, and let the weight
+	// crossfade do the transition. vrm.update() keeps running in the render task,
+	// so spring bones and blinking stay alive while posed.
+	let poseAction: THREE.AnimationAction | null = null;
+	// Rapid pose taps race their async loads; only the latest application wins.
+	let poseToken = 0;
+
+	async function applyPhotoPose(poseId: string | null) {
+		const targetVrm = vrm;
+		const targetMixer = mixer;
+		if (!targetVrm || !targetMixer) return;
+		const token = ++poseToken;
+
+		if (poseId === null) {
+			// Natural: fade any pose out and hold the idle stance
+			if (poseAction) {
+				poseAction.fadeOut(0.3);
+				poseAction = null;
+			}
+			if (idleAction) {
+				idleAction.reset().fadeIn(0.3).play();
+				idleAction.paused = true;
+			}
+			return;
+		}
+
+		const manifest = await loadPoseManifest();
+		const entry = manifest.find((p) => p.id === poseId);
+		if (!entry) return;
+
+		try {
+			const animation = await loadPoseAnimation(entry.file);
+			// Model swapped or a newer pose was requested while this one loaded
+			if (mixer !== targetMixer || token !== poseToken) return;
+			if (!photomodeStore.active) return;
+
+			const clip = createVRMAnimationClip(animation, targetVrm);
+			const previous = poseAction ?? idleAction;
+			if (previous) previous.fadeOut(0.3);
+
+			const action = targetMixer.clipAction(clip);
+			action.reset();
+			action.setLoop(THREE.LoopOnce, 1);
+			action.clampWhenFinished = true;
+			action.fadeIn(0.3).play();
+			// Freeze on the first frame; the fade still blends the held pose in
+			action.paused = true;
+			action.time = 0;
+			poseAction = action;
+		} catch (e) {
+			console.error('[PhotoMode] Failed to apply pose:', e);
+		}
+	}
+
+	// Enter/exit lifecycle: freeze the current stance on the way in, and re-run
+	// the normal idle start path on the way out so cycling resumes cleanly.
+	let wasPhotoActive = false;
+	$effect(() => {
+		const active = photomodeStore.active;
+		untrack(() => {
+			const targetVrm = vrm;
+			const targetMixer = mixer;
+			if (!targetVrm || !targetMixer) {
+				wasPhotoActive = active;
+				return;
+			}
+			if (active && !wasPhotoActive) {
+				if (talkingAction) talkingAction.fadeOut(0.2);
+				if (idleAction) idleAction.paused = true;
+			} else if (!active && wasPhotoActive) {
+				if (poseAction) {
+					poseAction.fadeOut(0.3);
+					poseAction = null;
+				}
+				if (idleAction) idleAction.paused = false;
+				startIdleAnimation(targetVrm, targetMixer);
+			}
+			wasPhotoActive = active;
+		});
+	});
+
+	// Apply pose selections while photo mode is active
+	$effect(() => {
+		const active = photomodeStore.active;
+		const poseId = photomodeStore.selectedPoseId;
+		if (!active) return;
+		untrack(() => {
+			// Entering starts on Natural, which the enter lifecycle already froze
+			if (poseId === null && !poseAction) return;
+			applyPhotoPose(poseId);
+		});
+	});
+
 	// Update lip-sync analyser when TTS state changes
 	$effect(() => {
 		lipSyncAnalyzer.setAnalyser(ttsStore.currentAnalyser);
@@ -366,8 +462,9 @@
 		const currentTalkingClip = untrack(() => talkingClip);
 		const currentEmotePlaying = untrack(() => isEmotePlaying);
 
-		// Don't switch if emote is playing or no mixer/clips available
-		if (!currentMixer || currentEmotePlaying) return;
+		// Don't switch if emote is playing or no mixer/clips available. A held
+		// photo pose must not be stomped by TTS either; exit restores the loop.
+		if (!currentMixer || currentEmotePlaying || photomodeStore.active) return;
 
 		if (speaking && currentTalkingClip) {
 			// Start talking animation, fade out idle
