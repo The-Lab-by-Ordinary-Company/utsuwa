@@ -9,9 +9,9 @@ import {
 	type SidebarPosition
 } from './display-types.ts';
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+export const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-function sanitizeCamera(raw: Partial<CameraSettings> | undefined): CameraSettings {
+export function sanitizeCamera(raw: Partial<CameraSettings> | undefined): CameraSettings {
 	return {
 		fov: clamp(raw?.fov ?? CAMERA_DEFAULTS.fov, CAMERA_LIMITS.fov.min, CAMERA_LIMITS.fov.max),
 		zoom: clamp(raw?.zoom ?? CAMERA_DEFAULTS.zoom, CAMERA_LIMITS.zoom.min, CAMERA_LIMITS.zoom.max),

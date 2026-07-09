@@ -10,26 +10,12 @@ import {
 	type ChatDisplayMode,
 	type SidebarPosition
 } from './display-types';
-import { parseDisplaySettings } from './display-parser';
+import { parseDisplaySettings, sanitizeCamera } from './display-parser';
 
 const STORAGE_KEY = 'utsuwa-display';
 
 export type { CameraSettings, CameraProfile, ChatDisplayMode, SidebarPosition };
 export { CAMERA_DEFAULTS, CAMERA_LIMITS, DEFAULT_CHAT_DISPLAY_MODE, DEFAULT_SIDEBAR_POSITION };
-
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-
-function sanitize(raw: Partial<CameraSettings> | undefined): CameraSettings {
-	return {
-		fov: clamp(raw?.fov ?? CAMERA_DEFAULTS.fov, CAMERA_LIMITS.fov.min, CAMERA_LIMITS.fov.max),
-		zoom: clamp(raw?.zoom ?? CAMERA_DEFAULTS.zoom, CAMERA_LIMITS.zoom.min, CAMERA_LIMITS.zoom.max),
-		height: clamp(
-			raw?.height ?? CAMERA_DEFAULTS.height,
-			CAMERA_LIMITS.height.min,
-			CAMERA_LIMITS.height.max
-		)
-	};
-}
 
 function createDisplayStore() {
 	// The main scene and the desktop overlay window frame very differently,
@@ -76,7 +62,7 @@ function createDisplayStore() {
 
 	function setCamera(update: Partial<CameraSettings>, profile: CameraProfile = 'main') {
 		const current = profile === 'overlay' ? overlayCamera : camera;
-		const next = sanitize({ ...current, ...update });
+		const next = sanitizeCamera({ ...current, ...update });
 		if (profile === 'overlay') {
 			overlayCamera = next;
 		} else {

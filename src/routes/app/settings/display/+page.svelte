@@ -27,6 +27,9 @@
 	<section class="card">
 		<div class="card-header">
 			<h3>Chat Display</h3>
+			<button class="reset-btn" onclick={() => displayStore.resetChatDisplay()}>
+				Reset to defaults
+			</button>
 		</div>
 
 		<div class="segment-control" role="group" aria-label="Chat display mode">
@@ -147,6 +150,24 @@
 		background: var(--accent-muted);
 		color: var(--accent);
 		font-weight: 600;
+	}
+
+	.reset-btn {
+		padding: 0.375rem 0.75rem;
+		background: transparent;
+		border: 1px solid var(--border-light);
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+	}
+
+	.reset-btn:hover {
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		border-color: var(--border-light);
 	}
 
 	.hint {

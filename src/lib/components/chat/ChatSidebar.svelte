@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
 	import { Icon } from '$lib/components/ui';
@@ -40,6 +41,7 @@
 	}
 
 	function handleClearHistory() {
+		if (!browser) return;
 		if (confirm('Delete all messages in this chat?')) {
 			chatStore.clearMessages();
 		}
@@ -210,24 +212,18 @@
 	}
 
 	.user .bubble {
-		background: linear-gradient(180deg, #01c4ff 0%, #01b2ff 100%);
-		color: white;
+		background: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
+		color: var(--color-accent-foreground);
 		border-bottom-right-radius: 4px;
-		box-shadow: 0 2px 8px rgba(1, 178, 255, 0.3);
+		box-shadow: 0 2px 8px rgba(0, 178, 255, 0.3);
 	}
 
 	.assistant .bubble {
-		background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
-		color: #1a1a1a;
-		border: 1px solid rgba(0, 0, 0, 0.08);
+		background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+		color: var(--text-primary);
+		border: 1px solid var(--border-subtle);
 		border-bottom-left-radius: 4px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-	}
-
-	:global(.dark) .assistant .bubble {
-		background: linear-gradient(180deg, #2a2a2a 0%, #222222 100%);
-		color: #fafafa;
-		border-color: rgba(255, 255, 255, 0.08);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.bubble p {
@@ -242,11 +238,7 @@
 	}
 
 	.bubble.speaking {
-		border-color: rgba(1, 196, 255, 0.35);
-		box-shadow: 0 2px 8px rgba(1, 196, 255, 0.15);
-	}
-
-	:global(.dark) .bubble.speaking {
-		border-color: rgba(1, 196, 255, 0.25);
+		border-color: rgba(0, 178, 255, 0.35);
+		box-shadow: 0 2px 8px rgba(0, 178, 255, 0.15);
 	}
 </style>
