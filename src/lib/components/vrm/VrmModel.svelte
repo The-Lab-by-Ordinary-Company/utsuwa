@@ -426,7 +426,13 @@
 			}
 			if (active && !wasPhotoActive) {
 				if (talkingAction) talkingAction.fadeOut(0.2);
-				if (idleAction) idleAction.paused = true;
+				if (idleAction) {
+					// Ensure the idle actually holds weight (entering mid-talk left it
+					// faded out), then freeze it as the held stance.
+					idleAction.play();
+					idleAction.fadeIn(0.2);
+					idleAction.paused = true;
+				}
 			} else if (!active && wasPhotoActive) {
 				if (poseAction) {
 					poseAction.fadeOut(0.3);
@@ -859,10 +865,12 @@
 		// Update animation mixer
 		mixer?.update(delta);
 
-		// Photo-mode tap reaction: a decaying additive nudge layered on top of
-		// the mixer's held pose each frame (the mixer rewrites transforms, so
-		// this never accumulates), applied before vrm.update so the spring
-		// bones inherit the motion.
+		// Photo-mode tap reaction: nudge the bone just long enough for the
+		// spring solver inside vrm.update to see the motion, then restore the
+		// exact prior rotation in the same frame. The skeleton never visibly
+		// moves (so it can never accumulate into a contortion regardless of
+		// mixer weights); only the hair/clothing physics inherit the impulse.
+		let pulseRestore: { bone: THREE.Object3D; quat: THREE.Quaternion } | null = null;
 		if (reactionPulse) {
 			reactionPulse.t += delta;
 			const progress = reactionPulse.t / reactionPulse.duration;
@@ -870,9 +878,13 @@
 				reactionPulse = null;
 			} else {
 				const envelope = Math.sin(progress * Math.PI) * Math.exp(-2.2 * progress);
-				const angle = reactionPulse.magnitude * 0.14 * envelope;
+				const angle = reactionPulse.magnitude * 0.07 * envelope;
+				pulseRestore = {
+					bone: reactionPulse.bone,
+					quat: reactionPulse.bone.quaternion.clone()
+				};
 				reactionPulse.bone.rotation.z += angle * reactionPulse.direction;
-				reactionPulse.bone.rotation.x -= angle * 0.6;
+				reactionPulse.bone.rotation.x -= angle * 0.4;
 			}
 		}
 		if (reactionFace && vrm.expressionManager) {
@@ -896,6 +908,11 @@
 		// Update VRM core. The delta is clamped because a huge frame gap (tab
 		// refocus, window drag) otherwise launches the spring bones violently.
 		vrm.update(clampFrameDelta(delta));
+
+		// Undo the tap nudge now that the physics has read it
+		if (pulseRestore) {
+			pulseRestore.bone.quaternion.copy(pulseRestore.quat);
+		}
 
 		// Track head position for 3D speech bubble
 		const headBone = vrm.humanoid.getNormalizedBoneNode('head');
