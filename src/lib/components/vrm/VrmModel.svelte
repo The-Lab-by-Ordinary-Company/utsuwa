@@ -489,13 +489,19 @@
 
 	// Tap reactions: an expression flash plus a decaying rotation nudge whose
 	// motion the spring bones inherit. Repeat taps inside the window escalate.
-	let reactionPulse: {
+	// Pulses overlap instead of replacing each other (replacement snapped the
+	// active nudge to zero, which read as a jump on rapid taps), and every
+	// nudge applied to a bone is explicitly undone at the start of the next
+	// frame, so nothing can accumulate no matter what the mixer weights are.
+	interface ReactionPulse {
 		bone: THREE.Object3D;
 		t: number;
 		duration: number;
 		magnitude: number;
 		direction: number;
-	} | null = null;
+	}
+	let activePulses: ReactionPulse[] = [];
+	let appliedNudges: Array<{ bone: THREE.Object3D; z: number; x: number }> = [];
 	let reactionFace: { name: string; weight: number; t: number; duration: number } | null = null;
 	const recentTaps = { zone: null as TouchZone | null, at: 0, count: 0 };
 	const REACTION_REPEAT_WINDOW_MS = 4000;
@@ -541,14 +547,17 @@
 							: targetVrm.humanoid.getNormalizedBoneNode('hips');
 			const fallback = targetVrm.humanoid.getNormalizedBoneNode('spine');
 			const target = bone ?? fallback;
-			if (target) {
-				reactionPulse = {
+			if (target && activePulses.length < 4) {
+				// Half strength while she is talking: the head is already moving,
+				// and a full kick layered on that read as a jump
+				const talkScale = shouldTalk ? 0.5 : 1;
+				activePulses.push({
 					bone: target,
 					t: 0,
 					duration: 0.9,
-					magnitude: spec.impulse,
+					magnitude: spec.impulse * talkScale,
 					direction: Math.random() > 0.5 ? 1 : -1
-				};
+				});
 			}
 		});
 	});
@@ -856,7 +865,8 @@
 				group = null;
 				springBase = [];
 				poseAction = null;
-				reactionPulse = null;
+				activePulses = [];
+				appliedNudges = [];
 				reactionFace = null;
 				heldExpression = null;
 			}
@@ -872,33 +882,41 @@
 	useTask((delta) => {
 		if (!vrm) return;
 
+		// Undo last frame's tap nudges before anything writes bones this frame.
+		// When the mixer overwrites the rotation anyway this is a no-op; when it
+		// does not, this is what makes accumulation impossible.
+		for (const applied of appliedNudges) {
+			applied.bone.rotation.z -= applied.z;
+			applied.bone.rotation.x -= applied.x;
+		}
+		appliedNudges.length = 0;
+
 		// Update animation mixer
 		mixer?.update(delta);
 
-		// Photo-mode tap reaction: nudge the bone just long enough for the
-		// spring solver inside vrm.update to see the motion, then restore the
-		// exact prior rotation in the same frame. The skeleton never visibly
-		// moves (so it can never accumulate into a contortion regardless of
-		// mixer weights); only the hair/clothing physics inherit the impulse.
-		let pulseRestore: { bone: THREE.Object3D; quat: THREE.Quaternion } | null = null;
-		if (reactionPulse) {
-			reactionPulse.t += delta;
-			const progress = reactionPulse.t / reactionPulse.duration;
-			if (progress >= 1) {
-				reactionPulse = null;
-			} else {
-				// sin^2 has zero slope at both ends: the impulse eases in and out
-				// instead of clipping on
+		// Tap reactions: decaying additive nudges layered over whatever the
+		// mixer wrote, rendered this frame (so the body sways with the physics
+		// instead of the solver and the render disagreeing, which read as
+		// jitter during talking). Overlapping pulses sum; each bone's total is
+		// recorded for the undo above.
+		if (activePulses.length > 0) {
+			const remaining: ReactionPulse[] = [];
+			for (const pulse of activePulses) {
+				pulse.t += delta;
+				const progress = pulse.t / pulse.duration;
+				if (progress >= 1) continue;
+				// sin^2 has zero slope at both ends: eases in and out
 				const wave = Math.sin(progress * Math.PI);
 				const envelope = wave * wave * Math.exp(-1.6 * progress);
-				const angle = reactionPulse.magnitude * 0.07 * envelope;
-				pulseRestore = {
-					bone: reactionPulse.bone,
-					quat: reactionPulse.bone.quaternion.clone()
-				};
-				reactionPulse.bone.rotation.z += angle * reactionPulse.direction;
-				reactionPulse.bone.rotation.x -= angle * 0.4;
+				const angle = pulse.magnitude * 0.07 * envelope;
+				const z = angle * pulse.direction;
+				const x = -angle * 0.4;
+				pulse.bone.rotation.z += z;
+				pulse.bone.rotation.x += x;
+				appliedNudges.push({ bone: pulse.bone, z, x });
+				remaining.push(pulse);
 			}
+			activePulses = remaining;
 		}
 		if (reactionFace && vrm.expressionManager) {
 			reactionFace.t += delta;
@@ -921,11 +939,6 @@
 		// Update VRM core. The delta is clamped because a huge frame gap (tab
 		// refocus, window drag) otherwise launches the spring bones violently.
 		vrm.update(clampFrameDelta(delta));
-
-		// Undo the tap nudge now that the physics has read it
-		if (pulseRestore) {
-			pulseRestore.bone.quaternion.copy(pulseRestore.quat);
-		}
 
 		// Track head position for 3D speech bubble
 		const headBone = vrm.humanoid.getNormalizedBoneNode('head');
