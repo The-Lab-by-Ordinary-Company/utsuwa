@@ -3,7 +3,6 @@
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
 	import { Icon } from '$lib/components/ui';
-	import { tick } from 'svelte';
 
 	interface Props {
 		open: boolean;
