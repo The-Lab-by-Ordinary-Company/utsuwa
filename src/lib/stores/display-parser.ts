@@ -70,7 +70,10 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 
 	if (parsed.camera && typeof parsed.camera === 'object') {
 		camera = sanitizeCamera(parsed.camera as Partial<CameraSettings>);
-		overlayCamera = sanitizeCamera((parsed.overlayCamera ?? parsed.camera) as Partial<CameraSettings>);
+		overlayCamera =
+			parsed.overlayCamera && typeof parsed.overlayCamera === 'object'
+				? sanitizeCamera(parsed.overlayCamera as Partial<CameraSettings>)
+				: { ...camera };
 	} else if (typeof parsed.cameraDistance === 'number') {
 		// Legacy setting predating auto-fit: old default distance was 2.0
 		camera = sanitizeCamera({ zoom: 2.0 / parsed.cameraDistance });

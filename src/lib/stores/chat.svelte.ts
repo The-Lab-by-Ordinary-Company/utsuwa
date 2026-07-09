@@ -18,7 +18,7 @@ function createChatStore() {
 	let error = $state<string | null>(null);
 	let errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	function addMessage(role: 'user' | 'assistant', content: string, images?: ShownImage[]) {
+	function addMessage(role: 'user' | 'assistant' | 'system', content: string, images?: ShownImage[]) {
 		const message: Message = {
 			id: crypto.randomUUID(),
 			role,

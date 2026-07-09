@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { clampPhysicsIntensity, PHYSICS_INTENSITY_DEFAULT } from '$lib/engine/spring-physics';
+import { clampPhysicsIntensity, PHYSICS_INTENSITY_DEFAULT } from '../engine/spring-physics.ts';
 import {
 	CAMERA_DEFAULTS,
 	CAMERA_LIMITS,
