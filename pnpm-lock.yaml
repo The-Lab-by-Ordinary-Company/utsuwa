@@ -50,9 +50,6 @@ importers:
       localforage:
         specifier: ^1.10.0
         version: 1.10.0
-      n8ao:
-        specifier: ^1.10.1
-        version: 1.10.1(postprocessing@6.38.2(three@0.182.0))(three@0.182.0)
       simple-icons:
         specifier: ^16.6.0
         version: 16.6.1
@@ -1411,12 +1408,6 @@ packages:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
     engines: {node: '>=10'}
 
-  n8ao@1.10.1:
-    resolution: {integrity: sha512-hhI1pC+BfOZBV1KMwynBrVlIm8wqLxj/abAWhF2nZ0qQKyzTSQa1QtLVS2veRiuoBQXojxobcnp0oe+PUoxf/w==}
-    peerDependencies:
-      postprocessing: '>=6.30.0'
-      three: '>=0.137'
-
   nanoid@3.3.11:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -1474,11 +1465,6 @@ packages:
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
-
-  postprocessing@6.38.2:
-    resolution: {integrity: sha512-7DwuT7Tkst41ZjSj287g7C9c5/D3Xx5rMgBosg0dadbUPoZD2HNzkadKPol1d2PJAoI9f+Jeh1/v9YfLzpFGVw==}
-    peerDependencies:
-      three: '>= 0.157.0 < 0.183.0'
 
   preact@10.28.3:
     resolution: {integrity: sha512-tCmoRkPQLpBeWzpmbhryairGnhW9tKV6c6gr/w+RhoRoKEJwsjzipwp//1oCpGPOchvSLaAPlpcJi9MwMmoPyA==}
@@ -2875,11 +2861,6 @@ snapshots:
 
   mrmime@2.0.1: {}
 
-  n8ao@1.10.1(postprocessing@6.38.2(three@0.182.0))(three@0.182.0):
-    dependencies:
-      postprocessing: 6.38.2(three@0.182.0)
-      three: 0.182.0
-
   nanoid@3.3.11: {}
 
   napi-build-utils@2.0.0: {}
@@ -2944,10 +2925,6 @@ snapshots:
       nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
-
-  postprocessing@6.38.2(three@0.182.0):
-    dependencies:
-      three: 0.182.0
 
   preact@10.28.3: {}
 

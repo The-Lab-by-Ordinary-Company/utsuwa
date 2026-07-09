@@ -11,6 +11,10 @@
 		PHYSICS_INTENSITY_MAX,
 		PHYSICS_INTENSITY_DEFAULT
 	} from '$lib/engine/spring-physics';
+	import { BACKGROUND_PRESETS, presetSwatch } from '$lib/services/scene-backgrounds';
+
+	// Transparent is a photo-capture concept; the scene picker skips it
+	const SCENE_PRESETS = BACKGROUND_PRESETS.filter((p) => !p.photoOnly);
 
 	interface Props {
 		onclose: () => void;
@@ -83,6 +87,26 @@
 	<button class="reset-btn" onclick={() => displayStore.resetCamera(profile)} disabled={isDefault}>
 		Reset camera
 	</button>
+
+	{#if profile === 'main'}
+		<div class="section-divider">
+			<span class="section-label">Background</span>
+		</div>
+
+		<div class="swatch-row">
+			{#each SCENE_PRESETS as preset (preset.id)}
+				<button
+					class="swatch"
+					class:selected={displayStore.sceneBackground.type === preset.bg.type &&
+						displayStore.sceneBackground.value === preset.bg.value}
+					style:background={presetSwatch(preset)}
+					title={preset.label}
+					aria-label={`Background: ${preset.label}`}
+					onclick={() => displayStore.setSceneBackground(preset.bg)}
+				></button>
+			{/each}
+		</div>
+	{/if}
 
 	<div class="section-divider">
 		<span class="section-label">Physics</span>
@@ -273,5 +297,28 @@
 		justify-content: space-between;
 		font-size: 0.6875rem;
 		color: var(--text-tertiary);
+	}
+
+	.swatch-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+	}
+
+	.swatch {
+		width: 24px;
+		height: 24px;
+		border-radius: var(--radius-full);
+		border: 2px solid var(--border-subtle);
+		cursor: pointer;
+		transition: transform 0.15s ease, border-color 0.15s ease;
+	}
+
+	.swatch:hover {
+		transform: scale(1.1);
+	}
+
+	.swatch.selected {
+		border-color: var(--accent);
 	}
 </style>

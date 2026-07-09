@@ -6,6 +6,10 @@
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { ttsStore } from '$lib/stores/tts.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
+	import { photomodeStore } from '$lib/stores/photomode.svelte';
+	import { loadPoseAnimation, loadPoseManifest } from '$lib/services/poses';
+	import { pickReaction, stageTier, type TouchZone } from '$lib/engine/photo-reactions';
+	import { characterStore } from '$lib/stores/character.svelte';
 	import {
 		computeSpringJointParams,
 		clampFrameDelta,
@@ -249,6 +253,9 @@
 				const action = targetMixer.clipAction(clip);
 				action.setLoop(THREE.LoopRepeat, Infinity);
 				action.play();
+				// A model that finishes loading while photo mode is already open
+				// holds its stance instead of idling through the shot
+				if (photomodeStore.active) action.paused = true;
 				idleAction = action;
 
 
@@ -271,10 +278,10 @@
 		const loops = 1 + Math.random();
 		const delay = duration * loops * 1000;
 		idleCycleTimeout = setTimeout(() => {
-			if (!shouldTalk && !isEmotePlaying) {
+			if (!shouldTalk && !isEmotePlaying && !photomodeStore.active) {
 				playNextIdleAnimation(targetVrm, targetMixer);
 			} else {
-				// Retry later if we're busy
+				// Retry later if we're busy (talking, emoting, or posing for a photo)
 				scheduleIdleCycle(targetVrm, targetMixer, duration);
 			}
 		}, delay);
@@ -353,6 +360,226 @@
 		);
 	}
 
+	// === Photo mode ===
+	// A held pose is a single-frame clip: play, pause at t=0, and let the weight
+	// crossfade do the transition. vrm.update() keeps running in the render task,
+	// so spring bones and blinking stay alive while posed.
+	let poseAction: THREE.AnimationAction | null = null;
+	// Rapid pose taps race their async loads; only the latest application wins.
+	let poseToken = 0;
+	// Clips are per-model; caching them means repeat selections reuse the same
+	// mixer action instead of accumulating new clips. Cleared on model switch.
+	const poseClipCache = new Map<string, THREE.AnimationClip>();
+
+	async function applyPhotoPose(poseId: string | null) {
+		const targetVrm = vrm;
+		const targetMixer = mixer;
+		if (!targetVrm || !targetMixer) return;
+		const token = ++poseToken;
+
+		// A slower fade reads as easing into the pose rather than a hard cut
+		const POSE_FADE = 0.6;
+
+		if (poseId === null) {
+			// Natural: fade any pose out and hold the idle stance
+			if (poseAction) {
+				poseAction.fadeOut(POSE_FADE);
+				poseAction = null;
+			}
+			if (idleAction) {
+				idleAction.reset().fadeIn(POSE_FADE).play();
+				idleAction.paused = true;
+			}
+			return;
+		}
+
+		const manifest = await loadPoseManifest();
+		const entry = manifest.find((p) => p.id === poseId);
+		if (!entry) return;
+
+		try {
+			const animation = await loadPoseAnimation(entry.file);
+			// Model swapped or a newer pose was requested while this one loaded
+			if (mixer !== targetMixer || token !== poseToken) return;
+			if (!photomodeStore.active) return;
+
+			let clip = poseClipCache.get(poseId);
+			if (!clip) {
+				clip = createVRMAnimationClip(animation, targetVrm);
+				poseClipCache.set(poseId, clip);
+			}
+			const previous = poseAction ?? idleAction;
+			if (previous) previous.fadeOut(POSE_FADE);
+
+			const action = targetMixer.clipAction(clip);
+			action.reset();
+			action.setLoop(THREE.LoopOnce, 1);
+			action.clampWhenFinished = true;
+			action.fadeIn(POSE_FADE).play();
+			// Freeze at the clip's expressive moment (manifest hold, fraction of
+			// duration). Frame zero is a neutral stance on most motion clips, which
+			// made every placeholder pose look identical.
+			action.paused = true;
+			action.time = clip.duration * Math.min(Math.max(entry.hold ?? 0, 0), 0.99);
+			poseAction = action;
+		} catch (e) {
+			console.error('[PhotoMode] Failed to apply pose:', e);
+		}
+	}
+
+	// Enter/exit lifecycle: freeze the current stance on the way in, and re-run
+	// the normal idle start path on the way out so cycling resumes cleanly.
+	let wasPhotoActive = false;
+	$effect(() => {
+		const active = photomodeStore.active;
+		untrack(() => {
+			const targetVrm = vrm;
+			const targetMixer = mixer;
+			if (!targetVrm || !targetMixer) {
+				wasPhotoActive = active;
+				return;
+			}
+			if (active && !wasPhotoActive) {
+				if (talkingAction) talkingAction.fadeOut(0.2);
+				if (idleAction) {
+					// Ensure the idle actually holds weight (entering mid-talk left it
+					// faded out), then freeze it as the held stance.
+					idleAction.play();
+					idleAction.fadeIn(0.2);
+					idleAction.paused = true;
+				}
+			} else if (!active && wasPhotoActive) {
+				if (poseAction) {
+					poseAction.fadeOut(0.6);
+					poseAction = null;
+				}
+				// Resume the frozen idle so the crossfade has live motion to blend
+				// from, then hand back to the cycler, which fades it out against a
+				// fresh idle clip and reschedules cycling. Starting a second idle at
+				// full weight here (the old path) blended two idles at once and made
+				// the resumed animation drift strangely. When TTS is still speaking,
+				// the talking-switch effect fades the talking action back in instead;
+				// starting an idle at the same time would blend both at half weight.
+				if (idleAction) idleAction.paused = false;
+				if (!shouldTalk) {
+					playNextIdleAnimation(targetVrm, targetMixer);
+				}
+			}
+			wasPhotoActive = active;
+		});
+	});
+
+	// Apply pose selections while photo mode is active
+	$effect(() => {
+		const active = photomodeStore.active;
+		const poseId = photomodeStore.selectedPoseId;
+		if (!active) return;
+		untrack(() => {
+			// Entering starts on Natural, which the enter lifecycle already froze,
+			// but the token still bumps so an in-flight pose load can't land stale
+			if (poseId === null && !poseAction) {
+				poseToken++;
+				return;
+			}
+			applyPhotoPose(poseId);
+		});
+	});
+
+	// Held photo expression: applied exclusively, cleared on change and exit.
+	// Tap reactions layer a transient expression on top and restore this one.
+	let heldExpression: string | null = null;
+	$effect(() => {
+		const active = photomodeStore.active;
+		const name = photomodeStore.selectedExpression;
+		untrack(() => {
+			const em = vrm?.expressionManager;
+			if (!em) return;
+			if (heldExpression && heldExpression !== name) {
+				em.setValue(heldExpression, 0);
+				heldExpression = null;
+			}
+			if (active && name) {
+				em.setValue(name, 1);
+				heldExpression = name;
+			}
+		});
+	});
+
+	// Tap reactions: an expression flash plus a decaying rotation nudge whose
+	// motion the spring bones inherit. Repeat taps inside the window escalate.
+	// Pulses overlap instead of replacing each other (replacement snapped the
+	// active nudge to zero, which read as a jump on rapid taps), and every
+	// nudge applied to a bone is explicitly undone at the start of the next
+	// frame, so nothing can accumulate no matter what the mixer weights are.
+	interface ReactionPulse {
+		bone: THREE.Object3D;
+		t: number;
+		duration: number;
+		magnitude: number;
+		direction: number;
+	}
+	let activePulses: ReactionPulse[] = [];
+	let appliedNudges: Array<{ bone: THREE.Object3D; z: number; x: number }> = [];
+	let reactionFace: { name: string; weight: number; t: number; duration: number } | null = null;
+	const recentTaps = { zone: null as TouchZone | null, at: 0, count: 0 };
+	const REACTION_REPEAT_WINDOW_MS = 4000;
+
+	$effect(() => {
+		const request = vrmStore.reactionRequest;
+		if (!request) return;
+		untrack(() => {
+			const targetVrm = vrm;
+			if (!targetVrm) return;
+
+			const now = performance.now();
+			if (recentTaps.zone === request.zone && now - recentTaps.at < REACTION_REPEAT_WINDOW_MS) {
+				recentTaps.count += 1;
+			} else {
+				recentTaps.count = 0;
+			}
+			recentTaps.zone = request.zone;
+			recentTaps.at = now;
+
+			const tier = stageTier(characterStore.state.relationshipStage);
+			const spec = pickReaction(request.zone, tier, recentTaps.count);
+
+			const em = targetVrm.expressionManager;
+			if (em) {
+				const name = spec.expressions.find((candidate) =>
+					em.expressions.some((e) => e.expressionName === candidate)
+				);
+				if (name) {
+					if (reactionFace && reactionFace.name !== name) em.setValue(reactionFace.name, 0);
+					reactionFace = { name, weight: spec.weight, t: 0, duration: 1.8 };
+				}
+			}
+
+			const bone =
+				request.zone === 'head' || request.zone === 'face'
+					? targetVrm.humanoid.getNormalizedBoneNode('head')
+					: request.zone === 'shoulder'
+						? (targetVrm.humanoid.getNormalizedBoneNode('upperChest') ??
+							targetVrm.humanoid.getNormalizedBoneNode('chest'))
+						: request.zone === 'torso'
+							? targetVrm.humanoid.getNormalizedBoneNode('spine')
+							: targetVrm.humanoid.getNormalizedBoneNode('hips');
+			const fallback = targetVrm.humanoid.getNormalizedBoneNode('spine');
+			const target = bone ?? fallback;
+			if (target && activePulses.length < 4) {
+				// Half strength while she is talking: the head is already moving,
+				// and a full kick layered on that read as a jump
+				const talkScale = shouldTalk ? 0.5 : 1;
+				activePulses.push({
+					bone: target,
+					t: 0,
+					duration: 0.9,
+					magnitude: spec.impulse * talkScale,
+					direction: Math.random() > 0.5 ? 1 : -1
+				});
+			}
+		});
+	});
+
 	// Update lip-sync analyser when TTS state changes
 	$effect(() => {
 		lipSyncAnalyzer.setAnalyser(ttsStore.currentAnalyser);
@@ -366,8 +593,9 @@
 		const currentTalkingClip = untrack(() => talkingClip);
 		const currentEmotePlaying = untrack(() => isEmotePlaying);
 
-		// Don't switch if emote is playing or no mixer/clips available
-		if (!currentMixer || currentEmotePlaying) return;
+		// Don't switch if emote is playing or no mixer/clips available. A held
+		// photo pose must not be stomped by TTS either; exit restores the loop.
+		if (!currentMixer || currentEmotePlaying || photomodeStore.active) return;
 
 		if (speaking && currentTalkingClip) {
 			// Start talking animation, fade out idle
@@ -654,6 +882,12 @@
 				vrm = null;
 				group = null;
 				springBase = [];
+				poseAction = null;
+				poseClipCache.clear();
+				activePulses = [];
+				appliedNudges = [];
+				reactionFace = null;
+				heldExpression = null;
 			}
 		};
 	});
@@ -663,12 +897,109 @@
 	const scratchWorld = new THREE.Vector3();
 	const scratchProjected = new THREE.Vector3();
 
+	// === Photo-mode head tracking ===
+	// Weight eases in/out so toggling never snaps the neck. The look rotation
+	// is slerped over whatever the animation wrote this frame, clamped to a
+	// natural range. Normalized humanoid bones face +Z in every VRM version.
+	let headTrackWeight = 0;
+	const headWorld = new THREE.Vector3();
+	const camWorld = new THREE.Vector3();
+	const lookDir = new THREE.Vector3();
+	const parentQuat = new THREE.Quaternion();
+	const lookQuat = new THREE.Quaternion();
+	const lookEuler = new THREE.Euler();
+
 	// Update VRM each frame
 	useTask((delta) => {
 		if (!vrm) return;
 
+		// Undo last frame's tap nudges before anything writes bones this frame.
+		// When the mixer overwrites the rotation anyway this is a no-op; when it
+		// does not, this is what makes accumulation impossible.
+		for (const applied of appliedNudges) {
+			applied.bone.rotation.z -= applied.z;
+			applied.bone.rotation.x -= applied.x;
+		}
+		appliedNudges.length = 0;
+
 		// Update animation mixer
 		mixer?.update(delta);
+
+		// Tap reactions: decaying additive nudges layered over whatever the
+		// mixer wrote, rendered this frame (so the body sways with the physics
+		// instead of the solver and the render disagreeing, which read as
+		// jitter during talking). Overlapping pulses sum; each bone's total is
+		// recorded for the undo above.
+		if (activePulses.length > 0) {
+			const remaining: ReactionPulse[] = [];
+			for (const pulse of activePulses) {
+				pulse.t += delta;
+				const progress = pulse.t / pulse.duration;
+				if (progress >= 1) continue;
+				// sin^2 has zero slope at both ends: eases in and out
+				const wave = Math.sin(progress * Math.PI);
+				const envelope = wave * wave * Math.exp(-1.6 * progress);
+				const angle = pulse.magnitude * 0.07 * envelope;
+				const z = angle * pulse.direction;
+				const x = -angle * 0.4;
+				pulse.bone.rotation.z += z;
+				pulse.bone.rotation.x += x;
+				appliedNudges.push({ bone: pulse.bone, z, x });
+				remaining.push(pulse);
+			}
+			activePulses = remaining;
+		}
+		if (reactionFace && vrm.expressionManager) {
+			reactionFace.t += delta;
+			const progress = reactionFace.t / reactionFace.duration;
+			const em = vrm.expressionManager;
+			if (progress >= 1) {
+				if (heldExpression === reactionFace.name) {
+					// The reaction borrowed the held expression; hand it back whole
+					em.setValue(heldExpression, 1);
+				} else {
+					em.setValue(reactionFace.name, 0);
+					if (heldExpression) em.setValue(heldExpression, 1);
+				}
+				reactionFace = null;
+			} else {
+				// Quick attack, long release
+				const shape =
+					progress < 0.3 ? progress / 0.3 : 1 - Math.max(0, (progress - 0.5) / 0.5);
+				em.setValue(reactionFace.name, Math.max(0, Math.min(1, reactionFace.weight * shape)));
+			}
+		}
+
+		// Photo-mode head tracking toward the scene camera
+		const trackTarget = photomodeStore.active && photomodeStore.headTracking ? 1 : 0;
+		headTrackWeight += (trackTarget - headTrackWeight) * Math.min(1, delta * 5);
+		if (headTrackWeight > 0.001 && camera.current) {
+			const head = vrm.humanoid.getNormalizedBoneNode('head');
+			if (head?.parent) {
+				head.getWorldPosition(headWorld);
+				camera.current.getWorldPosition(camWorld);
+				lookDir.subVectors(camWorld, headWorld);
+				head.parent.getWorldQuaternion(parentQuat).invert();
+				lookDir.applyQuaternion(parentQuat).normalize();
+				// VRM 0.x rigs face -Z where 1.0 faces +Z (the same split
+				// VRM_POSE_CONFIG handles for the scene), so the whole look
+				// direction mirrors on v0 models: horizontal AND vertical
+				if (vrm.meta?.metaVersion !== '1') {
+					lookDir.negate();
+				}
+				const yaw = THREE.MathUtils.clamp(Math.atan2(lookDir.x, lookDir.z), -0.65, 0.65);
+				// Asymmetric pitch range: looking up reads charming well past where
+				// looking down starts to double the chin. The wide bound is chosen
+				// by world-space geometry (is the camera above her head), which is
+				// immune to the v0/v1 sign-convention differences.
+				const rawPitch = -Math.asin(THREE.MathUtils.clamp(lookDir.y, -1, 1));
+				const pitchLimit = camWorld.y >= headWorld.y ? 0.85 : 0.32;
+				const pitch = THREE.MathUtils.clamp(rawPitch, -pitchLimit, pitchLimit);
+				lookEuler.set(pitch, yaw, 0, 'YXZ');
+				lookQuat.setFromEuler(lookEuler);
+				head.quaternion.slerp(lookQuat, headTrackWeight);
+			}
+		}
 
 		// Update VRM core. The delta is clamped because a huge frame gap (tab
 		// refocus, window drag) otherwise launches the spring bones violently.

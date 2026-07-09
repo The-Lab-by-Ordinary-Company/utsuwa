@@ -55,13 +55,17 @@
 - **VRM Model Viewer**: Load and display VRM 3D avatar models with orbit controls, automatic camera framing per model, and live camera settings (zoom, height, field of view)
 - **Developer Tools**: Test VRM facial expressions and animations, or upload a temporary `.vrm` file for a non-persistent preview that reverts when you leave the page
 - **AR Mode**: On WebXR-capable devices (Android Chrome, headset browsers), place your companion on your real floor, drag her around, and pinch to resize
+- **Photo Mode**: Pose her from a pose library, set her expression, pick a background, add a color filter, vignette, or frame, drop draggable stickers on the shot, and capture in high resolution with a quick snap or self-timer. Head tracking keeps her eyes on your camera while she holds the pose
+- **Touch Reactions**: Tap her and she reacts with an expression and a physics ripple through hair and clothes. Reactions depend on where you tap and how close the two of you are
+- **Scene Backgrounds**: Swap the backdrop behind her for pastel gradients or cute patterns (dots, hearts, sparkles, stripes, gingham) right from the Controls panel; your pick persists
+- **Physics Intensity**: A Movement slider from Subtle to Lively scales how much her hair and outfit respond to motion, respecting each model's own rig tuning
 - **Model-Centric UI**: Full-screen 3D model with unobtrusive overlay controls
 - **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
 - **Chat History Sidebar**: Optional side panel showing the full conversation history, with a configurable display mode (bubble, sidebar, both, or off) in Settings > Display
 - **Chat Interface**: Bottom-centered input bar with streaming responses
 - **Voice Input**: Speech-to-text via a local Whisper server (Speaches, faster-whisper-server, whisper.cpp), Groq (Whisper), or the browser's Web Speech API, with real-time audio visualization
-- **Show Her Photos**: Show your companion an image via the camera button or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
-- **LLM Integration**: Support for 7 LLM providers including OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, and LM Studio
+- **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
+- **LLM Integration**: Support for 8 LLM providers: OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, ...)
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
 - **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech)
 - **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
@@ -285,6 +289,7 @@ utsuwa/
 
 ```bash
 pnpm dev          # Start web development server
+pnpm test         # Run the test suite (node --test)
 pnpm build        # Build web app for production
 pnpm preview      # Preview production build
 pnpm lint         # Type-check the project (svelte-check)
@@ -300,7 +305,7 @@ pnpm tauri build  # Build desktop app installer
 
 - [x] VRM model loading and display with orbit controls
 - [x] 3D speech bubbles tracking model head position
-- [x] Multi-provider LLM support (7 providers)
+- [x] Multi-provider LLM support (8 providers)
 - [x] Multi-provider TTS support (3 providers)
 - [x] Audio-driven lip-sync
 - [x] VRMA-based animations (idle, talking, blinking)
@@ -317,6 +322,14 @@ pnpm tauri build  # Build desktop app installer
 - [x] In-app auto-updates for the desktop app
 - [x] Show companion images (multimodal vision) with a keepsake photo board
 - [x] Custom OpenAI-compatible LLM endpoint (OpenRouter, Together, Mistral, vLLM, LiteLLM, ...)
+- [x] AR mode on WebXR-capable devices
+- [x] Live camera settings (zoom, height, field of view) with per-overlay profiles
+- [x] Context window control with memory scaling and history truncation
+- [x] Reminders and timers with an alarm dropdown, multi-window aware
+- [x] Photo mode: poses, expressions, backgrounds, filters, frames, stickers, head tracking, high-res capture
+- [x] Relationship-staged touch reactions
+- [x] Persistent scene backgrounds (pastel gradients and patterns)
+- [x] Spring-bone physics intensity slider
 
 ### In Progress / Planned
 
@@ -362,11 +375,6 @@ Utsuwa is built on the shoulders of these excellent projects:
 - **[Dexie.js](https://github.com/dexie/Dexie.js)** - IndexedDB wrapper for local storage
 - **[force-graph](https://github.com/vasturiano/force-graph)** - Force-directed graph visualization for memory graph
 - **[simple-icons](https://github.com/simple-icons/simple-icons)** - SVG icons for provider logos
-
-### 3D Effects
-
-- **[n8ao](https://github.com/N8python/n8ao)** - Ambient occlusion for Three.js
-- **[postprocessing](https://github.com/pmndrs/postprocessing)** - Post-processing effects
 
 ## License
 

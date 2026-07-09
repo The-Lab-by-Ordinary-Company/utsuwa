@@ -1,5 +1,9 @@
 import { clampPhysicsIntensity, PHYSICS_INTENSITY_DEFAULT } from '../engine/spring-physics.ts';
 import {
+	sanitizeSceneBackground,
+	type SceneBackground
+} from '../services/scene-backgrounds.ts';
+import {
 	CAMERA_DEFAULTS,
 	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
@@ -39,6 +43,7 @@ export interface ParsedDisplaySettings {
 	camera: CameraSettings;
 	overlayCamera: CameraSettings;
 	physicsIntensity: number;
+	sceneBackground: SceneBackground;
 	chatDisplayMode: ChatDisplayMode;
 	sidebarPosition: SidebarPosition;
 }
@@ -66,6 +71,7 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 			camera: { ...CAMERA_DEFAULTS },
 			overlayCamera: { ...CAMERA_DEFAULTS },
 			physicsIntensity: PHYSICS_INTENSITY_DEFAULT,
+			sceneBackground: sanitizeSceneBackground(undefined),
 			chatDisplayMode: DEFAULT_CHAT_DISPLAY_MODE,
 			sidebarPosition: DEFAULT_SIDEBAR_POSITION
 		};
@@ -97,6 +103,8 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 		physicsIntensity = clampPhysicsIntensity(parsed.physicsIntensity);
 	}
 
+	const sceneBackground = sanitizeSceneBackground(parsed.sceneBackground);
+
 	const chatDisplayMode = isChatDisplayMode(parsed.chatDisplayMode)
 		? parsed.chatDisplayMode
 		: DEFAULT_CHAT_DISPLAY_MODE;
@@ -105,5 +113,5 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 		? parsed.sidebarPosition
 		: DEFAULT_SIDEBAR_POSITION;
 
-	return { camera, overlayCamera, physicsIntensity, chatDisplayMode, sidebarPosition };
+	return { camera, overlayCamera, physicsIntensity, sceneBackground, chatDisplayMode, sidebarPosition };
 }

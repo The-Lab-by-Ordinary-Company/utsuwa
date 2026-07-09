@@ -4,14 +4,32 @@
 	import { T, useThrelte, useTask } from '@threlte/core';
 	import { useXR } from '@threlte/xr';
 	import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-	import { ShaderMaterial, Color, Box3, Vector3, PerspectiveCamera, Group } from 'three';
+	import {
+		ShaderMaterial,
+		Color,
+		Box3,
+		Vector3,
+		Vector2,
+		Raycaster,
+		PerspectiveCamera,
+		Group
+	} from 'three';
 	import type { VRM } from '@pixiv/three-vrm';
 	import ArPlacement from './ArPlacement.svelte';
 	import VrmModel from './VrmModel.svelte';
 	import OverlayRaycastHandler from '$lib/components/overlay/OverlayRaycastHandler.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
-	import { screenshotStore } from '$lib/stores/screenshot.svelte';
+	import { photomodeStore, type CaptureOptions } from '$lib/stores/photomode.svelte';
+	import { bucketTouchZone } from '$lib/services/photo-touch';
+	import {
+		drawPhotoFrame,
+		drawPhotoBackground,
+		drawPhotoVignette,
+		drawPhotoStickers
+	} from '$lib/services/photo-capture';
+	import { drawSceneBackground } from '$lib/services/scene-backgrounds';
+	import { PHOTO_FILTERS } from '$lib/stores/photomode.svelte';
 	import { onMount } from 'svelte';
 
 	// Backdrop colors per theme
@@ -67,17 +85,113 @@
 		const observer = new MutationObserver(checkDarkMode);
 		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-		// Register screenshot handler
-		screenshotStore.register(() => {
-			if (renderer && scene && camera.current) {
+		// Photo-mode capture: render one supersampled frame in place (the canvas
+		// has preserveDrawingBuffer), composite background and frame on a 2D
+		// canvas, and hand back a PNG blob. Restores the live pixel ratio after.
+		const unregisterCapture = photomodeStore.registerCapture(async (options: CaptureOptions) => {
+			if (!renderer || !scene || !camera.current) return null;
+			const glCanvas = renderer.domElement;
+			const prevRatio = renderer.getPixelRatio();
+			// Cap the supersample so width/height never exceed the GPU texture limit
+			const maxTex = renderer.capabilities.maxTextureSize;
+			const scale = Math.min(
+				options.scale,
+				maxTex / glCanvas.width || 1,
+				maxTex / glCanvas.height || 1
+			);
+			try {
+				if (scale !== 1) {
+					renderer.setPixelRatio(prevRatio * scale);
+				}
 				renderer.render(scene, camera.current);
-				const dataUrl = renderer.domElement.toDataURL('image/png');
-				const link = document.createElement('a');
-				link.download = `utsuwa-screenshot-${Date.now()}.png`;
-				link.href = dataUrl;
-				link.click();
+
+				const out = document.createElement('canvas');
+				out.width = glCanvas.width;
+				out.height = glCanvas.height;
+				const ctx = out.getContext('2d');
+				if (!ctx) return null;
+				// The color filter covers the scene and background; stickers and
+				// frames sit on top unfiltered, like real stickers would
+				const filterCss = PHOTO_FILTERS[options.filter]?.css ?? 'none';
+				ctx.filter = filterCss;
+				// Patterns scale by CSS-to-capture pixel ratio so they bake at the
+				// same visual size the preview shows
+				const pixelScale = out.width / (glCanvas.clientWidth || out.width);
+				if (options.background.type === 'room' && displayStore.sceneBackground.type !== 'default') {
+					// Photo 'room' over a customized scene: composite the scene's own
+					// background, which the transparent GL canvas does not carry
+					drawSceneBackground(
+						ctx,
+						out.width,
+						out.height,
+						displayStore.sceneBackground,
+						pixelScale
+					);
+				} else {
+					drawPhotoBackground(ctx, out.width, out.height, options.background, pixelScale);
+				}
+				ctx.drawImage(glCanvas, 0, 0);
+				ctx.filter = 'none';
+				if (options.vignette) drawPhotoVignette(ctx, out.width, out.height);
+				drawPhotoFrame(ctx, out.width, out.height, options.frame);
+				await drawPhotoStickers(ctx, out.width, out.height, options.stickers);
+
+				return await new Promise<Blob | null>((resolve) =>
+					out.toBlob((blob) => resolve(blob), 'image/png')
+				);
+			} finally {
+				if (scale !== 1) {
+					renderer.setPixelRatio(prevRatio);
+					renderer.render(scene, camera.current);
+				}
 			}
 		});
+
+		// Tap reactions (universal, chat view and photo mode alike): commit the
+		// raycast target at pointerdown (the camera can drift before pointerup),
+		// fire only if the gesture stays a tap so orbit drags never trigger her.
+		const canvas = renderer?.domElement;
+		let tapCandidate: { zone: ReturnType<typeof bucketTouchZone>; x: number; y: number; at: number } | null = null;
+		const raycaster = new Raycaster();
+		const pointerNdc = new Vector2();
+
+		function onPointerDown(e: PointerEvent) {
+			// The overlay window has its own pointer/click-through handling, and
+			// XR sessions own their input
+			if (overlay || renderer?.xr.isPresenting || !renderer || !camera.current) return;
+			const vrm = vrmStore.vrm;
+			if (!vrm) return;
+			const rect = renderer.domElement.getBoundingClientRect();
+			pointerNdc.set(
+				((e.clientX - rect.left) / rect.width) * 2 - 1,
+				-((e.clientY - rect.top) / rect.height) * 2 + 1
+			);
+			raycaster.setFromCamera(pointerNdc, camera.current);
+			const hits = raycaster.intersectObject(vrm.scene, true);
+			if (hits.length === 0) {
+				tapCandidate = null;
+				return;
+			}
+			tapCandidate = {
+				zone: bucketTouchZone(vrm, hits[0].point),
+				x: e.clientX,
+				y: e.clientY,
+				at: performance.now()
+			};
+		}
+
+		function onPointerUp(e: PointerEvent) {
+			if (!tapCandidate) return;
+			const moved = Math.hypot(e.clientX - tapCandidate.x, e.clientY - tapCandidate.y);
+			const elapsed = performance.now() - tapCandidate.at;
+			if (tapCandidate.zone && moved < 8 && elapsed < 450) {
+				vrmStore.requestReaction(tapCandidate.zone);
+			}
+			tapCandidate = null;
+		}
+
+		canvas?.addEventListener('pointerdown', onPointerDown);
+		canvas?.addEventListener('pointerup', onPointerUp);
 
 		// Set transparent background for overlay mode
 		if (overlay) {
@@ -92,8 +206,47 @@
 
 		return () => {
 			observer.disconnect();
-			screenshotStore.unregister();
+			unregisterCapture();
+			canvas?.removeEventListener('pointerdown', onPointerDown);
+			canvas?.removeEventListener('pointerup', onPointerUp);
 		};
+	});
+
+	// Photo mode is a plain-screen feature: entering it during an AR/XR
+	// session ends the session first, so the shot always composes against the
+	// regular scene and never AR passthrough. The existing isPresenting effect
+	// then re-enables the orbit controls and re-applies the framing.
+	$effect(() => {
+		if (photomodeStore.active && $isPresenting) {
+			renderer?.xr
+				.getSession()
+				?.end()
+				.catch(() => {
+					// Session may already be winding down; nothing to do
+				});
+		}
+	});
+
+	// Any custom backdrop (photo override, or the persistent scene background)
+	// clears the GL canvas to transparent; the page shows a CSS preview behind
+	// it and captures composite the same background, so what you see is what
+	// you save. Photo 'room' means "whatever the scene shows", including a
+	// customized scene background.
+	const sceneBgActive = $derived(!overlay && displayStore.sceneBackground.type !== 'default');
+	const photoTransparent = $derived(
+		(photomodeStore.active && photomodeStore.background.type !== 'room') || sceneBgActive
+	);
+
+	$effect(() => {
+		if (!renderer || overlay) return;
+		if (photoTransparent) {
+			renderer.setClearColor(0x000000, 0);
+			return () => {
+				// The renderer is created with alpha:true and never had an opaque
+				// clear color; restoring alpha 1 here would break AR passthrough
+				renderer.setClearColor(0x000000, 0);
+			};
+		}
 	});
 
 	const backgroundColor = $derived(
@@ -174,13 +327,54 @@
 		}
 	}
 
-	// Re-frame when the model or the camera settings change
+	// Re-frame when the model or the camera settings change. In photo mode the
+	// user owns the framing, so FOV changes only adjust the lens in place
+	// instead of snapping the camera back to the fitted position.
 	$effect(() => {
 		void vrmStore.vrm;
 		void camSettings.fov;
 		void camSettings.zoom;
 		void camSettings.height;
+		if (photomodeStore.active) {
+			const cam = camera.current;
+			if (cam instanceof PerspectiveCamera) {
+				cam.fov = photomodeStore.photoFov ?? camSettings.fov;
+				cam.updateProjectionMatrix();
+			}
+			return;
+		}
 		applyCamera();
+	});
+
+	// The dock's reset chip explicitly asks for the fitted framing back
+	$effect(() => {
+		void photomodeStore.reframeCounter;
+		if (photomodeStore.active) applyCamera();
+	});
+
+	// Photo-mode camera profile: damping for deliberate motion, a wider zoom
+	// range for close portraits and full-body shots, and a polar clamp that
+	// keeps the camera above the floor. Exiting restores the chat profile and
+	// re-applies the fitted framing.
+	$effect(() => {
+		if (!controls) return;
+		if (photomodeStore.active) {
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.08;
+			controls.minDistance = 0.3;
+			controls.maxDistance = 8;
+			controls.minPolarAngle = 0.05;
+			controls.maxPolarAngle = Math.PI * 0.6;
+			return () => {
+				if (!controls) return;
+				controls.enableDamping = false;
+				controls.minDistance = 0;
+				controls.maxDistance = Infinity;
+				controls.minPolarAngle = 0;
+				controls.maxPolarAngle = Math.PI;
+				applyCamera();
+			};
+		}
 	});
 
 	// Setup OrbitControls (skip when locked)
@@ -219,9 +413,14 @@
 	<OverlayRaycastHandler />
 {/if}
 
-<!-- Backdrop + floor (hidden in overlay mode and AR passthrough) -->
-{#if !overlay && !$isPresenting}
+<!-- Backdrop + floor (hidden in overlay mode, AR passthrough, and photo
+     backgrounds, which render through a transparent canvas + composite) -->
+{#if !overlay && !$isPresenting && !photoTransparent}
 	<T.Color attach="background" args={[backgroundColor]} />
+{/if}
+{#if !overlay && !$isPresenting && !(photomodeStore.active && photomodeStore.background.type !== 'room')}
+	<!-- The floor disc stays over the persistent scene background so she keeps
+	     her grounding in daily use; photo overrides hide it for clean shots -->
 	<T.Mesh rotation.x={-Math.PI / 2} position.y={0}>
 		<T.CircleGeometry args={[2.5, 64]} />
 		<T is={floorMaterial} />

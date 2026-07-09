@@ -1,0 +1,8 @@
+[
+	{ "id": "present", "name": "Present", "file": "/animations/VRMA_01.vrma", "hold": 0.5 },
+	{ "id": "wave", "name": "Wave", "file": "/animations/VRMA_02.vrma", "hold": 0.55 },
+	{ "id": "peace", "name": "Peace", "file": "/animations/VRMA_03.vrma", "hold": 0.5 },
+	{ "id": "point", "name": "Point", "file": "/animations/VRMA_04.vrma", "hold": 0.5 },
+	{ "id": "rest", "name": "Rest", "file": "/animations/idle_3.vrma", "hold": 0.3 },
+	{ "id": "sway", "name": "Sway", "file": "/animations/idle_5.vrma", "hold": 0.6 }
+]

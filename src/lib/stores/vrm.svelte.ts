@@ -3,6 +3,7 @@ import type { VRM } from '@pixiv/three-vrm';
 import localforage from 'localforage';
 import { isTauri } from '$lib/services/platform/platform';
 import { createTempVrmStoreIntegration } from '$lib/utils/temp-vrm-store';
+import type { TouchZone } from '$lib/engine/photo-reactions';
 
 export interface VrmModel {
 	id: string;
@@ -121,6 +122,14 @@ function createVrmStore() {
 	// Talking animation state (triggered by text output)
 	let isTalking = $state(false);
 	let talkingTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	// Tap reactions: the scene raycasts a tap into a touch zone and the model
+	// component applies the staged reaction. Universal, not photo-mode-only.
+	let reactionRequest = $state<{ zone: TouchZone; seq: number } | null>(null);
+	let reactionSeq = 0;
+	function requestReaction(zone: TouchZone) {
+		reactionRequest = { zone, seq: ++reactionSeq };
+	}
 
 	// Head position for 3D speech bubble positioning
 	let headPosition = $state<[number, number, number]>([0, 1.6, 0]);
@@ -542,6 +551,10 @@ function createVrmStore() {
 		get isTalking() {
 			return isTalking;
 		},
+		get reactionRequest() {
+			return reactionRequest;
+		},
+		requestReaction,
 		get headPosition() {
 			return headPosition;
 		},

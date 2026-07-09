@@ -16,6 +16,10 @@ import {
 	setChatDisplayMode as computeSetChatDisplayMode,
 	setSidebarPosition as computeSetSidebarPosition
 } from './display-store-logic';
+import {
+	sanitizeSceneBackground,
+	type SceneBackground
+} from '../services/scene-backgrounds.ts';
 
 const STORAGE_KEY = 'utsuwa-display';
 
@@ -29,6 +33,8 @@ function createDisplayStore() {
 	let overlayCamera = $state<CameraSettings>({ ...CAMERA_DEFAULTS });
 	// One physics intensity for both surfaces: it's a model-feel setting, not framing
 	let physicsIntensity = $state(PHYSICS_INTENSITY_DEFAULT);
+	// Persistent backdrop for the regular scene ('default' = the theme backdrop)
+	let sceneBackground = $state<SceneBackground>({ type: 'default' });
 
 	// Chat display mode and sidebar docking
 	let chatDisplayMode = $state<ChatDisplayMode>(DEFAULT_CHAT_DISPLAY_MODE);
@@ -41,6 +47,7 @@ function createDisplayStore() {
 			camera = parsed.camera;
 			overlayCamera = parsed.overlayCamera;
 			physicsIntensity = parsed.physicsIntensity;
+			sceneBackground = parsed.sceneBackground;
 			chatDisplayMode = parsed.chatDisplayMode;
 			sidebarPosition = parsed.sidebarPosition;
 		}
@@ -54,6 +61,7 @@ function createDisplayStore() {
 					camera: $state.snapshot(camera),
 					overlayCamera: $state.snapshot(overlayCamera),
 					physicsIntensity,
+					sceneBackground: $state.snapshot(sceneBackground),
 					chatDisplayMode,
 					sidebarPosition
 				})
@@ -83,6 +91,11 @@ function createDisplayStore() {
 
 	function setPhysicsIntensity(value: number) {
 		physicsIntensity = clampPhysicsIntensity(value);
+		save();
+	}
+
+	function setSceneBackground(bg: SceneBackground) {
+		sceneBackground = sanitizeSceneBackground(bg);
 		save();
 	}
 
@@ -117,6 +130,9 @@ function createDisplayStore() {
 		get physicsIntensity() {
 			return physicsIntensity;
 		},
+		get sceneBackground() {
+			return sceneBackground;
+		},
 		get chatDisplayMode() {
 			return chatDisplayMode;
 		},
@@ -126,6 +142,7 @@ function createDisplayStore() {
 		setCamera,
 		resetCamera,
 		setPhysicsIntensity,
+		setSceneBackground,
 		setChatDisplayMode,
 		setSidebarPosition,
 		resetChatDisplay

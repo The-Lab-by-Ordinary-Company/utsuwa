@@ -3,6 +3,28 @@
 	import FloatingStatIndicators from '$lib/components/ui/FloatingStatIndicators.svelte';
 	import { TopRightButtons, TopLeftButtons, InfoModal } from '$lib/components/ui';
 	import BottomChatBar from '$lib/components/chat/BottomChatBar.svelte';
+	import PhotoModeDock from '$lib/components/photomode/PhotoModeDock.svelte';
+	import PhotoStickerLayer from '$lib/components/photomode/PhotoStickerLayer.svelte';
+	import PhotoFramePreview from '$lib/components/photomode/PhotoFramePreview.svelte';
+	import { photomodeStore, PHOTO_FILTERS } from '$lib/stores/photomode.svelte';
+	import { backgroundToCss, type SceneBackground } from '$lib/services/scene-backgrounds';
+
+	// Live preview filter shared with the capture composite
+	const photoFilterCss = $derived(
+		photomodeStore.active && photomodeStore.filterId !== 'none'
+			? PHOTO_FILTERS[photomodeStore.filterId].css
+			: undefined
+	);
+
+	// The backdrop behind the (then transparent) GL canvas: a photo-mode
+	// override wins while posing; otherwise the persistent scene background.
+	const effectiveBackdrop = $derived.by((): SceneBackground | null => {
+		if (photomodeStore.active && photomodeStore.background.type !== 'room') {
+			return photomodeStore.background as SceneBackground;
+		}
+		if (displayStore.sceneBackground.type !== 'default') return displayStore.sceneBackground;
+		return null;
+	});
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import ChatSidebar from '$lib/components/chat/ChatSidebar.svelte';
 	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
@@ -221,16 +243,18 @@
 </script>
 
 <div class="app-container">
-	<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} onBoardClick={() => showBoard = true} />
-	<TopRightButtons
-		onInfoClick={() => showInfoModal = true}
-		upcomingReminders={reminderStore.upcoming}
-		onDeleteReminder={reminderStore.deleteReminder}
-		recentFired={reminderStore.recentFired}
-		onDismissRecentFired={reminderStore.dismissRecentFired}
-		sidebarOpen={sidebarOpen && showSidebarTrigger}
-		onSidebarToggle={() => sidebarOpen = !sidebarOpen}
-	/>
+{#if !photomodeStore.active}
+		<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} onBoardClick={() => showBoard = true} />
+		<TopRightButtons
+			onInfoClick={() => showInfoModal = true}
+			upcomingReminders={reminderStore.upcoming}
+			onDeleteReminder={reminderStore.deleteReminder}
+			recentFired={reminderStore.recentFired}
+			onDismissRecentFired={reminderStore.dismissRecentFired}
+			sidebarOpen={sidebarOpen && showSidebarTrigger}
+			onSidebarToggle={() => sidebarOpen = !sidebarOpen}
+		/>
+	{/if}
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />
 	{/if}
@@ -266,17 +290,51 @@
 				</div>
 			{/if}
 
+			<!-- Backdrop behind the transparent GL canvas: the persistent scene
+			     background in daily use, or the photo-mode override while posing.
+			     Captures composite the identical background. -->
+			{#if effectiveBackdrop}
+				<div
+					class="photo-bg-layer"
+					style:filter={photoFilterCss}
+					style:background={backgroundToCss(effectiveBackdrop)}
+				></div>
+			{/if}
+
 			<!-- The avatar resolves into focus once the model is ready -->
-			<div class="vrm-stage" class:is-loading={vrmStore.isLoading || !vrmStore.modelUrl}>
+			<div
+				class="vrm-stage"
+				class:is-loading={vrmStore.isLoading || !vrmStore.modelUrl}
+				style:filter={photoFilterCss}
+			>
 				<VrmScene />
 			</div>
+
+			{#if photomodeStore.active && photomodeStore.vignette}
+				<div class="photo-vignette" aria-hidden="true"></div>
+			{/if}
+
+			{#if photomodeStore.active && photomodeStore.frameId !== 'none'}
+				<PhotoFramePreview />
+			{/if}
+
+			{#if photomodeStore.active}
+				<PhotoStickerLayer />
+			{/if}
+
+			{#if photomodeStore.active && photomodeStore.showGrid}
+				<div class="photo-grid" aria-hidden="true"></div>
+			{/if}
 		</div>
 
-		<!-- Floating Stat Indicators -->
-		<FloatingStatIndicators />
+		<!-- Hidden (not unmounted) during photo mode so component-local state
+		     like a typed chat draft survives the session -->
+		<div style:display={photomodeStore.active ? 'none' : 'contents'}>
+			<!-- Floating Stat Indicators -->
+			<FloatingStatIndicators />
 
 		<!-- Speech Bubble (shows latest response, click to dismiss) -->
-		{#if showBubble}
+			{#if showBubble}
 			<SpeechBubble
 				message={latestResponse}
 				isTyping={isTyping}
@@ -284,24 +342,28 @@
 			/>
 		{/if}
 
-		<!-- Chat History Sidebar -->
-		<ChatSidebar
-			open={sidebarOpen && showSidebarTrigger}
-			onClose={() => sidebarOpen = false}
-			{isTyping}
-		/>
+			<!-- Chat History Sidebar (hides with the rest of the chat UI in photo mode) -->
+			<ChatSidebar
+				open={sidebarOpen && showSidebarTrigger}
+				onClose={() => sidebarOpen = false}
+				{isTyping}
+			/>
 
-		<!-- The image she's being shown, floated above her head while she considers it -->
-		<ThinkingImages images={thinkingImages} show={isTyping} />
+			<!-- The image she's being shown, floated above her head while she considers it -->
+			<ThinkingImages images={thinkingImages} show={isTyping} />
 
-		<!-- Bottom Chat Bar -->
-		<BottomChatBar
-			onSend={handleSend}
-			disabled={chatStore.isLoading}
-			{visionCapable}
-			providerLabel={imageProvider.label}
-			providerIsLocal={imageProvider.isLocal}
-		/>
+			<!-- Bottom Chat Bar -->
+			<BottomChatBar
+				onSend={handleSend}
+				disabled={chatStore.isLoading}
+				{visionCapable}
+				providerLabel={imageProvider.label}
+				providerIsLocal={imageProvider.isLocal}
+			/>
+		</div>
+		{#if photomodeStore.active}
+			<PhotoModeDock />
+		{/if}
 
 		<!-- Error toast for chat errors -->
 		{#if chatStore.error}
@@ -318,8 +380,8 @@
 			</div>
 		{/if}
 
-		<!-- Event Scene Overlay -->
-		{#if activeEvent?.scene}
+		<!-- Event Scene Overlay (deferred while posing; renders on exit) -->
+		{#if activeEvent?.scene && !photomodeStore.active}
 			<EventScene
 				scene={activeEvent?.scene}
 				eventName={activeEvent?.name}
@@ -361,9 +423,41 @@
 		z-index: 0;
 	}
 
+	/* Photo-mode background preview sits behind the transparent GL canvas */
+	.photo-bg-layer {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+	}
+
+	/* Vignette preview matching the capture composite */
+	.photo-vignette {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
+		background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.38) 100%);
+	}
+
+	/* Rule-of-thirds composition guide (preview only, never captured) */
+	.photo-grid {
+		position: absolute;
+		inset: 0;
+		z-index: 4;
+		pointer-events: none;
+		background:
+			linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) 33.33%, transparent calc(33.33% + 0.5px)),
+			linear-gradient(to right, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) 66.66%, transparent calc(66.66% + 0.5px)),
+			linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.35) 33.33%, transparent calc(33.33% + 0.5px)),
+			linear-gradient(to bottom, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.35) 66.66%, transparent calc(66.66% + 0.5px));
+		mix-blend-mode: difference;
+	}
+
 	/* The scene sits blurred and dimmed while the model loads, then resolves
 	   into focus. Base state carries no filter so nothing lingers after. */
 	.vrm-stage {
+		position: relative;
+		z-index: 1; /* above the photo background layer */
 		height: 100%;
 		transition:
 			opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),

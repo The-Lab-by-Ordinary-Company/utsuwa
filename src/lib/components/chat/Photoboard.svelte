@@ -32,7 +32,12 @@
 	const ROTATIONS = [-3, 2.5, -1.5, 3, -2, 1.5, -2.5, 2];
 
 	onMount(async () => {
-		const records = await listKeepsakes();
+		// The board is "things you've shown her"; photo-mode captures are
+		// persisted under kind 'photo' and stay off this wall. The note check
+		// covers captures saved before the kind field existed.
+		const records = (await listKeepsakes()).filter(
+			(r) => r.kind !== 'photo' && r.note !== 'Photo mode'
+		);
 		const result: Item[] = [];
 		for (const r of records) {
 			if (r.thumb) {

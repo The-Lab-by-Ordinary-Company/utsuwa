@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.10.0] - 2026-07-09
+
+### Added
+- **Photo Mode**: the camera button now opens a full photo mode instead of taking an instant screenshot. Pose her from a growing pose library, set her expression, pick a background, add a color filter, vignette, or a polaroid or film frame, drop draggable stickers on the shot, and capture at high resolution with a quick snap or a 3 second self-timer. A compact tabbed panel keeps every control in the corner, out of your shot, and everything you see in the preview is exactly what the saved photo looks like. Head tracking is in there too: toggle it on and she follows your camera with her eyes and chin while she holds a pose.
+- **Reminders and timers**: ask her to remind you of something ("remind me in 10 minutes to stretch") and she will schedule it, bring it up when it fires, and notice timers that came due while the app was closed. Pending and fired reminders live in a new alarm dropdown in the top bar. Works across the main app and the desktop overlay. Contributed by @dezihh.
+- **She reacts to touch**: tap her, in the regular view or in photo mode, and she responds with an expression and a little physics ripple through her hair and clothes. How she reacts depends on where you tap and how close the two of you are: early on she is easily flustered, and the warmer reactions are something you earn.
+- **Scene backgrounds**: the backdrop behind her is yours to change now, in the Controls panel. Pastel gradients like Sakura, Peach, and Lavender, and cute patterns like polka dots, hearts, sparkles, candy stripes, and gingham. Your pick sticks across restarts, and photos taken in Room mode capture it faithfully.
+- **Physics intensity**: a Movement slider in the Controls panel, from Subtle to Lively, scales how much her hair, skirt, and everything else the model author rigged responds to motion. Every model keeps its own tuning; the slider just turns the dial.
+
+### Fixed
+- Spring-bone physics no longer explodes after a tab refocus or a long window drag; the worst frame the physics ever sees is now a calm one.
+- Fired reminders no longer count as you interacting: they cannot advance the relationship, reset the away-time clock, or plant memories, and the "last time you talked" recap works again after every restart.
 
 ### Changed
 - **Reminder system is now multi-window aware**: the main app and desktop overlay coordinate fired timers via `BroadcastChannel`, so the alarm icon updates on every open surface. The LLM reaction still runs exactly once, handled by the window that atomically claims the reminder.

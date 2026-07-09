@@ -63,6 +63,7 @@ interface CharacterState {
   savedDatingSimStage?: RelationshipStage;
   personality: PersonalityProfile;
   lastInteraction: Date | null;
+  lastDecayAt?: Date | null;   // decay applies once per absence, not per reload
   firstMet: Date;
   daysKnown: number;
   totalInteractions: number;
@@ -139,7 +140,7 @@ type RelationshipStage =
 Facts are indexed using vector embeddings for semantic similarity search. Instead of keyword matching, the system finds facts by meaning — "outdoor activities" can retrieve memories about hiking even without shared words.
 
 **How it works:**
-- Uses Transformers.js with the `all-MiniLM-L6-v2` model (~23MB, runs locally)
+- Uses Transformers.js with the multilingual `paraphrase-multilingual-MiniLM-L12-v2` model (runs locally; works across languages, not just English)
 - Embeddings are 384-dimensional vectors stored alongside facts in IndexedDB
 - On query, the user message is embedded and compared using cosine similarity
 - Results ranked by blending semantic similarity (70%) with importance score (30%), minimum similarity 0.3
@@ -166,6 +167,7 @@ interface Fact {
   createdAt: Date;
   lastAccessed?: Date;
   embedding?: number[];     // 384-dim vector
+  embeddingModel?: string;  // which model produced it; drives re-embedding on upgrades
 }
 ```
 
@@ -307,13 +309,21 @@ Events are organized by type (`milestone`, `random`, `scheduled`, `conditional`,
 
 ## Prompt Architecture
 
-The system prompt is built from 5 layers:
+The system prompt is built from up to 7 layers:
 
 1. **System** — Rules, output format, current time
 2. **Character** — Name, personality, background, speech patterns
 3. **Current State** — Mood, energy, relationship stage and stats, days known
 4. **Memory** — Recent conversation turns, relevant facts, session context
-5. **Instructions** — Stage-specific behavior guidance, JSON output format
+5. **Being Shown** *(optional)* — Present only when the user shows an image: frames the photo as something she is being shown in the moment, not a file attachment
+6. **Event** *(optional)* — Present only for system events such as a fired reminder: the trigger text arrives in an `<event>` block instead of a user turn
+7. **Instructions** — Stage-specific behavior guidance, JSON output format
+
+### System Events and Reminders
+
+Not every turn starts with the user. The companion can schedule reminders and timers, either by emitting a `[reminder:5min]content[/reminder]` tag in her reply or from natural phrasing like "remind me in 10 minutes" via a client-side fallback. Reminders persist in the `reminders` table, fire from a poll loop that survives reloads, and timers missed while the app was closed surface on the next launch.
+
+A fired reminder is delivered as a **system event**: the trigger text enters the prompt through the `<event>` layer instead of a fake user message, and the turn deliberately skips everything that would pretend the user spoke. Sentiment heuristics, baseline stat updates, streak and interaction counting, fact extraction, and event checks are all bypassed; her reply is still parsed, spoken through TTS, and can chain further reminders. Machine-generated turns can never advance the relationship or reset the away-time clock.
 
 ### Context Window and Memory Budget
 
@@ -453,6 +463,18 @@ db.version(3).stores({
   sessions: '++id, startedAt',
   conversationTurns: '++id, sessionId, createdAt',
   completedEvents: '++id, eventId, completedAt'
+});
+
+// v4: Reminders table for scheduled tasks and timers
+// v5: Compound index [executed+triggerAt] for efficient due/upcoming queries
+// v6: dismissed flag so fired reminders survive reloads until dismissed
+db.version(6).stores({
+  characterStates: '++id, updatedAt',
+  facts: '++id, category, importance, createdAt',
+  sessions: '++id, startedAt',
+  conversationTurns: '++id, sessionId, createdAt',
+  completedEvents: '++id, eventId, completedAt',
+  reminders: '++id, sessionId, triggerAt, executed, dismissed, [executed+triggerAt]'
 });
 ```
 

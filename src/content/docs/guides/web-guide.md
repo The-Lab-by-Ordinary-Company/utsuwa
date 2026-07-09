@@ -32,9 +32,9 @@ The app will be available at `http://localhost:5173`.
 
 Your companion needs an LLM to generate responses.
 
-1. Open **Settings** (gear icon in the sidebar)
-2. Navigate to the **Character** tab
-3. Enable the LLM toggle, then select a provider from the dropdown and enter your API key
+1. Open the **Controls** panel (sliders icon, top right) and click the **Settings** (gear) button
+2. Navigate to the **Character** tab and open the **AI Services** section
+3. Enable the Chat (LLM) toggle, then select a provider from the dropdown and enter your API key
 4. Alternatively, use a local server like Ollama or LM Studio (no API key needed)
 
 All API keys are stored locally on your device and never sent anywhere except the respective provider's API.
@@ -44,16 +44,15 @@ All API keys are stored locally on your device and never sent anywhere except th
 Utsuwa comes with a default avatar, but you can load your own:
 
 1. Go to **Settings > Character**
-2. Click **Load VRM** to select a local `.vrm` file
-3. Or enter a URL to load a VRM model from the web
+2. Click **Add Custom** in the Avatar section and select a local `.vrm` file (drag-and-drop works too)
 
 ### 3. Configure Text-to-Speech (Optional)
 
 To have your companion speak responses aloud:
 
-1. Go to **Settings > Character**
-2. Enable the TTS toggle, then select a provider (ElevenLabs or OpenAI TTS)
-3. Enter your API key and configure voice settings
+1. Go to **Settings > Character** and open the **AI Services** section
+2. Enable the Speech (TTS) toggle, then select a provider (ElevenLabs, OpenAI TTS, or Local TTS)
+3. Enter your API key (cloud providers) and configure voice settings
 
 ## Using the Chat
 
@@ -69,9 +68,41 @@ Click the microphone button in the chat bar to use speech-to-text. Three options
 - **Groq or OpenAI Whisper** — Higher-quality cloud transcription via Groq's or OpenAI's Whisper API. Requires the respective API key, added in the same Voice Input (STT) section.
 - **Web Speech API** — Built into your browser (Chrome, Edge, Safari). No API key required. The default in the browser when nothing else is configured.
 
-Selection is automatic by priority: a configured local server wins, then Groq, then Web Speech. On the desktop app the Web Speech API is unavailable, so configure either a local Whisper server or a Groq key for voice input.
+Selection is automatic by priority: a configured local server wins, then Groq, then OpenAI, then Web Speech. On the desktop app the Web Speech API is unavailable, so configure either a local Whisper server or a Groq key for voice input.
 
 See [Local STT Setup](/docs/guides/local-stt-setup) for running a local Whisper server.
+
+## Photo Mode
+
+Click the **camera button** (top left) to open Photo Mode. A compact tabbed panel appears in the corner:
+
+- **Camera** — lens (field of view) slider, a head-tracking toggle so she looks at your camera, a rule-of-thirds grid, and framing reset. Orbit, pan, and zoom freely while posing
+- **Pose** — hold a pose from the pose library, or Natural for her regular stance
+- **Face** — pick from the expressions your model actually ships
+- **Scene** — background presets (including transparent for stickers), color filters, a vignette, and polaroid or film frames
+- **Sticker** — drop stickers on the shot, drag to move, scroll to resize, double-click or use the list to remove
+
+Capture at high resolution, take a quick snap, or use the 3 second self-timer. What you see in the preview is exactly what the file contains. Captures download on the web app; they are kept out of the photoboard, which stays reserved for images you have shown her. Press Escape or the X to exit.
+
+## Reminders and Timers
+
+Ask her in chat: "remind me in 10 minutes to stretch." She schedules it, brings it up herself when it fires, and notices timers that came due while the app was closed. The alarm bell (top right) shows pending tasks and fired or missed reminders; dismissals persist. Reminders stay in sync between the main app and the desktop overlay.
+
+## Touch
+
+Tap her and she reacts: an expression and a small ripple through her hair and clothes. Where you tap matters, and so does your relationship stage; early on she is easily flustered, and warmer reactions come with closeness. A quick tap reacts; dragging orbits the camera and never triggers her.
+
+## Scene Controls
+
+The **Controls** panel (sliders icon, top right, then the camera icon) holds the scene:
+
+- **Camera** — zoom, height, and field of view sliders with a reset
+- **Background** — persistent scene backdrops: solids, pastel gradients (Sakura, Peach, Lavender, and more), and patterns (dots, hearts, sparkles, candy stripes, gingham)
+- **Physics** — a Movement intensity slider from Subtle to Lively that scales spring-bone motion (hair, skirts, ribbons) while respecting each model's own tuning
+
+## AR Mode
+
+On WebXR-capable devices (Android Chrome, headset browsers), the cube icon in the Controls cluster places your companion in your real space: put her on your floor, drag her around, and pinch to resize. Entering Photo Mode ends an AR session first; photos always compose against the regular scene.
 
 ## Data Management
 
@@ -83,4 +114,4 @@ All data is stored locally on your device.
 
 ## Themes
 
-Utsuwa supports light and dark modes with automatic system preference detection. Go to **Settings > Display** to change your appearance mode.
+Utsuwa supports light and dark modes with automatic system preference detection. Open the **Controls** panel (sliders icon, top right) and click the theme button to cycle System, Light, and Dark.
