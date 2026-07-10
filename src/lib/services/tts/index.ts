@@ -10,6 +10,12 @@ export interface TTSOptions {
 	speed?: number;
 	pitch?: number;
 	volume?: number;
+	/** Primary language for multilingual TTS. */
+	language?: string;
+	/** Alternative language that triggers the alternative voice. */
+	altLanguage?: string;
+	/** Voice ID used when the alternative language is active. */
+	altVoiceId?: string;
 }
 
 // Result from TTS speak method
@@ -18,10 +24,49 @@ export interface TTSSpeakResult {
 	analyser: AnalyserNode;
 }
 
+// Per-request options that can override session-level TTS options for a single
+// segment (e.g. alternative language/voice or emotion-specific tuning).
+export interface StreamOptions {
+	voiceId?: string;
+	language?: string;
+	emotion?: string;
+	exaggeration?: number;
+	cfgWeight?: number;
+	temperature?: number;
+	speed?: number;
+	pitch?: number;
+	volume?: number;
+	signal?: AbortSignal;
+}
+
+// Chunk yielded by streaming TTS providers. `done` marks the end of the stream.
+export interface AudioChunk {
+	data: ArrayBuffer;
+	done: boolean;
+}
+
+// Capability flags advertised by a TTS provider.
+export interface TTSCapabilities {
+	streaming?: boolean;
+	emotion?: boolean;
+	multilingual?: boolean;
+	// Maximum number of concurrent synthesis requests; Infinity if unspecified.
+	maxConcurrentSynthesis?: number;
+	// True if this provider ignores the speed parameter server-side and the
+	// orchestrator must apply it via AudioBufferSourceNode.playbackRate.
+	clientSideSpeed?: boolean;
+}
+
 // Base TTS provider interface
 export interface ITTSProvider {
 	speak(text: string): Promise<TTSSpeakResult>;
+	/** Fetch a full AudioBuffer for non-streaming pipelining. */
+	fetchAudioBuffer?(text: string, options?: StreamOptions): Promise<AudioBuffer>;
+	/** Optional true streaming: yields audio chunks as they arrive. */
+	speakStreaming?(text: string, options?: StreamOptions): AsyncGenerator<AudioChunk>;
 	getAudioContext(): AudioContext;
+	/** Capability flags used by the orchestrator to choose the right path. */
+	capabilities?: TTSCapabilities;
 }
 
 // Shared audio context for all providers
@@ -35,8 +80,8 @@ export function getSharedAudioContext(): AudioContext {
 }
 
 // Import individual providers
-import { ElevenLabsTTS } from './elevenlabs';
-import { OpenAITTS } from './openai-tts';
+import { ElevenLabsTTS } from './elevenlabs.ts';
+import { OpenAITTS } from './openai-tts.ts';
 
 // Provider factory
 let currentProvider: ITTSProvider | null = null;

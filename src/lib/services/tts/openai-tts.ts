@@ -1,10 +1,16 @@
-import { getSharedAudioContext, type ITTSProvider, type TTSOptions, type TTSSpeakResult } from './index';
+import {
+	getSharedAudioContext,
+	type ITTSProvider,
+	type TTSOptions,
+	type TTSSpeakResult,
+	type StreamOptions
+} from './index.ts';
 import {
 	getTTSBaseUrl,
 	getLocalTTSConnectionHint,
 	isLocalTTSProvider
-} from '$lib/services/providers/local-endpoints';
-import { providerErrorMessage } from './provider-utils';
+} from '../providers/local-endpoints.ts';
+import { providerErrorMessage } from './provider-utils.ts';
 
 function ensureTrailingSlash(url: string): string {
 	return url.endsWith('/') ? url : url + '/';
@@ -25,6 +31,12 @@ export class OpenAITTS implements ITTSProvider {
 	private baseUrl: string;
 	private isLocal: boolean;
 
+	readonly capabilities = {
+		streaming: false,
+		emotion: false,
+		multilingual: false
+	};
+
 	constructor(options: TTSOptions) {
 		this.apiKey = options.apiKey || '';
 		this.voiceId = options.voiceId || 'alloy';
@@ -41,6 +53,11 @@ export class OpenAITTS implements ITTSProvider {
 	}
 
 	async speak(text: string): Promise<TTSSpeakResult> {
+		const audioBuffer = await this.fetchAudioBuffer(text);
+		return this.playAudioBuffer(audioBuffer);
+	}
+
+	async fetchAudioBuffer(text: string, options?: StreamOptions): Promise<AudioBuffer> {
 		const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 		// Local servers don't need a key; only send auth when we actually have one.
 		if (this.apiKey) {
@@ -56,9 +73,10 @@ export class OpenAITTS implements ITTSProvider {
 					model: this.model,
 					input: text,
 					voice: this.voiceId,
-					speed: this.speed,
+					speed: options?.speed ?? this.speed,
 					response_format: 'mp3'
-				})
+				}),
+				signal: options?.signal
 			});
 		} catch (err) {
 			// A thrown fetch is usually a refused connection or a CORS block, which
@@ -91,7 +109,11 @@ export class OpenAITTS implements ITTSProvider {
 			await audioContext.resume();
 		}
 
-		const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+		return audioContext.decodeAudioData(arrayBuffer);
+	}
+
+	private playAudioBuffer(audioBuffer: AudioBuffer): TTSSpeakResult {
+		const audioContext = this.getAudioContext();
 
 		const source = audioContext.createBufferSource();
 		source.buffer = audioBuffer;

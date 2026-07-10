@@ -67,7 +67,7 @@
 - **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
 - **LLM Integration**: Support for 8 LLM providers: OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, ...)
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
-- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech)
+- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech). Sentences are fetched in parallel with playback so gaps between sentences stay short
 - **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking

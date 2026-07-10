@@ -1,5 +1,11 @@
-import { getSharedAudioContext, type ITTSProvider, type TTSOptions, type TTSSpeakResult } from './index';
-import { providerErrorMessage } from './provider-utils';
+import {
+	getSharedAudioContext,
+	type ITTSProvider,
+	type TTSOptions,
+	type TTSSpeakResult,
+	type StreamOptions
+} from './index.ts';
+import { providerErrorMessage } from './provider-utils.ts';
 
 function ensureTrailingSlash(url: string): string {
 	return url.endsWith('/') ? url : url + '/';
@@ -11,6 +17,13 @@ export class ElevenLabsTTS implements ITTSProvider {
 	private model: string;
 	private speed: number;
 	private baseUrl: string;
+
+	readonly capabilities = {
+		streaming: false,
+		emotion: false,
+		multilingual: true,
+		clientSideSpeed: true
+	};
 
 	constructor(options: TTSOptions) {
 		this.apiKey = options.apiKey || '';
@@ -25,6 +38,11 @@ export class ElevenLabsTTS implements ITTSProvider {
 	}
 
 	async speak(text: string): Promise<TTSSpeakResult> {
+		const audioBuffer = await this.fetchAudioBuffer(text);
+		return this.playAudioBuffer(audioBuffer);
+	}
+
+	async fetchAudioBuffer(text: string, options?: StreamOptions): Promise<AudioBuffer> {
 		const response = await fetch(
 			`${this.baseUrl}text-to-speech/${this.voiceId}/stream`,
 			{
@@ -40,7 +58,8 @@ export class ElevenLabsTTS implements ITTSProvider {
 						stability: 0.5,
 						similarity_boost: 0.75
 					}
-				})
+				}),
+				signal: options?.signal
 			}
 		);
 
@@ -64,22 +83,22 @@ export class ElevenLabsTTS implements ITTSProvider {
 			await audioContext.resume();
 		}
 
-		const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+		return audioContext.decodeAudioData(arrayBuffer);
+	}
 
-		// Create source node
+	private playAudioBuffer(audioBuffer: AudioBuffer): TTSSpeakResult {
+		const audioContext = this.getAudioContext();
+
 		const source = audioContext.createBufferSource();
 		source.buffer = audioBuffer;
 		source.playbackRate.value = this.speed;
 
-		// Create analyser for lip-sync
 		const analyser = audioContext.createAnalyser();
 		analyser.fftSize = 256;
 
-		// Connect nodes
 		source.connect(analyser);
 		analyser.connect(audioContext.destination);
 
-		// Start playback
 		source.start(0);
 
 		return { source, analyser };

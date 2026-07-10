@@ -1,0 +1,146 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+// Mock the browser AudioContext before importing the orchestrator.
+class MockAudioBufferSourceNode {
+	buffer: AudioBuffer | null = null;
+	onended: (() => void) | null = null;
+	start() {
+		// Simulate immediate playback completion on the next tick.
+		setImmediate(() => this.onended?.());
+	}
+	stop() {}
+	connect() {
+		return this;
+	}
+	disconnect() {}
+}
+
+class MockAnalyserNode {
+	fftSize = 256;
+	connect() {
+		return this;
+	}
+	disconnect() {}
+	getByteFrequencyData() {}
+}
+
+class MockAudioContext {
+	state = 'running';
+	currentTime = 0;
+	destination = {};
+	createBufferSource() {
+		return new MockAudioBufferSourceNode() as unknown as AudioBufferSourceNode;
+	}
+	createAnalyser() {
+		return new MockAnalyserNode() as unknown as AnalyserNode;
+	}
+	createBuffer(numChannels: number, length: number, sampleRate: number) {
+		return {
+			duration: length / sampleRate,
+			getChannelData: () => new Float32Array(length),
+			numberOfChannels: numChannels,
+			sampleRate,
+			length
+		} as unknown as AudioBuffer;
+	}
+	async decodeAudioData(buffer: ArrayBuffer) {
+		return this.createBuffer(1, 480, 48000);
+	}
+	resume() {
+		return Promise.resolve();
+	}
+}
+
+// @ts-expect-error globalThis.AudioContext is not available in Node test environment
+globalThis.AudioContext = MockAudioContext;
+
+import { VoiceOrchestrator, type SpeechSegment } from './voice-orchestrator.ts';
+import type { TTSOptions } from './tts/index.ts';
+
+const baseOptions: TTSOptions = { provider: 'openai-tts', apiKey: 'test-key' };
+
+function mockFetchResponse() {
+	return Promise.resolve({
+		ok: true,
+		status: 200,
+		arrayBuffer: () => Promise.resolve(new ArrayBuffer(8))
+	} as Response);
+}
+
+function parseBody(init?: RequestInit): Record<string, unknown> {
+	if (!init?.body) return {};
+	try {
+		return JSON.parse(init.body as string) as Record<string, unknown>;
+	} catch {
+		return {};
+	}
+}
+
+test('speakSegments plays all segments and fires onSegmentStart for each', async () => {
+	const fetchCalls: { url: string; body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (url: string, init: RequestInit) => {
+		fetchCalls.push({ url, body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const orchestrator = new VoiceOrchestrator();
+	const starts: string[] = [];
+	const segments: SpeechSegment[] = [
+		{ text: 'First sentence.' },
+		{ text: 'Second sentence.' }
+	];
+
+	let complete = false;
+	await orchestrator.speakSegments(segments, baseOptions, {
+		onSegmentStart: (seg) => starts.push(seg.text),
+		onComplete: () => {
+			complete = true;
+		}
+	});
+
+	assert.equal(fetchCalls.length, 2);
+	assert.equal(fetchCalls[0].body.input, 'First sentence.');
+	assert.equal(fetchCalls[1].body.input, 'Second sentence.');
+	assert.deepEqual(starts, ['First sentence.', 'Second sentence.']);
+	assert.equal(complete, true);
+});
+
+test('skips empty or punctuation-only segments', async () => {
+	globalThis.fetch = () => mockFetchResponse();
+
+	const orchestrator = new VoiceOrchestrator();
+	const starts: string[] = [];
+	const segments: SpeechSegment[] = [
+		{ text: 'Hello.' },
+		{ text: '   ' },
+		{ text: '!!!' },
+		{ text: 'Goodbye.' }
+	];
+
+	await orchestrator.speakSegments(segments, baseOptions, {
+		onSegmentStart: (seg) => starts.push(seg.text)
+	});
+
+	assert.deepEqual(starts, ['Hello.', 'Goodbye.']);
+});
+
+test('interrupt stops playback and onComplete fires', async () => {
+	globalThis.fetch = () => mockFetchResponse();
+
+	const orchestrator = new VoiceOrchestrator();
+	let complete = false;
+
+	orchestrator.beginSession(baseOptions, {
+		onComplete: () => {
+			complete = true;
+		}
+	});
+	orchestrator.pushSegment({ text: 'A long sentence that gets interrupted.' });
+	orchestrator.interrupt();
+
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.equal(complete, true);
+	assert.equal(orchestrator.getIsPlaying(), false);
+});

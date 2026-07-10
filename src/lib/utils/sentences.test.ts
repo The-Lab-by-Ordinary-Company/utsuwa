@@ -1,0 +1,59 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { splitIntoSentences, stripForSpeech, splitIntoSegments } from './sentences.ts';
+
+// --- splitIntoSentences ---
+
+test('splits text at sentence-ending punctuation', () => {
+	const text = 'Hello world. How are you? I am fine.';
+	const result = splitIntoSentences(text);
+	assert.deepEqual(result, ['Hello world.', 'How are you?', 'I am fine.']);
+});
+
+test('returns the whole text as one sentence when no boundary exists', () => {
+	const text = 'Just one long sentence without terminator';
+	const result = splitIntoSentences(text);
+	assert.deepEqual(result, [text]);
+});
+
+test('returns empty array for whitespace-only input', () => {
+	assert.deepEqual(splitIntoSentences('   '), []);
+	assert.deepEqual(splitIntoSentences(''), []);
+});
+
+// --- stripForSpeech ---
+
+test('strips fenced JSON blocks', () => {
+	const text = 'Hello. ```json\n{"mood_change":{}}\n``` Goodbye.';
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'Hello. Goodbye.');
+});
+
+test('strips inline JSON state-update blocks', () => {
+	const text = 'Hello. {"mood_change":{"emotion":"happy"}} Goodbye.';
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'Hello. Goodbye.');
+});
+
+test('removes markdown asterisks and arrows', () => {
+	const text = 'This is *bold* and → there.';
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'This is bold and there.');
+});
+
+// --- splitIntoSegments ---
+
+test('creates segments with default language', () => {
+	const text = 'First sentence. Second sentence.';
+	const segments = splitIntoSegments(text, 'de');
+	assert.equal(segments.length, 2);
+	assert.equal(segments[0].text, 'First sentence.');
+	assert.equal(segments[0].language, 'de');
+	assert.equal(segments[1].text, 'Second sentence.');
+	assert.equal(segments[1].language, 'de');
+});
+
+test('returns empty array for empty text', () => {
+	assert.deepEqual(splitIntoSegments('', 'en'), []);
+});
