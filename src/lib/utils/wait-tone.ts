@@ -19,6 +19,7 @@ export function createWaitTone(options?: { pingIntervalMs?: number }): WaitToneC
 	let ctx: AudioContext | null = null;
 	let intervalId: ReturnType<typeof setInterval> | null = null;
 	let running = false;
+	let destroyed = false;
 	const pingIntervalMs = options?.pingIntervalMs ?? DEFAULT_PING_MS;
 
 	function ensureContext(): AudioContext | null {
@@ -55,7 +56,7 @@ export function createWaitTone(options?: { pingIntervalMs?: number }): WaitToneC
 	}
 
 	function start() {
-		if (running) return;
+		if (running || destroyed) return;
 		const ac = ensureContext();
 		if (!ac) return;
 		running = true;
@@ -76,6 +77,8 @@ export function createWaitTone(options?: { pingIntervalMs?: number }): WaitToneC
 	}
 
 	function destroy() {
+		if (destroyed) return;
+		destroyed = true;
 		stop();
 		if (ctx && ctx.state !== 'closed') {
 			void ctx.close();

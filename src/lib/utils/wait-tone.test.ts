@@ -12,7 +12,7 @@ test('controller methods can be called repeatedly without throwing', () => {
 	assert.doesNotThrow(() => tone.destroy());
 });
 
-test('start after destroy creates a fresh controller', () => {
+test('start is a no-op after destroy', () => {
 	const tone = createWaitTone({ pingIntervalMs: 10 });
 	tone.destroy();
 	assert.doesNotThrow(() => tone.start());

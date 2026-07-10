@@ -20,7 +20,7 @@
 	function stepDelay(delta: number) {
 		const current = displayStore.typingIndicatorDelayMs / 1000;
 		const next = Math.round((current + delta) * 10) / 10;
-		displayStore.setTypingIndicatorDelayMs(Math.max(0, Math.min(10, next)) * 1000);
+		displayStore.setTypingIndicatorDelayMs(next * 1000);
 	}
 </script>
 
