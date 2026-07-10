@@ -17,3 +17,9 @@ test('start is a no-op after destroy', () => {
 	tone.destroy();
 	assert.doesNotThrow(() => tone.start());
 });
+
+test('start is safe in SSR environments without AudioContext', () => {
+	const tone = createWaitTone({ pingIntervalMs: 10 });
+	assert.equal(typeof window, 'undefined');
+	assert.doesNotThrow(() => tone.start());
+});

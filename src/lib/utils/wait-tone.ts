@@ -46,6 +46,10 @@ export function createWaitTone(options?: { pingIntervalMs?: number }): WaitToneC
 			gain.gain.setValueAtTime(0, t + startOffset);
 			gain.gain.linearRampToValueAtTime(peak, t + startOffset + NOTE_ATTACK_S);
 			gain.gain.exponentialRampToValueAtTime(0.001, t + startOffset + NOTE_DECAY_S);
+			osc.onended = () => {
+				osc.disconnect();
+				gain.disconnect();
+			};
 			osc.start(t + startOffset);
 			osc.stop(t + startOffset + NOTE_DURATION_S);
 		}
@@ -62,6 +66,8 @@ export function createWaitTone(options?: { pingIntervalMs?: number }): WaitToneC
 		running = true;
 		ac.resume();
 		playPing();
+		// Note: browsers throttle setInterval in background tabs to ≥1000ms,
+		// which is below our default ping interval and therefore acceptable.
 		intervalId = setInterval(playPing, pingIntervalMs);
 	}
 
