@@ -19,6 +19,8 @@ test('returns defaults for null input', () => {
 	assert.equal(result.physicsIntensity, PHYSICS_INTENSITY_DEFAULT);
 	assert.equal(result.chatDisplayMode, DEFAULT_CHAT_DISPLAY_MODE);
 	assert.equal(result.sidebarPosition, DEFAULT_SIDEBAR_POSITION);
+	assert.equal(result.waitToneEnabled, DEFAULT_WAIT_TONE_ENABLED);
+	assert.equal(result.typingIndicatorDelayMs, DEFAULT_TYPING_INDICATOR_DELAY_MS);
 });
 
 test('returns defaults for invalid JSON string', () => {
@@ -78,6 +80,8 @@ test('falls back to defaults for missing fields', () => {
 	assert.equal(result.physicsIntensity, PHYSICS_INTENSITY_DEFAULT);
 	assert.equal(result.chatDisplayMode, DEFAULT_CHAT_DISPLAY_MODE);
 	assert.equal(result.sidebarPosition, DEFAULT_SIDEBAR_POSITION);
+	assert.equal(result.waitToneEnabled, DEFAULT_WAIT_TONE_ENABLED);
+	assert.equal(result.typingIndicatorDelayMs, DEFAULT_TYPING_INDICATOR_DELAY_MS);
 });
 
 test('ignores invalid chat display mode values', () => {
@@ -176,5 +180,10 @@ test('parses and clamps typingIndicatorDelayMs', () => {
 
 test('ignores invalid typingIndicatorDelayMs values', () => {
 	const result = parseDisplaySettings({ typingIndicatorDelayMs: 'fast' });
+	assert.equal(result.typingIndicatorDelayMs, DEFAULT_TYPING_INDICATOR_DELAY_MS);
+});
+
+test('ignores NaN typingIndicatorDelayMs', () => {
+	const result = parseDisplaySettings({ typingIndicatorDelayMs: NaN });
 	assert.equal(result.typingIndicatorDelayMs, DEFAULT_TYPING_INDICATOR_DELAY_MS);
 });

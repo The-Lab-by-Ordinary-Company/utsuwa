@@ -140,6 +140,7 @@ function createDisplayStore() {
 	}
 
 	function setTypingIndicatorDelayMs(ms: number) {
+		if (Number.isNaN(ms)) return;
 		typingIndicatorDelayMs = Math.max(0, Math.min(10000, ms));
 		save();
 	}

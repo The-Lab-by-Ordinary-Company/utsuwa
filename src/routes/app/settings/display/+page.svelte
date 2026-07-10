@@ -111,7 +111,10 @@
 						max="10"
 						step="0.1"
 						value={(displayStore.typingIndicatorDelayMs / 1000).toFixed(1)}
-						oninput={(e) => displayStore.setTypingIndicatorDelayMs(parseFloat(e.currentTarget.value) * 1000)}
+						oninput={(e) => {
+							const v = parseFloat(e.currentTarget.value);
+							if (!Number.isNaN(v)) displayStore.setTypingIndicatorDelayMs(v * 1000);
+						}}
 						disabled={!displayStore.waitToneEnabled}
 					/>
 					<span class="delay-unit">s</span>
