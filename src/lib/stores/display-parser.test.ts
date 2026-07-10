@@ -7,7 +7,8 @@ import {
 	CAMERA_DEFAULTS,
 	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
-	DEFAULT_SIDEBAR_POSITION
+	DEFAULT_SIDEBAR_POSITION,
+	DEFAULT_WAIT_TONE_ENABLED
 } from './display-types.ts';
 
 test('returns defaults for null input', () => {
@@ -136,4 +137,22 @@ test('sanitizeCamera fills missing values from defaults', () => {
 	assert.equal(sanitized.fov, CAMERA_DEFAULTS.fov);
 	assert.equal(sanitized.zoom, 2.0);
 	assert.equal(sanitized.height, CAMERA_DEFAULTS.height);
+});
+
+test('defaults waitToneEnabled to false when missing', () => {
+	const result = parseDisplaySettings({});
+	assert.equal(result.waitToneEnabled, DEFAULT_WAIT_TONE_ENABLED);
+});
+
+test('parses waitToneEnabled when present', () => {
+	const enabled = parseDisplaySettings({ waitToneEnabled: true });
+	assert.equal(enabled.waitToneEnabled, true);
+
+	const disabled = parseDisplaySettings({ waitToneEnabled: false });
+	assert.equal(disabled.waitToneEnabled, false);
+});
+
+test('ignores non-boolean waitToneEnabled values', () => {
+	const result = parseDisplaySettings({ waitToneEnabled: 'yes' });
+	assert.equal(result.waitToneEnabled, DEFAULT_WAIT_TONE_ENABLED);
 });

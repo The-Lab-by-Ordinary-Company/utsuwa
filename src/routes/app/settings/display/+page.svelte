@@ -67,6 +67,29 @@
 			</div>
 		</section>
 	{/if}
+
+	<section class="card">
+		<div class="card-header">
+			<h3>Wait Tone</h3>
+		</div>
+
+		<div class="setting-row">
+			<div class="setting-info">
+				<span class="setting-label">Play wait tone</span>
+				<span class="setting-desc">Soft audio ping while the companion is thinking</span>
+			</div>
+			<label class="toggle">
+				<input
+					type="checkbox"
+					checked={displayStore.waitToneEnabled}
+					onchange={(e) => displayStore.setWaitToneEnabled(e.currentTarget.checked)}
+				/>
+				<span class="toggle-track">
+					<span class="toggle-thumb"></span>
+				</span>
+			</label>
+		</div>
+	</section>
 </div>
 
 <style>
@@ -174,5 +197,76 @@
 		margin: 0.625rem 0 0;
 		color: var(--text-secondary);
 		font-size: 0.8125rem;
+	}
+
+	.setting-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.setting-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.setting-label {
+		font-weight: 600;
+		font-size: 0.875rem;
+		color: var(--text-primary);
+	}
+
+	.setting-desc {
+		font-size: 0.75rem;
+		color: var(--text-secondary);
+	}
+
+	.toggle {
+		position: relative;
+		display: inline-block;
+		width: 40px;
+		height: 22px;
+		cursor: pointer;
+		flex-shrink: 0;
+	}
+
+	.toggle input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+		position: absolute;
+	}
+
+	.toggle-track {
+		display: block;
+		width: 100%;
+		height: 100%;
+		background: var(--bg-tertiary);
+		border-radius: 11px;
+		transition: background 0.2s ease-out;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+	}
+
+	.toggle input:checked ~ .toggle-track {
+		background: var(--accent);
+	}
+
+	.toggle-thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 18px;
+		height: 18px;
+		background: var(--bg-primary);
+		border-radius: 50%;
+		transition: transform 0.2s ease-out;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+		pointer-events: none;
+	}
+
+	.toggle input:checked ~ .toggle-track .toggle-thumb {
+		transform: translateX(18px);
 	}
 </style>

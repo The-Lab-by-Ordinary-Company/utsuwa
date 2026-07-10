@@ -38,6 +38,7 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
+import { startWaitTone, stopWaitTone } from '$lib/utils/wait-tone';
 	import { debugEventsStore } from '$lib/stores/debugEvents.svelte';
 	import { getLLMProvider, providerSupportsVision } from '$lib/services/providers/registry';
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
@@ -96,6 +97,15 @@
 	$effect(() => {
 		if (isTyping && displayStore.chatDisplayMode === 'sidebar' && !sidebarOpen) {
 			sidebarOpen = true;
+		}
+	});
+
+	// Optional wait tone while the companion is thinking
+	$effect(() => {
+		if (isTyping && displayStore.waitToneEnabled) {
+			startWaitTone();
+		} else {
+			stopWaitTone();
 		}
 	});
 
@@ -191,6 +201,7 @@
 			for (const img of m.images ?? []) URL.revokeObjectURL(img.url);
 		}
 		for (const img of thinkingImages) URL.revokeObjectURL(img.url);
+		stopWaitTone();
 	});
 
 

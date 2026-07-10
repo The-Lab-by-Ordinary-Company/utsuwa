@@ -14,6 +14,7 @@ export type SidebarPosition = 'left' | 'right';
 export const CAMERA_DEFAULTS: CameraSettings = { fov: 35, zoom: 1, height: 0 };
 export const DEFAULT_CHAT_DISPLAY_MODE: ChatDisplayMode = 'bubble';
 export const DEFAULT_SIDEBAR_POSITION: SidebarPosition = 'right';
+export const DEFAULT_WAIT_TONE_ENABLED = false;
 
 export const CAMERA_LIMITS = {
 	fov: { min: 20, max: 60 },
