@@ -16,6 +16,12 @@
 	const sidebarActive = $derived(
 		displayStore.chatDisplayMode === 'sidebar' || displayStore.chatDisplayMode === 'both'
 	);
+
+	function stepDelay(delta: number) {
+		const current = displayStore.typingIndicatorDelayMs / 1000;
+		const next = Math.round((current + delta) * 10) / 10;
+		displayStore.setTypingIndicatorDelayMs(Math.max(0, Math.min(10, next)) * 1000);
+	}
 </script>
 
 <div class="display-page">
@@ -67,6 +73,33 @@
 			</div>
 		</section>
 	{/if}
+
+	<section class="card">
+		<div class="card-header">
+			<h3>Typing Indicator</h3>
+		</div>
+
+		<div class="setting-row">
+			<div class="setting-info">
+				<span class="setting-label">Delay</span>
+				<span class="setting-desc">Wait before the typing dots appear</span>
+			</div>
+			<div class="delay-input-container">
+				<button class="delay-step" onclick={() => stepDelay(-0.1)} disabled={displayStore.typingIndicatorDelayMs <= 0}>−</button>
+				<input
+					type="number"
+					class="delay-input"
+					min="0"
+					max="10"
+					step="0.1"
+					value={(displayStore.typingIndicatorDelayMs / 1000).toFixed(1)}
+					oninput={(e) => displayStore.setTypingIndicatorDelayMs(parseFloat(e.currentTarget.value) * 1000)}
+				/>
+				<span class="delay-unit">s</span>
+				<button class="delay-step" onclick={() => stepDelay(0.1)} disabled={displayStore.typingIndicatorDelayMs >= 10000}>+</button>
+			</div>
+		</div>
+	</section>
 
 	<section class="card">
 		<div class="card-header">
@@ -268,5 +301,56 @@
 
 	.toggle input:checked ~ .toggle-track .toggle-thumb {
 		transform: translateX(18px);
+	}
+
+	.delay-input-container {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.delay-step {
+		width: 2rem;
+		height: 2rem;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-light);
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		font-size: 1rem;
+		line-height: 1;
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+
+	.delay-step:hover:not(:disabled) {
+		background: var(--bg-tertiary);
+	}
+
+	.delay-step:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+
+	.delay-input {
+		width: 3.5rem;
+		padding: 0.35rem 0.5rem;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-light);
+		background: var(--bg-secondary);
+		font-size: 0.875rem;
+		color: var(--text-primary);
+		text-align: center;
+		appearance: textfield;
+		-moz-appearance: textfield;
+	}
+
+	.delay-input::-webkit-outer-spin-button,
+	.delay-input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+	}
+
+	.delay-unit {
+		font-size: 0.8rem;
+		color: var(--text-secondary);
 	}
 </style>

@@ -8,6 +8,7 @@ import {
 	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
 	DEFAULT_SIDEBAR_POSITION,
+	DEFAULT_TYPING_INDICATOR_DELAY_MS,
 	DEFAULT_WAIT_TONE_ENABLED,
 	type CameraSettings,
 	type ChatDisplayMode,
@@ -48,6 +49,7 @@ export interface ParsedDisplaySettings {
 	chatDisplayMode: ChatDisplayMode;
 	sidebarPosition: SidebarPosition;
 	waitToneEnabled: boolean;
+	typingIndicatorDelayMs: number;
 }
 
 /**
@@ -76,7 +78,8 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 			sceneBackground: sanitizeSceneBackground(undefined),
 			chatDisplayMode: DEFAULT_CHAT_DISPLAY_MODE,
 			sidebarPosition: DEFAULT_SIDEBAR_POSITION,
-			waitToneEnabled: DEFAULT_WAIT_TONE_ENABLED
+			waitToneEnabled: DEFAULT_WAIT_TONE_ENABLED,
+			typingIndicatorDelayMs: DEFAULT_TYPING_INDICATOR_DELAY_MS
 		};
 	}
 
@@ -121,5 +124,10 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 			? parsed.waitToneEnabled
 			: DEFAULT_WAIT_TONE_ENABLED;
 
-	return { camera, overlayCamera, physicsIntensity, sceneBackground, chatDisplayMode, sidebarPosition, waitToneEnabled };
+	let typingIndicatorDelayMs = DEFAULT_TYPING_INDICATOR_DELAY_MS;
+	if (typeof parsed.typingIndicatorDelayMs === 'number' && !Number.isNaN(parsed.typingIndicatorDelayMs)) {
+		typingIndicatorDelayMs = Math.max(0, Math.min(10000, parsed.typingIndicatorDelayMs));
+	}
+
+	return { camera, overlayCamera, physicsIntensity, sceneBackground, chatDisplayMode, sidebarPosition, waitToneEnabled, typingIndicatorDelayMs };
 }

@@ -100,9 +100,28 @@ import { startWaitTone, stopWaitTone } from '$lib/utils/wait-tone';
 		}
 	});
 
-	// Optional wait tone while the companion is thinking
+	// Typing dots visibility — delayed by typingIndicatorDelayMs
+	let typingDotsVisible = $state(false);
 	$effect(() => {
-		if (isTyping && displayStore.waitToneEnabled) {
+		if (!isTyping) {
+			typingDotsVisible = false;
+			return;
+		}
+		typingDotsVisible = false;
+		const delay = displayStore.typingIndicatorDelayMs;
+		if (delay <= 0) {
+			typingDotsVisible = true;
+			return;
+		}
+		const timer = setTimeout(() => {
+			typingDotsVisible = true;
+		}, delay);
+		return () => clearTimeout(timer);
+	});
+
+	// Wait tone — starts/stops with typing dots
+	$effect(() => {
+		if (typingDotsVisible && displayStore.waitToneEnabled) {
 			startWaitTone();
 		} else {
 			stopWaitTone();
@@ -356,10 +375,10 @@ import { startWaitTone, stopWaitTone } from '$lib/utils/wait-tone';
 			<FloatingStatIndicators />
 
 		<!-- Speech Bubble (shows latest response, click to dismiss) -->
-			{#if showBubble}
+			{#if showBubble || (typingDotsVisible && isTyping)}
 			<SpeechBubble
 				message={latestResponse}
-				isTyping={isTyping}
+				isTyping={isTyping && typingDotsVisible}
 				onHide={handleBubbleHide}
 			/>
 		{/if}
@@ -368,7 +387,7 @@ import { startWaitTone, stopWaitTone } from '$lib/utils/wait-tone';
 			<ChatSidebar
 				open={sidebarOpen && showSidebarTrigger}
 				onClose={() => sidebarOpen = false}
-				{isTyping}
+				isTyping={isTyping && typingDotsVisible}
 			/>
 
 			<!-- The image she's being shown, floated above her head while she considers it -->

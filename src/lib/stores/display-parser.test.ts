@@ -8,6 +8,7 @@ import {
 	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
 	DEFAULT_SIDEBAR_POSITION,
+	DEFAULT_TYPING_INDICATOR_DELAY_MS,
 	DEFAULT_WAIT_TONE_ENABLED
 } from './display-types.ts';
 
@@ -155,4 +156,25 @@ test('parses waitToneEnabled when present', () => {
 test('ignores non-boolean waitToneEnabled values', () => {
 	const result = parseDisplaySettings({ waitToneEnabled: 'yes' });
 	assert.equal(result.waitToneEnabled, DEFAULT_WAIT_TONE_ENABLED);
+});
+
+test('defaults typingIndicatorDelayMs to 0 when missing', () => {
+	const result = parseDisplaySettings({});
+	assert.equal(result.typingIndicatorDelayMs, DEFAULT_TYPING_INDICATOR_DELAY_MS);
+});
+
+test('parses and clamps typingIndicatorDelayMs', () => {
+	const result = parseDisplaySettings({ typingIndicatorDelayMs: 1500 });
+	assert.equal(result.typingIndicatorDelayMs, 1500);
+
+	const negative = parseDisplaySettings({ typingIndicatorDelayMs: -500 });
+	assert.equal(negative.typingIndicatorDelayMs, 0);
+
+	const tooLarge = parseDisplaySettings({ typingIndicatorDelayMs: 999999 });
+	assert.equal(tooLarge.typingIndicatorDelayMs, 10000);
+});
+
+test('ignores invalid typingIndicatorDelayMs values', () => {
+	const result = parseDisplaySettings({ typingIndicatorDelayMs: 'fast' });
+	assert.equal(result.typingIndicatorDelayMs, DEFAULT_TYPING_INDICATOR_DELAY_MS);
 });

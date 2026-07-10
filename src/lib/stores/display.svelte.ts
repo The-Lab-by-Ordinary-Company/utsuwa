@@ -5,6 +5,7 @@ import {
 	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
 	DEFAULT_SIDEBAR_POSITION,
+	DEFAULT_TYPING_INDICATOR_DELAY_MS,
 	DEFAULT_WAIT_TONE_ENABLED,
 	type CameraSettings,
 	type CameraProfile,
@@ -30,6 +31,7 @@ export {
 	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
 	DEFAULT_SIDEBAR_POSITION,
+	DEFAULT_TYPING_INDICATOR_DELAY_MS,
 	DEFAULT_WAIT_TONE_ENABLED
 };
 
@@ -46,6 +48,8 @@ function createDisplayStore() {
 	// Chat display mode and sidebar docking
 	let chatDisplayMode = $state<ChatDisplayMode>(DEFAULT_CHAT_DISPLAY_MODE);
 	let sidebarPosition = $state<SidebarPosition>(DEFAULT_SIDEBAR_POSITION);
+	// Optional delay before the typing indicator appears
+	let typingIndicatorDelayMs = $state(DEFAULT_TYPING_INDICATOR_DELAY_MS);
 	// Optional soft audio ping while the companion is thinking
 	let waitToneEnabled = $state(DEFAULT_WAIT_TONE_ENABLED);
 
@@ -59,6 +63,7 @@ function createDisplayStore() {
 			sceneBackground = parsed.sceneBackground;
 			chatDisplayMode = parsed.chatDisplayMode;
 			sidebarPosition = parsed.sidebarPosition;
+			typingIndicatorDelayMs = parsed.typingIndicatorDelayMs;
 			waitToneEnabled = parsed.waitToneEnabled;
 		}
 	}
@@ -74,6 +79,7 @@ function createDisplayStore() {
 					sceneBackground: $state.snapshot(sceneBackground),
 					chatDisplayMode,
 					sidebarPosition,
+					typingIndicatorDelayMs,
 					waitToneEnabled
 				})
 			);
@@ -128,6 +134,13 @@ function createDisplayStore() {
 		const next = computeResetChatDisplay();
 		chatDisplayMode = next.chatDisplayMode;
 		sidebarPosition = next.sidebarPosition;
+		typingIndicatorDelayMs = DEFAULT_TYPING_INDICATOR_DELAY_MS;
+		waitToneEnabled = DEFAULT_WAIT_TONE_ENABLED;
+		save();
+	}
+
+	function setTypingIndicatorDelayMs(ms: number) {
+		typingIndicatorDelayMs = Math.max(0, Math.min(10000, ms));
 		save();
 	}
 
@@ -155,6 +168,9 @@ function createDisplayStore() {
 		get sidebarPosition() {
 			return sidebarPosition;
 		},
+		get typingIndicatorDelayMs() {
+			return typingIndicatorDelayMs;
+		},
 		get waitToneEnabled() {
 			return waitToneEnabled;
 		},
@@ -165,6 +181,7 @@ function createDisplayStore() {
 		setChatDisplayMode,
 		setSidebarPosition,
 		resetChatDisplay,
+		setTypingIndicatorDelayMs,
 		setWaitToneEnabled
 	};
 }
