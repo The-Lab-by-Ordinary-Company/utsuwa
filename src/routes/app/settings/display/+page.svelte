@@ -79,48 +79,45 @@
 			<h3>Typing Indicator</h3>
 		</div>
 
-		<div class="setting-row">
-			<div class="setting-info">
-				<span class="setting-label">Delay</span>
-				<span class="setting-desc">Wait before the typing dots appear</span>
+		<div class="settings-stack">
+			<div class="setting-row">
+				<div class="setting-info">
+					<span class="setting-label">Wait tone</span>
+					<span class="setting-desc">Soft audio ping while the typing indicator is visible</span>
+				</div>
+				<label class="toggle">
+					<input
+						type="checkbox"
+						checked={displayStore.waitToneEnabled}
+						onchange={(e) => displayStore.setWaitToneEnabled(e.currentTarget.checked)}
+					/>
+					<span class="toggle-track">
+						<span class="toggle-thumb"></span>
+					</span>
+				</label>
 			</div>
-			<div class="delay-input-container">
-				<button class="delay-step" onclick={() => stepDelay(-0.1)} disabled={displayStore.typingIndicatorDelayMs <= 0}>−</button>
-				<input
-					type="number"
-					class="delay-input"
-					min="0"
-					max="10"
-					step="0.1"
-					value={(displayStore.typingIndicatorDelayMs / 1000).toFixed(1)}
-					oninput={(e) => displayStore.setTypingIndicatorDelayMs(parseFloat(e.currentTarget.value) * 1000)}
-				/>
-				<span class="delay-unit">s</span>
-				<button class="delay-step" onclick={() => stepDelay(0.1)} disabled={displayStore.typingIndicatorDelayMs >= 10000}>+</button>
-			</div>
-		</div>
-	</section>
 
-	<section class="card">
-		<div class="card-header">
-			<h3>Wait Tone</h3>
-		</div>
-
-		<div class="setting-row">
-			<div class="setting-info">
-				<span class="setting-label">Play wait tone</span>
-				<span class="setting-desc">Soft audio ping while the companion is thinking</span>
+			<div class="setting-row" class:disabled={!displayStore.waitToneEnabled}>
+				<div class="setting-info">
+					<span class="setting-label">Delay</span>
+					<span class="setting-desc">Wait before the typing dots appear</span>
+				</div>
+				<div class="delay-input-container">
+					<button class="delay-step" onclick={() => stepDelay(-0.1)} disabled={displayStore.typingIndicatorDelayMs <= 0 || !displayStore.waitToneEnabled}>−</button>
+					<input
+						type="number"
+						class="delay-input"
+						min="0"
+						max="10"
+						step="0.1"
+						value={(displayStore.typingIndicatorDelayMs / 1000).toFixed(1)}
+						oninput={(e) => displayStore.setTypingIndicatorDelayMs(parseFloat(e.currentTarget.value) * 1000)}
+						disabled={!displayStore.waitToneEnabled}
+					/>
+					<span class="delay-unit">s</span>
+					<button class="delay-step" onclick={() => stepDelay(0.1)} disabled={displayStore.typingIndicatorDelayMs >= 10000 || !displayStore.waitToneEnabled}>+</button>
+				</div>
 			</div>
-			<label class="toggle">
-				<input
-					type="checkbox"
-					checked={displayStore.waitToneEnabled}
-					onchange={(e) => displayStore.setWaitToneEnabled(e.currentTarget.checked)}
-				/>
-				<span class="toggle-track">
-					<span class="toggle-thumb"></span>
-				</span>
-			</label>
 		</div>
 	</section>
 </div>
@@ -172,6 +169,12 @@
 		font-size: 0.9375rem;
 		font-weight: 600;
 		color: var(--text-primary);
+	}
+
+	.settings-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 	}
 
 	.segment-control {
@@ -237,6 +240,13 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
+	}
+
+	.setting-row.disabled {
+		opacity: 0.45;
+		filter: grayscale(0.7);
+		pointer-events: none;
+		transition: opacity 0.2s ease, filter 0.2s ease;
 	}
 
 	.setting-info {
