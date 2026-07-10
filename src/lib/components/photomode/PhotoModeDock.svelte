@@ -116,12 +116,22 @@
 				kind: 'photo'
 			});
 
-			// Browser download on web; the desktop build keeps the photoboard copy
-			// (native save dialog is a follow-up needing the Tauri dialog plugin)
-			if (!isTauri()) {
+			// Both platforms put the file where users expect downloads to land:
+			// the browser via a download, the desktop app by writing directly to
+			// the Downloads folder. The keepsake-store copy is kept either way.
+			const filename = `utsuwa-photo-${Date.now()}.png`;
+			if (isTauri()) {
+				try {
+					const { writeFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
+					const bytes = new Uint8Array(await blob.arrayBuffer());
+					await writeFile(filename, bytes, { baseDir: BaseDirectory.Download });
+				} catch (e) {
+					console.error('[PhotoMode] Could not write to Downloads:', e);
+				}
+			} else {
 				const url = URL.createObjectURL(blob);
 				const link = document.createElement('a');
-				link.download = `utsuwa-photo-${Date.now()}.png`;
+				link.download = filename;
 				link.href = url;
 				link.click();
 				URL.revokeObjectURL(url);

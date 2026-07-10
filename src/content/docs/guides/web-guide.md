@@ -82,7 +82,7 @@ Click the **camera button** (top left) to open Photo Mode. A compact tabbed pane
 - **Scene** — background presets (including transparent for stickers), color filters, a vignette, and polaroid or film frames
 - **Sticker** — drop stickers on the shot, drag to move, scroll to resize, double-click or use the list to remove
 
-Capture at high resolution, take a quick snap, or use the 3 second self-timer. What you see in the preview is exactly what the file contains. Captures download on the web app; they are kept out of the photoboard, which stays reserved for images you have shown her. Press Escape or the X to exit.
+Capture at high resolution, take a quick snap, or use the 3 second self-timer. What you see in the preview is exactly what the file contains. Captures land in your Downloads folder on both the web and desktop apps; they are kept out of the photoboard, which stays reserved for images you have shown her. Press Escape or the X to exit.
 
 ## Reminders and Timers
 

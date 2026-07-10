@@ -234,7 +234,7 @@ A studio inside the scene: poses, expressions, backgrounds, filters, frames, sti
 - `src/lib/services/photo-capture.ts` — capture composite helpers (backgrounds, frames, vignette, stickers)
 - `src/lib/components/photomode/` — the tabbed panel, draggable sticker layer, and frame preview
 
-Captures render one supersampled frame in place (the canvas keeps its drawing buffer), then composite the background, filter, vignette, frame, and stickers on a 2D canvas so the saved PNG matches the preview exactly. Photo captures are stored under a separate keepsake kind and never appear on the photoboard.
+Captures render one supersampled frame in place (the canvas keeps its drawing buffer), then composite the background, filter, vignette, frame, and stickers on a 2D canvas so the saved PNG matches the preview exactly. Photo captures are stored under a separate keepsake kind and never appear on the photoboard; the file itself lands in the Downloads folder (a browser download on web, a direct write via the fs plugin on desktop).
 
 ### Tap Reactions and Physics
 

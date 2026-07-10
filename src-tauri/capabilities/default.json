@@ -2,7 +2,10 @@
   "$schema": "https://schema.tauri.app/config/2/capability",
   "identifier": "default",
   "description": "Default capabilities for Utsuwa",
-  "windows": ["main", "overlay"],
+  "windows": [
+    "main",
+    "overlay"
+  ],
   "permissions": [
     "core:default",
     "core:window:default",
@@ -25,22 +28,58 @@
     {
       "identifier": "fs:allow-read-file",
       "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$DESKTOP/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$PICTURE/**" },
-        { "path": "$RESOURCE/**" },
-        { "path": "$TEMP/**" },
-        { "path": "/Volumes/**" },
-        { "path": "/media/**" },
-        { "path": "/mnt/**" }
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$DOWNLOAD/**"
+        },
+        {
+          "path": "$PICTURE/**"
+        },
+        {
+          "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        },
+        {
+          "path": "/Volumes/**"
+        },
+        {
+          "path": "/media/**"
+        },
+        {
+          "path": "/mnt/**"
+        }
       ],
       "deny": [
-        { "path": "$HOME/.ssh/**" },
-        { "path": "$HOME/.aws/**" },
-        { "path": "$HOME/.gnupg/**" },
-        { "path": "$HOME/.config/**" }
+        {
+          "path": "$HOME/.ssh/**"
+        },
+        {
+          "path": "$HOME/.aws/**"
+        },
+        {
+          "path": "$HOME/.gnupg/**"
+        },
+        {
+          "path": "$HOME/.config/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [
+        {
+          "path": "$DOWNLOAD/**"
+        }
       ]
     }
   ]
