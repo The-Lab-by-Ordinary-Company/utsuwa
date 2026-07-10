@@ -62,6 +62,7 @@
 - **Model-Centric UI**: Full-screen 3D model with unobtrusive overlay controls
 - **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
 - **Chat History Sidebar**: Optional side panel showing the full conversation history, with a configurable display mode (bubble, sidebar, both, or off) in Settings > Display
+- **Typing Indicator**: Configurable delay before the typing dots appear, plus an optional soft audio ping while she is thinking
 - **Chat Interface**: Bottom-centered input bar with streaming responses
 - **Voice Input**: Speech-to-text via a local Whisper server (Speaches, faster-whisper-server, whisper.cpp), Groq (Whisper), or the browser's Web Speech API, with real-time audio visualization
 - **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
