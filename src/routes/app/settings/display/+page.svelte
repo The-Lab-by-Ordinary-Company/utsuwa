@@ -97,13 +97,13 @@
 				</label>
 			</div>
 
-			<div class="setting-row" class:disabled={!displayStore.waitToneEnabled}>
+			<div class="setting-row">
 				<div class="setting-info">
 					<span class="setting-label">Delay</span>
 					<span class="setting-desc">Wait before the typing dots appear</span>
 				</div>
 				<div class="delay-input-container">
-					<button class="delay-step" onclick={() => stepDelay(-0.1)} disabled={displayStore.typingIndicatorDelayMs <= 0 || !displayStore.waitToneEnabled}>−</button>
+					<button class="delay-step" onclick={() => stepDelay(-0.1)} disabled={displayStore.typingIndicatorDelayMs <= 0}>−</button>
 					<input
 						type="number"
 						class="delay-input"
@@ -115,10 +115,9 @@
 							const v = parseFloat(e.currentTarget.value);
 							if (!Number.isNaN(v)) displayStore.setTypingIndicatorDelayMs(v * 1000);
 						}}
-						disabled={!displayStore.waitToneEnabled}
 					/>
 					<span class="delay-unit">s</span>
-					<button class="delay-step" onclick={() => stepDelay(0.1)} disabled={displayStore.typingIndicatorDelayMs >= 10000 || !displayStore.waitToneEnabled}>+</button>
+					<button class="delay-step" onclick={() => stepDelay(0.1)} disabled={displayStore.typingIndicatorDelayMs >= 10000}>+</button>
 				</div>
 			</div>
 		</div>
@@ -243,13 +242,6 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-	}
-
-	.setting-row.disabled {
-		opacity: 0.45;
-		filter: grayscale(0.7);
-		pointer-events: none;
-		transition: opacity 0.2s ease, filter 0.2s ease;
 	}
 
 	.setting-info {

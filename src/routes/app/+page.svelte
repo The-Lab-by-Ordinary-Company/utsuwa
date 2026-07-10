@@ -38,7 +38,7 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
-import { startWaitTone, stopWaitTone } from '$lib/utils/wait-tone';
+import { startWaitTone, stopWaitTone, destroyWaitTone } from '$lib/utils/wait-tone';
 	import { debugEventsStore } from '$lib/stores/debugEvents.svelte';
 	import { getLLMProvider, providerSupportsVision } from '$lib/services/providers/registry';
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';
@@ -221,6 +221,7 @@ import { startWaitTone, stopWaitTone } from '$lib/utils/wait-tone';
 		}
 		for (const img of thinkingImages) URL.revokeObjectURL(img.url);
 		stopWaitTone();
+		destroyWaitTone();
 	});
 
 
@@ -375,7 +376,7 @@ import { startWaitTone, stopWaitTone } from '$lib/utils/wait-tone';
 			<FloatingStatIndicators />
 
 		<!-- Speech Bubble (shows latest response, click to dismiss) -->
-			{#if showBubble || (typingDotsVisible && isTyping)}
+			{#if showBubble && (latestResponse || (isTyping && typingDotsVisible))}
 			<SpeechBubble
 				message={latestResponse}
 				isTyping={isTyping && typingDotsVisible}
