@@ -227,15 +227,17 @@ pnpm tauri dev
 #### Configuration
 
 1. Click the **Settings** (gear icon) in the sidebar
-2. Navigate to **Settings > AI Services** to configure your chat provider:
+2. Navigate to **Settings > LLM Model** to configure your chat provider:
    - Enable Chat (LLM)
    - Select a cloud provider and enter your API key
    - Or select a local server like Ollama or LM Studio and choose an installed model from the discovered model dropdown
    - Optional: enable **Context Window** to scale memory injection and history truncation to your model's token limit
-3. Configure text-to-speech in the same settings area (optional):
+3. Configure text-to-speech in **Settings > TTS** (optional):
    - Select a TTS provider
    - Enter your API key
    - Configure voice settings
+4. Configure voice input in **Settings > STT** (optional):
+   - Enter your Groq or OpenAI API key, or set a local Whisper server URL
 
 All API keys are stored locally on your device and are never sent to any server except the respective API providers.
 

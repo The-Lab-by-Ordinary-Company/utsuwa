@@ -2,8 +2,6 @@
 	import { pop, fadeFast } from '$lib/utils/motion';
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { characterStore } from '$lib/stores/character.svelte';
-	import { settingsStore } from '$lib/stores/settings.svelte';
-	import { getLLMProvider } from '$lib/services/providers/registry';
 
 	import { Icon } from '$lib/components/ui';
 	import { getCompletedEvents } from '$lib/services/storage/events';
@@ -12,7 +10,6 @@
 	import AppModeSection from './AppModeSection.svelte';
 	import AvatarGallery from './AvatarGallery.svelte';
 	import CorePersonality from './CorePersonality.svelte';
-	import AiServicesSection from './AiServicesSection.svelte';
 	import StatsPanel from './StatsPanel.svelte';
 
 	const page = createPersonaPageState();
@@ -23,23 +20,6 @@
 			getCompletedEvents().then(records => {
 				page.completedEventRecords = records;
 			});
-		}
-	});
-
-	$effect(() => {
-		const providerId = page.consciousnessSettings.activeProvider as string;
-		const provider = providerId ? getLLMProvider(providerId) : null;
-		if (!provider?.isLocal) {
-			page.lastLocalLLMFetchKey = '';
-			return;
-		}
-
-		const baseUrl = settingsStore.getProviderConfig(provider.id).baseUrl ?? provider.defaultBaseUrl ?? '';
-		const fetchKey = `${provider.id}:${baseUrl}`;
-
-		if (fetchKey !== page.lastLocalLLMFetchKey) {
-			page.lastLocalLLMFetchKey = fetchKey;
-			page.debouncedFetchLLMModels();
 		}
 	});
 
@@ -71,7 +51,6 @@
 			<AppModeSection {page} />
 			<AvatarGallery {page} />
 			<CorePersonality {page} />
-			<AiServicesSection {page} />
 		</div>
 
 		<StatsPanel {page} />
