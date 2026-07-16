@@ -38,7 +38,7 @@
 	import { characterStore } from '$lib/stores/character.svelte';
 	import { personaStore } from '$lib/stores/persona.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
-import { startWaitTone, stopWaitTone, destroyWaitTone } from '$lib/utils/wait-tone';
+	import { startWaitTone, stopWaitTone, destroyWaitTone } from '$lib/utils/wait-tone';
 	import { debugEventsStore } from '$lib/stores/debugEvents.svelte';
 	import { getLLMProvider, providerSupportsVision } from '$lib/services/providers/registry';
 	import { isLocalLLMProvider } from '$lib/services/providers/local-endpoints';

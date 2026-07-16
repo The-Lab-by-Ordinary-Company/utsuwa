@@ -95,7 +95,7 @@ export function createWaitTone(options?: { pingIntervalMs?: number }): WaitToneC
 	return { start, stop, destroy };
 }
 
-const singleton = createWaitTone();
+let singleton = createWaitTone();
 
 export function startWaitTone() {
 	singleton.start();
@@ -105,6 +105,10 @@ export function stopWaitTone() {
 	singleton.stop();
 }
 
+// Destroy releases the AudioContext (the app page calls this on navigation),
+// but the module outlives the page, so swap in a fresh controller for the
+// next start.
 export function destroyWaitTone() {
 	singleton.destroy();
+	singleton = createWaitTone();
 }
