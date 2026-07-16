@@ -94,7 +94,7 @@
 							: provider.defaultBaseUrl || 'http://localhost:11434/v1/'}
 						value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
 						oninput={(e) => state.handleLLMBaseUrlChange(provider.id, e.currentTarget.value)}
-						onblur={provider.custom ? undefined : () => state.fetchLLMModels()}
+						onblur={provider.custom ? undefined : () => state.debouncedFetchLLMModels()}
 					/>
 				</div>
 				{#if provider?.isLocal && !state.llmFetchError}
