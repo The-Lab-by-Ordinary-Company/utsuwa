@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { Icon } from '$lib/components/ui';
+	import './ai-services-settings.css';
 </script>
 
 <div class="service-group">
@@ -18,8 +19,10 @@
 			placeholder="Groq API Key"
 			value={settingsStore.getProviderConfig('groq-stt').apiKey ?? ''}
 			oninput={(e) => {
-				settingsStore.setProviderConfig('groq-stt', { apiKey: e.currentTarget.value });
-				settingsStore.markProviderAdded('groq-stt');
+				const v = e.currentTarget.value;
+				settingsStore.setProviderConfig('groq-stt', { apiKey: v });
+				if (v) settingsStore.markProviderAdded('groq-stt');
+				else settingsStore.removeProvider('groq-stt');
 			}}
 		/>
 	</div>
@@ -32,8 +35,10 @@
 			placeholder="OpenAI API Key"
 			value={settingsStore.getProviderConfig('openai-stt').apiKey ?? ''}
 			oninput={(e) => {
-				settingsStore.setProviderConfig('openai-stt', { apiKey: e.currentTarget.value });
-				settingsStore.markProviderAdded('openai-stt');
+				const v = e.currentTarget.value;
+				settingsStore.setProviderConfig('openai-stt', { apiKey: v });
+				if (v) settingsStore.markProviderAdded('openai-stt');
+				else settingsStore.removeProvider('openai-stt');
 			}}
 		/>
 	</div>
@@ -67,24 +72,6 @@
 </div>
 
 <style>
-	.service-group {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.service-header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--text-tertiary);
-		margin-bottom: 0.25rem;
-	}
-
 	.stt-hint {
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
@@ -98,33 +85,5 @@
 		font-weight: 600;
 		color: var(--text-secondary);
 		margin-top: 0.25rem;
-	}
-
-	.api-key-row {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.api-key-input {
-		flex: 1;
-		padding: 0.5rem 0.75rem;
-		background: var(--bg-secondary);
-		border: 1px solid transparent;
-		border-radius: var(--radius-lg);
-		font-size: 0.8rem;
-		font-family: var(--font-mono);
-		color: var(--text-primary);
-		transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-	}
-
-	.api-key-input::placeholder {
-		color: var(--text-tertiary);
-	}
-
-	.api-key-input:focus {
-		outline: none;
-		background: var(--bg-primary);
-		border-color: var(--accent);
-		box-shadow: 0 0 0 3px var(--accent-muted);
 	}
 </style>

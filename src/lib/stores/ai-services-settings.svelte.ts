@@ -15,6 +15,17 @@ import {
 } from './ai-services-settings-logic.ts';
 
 /**
+ * Shared helper: persists an API key and marks the provider as added when a key
+ * is present. Both LLM and TTS settings use the exact same flow.
+ */
+function applyApiKey(providerId: string, apiKey: string) {
+	settingsStore.setProviderConfig(providerId, { apiKey });
+	if (apiKey) {
+		settingsStore.markProviderAdded(providerId);
+	}
+}
+
+/**
  * Shared reactive state for the LLM settings page.
  * Extracted from the persona page so the same UI can live in the settings sidebar.
  */
@@ -41,9 +52,7 @@ export function createLlmSettingsState() {
 		if (!providerId) return false;
 		const provider = getLLMProvider(providerId);
 		if (!provider) return false;
-		if (provider.isLocal || !provider.requiresApiKey) return true;
-		const config = settingsStore.getProviderConfig(providerId);
-		return !!config.apiKey;
+		return isProviderReadyForFetch(provider, settingsStore.getProviderConfig(providerId));
 	});
 
 	async function fetchLLMModels(targetProvider = consciousnessSettings.activeProvider as string) {
@@ -144,10 +153,7 @@ export function createLlmSettingsState() {
 
 	function handleApiKeyChange(providerId: string, apiKey: string) {
 		llmFetchError = null;
-		settingsStore.setProviderConfig(providerId, { apiKey });
-		if (apiKey) {
-			settingsStore.markProviderAdded(providerId);
-		}
+		applyApiKey(providerId, apiKey);
 	}
 
 	function handleLLMApiKeyBlur() {
@@ -228,9 +234,7 @@ export function createTtsSettingsState() {
 		if (!providerId) return false;
 		const provider = getTTSProvider(providerId);
 		if (!provider) return false;
-		if (provider.isLocal || !provider.requiresApiKey) return true;
-		const config = settingsStore.getProviderConfig(providerId);
-		return !!config.apiKey;
+		return isProviderReadyForFetch(provider, settingsStore.getProviderConfig(providerId));
 	});
 
 	async function fetchTTSModels() {
@@ -321,10 +325,7 @@ export function createTtsSettingsState() {
 
 	function handleApiKeyChange(providerId: string, apiKey: string) {
 		ttsFetchError = null;
-		settingsStore.setProviderConfig(providerId, { apiKey });
-		if (apiKey) {
-			settingsStore.markProviderAdded(providerId);
-		}
+		applyApiKey(providerId, apiKey);
 	}
 
 	function toggleTTS() {

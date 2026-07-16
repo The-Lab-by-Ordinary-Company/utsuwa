@@ -2,6 +2,7 @@
 	import { getLLMProvider } from '$lib/services/providers/registry';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { createLlmSettingsState } from '$lib/stores/ai-services-settings.svelte';
+	import { createFetchSignature } from '$lib/stores/ai-services-settings-logic';
 	import LlmSettings from '$lib/components/settings/LlmSettings.svelte';
 
 	const state = createLlmSettingsState();
@@ -16,7 +17,7 @@
 		}
 
 		const baseUrl = settingsStore.getProviderConfig(provider.id).baseUrl ?? provider.defaultBaseUrl ?? '';
-		const fetchKey = `${provider.id}:${baseUrl}`;
+		const fetchKey = createFetchSignature(provider.id, baseUrl);
 
 		if (fetchKey !== state.lastLocalLLMFetchKey) {
 			state.lastLocalLLMFetchKey = fetchKey;
