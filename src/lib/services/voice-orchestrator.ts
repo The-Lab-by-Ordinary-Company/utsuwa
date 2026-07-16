@@ -44,6 +44,11 @@ export interface OrchestratorCallbacks {
 	onAction?: (action: string) => void;
 }
 
+// Cloud TTS plans commonly cap concurrent synthesis (ElevenLabs Free allows 2),
+// and the pipeline only needs to stay one segment ahead of playback anyway.
+// Providers that tolerate more can raise this via capabilities.maxConcurrentSynthesis.
+const DEFAULT_MAX_CONCURRENT_SYNTHESIS = 2;
+
 // ---------------------------------------------------------------------------
 // Simple counting semaphore for limiting parallel TTS synthesis requests
 // ---------------------------------------------------------------------------
@@ -161,8 +166,10 @@ export class VoiceOrchestrator {
 	private inferredPrimaryLang: string | undefined = undefined;
 	private lastSegmentLang: string | undefined = undefined;
 	private pipelineDoneResolve: (() => void) | null = null;
+	private pipelineDoneReject: ((err: unknown) => void) | null = null;
 	private pipelineDone: Promise<void> = Promise.resolve();
 	private pipelineDoneResolved = true;
+	private pipelineErrors: unknown[] = [];
 
 	// Limits parallel TTS synthesis requests (important for single-GPU diffusion models)
 	private synthesisLimiter = new Semaphore(Infinity);
@@ -212,11 +219,13 @@ export class VoiceOrchestrator {
 
 		// Apply provider-specific concurrency limit (e.g. OmniVoice = 2)
 		const provider = getTTSProvider(options);
-		const limit = provider.capabilities?.maxConcurrentSynthesis ?? Infinity;
+		const limit = provider.capabilities?.maxConcurrentSynthesis ?? DEFAULT_MAX_CONCURRENT_SYNTHESIS;
 		this.synthesisLimiter.drainAndReset(limit);
+		this.pipelineErrors = [];
 		this.pipelineDoneResolved = false;
-		this.pipelineDone = new Promise<void>((resolve) => {
+		this.pipelineDone = new Promise<void>((resolve, reject) => {
 			this.pipelineDoneResolve = resolve;
+			this.pipelineDoneReject = reject;
 		});
 
 		// Start the async pipeline runner (fire-and-forget; resolves pipelineDone)
@@ -276,6 +285,9 @@ export class VoiceOrchestrator {
 
 		// Non-streaming providers: batch path (prefetch while previous segment plays)
 		const bufferPromise = this.fetchBuffer(provider, segment, signal);
+		// runPipeline awaits this later; the no-op catch just keeps a fast rejection
+		// from surfacing as an unhandled-rejection warning in the meantime.
+		bufferPromise.catch(() => {});
 		this.channel.push({ segment, index, bufferPromise });
 	}
 
@@ -338,6 +350,16 @@ export class VoiceOrchestrator {
 			this.pipelineDoneResolved = true;
 			this.pipelineDoneResolve?.();
 			this.pipelineDoneResolve = null;
+			this.pipelineDoneReject = null;
+		}
+	}
+
+	private rejectPipeline(err: unknown): void {
+		if (!this.pipelineDoneResolved) {
+			this.pipelineDoneResolved = true;
+			this.pipelineDoneReject?.(err);
+			this.pipelineDoneResolve = null;
+			this.pipelineDoneReject = null;
 		}
 	}
 
@@ -372,7 +394,10 @@ export class VoiceOrchestrator {
 						item.segment.text,
 						err
 					);
-					continue; // skip this segment
+					// Keep playing the remaining segments, but remember the failure so
+					// the session promise rejects and the store can show its toast.
+					this.pipelineErrors.push(err);
+					continue;
 				}
 
 				if (!buffer || this.pipelineAbort?.signal.aborted) continue;
@@ -390,7 +415,14 @@ export class VoiceOrchestrator {
 			this.currentAnalyser = null;
 			callbacks?.onEmotionChange?.(null);
 			callbacks?.onComplete?.();
-			this.resolvePipeline();
+			const firstError = this.pipelineErrors[0];
+			if (firstError !== undefined && !this.pipelineAbort?.signal.aborted) {
+				this.rejectPipeline(
+					firstError instanceof Error ? firstError : new Error(String(firstError))
+				);
+			} else {
+				this.resolvePipeline();
+			}
 		}
 	}
 
@@ -480,6 +512,11 @@ export class VoiceOrchestrator {
 			source.onended = () => resolve();
 			source.start(0);
 		});
+
+		// One analyser is created per segment; leaving them connected to the
+		// destination accumulates nodes on the shared context over a session.
+		source.disconnect();
+		analyser.disconnect();
 	}
 
 	/**

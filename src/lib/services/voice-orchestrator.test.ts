@@ -126,6 +126,64 @@ test('skips empty or punctuation-only segments', async () => {
 	assert.deepEqual(starts, ['Hello.', 'Goodbye.']);
 });
 
+test('caps parallel synthesis when the provider declares no limit', async () => {
+	let inFlight = 0;
+	let maxInFlight = 0;
+	globalThis.fetch = async () => {
+		inFlight++;
+		maxInFlight = Math.max(maxInFlight, inFlight);
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		inFlight--;
+		return {
+			ok: true,
+			status: 200,
+			arrayBuffer: () => Promise.resolve(new ArrayBuffer(8))
+		} as Response;
+	};
+
+	const orchestrator = new VoiceOrchestrator();
+	const segments: SpeechSegment[] = Array.from({ length: 6 }, (_, i) => ({
+		text: `Sentence number ${i + 1}.`
+	}));
+
+	await orchestrator.speakSegments(segments, baseOptions, {});
+
+	// Cloud providers enforce per-plan concurrency caps (ElevenLabs Free allows 2),
+	// so an uncapped fan-out turns an ordinary reply into a 429 storm.
+	assert.ok(
+		maxInFlight <= 2,
+		`expected at most 2 parallel synthesis requests, saw ${maxInFlight}`
+	);
+});
+
+test('speakSegments rejects when a segment fails so the store can surface it', async () => {
+	let call = 0;
+	globalThis.fetch = () => {
+		call++;
+		if (call === 2) {
+			return Promise.resolve({
+				ok: false,
+				status: 429,
+				json: () => Promise.reject(new Error('no body'))
+			} as unknown as Response);
+		}
+		return mockFetchResponse();
+	};
+
+	const orchestrator = new VoiceOrchestrator();
+	const starts: string[] = [];
+	const segments: SpeechSegment[] = [{ text: 'One.' }, { text: 'Two.' }, { text: 'Three.' }];
+
+	await assert.rejects(
+		orchestrator.speakSegments(segments, baseOptions, {
+			onSegmentStart: (seg) => starts.push(seg.text)
+		}),
+		/429/
+	);
+	// The surviving segments still play; the failure is reported, not swallowed.
+	assert.deepEqual(starts, ['One.', 'Three.']);
+});
+
 test('interrupt stops playback and onComplete fires', async () => {
 	globalThis.fetch = () => mockFetchResponse();
 
