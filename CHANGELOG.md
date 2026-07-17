@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-07-17
+
+### Added
+- **Dedicated settings pages for LLM, TTS, and STT**: AI service configuration moved out of the Character page into three focused pages in the settings sidebar, so finding the model picker no longer means scrolling past persona settings. The refresh button next to the model list now always refetches from the provider instead of serving a cached list. Contributed by @dezihh.
+- **Typing indicator delay and wait tone**: two new options under Settings > Display > Typing Indicator. Set a delay so the typing dots only appear when a reply is actually taking a while, and optionally enable a soft two-note ping that plays while she is thinking. Both are off by default. Contributed by @dezihh.
+
+### Changed
+- **She starts speaking sooner**: long replies are now synthesized and spoken sentence by sentence instead of as one block, so the first sentence can play while the rest is still being generated. For cloud voices this means a few smaller TTS requests per reply instead of one large one, capped at two at a time to stay inside provider concurrency limits. If a sentence fails to synthesize, the rest still plays and the error surfaces as a toast instead of being swallowed. This also lays the groundwork for streaming TTS providers in a future release. Contributed by @dezihh.
+- CI now runs a full production build alongside type checks and tests, so build-only failures cannot slip through green checks.
+
 ## [0.11.0] - 2026-07-09
 
 ### Added
