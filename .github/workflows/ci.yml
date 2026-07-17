@@ -29,6 +29,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # check and test don't resolve CSS side-effect imports or other
+      # build-only failures; a route can 500 in production with both green.
+      - name: Build
+        run: pnpm build
+
   tauri:
     runs-on: ubuntu-22.04
     steps:
