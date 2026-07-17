@@ -121,7 +121,7 @@
 							onSelect={state.handleLLMModelChange}
 							placeholder="Pick a fetched model..."
 							isLoading={state.llmIsLoading}
-							onRefresh={state.fetchLLMModels}
+							onRefresh={state.refreshLLMModels}
 							disabled={false}
 						/>
 					</div>
@@ -233,7 +233,7 @@
 					onSelect={state.handleLLMModelChange}
 					placeholder="Select model..."
 					isLoading={state.llmIsLoading}
-					onRefresh={state.llmHasApiKey ? state.fetchLLMModels : undefined}
+					onRefresh={state.llmHasApiKey ? state.refreshLLMModels : undefined}
 					disabled={!state.llmHasApiKey}
 					disabledMessage="Enter API key first"
 				/>

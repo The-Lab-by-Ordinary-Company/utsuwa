@@ -55,23 +55,45 @@ export function createLlmSettingsState() {
 		return isProviderReadyForFetch(provider, settingsStore.getProviderConfig(providerId));
 	});
 
-	async function fetchLLMModels(targetProvider = consciousnessSettings.activeProvider as string) {
-		if (!targetProvider) return;
-		const provider = getLLMProvider(targetProvider);
-		if (!provider) return;
+	function activeLLMProviderForFetch() {
+		const providerId = consciousnessSettings.activeProvider as string;
+		if (!providerId) return null;
+		const provider = getLLMProvider(providerId);
+		if (!provider) return null;
 
 		const config = settingsStore.getProviderConfig(provider.id);
 		if (!isProviderReadyForFetch(provider, config)) {
 			llmDynamicModels = null;
-			return;
+			return null;
 		}
+		return { provider, config };
+	}
 
-		const cached = getCachedModelsForProvider(provider.id);
+	async function fetchLLMModels() {
+		const target = activeLLMProviderForFetch();
+		if (!target) return;
+
+		const cached = getCachedModelsForProvider(target.provider.id);
 		if (cached) {
 			llmDynamicModels = cached;
 			return;
 		}
 
+		await fetchLLMModelsFromNetwork(target.provider, target.config);
+	}
+
+	// Explicit user refresh: skip the 24h cache so "pull a model, then refresh"
+	// actually shows the new model. The successful fetch re-populates the cache.
+	async function refreshLLMModels() {
+		const target = activeLLMProviderForFetch();
+		if (!target) return;
+		await fetchLLMModelsFromNetwork(target.provider, target.config);
+	}
+
+	async function fetchLLMModelsFromNetwork(
+		provider: NonNullable<ReturnType<typeof getLLMProvider>>,
+		config: ReturnType<typeof settingsStore.getProviderConfig>
+	) {
 		await fetchModels({
 			providerId: provider.id,
 			apiKey: config.apiKey ?? '',
@@ -196,6 +218,7 @@ export function createLlmSettingsState() {
 			lastLocalLLMFetchKey = value;
 		},
 		fetchLLMModels,
+		refreshLLMModels,
 		debouncedFetchLLMModels,
 		handleLLMProviderChange,
 		handleLLMNumberSetting,
