@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createTtsSettingsState } from '$lib/stores/ai-services-settings.svelte';
 	import TtsSettings from '$lib/components/settings/TtsSettings.svelte';
-	import './settings-page.css';
+	import '../settings-page.css';
 
 	const state = createTtsSettingsState();
 </script>

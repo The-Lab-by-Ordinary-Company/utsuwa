@@ -4,7 +4,7 @@
 	import { createLlmSettingsState } from '$lib/stores/ai-services-settings.svelte';
 	import { createFetchSignature } from '$lib/stores/ai-services-settings-logic';
 	import LlmSettings from '$lib/components/settings/LlmSettings.svelte';
-	import './settings-page.css';
+	import '../settings-page.css';
 
 	const state = createLlmSettingsState();
 

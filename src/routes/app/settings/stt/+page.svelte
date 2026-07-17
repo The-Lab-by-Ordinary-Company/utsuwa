@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SttSettings from '$lib/components/settings/SttSettings.svelte';
-	import './settings-page.css';
+	import '../settings-page.css';
 </script>
 
 <div class="page">
