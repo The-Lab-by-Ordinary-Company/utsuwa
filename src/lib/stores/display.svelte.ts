@@ -7,10 +7,15 @@ import {
 	DEFAULT_SIDEBAR_POSITION,
 	DEFAULT_TYPING_INDICATOR_DELAY_MS,
 	DEFAULT_WAIT_TONE_ENABLED,
+	DEFAULT_TEXT_REVEAL_SPEED,
+	DEFAULT_CHAT_BAR_ALIGNMENT,
+	REVEAL_SPEED_MS,
 	type CameraSettings,
 	type CameraProfile,
 	type ChatDisplayMode,
-	type SidebarPosition
+	type SidebarPosition,
+	type TextRevealSpeed,
+	type ChatBarAlignment
 } from './display-types';
 import { parseDisplaySettings, sanitizeCamera } from './display-parser';
 import {
@@ -25,14 +30,17 @@ import {
 
 const STORAGE_KEY = 'utsuwa-display';
 
-export type { CameraSettings, CameraProfile, ChatDisplayMode, SidebarPosition };
+export type { CameraSettings, CameraProfile, ChatDisplayMode, SidebarPosition, TextRevealSpeed, ChatBarAlignment };
 export {
 	CAMERA_DEFAULTS,
 	CAMERA_LIMITS,
 	DEFAULT_CHAT_DISPLAY_MODE,
 	DEFAULT_SIDEBAR_POSITION,
 	DEFAULT_TYPING_INDICATOR_DELAY_MS,
-	DEFAULT_WAIT_TONE_ENABLED
+	DEFAULT_WAIT_TONE_ENABLED,
+	DEFAULT_TEXT_REVEAL_SPEED,
+	DEFAULT_CHAT_BAR_ALIGNMENT,
+	REVEAL_SPEED_MS
 };
 
 function createDisplayStore() {
@@ -52,6 +60,12 @@ function createDisplayStore() {
 	let typingIndicatorDelayMs = $state(DEFAULT_TYPING_INDICATOR_DELAY_MS);
 	// Optional soft audio ping while the companion is thinking
 	let waitToneEnabled = $state(DEFAULT_WAIT_TONE_ENABLED);
+	// Word-by-word reveal cadence for replies
+	let textRevealSpeed = $state<TextRevealSpeed>(DEFAULT_TEXT_REVEAL_SPEED);
+	// Where the floating bar sits along the bottom edge
+	let chatBarAlignment = $state<ChatBarAlignment>(DEFAULT_CHAT_BAR_ALIGNMENT);
+	// Session-only counter; the chat window clears its saved rect when it changes
+	let chatWindowResetToken = $state(0);
 
 	if (browser) {
 		const saved = localStorage.getItem(STORAGE_KEY);
@@ -65,6 +79,8 @@ function createDisplayStore() {
 			sidebarPosition = parsed.sidebarPosition;
 			typingIndicatorDelayMs = parsed.typingIndicatorDelayMs;
 			waitToneEnabled = parsed.waitToneEnabled;
+			textRevealSpeed = parsed.textRevealSpeed;
+			chatBarAlignment = parsed.chatBarAlignment;
 		}
 	}
 
@@ -80,7 +96,9 @@ function createDisplayStore() {
 					chatDisplayMode,
 					sidebarPosition,
 					typingIndicatorDelayMs,
-					waitToneEnabled
+					waitToneEnabled,
+					textRevealSpeed,
+					chatBarAlignment
 				})
 			);
 		}
@@ -136,7 +154,23 @@ function createDisplayStore() {
 		sidebarPosition = next.sidebarPosition;
 		typingIndicatorDelayMs = DEFAULT_TYPING_INDICATOR_DELAY_MS;
 		waitToneEnabled = DEFAULT_WAIT_TONE_ENABLED;
+		textRevealSpeed = DEFAULT_TEXT_REVEAL_SPEED;
+		chatBarAlignment = DEFAULT_CHAT_BAR_ALIGNMENT;
 		save();
+	}
+
+	function setTextRevealSpeed(speed: TextRevealSpeed) {
+		textRevealSpeed = speed;
+		save();
+	}
+
+	function setChatBarAlignment(alignment: ChatBarAlignment) {
+		chatBarAlignment = alignment;
+		save();
+	}
+
+	function requestChatWindowReset() {
+		chatWindowResetToken += 1;
 	}
 
 	function setTypingIndicatorDelayMs(ms: number) {
@@ -175,6 +209,15 @@ function createDisplayStore() {
 		get waitToneEnabled() {
 			return waitToneEnabled;
 		},
+		get textRevealSpeed() {
+			return textRevealSpeed;
+		},
+		get chatBarAlignment() {
+			return chatBarAlignment;
+		},
+		get chatWindowResetToken() {
+			return chatWindowResetToken;
+		},
 		setCamera,
 		resetCamera,
 		setPhysicsIntensity,
@@ -183,7 +226,10 @@ function createDisplayStore() {
 		setSidebarPosition,
 		resetChatDisplay,
 		setTypingIndicatorDelayMs,
-		setWaitToneEnabled
+		setWaitToneEnabled,
+		setTextRevealSpeed,
+		setChatBarAlignment,
+		requestChatWindowReset
 	};
 }
 

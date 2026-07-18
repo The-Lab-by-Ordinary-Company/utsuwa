@@ -10,12 +10,24 @@ export interface CameraSettings {
 export type CameraProfile = 'main' | 'overlay';
 export type ChatDisplayMode = 'bubble' | 'sidebar' | 'both' | 'off';
 export type SidebarPosition = 'left' | 'right';
+export type TextRevealSpeed = 'off' | 'slow' | 'normal' | 'fast';
+export type ChatBarAlignment = 'left' | 'center' | 'right';
 
 export const CAMERA_DEFAULTS: CameraSettings = { fov: 35, zoom: 1, height: 0 };
 export const DEFAULT_CHAT_DISPLAY_MODE: ChatDisplayMode = 'bubble';
 export const DEFAULT_SIDEBAR_POSITION: SidebarPosition = 'right';
 export const DEFAULT_WAIT_TONE_ENABLED = false;
 export const DEFAULT_TYPING_INDICATOR_DELAY_MS = 0;
+export const DEFAULT_TEXT_REVEAL_SPEED: TextRevealSpeed = 'normal';
+export const DEFAULT_CHAT_BAR_ALIGNMENT: ChatBarAlignment = 'center';
+
+/** Per-word reveal cadence for each speed; 0 disables the effect. */
+export const REVEAL_SPEED_MS: Record<TextRevealSpeed, number> = {
+	off: 0,
+	slow: 110,
+	normal: 60,
+	fast: 30
+};
 
 export const CAMERA_LIMITS = {
 	fov: { min: 20, max: 60 },

@@ -10,9 +10,13 @@ import {
 	DEFAULT_SIDEBAR_POSITION,
 	DEFAULT_TYPING_INDICATOR_DELAY_MS,
 	DEFAULT_WAIT_TONE_ENABLED,
+	DEFAULT_TEXT_REVEAL_SPEED,
+	DEFAULT_CHAT_BAR_ALIGNMENT,
 	type CameraSettings,
 	type ChatDisplayMode,
-	type SidebarPosition
+	type SidebarPosition,
+	type TextRevealSpeed,
+	type ChatBarAlignment
 } from './display-types.ts';
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -37,6 +41,14 @@ function isSidebarPosition(value: unknown): value is SidebarPosition {
 	return value === 'left' || value === 'right';
 }
 
+function isTextRevealSpeed(value: unknown): value is TextRevealSpeed {
+	return value === 'off' || value === 'slow' || value === 'normal' || value === 'fast';
+}
+
+function isChatBarAlignment(value: unknown): value is ChatBarAlignment {
+	return value === 'left' || value === 'center' || value === 'right';
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -50,6 +62,8 @@ export interface ParsedDisplaySettings {
 	sidebarPosition: SidebarPosition;
 	waitToneEnabled: boolean;
 	typingIndicatorDelayMs: number;
+	textRevealSpeed: TextRevealSpeed;
+	chatBarAlignment: ChatBarAlignment;
 }
 
 /**
@@ -79,7 +93,9 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 			chatDisplayMode: DEFAULT_CHAT_DISPLAY_MODE,
 			sidebarPosition: DEFAULT_SIDEBAR_POSITION,
 			waitToneEnabled: DEFAULT_WAIT_TONE_ENABLED,
-			typingIndicatorDelayMs: DEFAULT_TYPING_INDICATOR_DELAY_MS
+			typingIndicatorDelayMs: DEFAULT_TYPING_INDICATOR_DELAY_MS,
+			textRevealSpeed: DEFAULT_TEXT_REVEAL_SPEED,
+			chatBarAlignment: DEFAULT_CHAT_BAR_ALIGNMENT
 		};
 	}
 
@@ -129,5 +145,13 @@ export function parseDisplaySettings(raw: unknown): ParsedDisplaySettings {
 		typingIndicatorDelayMs = Math.max(0, Math.min(10000, parsed.typingIndicatorDelayMs));
 	}
 
-	return { camera, overlayCamera, physicsIntensity, sceneBackground, chatDisplayMode, sidebarPosition, waitToneEnabled, typingIndicatorDelayMs };
+	const textRevealSpeed = isTextRevealSpeed(parsed.textRevealSpeed)
+		? parsed.textRevealSpeed
+		: DEFAULT_TEXT_REVEAL_SPEED;
+
+	const chatBarAlignment = isChatBarAlignment(parsed.chatBarAlignment)
+		? parsed.chatBarAlignment
+		: DEFAULT_CHAT_BAR_ALIGNMENT;
+
+	return { camera, overlayCamera, physicsIntensity, sceneBackground, chatDisplayMode, sidebarPosition, waitToneEnabled, typingIndicatorDelayMs, textRevealSpeed, chatBarAlignment };
 }

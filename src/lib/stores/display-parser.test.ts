@@ -9,7 +9,9 @@ import {
 	DEFAULT_CHAT_DISPLAY_MODE,
 	DEFAULT_SIDEBAR_POSITION,
 	DEFAULT_TYPING_INDICATOR_DELAY_MS,
-	DEFAULT_WAIT_TONE_ENABLED
+	DEFAULT_WAIT_TONE_ENABLED,
+	DEFAULT_TEXT_REVEAL_SPEED,
+	DEFAULT_CHAT_BAR_ALIGNMENT
 } from './display-types.ts';
 
 test('returns defaults for null input', () => {
@@ -186,4 +188,28 @@ test('ignores invalid typingIndicatorDelayMs values', () => {
 test('ignores NaN typingIndicatorDelayMs', () => {
 	const result = parseDisplaySettings({ typingIndicatorDelayMs: NaN });
 	assert.equal(result.typingIndicatorDelayMs, DEFAULT_TYPING_INDICATOR_DELAY_MS);
+});
+
+test('parses text reveal speed and bar alignment', () => {
+	const result = parseDisplaySettings({ textRevealSpeed: 'fast', chatBarAlignment: 'left' });
+	assert.equal(result.textRevealSpeed, 'fast');
+	assert.equal(result.chatBarAlignment, 'left');
+});
+
+test('falls back to defaults for unknown reveal speed and alignment', () => {
+	const result = parseDisplaySettings({ textRevealSpeed: 'warp', chatBarAlignment: 'top' });
+	assert.equal(result.textRevealSpeed, DEFAULT_TEXT_REVEAL_SPEED);
+	assert.equal(result.chatBarAlignment, DEFAULT_CHAT_BAR_ALIGNMENT);
+});
+
+test('falls back to defaults for non-string reveal speed and alignment', () => {
+	const result = parseDisplaySettings({ textRevealSpeed: 42, chatBarAlignment: null });
+	assert.equal(result.textRevealSpeed, DEFAULT_TEXT_REVEAL_SPEED);
+	assert.equal(result.chatBarAlignment, DEFAULT_CHAT_BAR_ALIGNMENT);
+});
+
+test('defaults reveal speed and alignment when absent', () => {
+	const result = parseDisplaySettings({ chatDisplayMode: 'bubble' });
+	assert.equal(result.textRevealSpeed, DEFAULT_TEXT_REVEAL_SPEED);
+	assert.equal(result.chatBarAlignment, DEFAULT_CHAT_BAR_ALIGNMENT);
 });
