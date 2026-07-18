@@ -1,17 +1,23 @@
 <script lang="ts">
 	import { vrmStore } from '$lib/stores/vrm.svelte';
+	import { displayStore, REVEAL_SPEED_MS } from '$lib/stores/display.svelte';
+	import { ShimmerLabel, StreamingText } from '$lib/components/ui';
+	import { phaseLabel, type ThinkingPhase } from '$lib/services/chat/chat-phase';
 	import { pop, fadeFast } from '$lib/utils/motion';
 
 	interface Props {
 		message: string;
 		isTyping?: boolean;
+		phase?: ThinkingPhase;
 		onHide?: () => void;
 		/** Docked dialog mode: the window moves around in overlay mode, so the
 		 *  bubble anchors above the bottom controls instead of chasing the head */
 		docked?: boolean;
 	}
 
-	let { message, isTyping = false, onHide, docked = false }: Props = $props();
+	let { message, isTyping = false, phase = 'thinking', onHide, docked = false }: Props = $props();
+
+	const revealSpeedMs = $derived(REVEAL_SPEED_MS[displayStore.textRevealSpeed]);
 
 	// Get screen position from VRM store for 3D tracking
 	const screenPos = $derived(vrmStore.headScreenPosition);
@@ -69,13 +75,11 @@
 			{#key isTyping ? '::typing' : message}
 				<div class="speech-bubble-content" in:fadeFast={{ duration: 180 }}>
 					{#if isTyping}
-						<div class="typing-indicator">
-							<span></span>
-							<span></span>
-							<span></span>
+						<div class="thinking-row">
+							<ShimmerLabel label={phaseLabel(phase)} />
 						</div>
 					{:else}
-						<p class="message">{message}</p>
+						<p class="message"><StreamingText text={message} speedMs={revealSpeedMs} /></p>
 					{/if}
 				</div>
 			{/key}
@@ -189,39 +193,10 @@
 		color: var(--text-primary);
 	}
 
-	.typing-indicator {
+	.thinking-row {
 		display: flex;
-		gap: 4px;
+		align-items: center;
 		padding: 0.125rem 0;
-	}
-
-	.typing-indicator span {
-		width: 8px;
-		height: 8px;
-		background: var(--accent);
-		border-radius: 50%;
-		animation: bounce 1.4s ease-in-out infinite;
-	}
-
-	.typing-indicator span:nth-child(1) {
-		animation-delay: 0s;
-	}
-
-	.typing-indicator span:nth-child(2) {
-		animation-delay: 0.2s;
-	}
-
-	.typing-indicator span:nth-child(3) {
-		animation-delay: 0.4s;
-	}
-
-	@keyframes bounce {
-		0%, 60%, 100% {
-			transform: translateY(0);
-		}
-		30% {
-			transform: translateY(-4px);
-		}
 	}
 
 	@media (max-width: 640px) {

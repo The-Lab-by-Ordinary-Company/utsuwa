@@ -26,7 +26,8 @@
 		return null;
 	});
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
-	import ChatSidebar from '$lib/components/chat/ChatSidebar.svelte';
+	import ChatWindow from '$lib/components/chat/ChatWindow.svelte';
+	import { type ThinkingPhase } from '$lib/services/chat/chat-phase';
 	import ThinkingImages from '$lib/components/chat/ThinkingImages.svelte';
 	import Photoboard from '$lib/components/chat/Photoboard.svelte';
 	import { EventScene } from '$lib/components/events';
@@ -85,6 +86,8 @@
 	// Speech bubble state
 	let latestResponse = $state('');
 	let isTyping = $state(false);
+	// What she's doing this turn, for the shimmer label
+	let thinkingPhase = $state<ThinkingPhase>('thinking');
 	// Chat sidebar state — start open when sidebar mode is enabled
 	let sidebarOpen = $state(
 		displayStore.chatDisplayMode === 'sidebar' || displayStore.chatDisplayMode === 'both'
@@ -235,6 +238,7 @@
 			setTyping: (v) => (isTyping = v),
 			setLatestResponse: (v) => (latestResponse = v),
 			setActiveEvent: (e) => (activeEvent = e),
+			setPhase: (p) => (thinkingPhase = p),
 			onShownImages: (shown) => (thinkingImages = shown),
 			onNewMemory: (m) => (lastNewMemory = m)
 		}, options);
@@ -380,27 +384,33 @@
 			<SpeechBubble
 				message={latestResponse}
 				isTyping={isTyping && typingDotsVisible}
+				phase={thinkingPhase}
 				onHide={handleBubbleHide}
 			/>
 		{/if}
 
-			<!-- Chat History Sidebar (hides with the rest of the chat UI in photo mode) -->
-			<ChatSidebar
+			<!-- Chat window (hides with the rest of the chat UI in photo mode) -->
+			<ChatWindow
 				open={sidebarOpen && showSidebarTrigger}
 				onClose={() => sidebarOpen = false}
 				isTyping={isTyping && typingDotsVisible}
+				phase={thinkingPhase}
+				onSend={handleSend}
+				disabled={chatStore.isLoading}
+				{visionCapable}
 			/>
 
 			<!-- The image she's being shown, floated above her head while she considers it -->
 			<ThinkingImages images={thinkingImages} show={isTyping} />
 
-			<!-- Bottom Chat Bar -->
+			<!-- Bottom Chat Bar (its input docks into the chat window while open) -->
 			<BottomChatBar
 				onSend={handleSend}
 				disabled={chatStore.isLoading}
 				{visionCapable}
 				providerLabel={imageProvider.label}
 				providerIsLocal={imageProvider.isLocal}
+				barHidden={sidebarOpen && showSidebarTrigger}
 			/>
 		</div>
 		{#if photomodeStore.active}

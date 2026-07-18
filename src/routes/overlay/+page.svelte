@@ -22,6 +22,7 @@
 	import { overlayStore } from '$lib/stores/overlay.svelte';
 	import { isTauri, startDragging } from '$lib/services/platform';
 	import { sendCompanionMessage, type SendCompanionMessageOptions } from '$lib/services/chat/companion-chat';
+	import { type ThinkingPhase } from '$lib/services/chat/chat-phase';
 	import { createReminderFiredHandler } from '$lib/services/chat/reminder-chat';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { eventsApi } from '$lib/engine/events';
@@ -40,6 +41,7 @@
 
 	let latestResponse = $state('');
 	let isTyping = $state(false);
+	let thinkingPhase = $state<ThinkingPhase>('thinking');
 	let activeEvent = $state<EventDefinition | null>(null);
 	let showCamera = $state(false);
 	let positionLocked = $state(false);
@@ -226,6 +228,7 @@
 			setTyping: (v) => (isTyping = v),
 			setLatestResponse: (v) => (latestResponse = v),
 			setActiveEvent: (e) => (activeEvent = e),
+			setPhase: (p) => (thinkingPhase = p),
 			beforeStream: () => overlayStore.setChatExpanded(false)
 		});
 	}
@@ -236,6 +239,7 @@
 			setTyping: (v) => (isTyping = v),
 			setLatestResponse: (v) => (latestResponse = v),
 			setActiveEvent: (e) => (activeEvent = e),
+			setPhase: (p) => (thinkingPhase = p),
 			beforeStream: () => overlayStore.setChatExpanded(false)
 		}, options);
 	}
@@ -334,6 +338,7 @@
 	<SpeechBubble
 		message={latestResponse}
 		isTyping={isTyping}
+		phase={thinkingPhase}
 		onHide={handleBubbleHide}
 		docked
 	/>
