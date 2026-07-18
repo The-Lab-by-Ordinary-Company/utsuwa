@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { displayStore, REVEAL_SPEED_MS } from '$lib/stores/display.svelte';
@@ -88,9 +89,14 @@
 		}
 	});
 
-	// Reopening after a viewport change must never leave the panel stranded
+	// Reopening after a viewport change must never leave the panel stranded.
+	// untrack keeps rect out of the dependency list; reacting to our own
+	// rect write would loop the effect forever.
 	$effect(() => {
-		if (open && rect) rect = clampRect(rect);
+		if (!open) return;
+		untrack(() => {
+			if (rect) rect = clampRect(rect);
+		});
 	});
 
 	// Settings can rescue a lost window: clear the saved rect, start fresh
@@ -305,17 +311,22 @@
 		{:else}
 			{#each visibleMessages as msg (msg.id)}
 				{@const isLastAssistant = msg.id === lastAssistantId}
-				<div class="message" class:user={msg.role === 'user'} class:assistant={msg.role === 'assistant'}>
-					<div class="bubble" class:speaking={isLastAssistant && isTyping}>
-						{#if isLastAssistant && revealCadenceMs > 0 && msg.content}
-							<p style="--reveal-cadence: {revealCadenceMs}ms">
-								{@html wrapWordsInHtml(renderMarkdown(msg.content)).html}
-							</p>
-						{:else}
-							<p>{@html renderMarkdown(msg.content)}</p>
-						{/if}
+				<!-- While she's typing, the shimmer bubble below stands in for the
+				     streaming message; rendering partial content would restart the
+				     reveal animation on every delta -->
+				{#if !(isLastAssistant && isTyping)}
+					<div class="message" class:user={msg.role === 'user'} class:assistant={msg.role === 'assistant'}>
+						<div class="bubble">
+							{#if isLastAssistant && revealCadenceMs > 0 && msg.content}
+								<p style="--reveal-cadence: {revealCadenceMs}ms">
+									{@html wrapWordsInHtml(renderMarkdown(msg.content)).html}
+								</p>
+							{:else}
+								<p>{@html renderMarkdown(msg.content)}</p>
+							{/if}
+						</div>
 					</div>
-				</div>
+				{/if}
 			{/each}
 			{#if isTyping}
 				<div class="message assistant">
@@ -557,10 +568,6 @@
 		font-size: 0.8125rem;
 		color: var(--text-tertiary);
 		margin-top: 2rem;
-	}
-
-	.bubble.speaking {
-		border-color: color-mix(in srgb, var(--accent), transparent 55%);
 	}
 
 	.input-dock {
