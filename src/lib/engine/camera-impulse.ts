@@ -28,7 +28,7 @@ export const JIGGLE = {
 	maxVel: 8,
 	// how strongly camera angular velocity accelerates the spring; tuned for
 	// a visible, playful wobble on a brisk orbit (Turret Girls camera energy)
-	gain: 4.0,
+	gain: 5.0,
 	// spring constant and damping; damping is slightly under critical so the
 	// settle has one soft overshoot, which reads as physical
 	stiffness: 40,
