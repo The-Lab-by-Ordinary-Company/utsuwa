@@ -26,14 +26,15 @@ export const JIGGLE = {
 	deadZone: 0.15,
 	// rad/s cap so a whip pan cannot inject unbounded energy
 	maxVel: 8,
-	// how strongly camera angular velocity accelerates the spring
-	gain: 0.6,
+	// how strongly camera angular velocity accelerates the spring; tuned for
+	// a visible, playful wobble on a brisk orbit (Turret Girls camera energy)
+	gain: 4.0,
 	// spring constant and damping; damping is slightly under critical so the
 	// settle has one soft overshoot, which reads as physical
 	stiffness: 40,
 	damping: 11,
-	// hard cap on the additive rotation offset (radians)
-	maxOffset: 0.09
+	// hard cap on the additive rotation offset (radians, ~8 degrees)
+	maxOffset: 0.14
 } as const;
 
 export function createJiggleState(): JiggleState {

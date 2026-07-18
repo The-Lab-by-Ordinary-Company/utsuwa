@@ -980,19 +980,25 @@
 						vrm.humanoid.getNormalizedBoneNode('chest') ??
 						vrm.humanoid.getNormalizedBoneNode('spine');
 					const head = vrm.humanoid.getNormalizedBoneNode('head');
+					// Horizontal orbit reads as a side lean (z) with a touch of
+					// twist (y); vertical orbit as a forward/back sway (x)
 					if (chest) {
-						const y = jiggleState.yaw;
+						const z = jiggleState.yaw * 0.8;
+						const y = jiggleState.yaw * 0.4;
 						const x = jiggleState.pitch;
+						chest.rotation.z += z;
 						chest.rotation.y += y;
 						chest.rotation.x += x;
-						appliedNudges.push({ bone: chest, z: 0, x, y });
+						appliedNudges.push({ bone: chest, z, x, y });
 					}
 					if (head) {
-						const y = jiggleState.yaw * 0.5;
+						const z = jiggleState.yaw * 0.45;
+						const y = jiggleState.yaw * 0.25;
 						const x = jiggleState.pitch * 0.5;
+						head.rotation.z += z;
 						head.rotation.y += y;
 						head.rotation.x += x;
-						appliedNudges.push({ bone: head, z: 0, x, y });
+						appliedNudges.push({ bone: head, z, x, y });
 					}
 				}
 			}
