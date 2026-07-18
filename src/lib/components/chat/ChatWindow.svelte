@@ -58,6 +58,14 @@
 	function defaultRect(): PanelRect {
 		const vw = window.innerWidth;
 		const vh = window.innerHeight;
+		// Mobile: dock low in the viewport so her face stays visible above the
+		// chat, hugging the snap side with a slim margin
+		if (vw <= 640) {
+			const w = Math.max(MIN_WIDTH, Math.round(vw * 0.7));
+			const h = Math.round(vh * 0.42);
+			const x = displayStore.sidebarPosition === 'left' ? MARGIN : vw - w - MARGIN;
+			return { x, y: vh - h - MARGIN * 2, w, h };
+		}
 		const w = DEFAULT_WIDTH;
 		const h = Math.round(vh * DEFAULT_HEIGHT_VH);
 		const x = displayStore.sidebarPosition === 'left' ? MARGIN : vw - w - MARGIN;
