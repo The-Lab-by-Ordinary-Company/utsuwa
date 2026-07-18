@@ -319,6 +319,10 @@ The system prompt is built from up to 7 layers:
 6. **Event** *(optional)* — Present only for system events such as a fired reminder: the trigger text arrives in an `<event>` block instead of a user turn
 7. **Instructions** — Stage-specific behavior guidance, JSON output format
 
+### Turn Progress Hooks
+
+The send loop (`companion-chat.ts`) reports progress to whichever surface hosts it (main app or desktop overlay) through a small hooks interface. Beyond the typing flag and the final reply, an optional `setPhase` hook narrates what the turn is actually doing: `remembering` while memory retrieval builds the prompt, then `seeing` (image turns) or `thinking` once the model call starts. The UI renders these as a shimmer label in the speech bubble and chat window instead of anonymous typing dots. The phases are driven by the real pipeline stages, never simulated.
+
 ### System Events and Reminders
 
 Not every turn starts with the user. The companion can schedule reminders and timers, either by emitting a `[reminder:5min]content[/reminder]` tag in her reply or from natural phrasing like "remind me in 10 minutes" via a client-side fallback. Reminders persist in the `reminders` table, fire from a poll loop that survives reloads, and timers missed while the app was closed surface on the next launch.

@@ -60,10 +60,10 @@
 - **Scene Backgrounds**: Swap the backdrop behind her for pastel gradients or cute patterns (dots, hearts, sparkles, stripes, gingham) right from the Controls panel; your pick persists
 - **Physics Intensity**: A Movement slider from Subtle to Lively scales how much her hair and outfit respond to motion, respecting each model's own rig tuning
 - **Model-Centric UI**: Full-screen 3D model with unobtrusive overlay controls
-- **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space
-- **Chat History Sidebar**: Optional side panel showing the full conversation history, with a configurable display mode (bubble, sidebar, both, or off) in Settings > Display
-- **Typing Indicator**: Configurable delay before the typing dots appear, plus an optional soft audio ping while she is thinking
-- **Chat Interface**: Bottom-centered input bar with streaming responses
+- **3D Speech Bubbles**: Chat responses appear as bubbles that track the model's head in 3D space, revealed word by word at a configurable speed
+- **Chat Window**: Optional messenger-style floating window with the full conversation history and the input docked inside; drag it anywhere, resize from any edge, snap it left or right. Display modes (Immersive, Chat window, Both, Off) live in Settings > Display
+- **Thinking Status**: A shimmer label narrates what she is actually doing (Remembering, Looking at your photo, Thinking), with a configurable delay and an optional soft audio ping
+- **Chat Interface**: Floating input bar (left, center, or right aligned) with streaming responses
 - **Voice Input**: Speech-to-text via a local Whisper server (Speaches, faster-whisper-server, whisper.cpp), Groq (Whisper), or the browser's Web Speech API, with real-time audio visualization
 - **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
 - **LLM Integration**: Support for 8 LLM providers: OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, ...)
