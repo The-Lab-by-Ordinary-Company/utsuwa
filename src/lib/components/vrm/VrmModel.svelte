@@ -526,7 +526,7 @@
 		direction: number;
 	}
 	let activePulses: ReactionPulse[] = [];
-	let appliedNudges: Array<{ bone: THREE.Object3D; z: number; x: number; y?: number }> = [];
+	let appliedNudges: Array<{ bone: THREE.Object3D; z: number; x: number }> = [];
 	let reactionFace: { name: string; weight: number; t: number; duration: number } | null = null;
 	const recentTaps = { zone: null as TouchZone | null, at: 0, count: 0 };
 	const REACTION_REPEAT_WINDOW_MS = 4000;
@@ -932,7 +932,6 @@
 		for (const applied of appliedNudges) {
 			applied.bone.rotation.z -= applied.z;
 			applied.bone.rotation.x -= applied.x;
-			if (applied.y) applied.bone.rotation.y -= applied.y;
 		}
 		appliedNudges.length = 0;
 
@@ -964,9 +963,9 @@
 			activePulses = remaining;
 		}
 
-		// Camera-driven jiggle: measure orbit velocity, run the damped spring,
-		// nudge chest (full) and head (half) additively; undone next frame like
-		// the tap pulses so nothing accumulates
+		// Camera-driven jiggle: measure orbit velocity and advance the damped
+		// spring. The offsets are applied around vrm.update() further down, so
+		// only the spring bones see the movement, never the rendered skeleton.
 		{
 			camera.current.getWorldPosition(jiggleCamPos);
 			vrm.scene.getWorldPosition(jiggleModelPos);
@@ -974,33 +973,6 @@
 			if (prevCamAngles && delta > 0) {
 				const vel = angularVelocity(prevCamAngles, angles, delta);
 				jiggleState = stepJiggle(jiggleState, vel, displayStore.physicsIntensity, delta);
-				if (Math.abs(jiggleState.yaw) > 1e-5 || Math.abs(jiggleState.pitch) > 1e-5) {
-					const chest =
-						vrm.humanoid.getNormalizedBoneNode('upperChest') ??
-						vrm.humanoid.getNormalizedBoneNode('chest') ??
-						vrm.humanoid.getNormalizedBoneNode('spine');
-					const head = vrm.humanoid.getNormalizedBoneNode('head');
-					// Horizontal orbit reads as a side lean (z) with a touch of
-					// twist (y); vertical orbit as a forward/back sway (x)
-					if (chest) {
-						const z = jiggleState.yaw * 0.8;
-						const y = jiggleState.yaw * 0.4;
-						const x = jiggleState.pitch;
-						chest.rotation.z += z;
-						chest.rotation.y += y;
-						chest.rotation.x += x;
-						appliedNudges.push({ bone: chest, z, x, y });
-					}
-					if (head) {
-						const z = jiggleState.yaw * 0.45;
-						const y = jiggleState.yaw * 0.25;
-						const x = jiggleState.pitch * 0.5;
-						head.rotation.z += z;
-						head.rotation.y += y;
-						head.rotation.x += x;
-						appliedNudges.push({ bone: head, z, x, y });
-					}
-				}
 			}
 			prevCamAngles = angles;
 		}
@@ -1057,9 +1029,53 @@
 			}
 		}
 
+		// Camera jiggle, phase 1: displace the chest and head so the spring
+		// solver inside vrm.update() reads their movement and swings hair,
+		// clothes, and accessories accordingly.
+		const jiggleActive =
+			Math.abs(jiggleState.yaw) > 1e-5 || Math.abs(jiggleState.pitch) > 1e-5;
+		let jiggleChest: THREE.Object3D | null = null;
+		let jiggleHead: THREE.Object3D | null = null;
+		if (jiggleActive) {
+			jiggleChest =
+				vrm.humanoid.getNormalizedBoneNode('upperChest') ??
+				vrm.humanoid.getNormalizedBoneNode('chest') ??
+				vrm.humanoid.getNormalizedBoneNode('spine');
+			jiggleHead = vrm.humanoid.getNormalizedBoneNode('head');
+			if (jiggleChest) {
+				jiggleChest.rotation.z += jiggleState.yaw * 0.8;
+				jiggleChest.rotation.y += jiggleState.yaw * 0.4;
+				jiggleChest.rotation.x += jiggleState.pitch;
+			}
+			if (jiggleHead) {
+				jiggleHead.rotation.z += jiggleState.yaw * 0.45;
+				jiggleHead.rotation.y += jiggleState.yaw * 0.25;
+				jiggleHead.rotation.x += jiggleState.pitch * 0.5;
+			}
+		}
+
 		// Update VRM core. The delta is clamped because a huge frame gap (tab
 		// refocus, window drag) otherwise launches the spring bones violently.
 		vrm.update(clampFrameDelta(delta));
+
+		// Camera jiggle, phase 2: put the skeleton straight back. The solver
+		// already sampled the displaced pose; re-syncing the humanoid pushes
+		// the rest pose back onto the raw render skeleton (vrm.update copied
+		// the displaced one), so the body stays planted while only the spring
+		// bones carry the motion.
+		if (jiggleActive) {
+			if (jiggleChest) {
+				jiggleChest.rotation.z -= jiggleState.yaw * 0.8;
+				jiggleChest.rotation.y -= jiggleState.yaw * 0.4;
+				jiggleChest.rotation.x -= jiggleState.pitch;
+			}
+			if (jiggleHead) {
+				jiggleHead.rotation.z -= jiggleState.yaw * 0.45;
+				jiggleHead.rotation.y -= jiggleState.yaw * 0.25;
+				jiggleHead.rotation.x -= jiggleState.pitch * 0.5;
+			}
+			if (jiggleChest || jiggleHead) vrm.humanoid.update();
+		}
 
 		// Track head position for 3D speech bubble
 		const headBone = vrm.humanoid.getNormalizedBoneNode('head');
