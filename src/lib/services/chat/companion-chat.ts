@@ -5,6 +5,7 @@
 // post-turn processing, keepsakes, TTS, and the talking animation. Pages provide
 // a small set of hooks to sync their own reactive state.
 import { characterStore } from '$lib/stores/character.svelte';
+import type { ThinkingPhase } from './chat-phase';
 import { chatStore } from '$lib/stores/chat.svelte';
 import { settingsStore } from '$lib/stores/settings.svelte';
 import { modulesStore } from '$lib/stores/modules.svelte';
@@ -38,6 +39,8 @@ export interface CompanionChatHooks {
 	onNewMemory?: (memory: string | undefined) => void;
 	/** Runs just before streaming starts (e.g. the overlay collapses its chat). */
 	beforeStream?: () => void;
+	/** What she is doing right now (remembering, seeing, thinking). */
+	setPhase?: (phase: ThinkingPhase) => void;
 }
 
 async function buildCompanionPrompt(
@@ -171,6 +174,7 @@ export async function sendCompanionMessage(
 	chatStore.setError(null);
 	hooks.setTyping(true);
 	hooks.setLatestResponse('');
+	hooks.setPhase?.('remembering');
 	hooks.beforeStream?.();
 
 	// Only touch relationship-time state once the character has loaded, or an
@@ -197,6 +201,9 @@ export async function sendCompanionMessage(
 		if (providerMeta?.requiresApiKey && !apiKey) {
 			throw new Error(`Please configure API key for ${providerMeta.name} in Settings > Providers`);
 		}
+
+		// Prompt building (memory retrieval) is done; the model call starts now
+		hooks.setPhase?.(images.length > 0 ? 'seeing' : 'thinking');
 
 		chatStore.addMessage('assistant', '');
 		const selectedModel = model || providerMeta?.models?.[0]?.id || '';
