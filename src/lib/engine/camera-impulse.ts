@@ -33,8 +33,8 @@ export const JIGGLE = {
 	// settle has one soft overshoot, which reads as physical
 	stiffness: 40,
 	damping: 11,
-	// hard cap on the additive rotation offset (radians, ~8 degrees)
-	maxOffset: 0.14
+	// hard cap on the additive rotation offset (radians, ~10 degrees)
+	maxOffset: 0.17
 } as const;
 
 export function createJiggleState(): JiggleState {
