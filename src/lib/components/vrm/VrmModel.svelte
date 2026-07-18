@@ -15,6 +15,13 @@
 		clampFrameDelta,
 		type SpringJointParams
 	} from '$lib/engine/spring-physics';
+	import {
+		cameraAngles,
+		angularVelocity,
+		stepJiggle,
+		createJiggleState,
+		type CameraAngles
+	} from '$lib/engine/camera-impulse';
 	import { lipSyncAnalyzer } from '$lib/services/lipsync/analyzer';
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
@@ -519,7 +526,7 @@
 		direction: number;
 	}
 	let activePulses: ReactionPulse[] = [];
-	let appliedNudges: Array<{ bone: THREE.Object3D; z: number; x: number }> = [];
+	let appliedNudges: Array<{ bone: THREE.Object3D; z: number; x: number; y?: number }> = [];
 	let reactionFace: { name: string; weight: number; t: number; duration: number } | null = null;
 	const recentTaps = { zone: null as TouchZone | null, at: 0, count: 0 };
 	const REACTION_REPEAT_WINDOW_MS = 4000;
@@ -904,6 +911,12 @@
 	let headTrackWeight = 0;
 	const headWorld = new THREE.Vector3();
 	const camWorld = new THREE.Vector3();
+	// Camera jiggle: orbiting excites the spring bones via a damped nudge on
+	// the chest and head; the rig's own springs do the visible swinging
+	const jiggleCamPos = new THREE.Vector3();
+	const jiggleModelPos = new THREE.Vector3();
+	let jiggleState = createJiggleState();
+	let prevCamAngles: CameraAngles | null = null;
 	const lookDir = new THREE.Vector3();
 	const parentQuat = new THREE.Quaternion();
 	const lookQuat = new THREE.Quaternion();
@@ -919,6 +932,7 @@
 		for (const applied of appliedNudges) {
 			applied.bone.rotation.z -= applied.z;
 			applied.bone.rotation.x -= applied.x;
+			if (applied.y) applied.bone.rotation.y -= applied.y;
 		}
 		appliedNudges.length = 0;
 
@@ -949,6 +963,42 @@
 			}
 			activePulses = remaining;
 		}
+
+		// Camera-driven jiggle: measure orbit velocity, run the damped spring,
+		// nudge chest (full) and head (half) additively; undone next frame like
+		// the tap pulses so nothing accumulates
+		{
+			camera.current.getWorldPosition(jiggleCamPos);
+			vrm.scene.getWorldPosition(jiggleModelPos);
+			const angles = cameraAngles(jiggleCamPos, jiggleModelPos);
+			if (prevCamAngles && delta > 0) {
+				const vel = angularVelocity(prevCamAngles, angles, delta);
+				jiggleState = stepJiggle(jiggleState, vel, displayStore.physicsIntensity, delta);
+				if (Math.abs(jiggleState.yaw) > 1e-5 || Math.abs(jiggleState.pitch) > 1e-5) {
+					const chest =
+						vrm.humanoid.getNormalizedBoneNode('upperChest') ??
+						vrm.humanoid.getNormalizedBoneNode('chest') ??
+						vrm.humanoid.getNormalizedBoneNode('spine');
+					const head = vrm.humanoid.getNormalizedBoneNode('head');
+					if (chest) {
+						const y = jiggleState.yaw;
+						const x = jiggleState.pitch;
+						chest.rotation.y += y;
+						chest.rotation.x += x;
+						appliedNudges.push({ bone: chest, z: 0, x, y });
+					}
+					if (head) {
+						const y = jiggleState.yaw * 0.5;
+						const x = jiggleState.pitch * 0.5;
+						head.rotation.y += y;
+						head.rotation.x += x;
+						appliedNudges.push({ bone: head, z: 0, x, y });
+					}
+				}
+			}
+			prevCamAngles = angles;
+		}
+
 		if (reactionFace && vrm.expressionManager) {
 			reactionFace.t += delta;
 			const progress = reactionFace.t / reactionFace.duration;
