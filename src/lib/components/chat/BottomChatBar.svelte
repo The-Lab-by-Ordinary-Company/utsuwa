@@ -8,6 +8,7 @@
 	import { displayStore } from '$lib/stores/display.svelte';
 	import { chatHintStore } from '$lib/stores/chat-hint.svelte';
 	import { queueFiles, imageMimeFromPath } from './attach-files';
+	import { chatDraftStore } from '$lib/stores/chat-draft.svelte';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import ChatInput from './ChatInput.svelte';
 	import { pop, fadeFast } from '$lib/utils/motion';
@@ -67,8 +68,8 @@
 		return () => chatHintStore.destroy();
 	});
 
-	// Drag-to-show: the whole window is a drop target; the bar morphs into one.
-	let dragActive = $state(false);
+	// Drag-to-show: the whole window is a drop target. The active flag lives in
+	// the draft store so whichever surface is visible shows the affordance.
 	let dragDepth = 0;
 
 	function dragHasFiles(e: DragEvent): boolean {
@@ -78,7 +79,7 @@
 	function handleDragEnter(e: DragEvent) {
 		if (overlay || !dragHasFiles(e)) return;
 		dragDepth++;
-		dragActive = true;
+		chatDraftStore.setDropActive(true);
 	}
 
 	function handleDragOver(e: DragEvent) {
@@ -90,7 +91,7 @@
 		dragDepth--;
 		if (dragDepth <= 0) {
 			dragDepth = 0;
-			dragActive = false;
+			chatDraftStore.setDropActive(false);
 		}
 	}
 
@@ -98,7 +99,7 @@
 		if (!dragHasFiles(e)) return;
 		e.preventDefault();
 		dragDepth = 0;
-		dragActive = false;
+		chatDraftStore.setDropActive(false);
 		if (!overlay) queueFiles(e.dataTransfer?.files ?? null, visionCapable);
 	}
 
@@ -114,12 +115,12 @@
 			if (cancelled) return;
 			unlisten = await getCurrentWindow().onDragDropEvent(async (event) => {
 				if (event.payload.type === 'over') {
-					dragActive = true;
+					chatDraftStore.setDropActive(true);
 				} else if (event.payload.type === 'leave') {
-					dragActive = false;
+					chatDraftStore.setDropActive(false);
 					dragDepth = 0;
 				} else if (event.payload.type === 'drop') {
-					dragActive = false;
+					chatDraftStore.setDropActive(false);
 					dragDepth = 0;
 					const imagePaths = event.payload.paths.filter((p) => imageMimeFromPath(p));
 					if (imagePaths.length === 0) return; // not images (VrmUploader etc. handle those)
@@ -209,18 +210,22 @@
 {#if !barHidden}
 	<div
 		class="bottom-chat-bar"
-		class:dragging={dragActive}
+		class:dragging={chatDraftStore.dropActive}
 		class:align-left={displayStore.chatBarAlignment === 'left'}
 		class:align-right={displayStore.chatBarAlignment === 'right'}
 	>
-		{#if dragActive}
+		{#if chatDraftStore.dropActive}
 			<div class="drop-zone" out:fadeFast={{ duration: 120 }}>
 				<Icon name="camera" size={22} />
 				<span>Drop a photo to show her</span>
 			</div>
 		{/if}
 		{#if showStats && !overlay}
-			<div class="stats-tray" out:pop={{ base: 'translateX(-50%)', y: 8, duration: 200 }}>
+			<div class="stats-tray" out:pop={{ y: 8, duration: 200 }}>
+				<div class="tray-mood">
+					<span class="mood-dot" style="color: {moodInfo.color}"><Icon name={moodInfo.icon} size={16} /></span>
+					<span>{moodInfo.description}</span>
+				</div>
 				<div class="stat-list">
 					{#each stats as stat}
 						<div class="stat-row">
@@ -253,20 +258,9 @@
 					title={moodInfo.description}
 				>
 					<span class="mood-dot" style="color: {moodInfo.color}"><Icon name={moodInfo.icon} size={20} /></span>
-					{#if showStats}
-						<span class="mood-fab-label" in:fadeFast={{ duration: 150 }}>{moodInfo.description}</span>
-					{/if}
 				</button>
 			{/if}
 			<ChatInput {onSend} {disabled} {visionCapable} {overlay} />
-		</div>
-	</div>
-{:else if dragActive}
-	<!-- Window mode: the bar is hidden but drops still land in the shared draft -->
-	<div class="bottom-chat-bar">
-		<div class="drop-zone" out:fadeFast={{ duration: 120 }}>
-			<Icon name="camera" size={22} />
-			<span>Drop a photo to show her</span>
 		</div>
 	</div>
 {/if}
@@ -402,15 +396,15 @@
 	}
 
 	/* Floating mood button (companion status) */
+	/* Fixed size: expanding it would shove the input pill off center */
 	.mood-fab {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.45rem;
 		flex-shrink: 0;
 		height: 56px;
-		min-width: 56px;
-		padding: 0 1rem;
+		width: 56px;
+		padding: 0;
 		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-full);
 		background: var(--bg-secondary);
@@ -431,12 +425,6 @@
 		flex-shrink: 0;
 	}
 
-	.mood-fab-label {
-		font-size: 0.85rem;
-		font-weight: 500;
-		white-space: nowrap;
-	}
-
 	/* Stats tray (expands above the pill) */
 	.stats-tray {
 		margin-bottom: 0.5rem;
@@ -450,6 +438,16 @@
 	@keyframes trayIn {
 		from { opacity: 0; transform: translateY(8px); }
 		to { opacity: 1; transform: translateY(0); }
+	}
+
+	.tray-mood {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		margin-bottom: 0.7rem;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--text-primary);
 	}
 
 	.stat-list {

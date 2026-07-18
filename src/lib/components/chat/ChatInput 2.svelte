@@ -59,7 +59,7 @@
 		const { text, images } = chatDraftStore.takeAll();
 		if (!text && images.length === 0) return;
 		onSend(text, images);
-		if (textareaRef) textareaRef.scrollLeft = 0;
+		if (textareaRef) textareaRef.style.height = 'auto';
 	}
 
 	function handleSubmit(e: SubmitEvent) {
@@ -71,6 +71,13 @@
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
 			doSend();
+		}
+	}
+
+	function handleInput() {
+		if (textareaRef) {
+			textareaRef.style.height = 'auto';
+			textareaRef.style.height = Math.min(textareaRef.scrollHeight, 120) + 'px';
 		}
 	}
 
@@ -153,16 +160,13 @@
 						<Icon name="paperclip" size={20} />
 					</button>
 				{/if}
-				<!-- wrap="off" keeps long messages trailing forward on one line
-				     instead of stacking; pasted newlines are preserved, just not
-				     shown as extra rows -->
 				<textarea
 					bind:this={textareaRef}
 					bind:value={chatDraftStore.draft}
 					onkeydown={handleKeydown}
+					oninput={handleInput}
 					placeholder="Type a message..."
 					rows="1"
-					wrap="off"
 					{disabled}
 				></textarea>
 				<button
@@ -251,8 +255,7 @@
 		transform: scale(1.2);
 	}
 
-	/* Gray input surface, shared by both variants. Fixed height so swapping
-	   between typing, listening, and transcribing never resizes the pill */
+	/* Gray input surface, shared by both variants */
 	.input-wrapper {
 		display: flex;
 		align-items: center;
@@ -263,7 +266,7 @@
 		-webkit-backdrop-filter: blur(20px);
 		border-radius: var(--radius-full);
 		padding: 0.5rem;
-		height: 56px;
+		min-height: 56px;
 		box-shadow: var(--shadow-md);
 		transition: box-shadow 0.2s;
 	}
@@ -281,16 +284,12 @@
 		box-shadow: 0 0 0 3px var(--accent-muted), var(--shadow-md);
 	}
 
-	/* Docked: flat compact row that reads as part of the chat window and
-	   keeps shrinking gracefully as the window narrows */
+	/* Docked: flat row that reads as part of the chat window */
 	.docked .input-wrapper {
 		border-radius: var(--radius-md);
 		border: none;
 		box-shadow: none;
-		height: 42px;
-		min-width: 0;
-		gap: 0.25rem;
-		padding: 0.25rem 0.35rem;
+		min-height: 48px;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
 	}
@@ -317,7 +316,6 @@
 
 	textarea {
 		flex: 1;
-		min-width: 0;
 		padding: 0.625rem 0.5rem;
 		border: none;
 		background: transparent;
@@ -327,21 +325,11 @@
 		outline: none;
 		font-family: inherit;
 		line-height: 1.5;
-		height: calc(1.5em + 1rem);
-		white-space: nowrap;
-		overflow-x: auto;
-		overflow-y: hidden;
-		scrollbar-width: none;
-	}
-
-	textarea::-webkit-scrollbar {
-		display: none;
+		max-height: 120px;
 	}
 
 	.docked textarea {
-		font-size: 0.875rem;
-		padding: 0.375rem 0.4rem;
-		height: calc(1.5em + 0.75rem);
+		font-size: 0.9rem;
 	}
 
 	textarea::placeholder {
@@ -370,13 +358,8 @@
 	}
 
 	.docked .mic-btn {
-		width: 34px;
-		height: 34px;
-	}
-
-	.docked .pending-chip {
-		width: 44px;
-		height: 44px;
+		width: 38px;
+		height: 38px;
 	}
 
 	.mic-btn:hover:not(:disabled) {

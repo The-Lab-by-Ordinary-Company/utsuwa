@@ -9,7 +9,6 @@
 	import { wrapWordsInHtml } from './reveal-markup';
 	import { phaseLabel, type ThinkingPhase } from '$lib/services/chat/chat-phase';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
-	import { chatDraftStore } from '$lib/stores/chat-draft.svelte';
 	import ChatInput from './ChatInput.svelte';
 
 	interface Props {
@@ -42,8 +41,8 @@
 	// rect persists so it comes back where you left it. Until the user drags,
 	// it anchors to the docked side from settings.
 	const GEOMETRY_KEY = 'utsuwa-chat-panel';
-	const DEFAULT_WIDTH = 460;
-	const DEFAULT_HEIGHT_VH = 0.72;
+	const DEFAULT_WIDTH = 340;
+	const DEFAULT_HEIGHT_VH = 0.62;
 	const MIN_WIDTH = 260;
 	const MIN_HEIGHT = 220;
 	const MARGIN = 12;
@@ -59,14 +58,6 @@
 	function defaultRect(): PanelRect {
 		const vw = window.innerWidth;
 		const vh = window.innerHeight;
-		// Mobile: dock low in the viewport so her face stays visible above the
-		// chat, hugging the snap side with a slim margin
-		if (vw <= 640) {
-			const w = Math.max(MIN_WIDTH, Math.round(vw * 0.7));
-			const h = Math.round(vh * 0.42);
-			const x = displayStore.sidebarPosition === 'left' ? MARGIN : vw - w - MARGIN;
-			return { x, y: vh - h - MARGIN * 2, w, h };
-		}
 		const w = DEFAULT_WIDTH;
 		const h = Math.round(vh * DEFAULT_HEIGHT_VH);
 		const x = displayStore.sidebarPosition === 'left' ? MARGIN : vw - w - MARGIN;
@@ -350,13 +341,6 @@
 	<div class="input-dock">
 		<ChatInput {onSend} {disabled} {visionCapable} docked />
 	</div>
-
-	{#if open && chatDraftStore.dropActive}
-		<div class="drop-overlay">
-			<Icon name="camera" size={22} />
-			<span>Drop a photo to show her</span>
-		</div>
-	{/if}
 </div>
 
 <style>
@@ -591,32 +575,5 @@
 		padding: 0.5rem 0.625rem;
 		border-top: 1px solid var(--border-subtle);
 		background: var(--bg-secondary);
-	}
-
-	/* Drag-to-show target while the window owns the input */
-	.drop-overlay {
-		position: absolute;
-		inset: 6px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.55rem;
-		border-radius: calc(var(--radius-xl) - 4px);
-		background: var(--accent-subtle);
-		border: 2px dashed var(--accent);
-		color: var(--accent);
-		font-size: 0.95rem;
-		font-weight: 600;
-		z-index: 4;
-		pointer-events: none;
-	}
-
-	.drop-overlay :global(svg) {
-		animation: dropIcon 0.9s ease-in-out infinite;
-	}
-
-	@keyframes dropIcon {
-		0%, 100% { transform: translateY(0) rotate(0deg); }
-		50% { transform: translateY(-4px) rotate(-6deg); }
 	}
 </style>

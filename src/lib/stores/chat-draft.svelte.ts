@@ -13,6 +13,13 @@ export interface PendingPhoto {
 function createChatDraftStore() {
 	let draft = $state('');
 	let pending = $state<PendingPhoto[]>([]);
+	// Files are being dragged over the app; whichever input surface is visible
+	// (floating bar or chat window) shows the drop affordance
+	let dropActive = $state(false);
+
+	function setDropActive(active: boolean) {
+		dropActive = active;
+	}
 
 	function addPending(image: PreparedImage, url: string) {
 		pending = [...pending, { image, url }];
@@ -45,6 +52,10 @@ function createChatDraftStore() {
 		get pending() {
 			return pending;
 		},
+		get dropActive() {
+			return dropActive;
+		},
+		setDropActive,
 		addPending,
 		removePending,
 		takeAll
