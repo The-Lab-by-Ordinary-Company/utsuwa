@@ -10,3 +10,5 @@ export { default as InfoModal } from './InfoModal.svelte';
 export { default as ProviderDropdown } from './ProviderDropdown.svelte';
 export { default as ModelDropdown } from './ModelDropdown.svelte';
 export { default as ContextSizeSlider } from './ContextSizeSlider.svelte';
+export { default as ShimmerLabel } from './ShimmerLabel.svelte';
+export { default as StreamingText } from './StreamingText.svelte';
