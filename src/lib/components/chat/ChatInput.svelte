@@ -59,7 +59,7 @@
 		const { text, images } = chatDraftStore.takeAll();
 		if (!text && images.length === 0) return;
 		onSend(text, images);
-		if (textareaRef) textareaRef.style.height = 'auto';
+		if (textareaRef) textareaRef.scrollLeft = 0;
 	}
 
 	function handleSubmit(e: SubmitEvent) {
@@ -71,13 +71,6 @@
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
 			doSend();
-		}
-	}
-
-	function handleInput() {
-		if (textareaRef) {
-			textareaRef.style.height = 'auto';
-			textareaRef.style.height = Math.min(textareaRef.scrollHeight, 120) + 'px';
 		}
 	}
 
@@ -160,13 +153,16 @@
 						<Icon name="paperclip" size={20} />
 					</button>
 				{/if}
+				<!-- wrap="off" keeps long messages trailing forward on one line
+				     instead of stacking; pasted newlines are preserved, just not
+				     shown as extra rows -->
 				<textarea
 					bind:this={textareaRef}
 					bind:value={chatDraftStore.draft}
 					onkeydown={handleKeydown}
-					oninput={handleInput}
 					placeholder="Type a message..."
 					rows="1"
+					wrap="off"
 					{disabled}
 				></textarea>
 				<button
@@ -284,12 +280,16 @@
 		box-shadow: 0 0 0 3px var(--accent-muted), var(--shadow-md);
 	}
 
-	/* Docked: flat row that reads as part of the chat window */
+	/* Docked: flat compact row that reads as part of the chat window and
+	   keeps shrinking gracefully as the window narrows */
 	.docked .input-wrapper {
 		border-radius: var(--radius-md);
 		border: none;
 		box-shadow: none;
-		min-height: 48px;
+		min-height: 42px;
+		min-width: 0;
+		gap: 0.25rem;
+		padding: 0.25rem 0.35rem;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
 	}
@@ -316,6 +316,7 @@
 
 	textarea {
 		flex: 1;
+		min-width: 0;
 		padding: 0.625rem 0.5rem;
 		border: none;
 		background: transparent;
@@ -325,11 +326,21 @@
 		outline: none;
 		font-family: inherit;
 		line-height: 1.5;
-		max-height: 120px;
+		height: calc(1.5em + 1.25rem);
+		white-space: nowrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scrollbar-width: none;
+	}
+
+	textarea::-webkit-scrollbar {
+		display: none;
 	}
 
 	.docked textarea {
-		font-size: 0.9rem;
+		font-size: 0.875rem;
+		padding: 0.5rem 0.4rem;
+		height: calc(1.5em + 1rem);
 	}
 
 	textarea::placeholder {
@@ -358,8 +369,13 @@
 	}
 
 	.docked .mic-btn {
-		width: 38px;
-		height: 38px;
+		width: 34px;
+		height: 34px;
+	}
+
+	.docked .pending-chip {
+		width: 44px;
+		height: 44px;
 	}
 
 	.mic-btn:hover:not(:disabled) {

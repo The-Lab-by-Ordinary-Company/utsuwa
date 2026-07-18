@@ -41,8 +41,8 @@
 	// rect persists so it comes back where you left it. Until the user drags,
 	// it anchors to the docked side from settings.
 	const GEOMETRY_KEY = 'utsuwa-chat-panel';
-	const DEFAULT_WIDTH = 340;
-	const DEFAULT_HEIGHT_VH = 0.62;
+	const DEFAULT_WIDTH = 460;
+	const DEFAULT_HEIGHT_VH = 0.72;
 	const MIN_WIDTH = 260;
 	const MIN_HEIGHT = 220;
 	const MARGIN = 12;
