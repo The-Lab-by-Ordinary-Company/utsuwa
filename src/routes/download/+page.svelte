@@ -137,7 +137,7 @@
 		<div use:reveal class="reveal build-inner">
 			<h2 class="section-title">Rather build it yourself?</h2>
 			<p class="build-body text-pretty">
-				Utsuwa is MIT licensed and built on SvelteKit, Three.js, and Tauri. Clone the repo, install
+				Utsuwa is AGPL-3.0 licensed and built on SvelteKit, Three.js, and Tauri. Clone the repo, install
 				dependencies, and run it locally, or fork it and make it your own.
 			</p>
 			<a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" class="btn btn-secondary">

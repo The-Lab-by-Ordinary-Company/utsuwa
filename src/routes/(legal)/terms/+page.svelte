@@ -30,8 +30,7 @@
 		utsuwa.ai (including app.utsuwa.ai and docs.utsuwa.ai) and the Utsuwa desktop app, operated by
 		Ordinary Company Group LLC ("we", "us"), a limited liability company formed in Ohio, USA.
 		Utsuwa's source code is open source and separately licensed under the
-		<a href={`${GITHUB_REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">MIT
-		License</a>; nothing in these terms limits the rights that license gives you. By using Utsuwa,
+		<a href={`${GITHUB_REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">GNU AGPL-3.0-or-later</a>; nothing in these terms limits the rights that license gives you. By using Utsuwa,
 		you agree to these terms.
 	</p>
 
@@ -82,8 +81,7 @@
 	<h2 id="open-source">Open source and ownership</h2>
 	<p>
 		Utsuwa's code is licensed under the
-		<a href={`${GITHUB_REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">MIT
-		License</a>, and these terms don't restrict what that license permits you to do with the code.
+		<a href={`${GITHUB_REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">GNU AGPL-3.0-or-later</a>, and these terms don't restrict what that license permits you to do with the code.
 		These terms govern your use of our website and hosted services. The Utsuwa name, logo, and
 		branding belong to Ordinary Company Group LLC; please don't use them in ways that imply
 		endorsement or affiliation. Avatar models, animations, and other assets you import remain

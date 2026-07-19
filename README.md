@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0"></a>
   <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases"><img src="https://img.shields.io/github/v/release/The-Lab-by-Ordinary-Company/utsuwa?label=Release&color=00b2ff" alt="Latest release"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22+-green.svg" alt="Node.js 22+"></a>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome"></a>
@@ -381,7 +381,9 @@ Utsuwa is built on the shoulders of these excellent projects:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Utsuwa is licensed under the [GNU AGPL-3.0-or-later](LICENSE). In plain terms: you can use, modify, self-host, and redistribute it freely, and if you offer a modified version to others, including over a network, you share your changes under the same license.
+
+Releases up to and including 0.12.0 were published under the MIT License and remain so. Code contributed under MIT is carried forward with its attribution intact.
 
 ## Star History
 

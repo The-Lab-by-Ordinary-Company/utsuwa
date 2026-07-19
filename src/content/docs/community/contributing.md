@@ -106,4 +106,4 @@ src-tauri/              # Tauri desktop app (Rust)
 
 ## License
 
-By contributing to Utsuwa, you agree that your contributions will be licensed under the MIT License.
+By contributing to Utsuwa, you agree that your contributions are licensed under the AGPL-3.0-or-later, and you confirm you have the right to submit the work. You keep the copyright to your contribution.

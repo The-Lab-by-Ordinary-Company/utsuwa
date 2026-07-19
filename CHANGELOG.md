@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.12.1] - 2026-07-18
+## [0.12.1] - 2026-07-19
+
+### License
+- Utsuwa is now licensed under AGPL-3.0-or-later. Everything you could do before you can still do: use it, change it, self-host it, share it. The one new rule is for people who ship a modified Utsuwa to others, including as a hosted service: their changes have to stay open too. Releases up to 0.12.0 remain MIT.
 
 ### Added
 - **The chat window grew up**: the old sidebar is now a proper messenger-style window with the input docked inside it. Type where you read. Drag it anywhere by the header, resize it from any edge or corner, snap it to either side, and it remembers exactly where you left it. On phones it opens low on the screen so her face stays in view above the conversation. If it ever ends up somewhere off screen, a Reset position button in Settings > Display brings it home.

@@ -139,7 +139,7 @@
 			price: '0',
 			priceCurrency: 'USD'
 		},
-		license: 'https://opensource.org/licenses/MIT',
+		license: 'https://www.gnu.org/licenses/agpl-3.0.html',
 		author: {
 			'@type': 'Organization',
 			name: 'Ordinary Company Group LLC',

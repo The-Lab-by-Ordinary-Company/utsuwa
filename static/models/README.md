@@ -1,6 +1,6 @@
 # Bundled avatar models
 
-These models are not covered by this repository's MIT license. Each has its
+These models are not covered by this repository's AGPL-3.0 license. Each has its
 own license from its creator:
 
 | File | In-app name | Character | Author | License |
