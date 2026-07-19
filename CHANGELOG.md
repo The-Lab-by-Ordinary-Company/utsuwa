@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] - 2026-07-18
+
+### Added
+- **The chat window grew up**: the old sidebar is now a proper messenger-style window with the input docked inside it. Type where you read. Drag it anywhere by the header, resize it from any edge or corner, snap it to either side, and it remembers exactly where you left it. On phones it opens low on the screen so her face stays in view above the conversation. If it ever ends up somewhere off screen, a Reset position button in Settings > Display brings it home.
+- **She tells you what she is doing**: the typing dots are gone. While a reply is in flight you now see a soft shimmer that narrates the actual step, Remembering while she digs through your history, Looking at your photo when you have shown her one, and Thinking while she writes. No fake theatre, the labels follow the real pipeline.
+- **Replies reveal word by word**: her messages fade in a word at a time instead of appearing all at once, in the bubble and in the chat window. Pick the pace (or turn it off) under Settings > Display > Text Reveal. Respects reduced-motion preferences.
+- **She reacts when you move the camera**: orbiting or whipping the camera around now sends a ripple through her hair, clothes, and anything else with physics, in the main view and in photo mode. Her body stays planted, only the soft parts swing. The existing Movement slider scales the effect.
+- **Floating bar placement**: the input bar can sit left, center, or right along the bottom edge, under Settings > Display > Floating Bar.
+
+### Changed
+- The display modes have new names: Immersive (bubble by her head), Chat window, Both, and Off. Your saved preference carries over unchanged.
+- Typing a long message now trails forward on a single line instead of stacking rows, in both the floating bar and the chat window.
+- The input bar and mood button moved to the softer gray surface from the design system, and the bar holds its exact size when you switch between typing and voice input.
+- The Display settings page was cleaned up to match its siblings: borderless panels and the same toggle switch used everywhere else.
+
+### Fixed
+- Resizing the chat window after closing and reopening it no longer fights you. Resize now works from every edge and corner, and the window re-clamps itself when your browser window changes size.
+- Dragging a photo in while the chat window is open now highlights the window itself instead of a ghost of the hidden floating bar.
+- The floating bar no longer shifts off center when opening the companion status tray.
+
 ## [0.12.0] - 2026-07-17
 
 ### Added
