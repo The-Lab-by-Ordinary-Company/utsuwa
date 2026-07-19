@@ -242,7 +242,6 @@
 
 	.card {
 		background: var(--bg-primary);
-		border: 1px solid var(--border-light);
 		border-radius: var(--radius-lg);
 		padding: 1rem 1.25rem;
 		box-shadow: var(--shadow-sm);
@@ -282,7 +281,6 @@
 		display: flex;
 		width: 100%;
 		background: var(--bg-secondary);
-		border: 1px solid var(--border-light);
 		border-radius: var(--radius-md);
 		padding: 0.25rem;
 		gap: 0.25rem;
@@ -314,20 +312,19 @@
 
 	.reset-btn {
 		padding: 0.375rem 0.75rem;
-		background: transparent;
-		border: 1px solid var(--border-light);
+		background: var(--bg-secondary);
+		border: none;
 		border-radius: var(--radius-md);
 		color: var(--text-secondary);
 		font-size: 0.8125rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+		transition: background 0.15s ease, color 0.15s ease;
 	}
 
 	.reset-btn:hover {
-		background: var(--bg-secondary);
+		background: var(--bg-tertiary);
 		color: var(--text-primary);
-		border-color: var(--border-light);
 	}
 
 	.hint {
@@ -417,7 +414,7 @@
 		width: 2rem;
 		height: 2rem;
 		border-radius: var(--radius-md);
-		border: 1px solid var(--border-light);
+		border: none;
 		background: var(--bg-secondary);
 		color: var(--text-primary);
 		font-size: 1rem;
@@ -439,7 +436,7 @@
 		width: 3.5rem;
 		padding: 0.35rem 0.5rem;
 		border-radius: var(--radius-md);
-		border: 1px solid var(--border-light);
+		border: none;
 		background: var(--bg-secondary);
 		font-size: 0.875rem;
 		color: var(--text-primary);
