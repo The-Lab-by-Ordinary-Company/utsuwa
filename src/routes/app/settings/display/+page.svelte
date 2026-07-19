@@ -174,16 +174,17 @@
 					<span class="setting-label">Wait tone</span>
 					<span class="setting-desc">Soft audio ping while the typing indicator is visible</span>
 				</div>
-				<label class="toggle">
-					<input
-						type="checkbox"
-						checked={displayStore.waitToneEnabled}
-						onchange={(e) => displayStore.setWaitToneEnabled(e.currentTarget.checked)}
-					/>
+				<button
+					class="service-toggle"
+					class:enabled={displayStore.waitToneEnabled}
+					onclick={() => displayStore.setWaitToneEnabled(!displayStore.waitToneEnabled)}
+					aria-label="Toggle wait tone"
+					aria-pressed={displayStore.waitToneEnabled}
+				>
 					<span class="toggle-track">
 						<span class="toggle-thumb"></span>
 					</span>
-				</label>
+				</button>
 			</div>
 
 			<div class="setting-row">
@@ -357,20 +358,16 @@
 		color: var(--text-secondary);
 	}
 
-	.toggle {
+	/* Same switch as the LLM / TTS / STT pages */
+	.service-toggle {
 		position: relative;
-		display: inline-block;
 		width: 40px;
 		height: 22px;
+		background: transparent;
+		border: none;
+		padding: 0;
 		cursor: pointer;
 		flex-shrink: 0;
-	}
-
-	.toggle input {
-		opacity: 0;
-		width: 0;
-		height: 0;
-		position: absolute;
 	}
 
 	.toggle-track {
@@ -378,12 +375,11 @@
 		width: 100%;
 		height: 100%;
 		background: var(--bg-tertiary);
-		border-radius: 11px;
-		transition: background 0.2s ease-out;
-		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+		border-radius: var(--radius-full);
+		transition: background 0.2s ease;
 	}
 
-	.toggle input:checked ~ .toggle-track {
+	.service-toggle.enabled .toggle-track {
 		background: var(--accent);
 	}
 
@@ -393,14 +389,13 @@
 		left: 2px;
 		width: 18px;
 		height: 18px;
-		background: var(--bg-primary);
-		border-radius: 50%;
-		transition: transform 0.2s ease-out;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-		pointer-events: none;
+		background: #fff;
+		border-radius: var(--radius-full);
+		transition: transform 0.2s ease;
+		box-shadow: var(--shadow-xs);
 	}
 
-	.toggle input:checked ~ .toggle-track .toggle-thumb {
+	.service-toggle.enabled .toggle-thumb {
 		transform: translateX(18px);
 	}
 
