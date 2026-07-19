@@ -263,7 +263,8 @@
 		-webkit-backdrop-filter: blur(20px);
 		border-radius: var(--radius-full);
 		padding: 0.5rem;
-		height: 56px;
+		/* 44px buttons + 0.5rem padding either side: the pill's original stature */
+		height: 60px;
 		box-shadow: var(--shadow-md);
 		transition: box-shadow 0.2s;
 	}
