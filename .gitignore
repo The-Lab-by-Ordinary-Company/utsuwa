@@ -33,3 +33,6 @@ vite.config.ts.timestamp-*
 .refs
 # Temporary marketing-capture harness (do NOT commit)
 src/routes/(shots)/
+
+# Internal working notes, never tracked
+docs/superpowers/
