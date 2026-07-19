@@ -180,6 +180,13 @@
 </div>
 
 <style>
+	/* Fill the bar's flex row; without this the pill collapses to the
+	   textarea's intrinsic width */
+	.chat-input {
+		flex: 1;
+		min-width: 0;
+	}
+
 	.chat-form {
 		flex: 1;
 		min-width: 0;
