@@ -285,6 +285,8 @@ utsuwa/
 ├── src-tauri/               # Tauri desktop app (Rust)
 ├── static/
 │   └── models/             # Place default VRM models here
+├── tools/                   # Optional helpers and self-hosted integrations
+│   └── omnivoice/          # Local OmniVoice TTS proxy
 └── package.json
 ```
 

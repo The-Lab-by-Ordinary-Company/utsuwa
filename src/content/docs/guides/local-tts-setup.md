@@ -9,6 +9,8 @@ If you already run local LLMs with Ollama or LM Studio, you can give your compan
 
 Utsuwa talks to any TTS server that exposes the OpenAI `/v1/audio/speech` endpoint. The two we recommend are **Kokoro-FastAPI** and **openedai-speech**. Lip-sync works automatically because Utsuwa animates the mouth from the audio itself, no extra data needed.
 
+For a fully local, multi-language voice that needs no external API, see the [OmniVoice Setup](/docs/guides/omnivoice) guide. The rest of this page covers generic OpenAI-compatible local TTS servers.
+
 ## Kokoro-FastAPI (recommended)
 
 [Kokoro-FastAPI](https://github.com/remsky/Kokoro-FastAPI) wraps the Kokoro voice model and serves the OpenAI speech API directly. It is fast on CPU and sounds great for its size.
