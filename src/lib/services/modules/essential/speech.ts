@@ -35,6 +35,14 @@ export const speechModule: ModuleDefinition = {
 				placeholder: 'Select a voice'
 			},
 			{
+				key: 'activeLanguage',
+				type: 'text',
+				label: 'Language',
+				description: 'Primary language for multilingual TTS (ISO 639-1)',
+				placeholder: 'en',
+				defaultValue: 'en'
+			},
+			{
 				key: 'speed',
 				type: 'number',
 				label: 'Speed',

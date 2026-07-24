@@ -68,7 +68,7 @@
 - **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
 - **LLM Integration**: Support for 8 LLM providers: OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, ...)
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
-- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, plus local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech). Sentences are fetched in parallel with playback so gaps between sentences stay short
+- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech), and local OmniVoice. Sentences are fetched in parallel with playback so gaps between sentences stay short
 - **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
@@ -145,12 +145,12 @@ The **Context Window** setting is available for every LLM provider. When enabled
 
 If the setting is left off, Utsuwa keeps the historical defaults (10 retrieved turns, 6 injected turns, 5 facts) and does not truncate history. This is useful when you want the provider to handle its own context management.
 
-### TTS Providers (3)
+### TTS Providers (4)
 
 | Category | Providers |
 |----------|-----------|
 | **Cloud** | ElevenLabs, OpenAI TTS |
-| **Local** | Local TTS (Kokoro-FastAPI, openedai-speech, any OpenAI-compatible server) |
+| **Local** | Local TTS (Kokoro-FastAPI, openedai-speech, any OpenAI-compatible server), OmniVoice |
 
 ### STT Providers (4)
 
@@ -309,7 +309,7 @@ pnpm tauri build  # Build desktop app installer
 - [x] VRM model loading and display with orbit controls
 - [x] 3D speech bubbles tracking model head position
 - [x] Multi-provider LLM support (8 providers)
-- [x] Multi-provider TTS support (3 providers)
+- [x] Multi-provider TTS support (4 providers)
 - [x] Audio-driven lip-sync
 - [x] VRMA-based animations (idle, talking, blinking)
 - [x] Companion system with multi-axis relationships
@@ -333,13 +333,13 @@ pnpm tauri build  # Build desktop app installer
 - [x] Relationship-staged touch reactions
 - [x] Persistent scene backgrounds (pastel gradients and patterns)
 - [x] Spring-bone physics intensity slider
+- [x] OmniVoice Local TTS - Self-hosted OmniVoice proxy support for local text-to-speech
 
 ### In Progress / Planned
 
 - [ ] **File and Video Uploads** - Add support for attaching files and videos for multimodal LLM workflows and providers that can use richer context or web-aware tools (image support has shipped)
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
 - [ ] **Hands-Free Voice Mode** - Full duplex conversation: speak naturally and she answers, no push-to-talk, with voice activity detection
-- [ ] **Omnivoice Local TTS** - Self-hosted voice engine support with a dual-voice setup and text chunking, so she starts speaking within moments instead of waiting for the full reply
 - [ ] **MCP Tool Calling** - Model Context Protocol support so your companion can reach beyond the chat: search the web for news, pull live data, or quiz you on Spanish vocabulary, through MCP servers you run yourself
 - [ ] **Flexible Chat Layout** - Choose between the floating chat bar, a full conversation sidebar, or both at once
 

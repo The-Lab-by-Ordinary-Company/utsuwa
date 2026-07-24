@@ -102,6 +102,30 @@ test('provides local TTS troubleshooting hint with CORS guidance', () => {
 	);
 });
 
+// --- OmniVoice ---
+
+import { getOmniVoiceConnectionHint } from './local-endpoints.ts';
+
+test('identifies OmniVoice as a local TTS provider', () => {
+	assert.equal(isLocalTTSProvider('omnivoice'), true);
+	assert.equal(isLocalTTSProvider('openai-tts'), false);
+});
+
+test('normalizes OmniVoice base URL to a trailing-slash /v1 path', () => {
+	assert.equal(getTTSBaseUrl('omnivoice', 'http://localhost:8880'), 'http://localhost:8880/v1/');
+	assert.equal(getTTSBaseUrl('omnivoice', 'http://localhost:8880/'), 'http://localhost:8880/v1/');
+	assert.equal(getTTSBaseUrl('omnivoice', 'http://localhost:8880/v1'), 'http://localhost:8880/v1/');
+	assert.equal(getTTSBaseUrl('omnivoice', 'http://localhost:8880/v1/'), 'http://localhost:8880/v1/');
+	assert.equal(getTTSBaseUrl('omnivoice'), 'http://localhost:8880/v1/');
+});
+
+test('provides OmniVoice troubleshooting hint with CORS guidance', () => {
+	const hint = getOmniVoiceConnectionHint('http://localhost:8880');
+	assert.match(hint, /OmniVoice proxy/);
+	assert.match(hint, /audio\/speech/);
+	assert.match(hint, /CORS/);
+});
+
 // --- ensureOpenAIPath (shared by model discovery and custom-endpoint chat) ---
 
 test('ensureOpenAIPath appends /v1 to bare base URLs', () => {

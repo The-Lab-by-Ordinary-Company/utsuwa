@@ -2,6 +2,7 @@
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { getTTSProvider } from '$lib/services/providers/registry';
 	import { Icon, ProviderDropdown, ModelDropdown } from '$lib/components/ui';
+	import OmniVoiceSettings from './OmniVoiceSettings.svelte';
 	import type { TtsSettingsState } from '$lib/stores/ai-services-settings.svelte';
 	import './ai-services-settings.css';
 
@@ -74,7 +75,7 @@
 				</div>
 			{/if}
 
-			{#if provider?.isLocal}
+			{#if provider?.isLocal && state.speechSettings.activeProvider !== 'omnivoice'}
 				<div class="api-key-row">
 					<input
 						type="text"
@@ -108,6 +109,10 @@
 						onchange={(e) => settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value })}
 					/>
 				</div>
+			{/if}
+
+			{#if provider && state.speechSettings.activeProvider === 'omnivoice'}
+				<OmniVoiceSettings {state} {provider} />
 			{/if}
 		{/if}
 	{/if}

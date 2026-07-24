@@ -1,0 +1,24 @@
+name: omnivoice-proxy
+
+services:
+  omnivoice-proxy:
+    build:
+      context: ..
+      dockerfile: tools/omnivoice/Dockerfile
+    container_name: omnivoice-proxy
+    network_mode: host
+    ipc: host
+    shm_size: "2g"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - omnivoice-cache:/data/hf_cache
+    restart: unless-stopped
+
+volumes:
+  omnivoice-cache:

@@ -193,6 +193,33 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 			{ id: 'bm_george', name: 'George (UK, male)' }
 		]
 	},
+	// OmniVoice - local OmniVoice proxy running on the user's machine.
+	{
+		id: 'omnivoice',
+		name: 'OmniVoice',
+		description: 'Local OmniVoice TTS',
+		category: 'tts',
+		icon: '🔊',
+		requiresApiKey: false,
+		isLocal: true,
+		defaultBaseUrl: 'http://localhost:8880/v1/',
+		models: [{ id: 'omnivoice', name: 'OmniVoice' }],
+		voices: [
+			{ id: 'alloy', name: 'Alloy' },
+			{ id: 'ash', name: 'Ash' },
+			{ id: 'ballad', name: 'Ballad' },
+			{ id: 'cedar', name: 'Cedar' },
+			{ id: 'coral', name: 'Coral' },
+			{ id: 'echo', name: 'Echo' },
+			{ id: 'fable', name: 'Fable' },
+			{ id: 'marin', name: 'Marin' },
+			{ id: 'nova', name: 'Nova' },
+			{ id: 'onyx', name: 'Onyx' },
+			{ id: 'sage', name: 'Sage' },
+			{ id: 'shimmer', name: 'Shimmer' },
+			{ id: 'verse', name: 'Verse' }
+		]
+	},
 ];
 
 // ============================================

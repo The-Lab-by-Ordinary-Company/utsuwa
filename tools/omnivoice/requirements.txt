@@ -1,0 +1,11 @@
+# OmniVoice native dependencies
+# Python 3.11 is strongly recommended (OmniVoice 0.2.1 pulls numba/llvmlite builds
+# that do not support Python 3.12+ yet).
+
+torch==2.6.0
+torchaudio==2.6.0
+fastapi>=0.110
+uvicorn[standard]>=0.29
+requests>=2.31
+soundfile>=0.12.0
+omnivoice>=0.2.1

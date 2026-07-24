@@ -336,6 +336,15 @@ export function createTtsSettingsState() {
 		modulesStore.setModuleSetting('speech', 'activeVoiceId', voiceId);
 	}
 
+	function handleTTSLanguageChange(language: string) {
+		modulesStore.setModuleSetting('speech', 'activeLanguage', language);
+	}
+
+	function handleTTSSpeedChange(speed: number | undefined) {
+		if (speed !== undefined && Number.isNaN(speed)) return;
+		modulesStore.setModuleSetting('speech', 'speed', speed ?? 1);
+	}
+
 	function handleTTSApiKeyBlur() {
 		const providerId = speechSettings.activeProvider as string;
 		if (!providerId) return;
@@ -379,6 +388,8 @@ export function createTtsSettingsState() {
 		handleTTSProviderChange,
 		handleTTSModelChange,
 		handleTTSVoiceChange,
+		handleTTSLanguageChange,
+		handleTTSSpeedChange,
 		handleTTSApiKeyBlur,
 		handleApiKeyChange,
 		toggleTTS

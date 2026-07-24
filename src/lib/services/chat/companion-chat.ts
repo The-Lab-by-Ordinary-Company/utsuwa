@@ -337,7 +337,8 @@ export async function sendCompanionMessage(
 					voiceId: (speechSettings.activeVoiceId as string) || ttsConfig.voiceId,
 					model: (speechSettings.activeModel as string) || ttsConfig.modelId,
 					baseUrl: ttsConfig.baseUrl || ttsMeta?.defaultBaseUrl,
-					speed: (speechSettings.speed as number) ?? 1
+					speed: (speechSettings.speed as number) ?? 1,
+					language: (speechSettings.activeLanguage as string) || 'en'
 				});
 			}
 		}

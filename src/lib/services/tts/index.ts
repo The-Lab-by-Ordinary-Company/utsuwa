@@ -82,6 +82,7 @@ export function getSharedAudioContext(): AudioContext {
 // Import individual providers
 import { ElevenLabsTTS } from './elevenlabs.ts';
 import { OpenAITTS } from './openai-tts.ts';
+import { OmniVoiceTTS } from './omnivoice.ts';
 
 // Provider factory
 let currentProvider: ITTSProvider | null = null;
@@ -97,7 +98,8 @@ export function getTTSProvider(options: TTSOptions): ITTSProvider {
 		currentOptions.voiceId === options.voiceId &&
 		currentOptions.model === options.model &&
 		currentOptions.baseUrl === options.baseUrl &&
-		currentOptions.speed === options.speed
+		currentOptions.speed === options.speed &&
+		currentOptions.language === options.language
 	) {
 		return currentProvider;
 	}
@@ -116,6 +118,10 @@ export function getTTSProvider(options: TTSOptions): ITTSProvider {
 		// localhost base URL. The provider id drives URL/key/error handling.
 		case 'local-tts':
 			currentProvider = new OpenAITTS(options);
+			break;
+
+		case 'omnivoice':
+			currentProvider = new OmniVoiceTTS(options);
 			break;
 
 		default:
