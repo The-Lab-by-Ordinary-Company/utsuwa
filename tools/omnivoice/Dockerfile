@@ -13,7 +13,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir "omnivoice>=0.2" "fastapi>=0.115" "uvicorn[standard]>=0.32" "soundfile>=0.12" \
     && pip cache purge
 
-COPY tools/omnivoice /app/
+COPY . /app/
 
 RUN mkdir -p /data/hf_cache \
     && groupadd -r appuser \
@@ -24,7 +24,7 @@ USER appuser
 
 EXPOSE 8880
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=600s --retries=3 \
     CMD curl -fsS http://localhost:8880/health >/dev/null || exit 1
 
 CMD ["python", "omnivoice-proxy.py", "--host", "0.0.0.0", "--port", "8880", "--device", "cuda"]

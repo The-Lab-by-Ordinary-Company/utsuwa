@@ -3,8 +3,8 @@ name: omnivoice-proxy
 services:
   omnivoice-proxy:
     build:
-      context: ..
-      dockerfile: tools/omnivoice/Dockerfile
+      context: .
+      dockerfile: ./Dockerfile
     container_name: omnivoice-proxy
     network_mode: host
     ipc: host
