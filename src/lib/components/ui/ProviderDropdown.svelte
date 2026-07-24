@@ -9,15 +9,14 @@
 		type ProviderMetadata
 	} from '$lib/services/providers/registry';
 
-import {
-	checkTTSProviderHealth,
-	getTTSProviderHealth,
-	subscribeTTSProviderHealth,
+	import {
+		checkTTSProviderHealth,
+		getTTSProviderHealth,
+		subscribeTTSProviderHealth,
+		type HealthStatus
+	} from '$lib/services/providers/health-check';
 
-	type HealthStatus
-} from '$lib/services/providers/health-check';
-
-import { isLocalTTSProvider } from '$lib/services/providers/local-endpoints';
+	import { isLocalTTSProvider } from '$lib/services/providers/local-endpoints';
 	import ProviderIcon from '$lib/components/icons/ProviderIcons.svelte';
 	import { Icon } from '$lib/components/ui';
 
@@ -101,6 +100,7 @@ import { isLocalTTSProvider } from '$lib/services/providers/local-endpoints';
 		}
 	}
 	function handleSelect(providerId: string) {
+		onSelect(providerId);
 	}
 </script>
 

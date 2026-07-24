@@ -31,7 +31,17 @@ export function getTTSProviderHealth(providerId: string, baseUrl?: string): Heal
 	return entry.status;
 }
 
+function pruneExpiredHealthEntries() {
+	const cutoff = Date.now() - HEALTH_CACHE_TTL_MS;
+	for (const [key, entry] of healthState) {
+		if (entry.checkedAt < cutoff) {
+			healthState.delete(key);
+		}
+	}
+}
+
 function setTTSProviderHealth(providerId: string, baseUrl: string | undefined, status: HealthStatus) {
+	pruneExpiredHealthEntries();
 	const key = healthKey(providerId, baseUrl);
 	healthState.set(key, { status, checkedAt: Date.now() });
 	emit();
