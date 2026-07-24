@@ -2,6 +2,7 @@
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import type { TtsSettingsState } from '$lib/stores/ai-services-settings.svelte';
 	import type { ProviderMetadata } from '$lib/services/providers/registry';
+import { checkTTSProviderHealth } from '$lib/services/providers/health-check';
 	import './ai-services-settings.css';
 
 	let {
@@ -44,7 +45,10 @@
 			class="api-key-input"
 			placeholder={provider.defaultBaseUrl || 'http://localhost:8880/v1/'}
 			value={settingsStore.getProviderConfig(provider.id).baseUrl ?? ''}
-			onchange={(e) => settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value })}
+			onchange={(e) => {
+					settingsStore.setProviderConfig(provider.id, { baseUrl: e.currentTarget.value });
+					checkTTSProviderHealth(provider.id, e.currentTarget.value);
+				}}
 		/>
 	</div>
 </div>
