@@ -98,7 +98,8 @@ test('OpenAI TTS request body remains unchanged (regression)', async () => {
 	assert.equal(requests[0].body.voice, 'nova');
 	assert.equal(requests[0].body.speed, 1.15);
 	assert.equal(requests[0].body.response_format, 'mp3');
-	assert.equal(requests[0].body.language, undefined);
+	// Key must be absent, not merely undefined: OmniVoice shares this client.
+	assert.equal('language' in requests[0].body, false);
 });
 
 test('Local TTS request body remains unchanged and uses mp3 format (regression)', async () => {
@@ -123,4 +124,53 @@ test('Local TTS request body remains unchanged and uses mp3 format (regression)'
 	assert.equal(requests[0].body.voice, 'af_bella');
 	assert.equal(requests[0].body.response_format, 'mp3');
 	assert.equal(requests[0].body.speed, 1.0);
+	assert.equal('language' in requests[0].body, false);
+});
+
+test('Local TTS keeps its own connection hint and HTTP error message', async () => {
+	globalThis.fetch = () => Promise.reject(new TypeError('Failed to fetch'));
+
+	const tts = new OpenAITTS({ provider: 'local-tts', baseUrl: 'http://localhost:8880/v1' });
+	await assert.rejects(() => tts.fetchAudioBuffer('Hi.'), /local TTS server/i);
+
+	globalThis.fetch = () =>
+		Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) } as Response);
+
+	await assert.rejects(
+		() => tts.fetchAudioBuffer('Hi.'),
+		/Local TTS server returned 404 at http:\/\/localhost:8880\/v1\//
+	);
+});
+
+test('Hosted OpenAI TTS rethrows network errors and uses the OpenAI error label', async () => {
+	const networkError = new TypeError('Failed to fetch');
+	globalThis.fetch = () => Promise.reject(networkError);
+
+	const tts = new OpenAITTS({ provider: 'openai-tts', apiKey: 'k' });
+	// Hosted OpenAI must rethrow the original error, not a local-server hint.
+	await assert.rejects(() => tts.fetchAudioBuffer('Hi.'), (err) => err === networkError);
+
+	globalThis.fetch = () =>
+		Promise.resolve({
+			ok: false,
+			status: 401,
+			json: () => Promise.resolve({ error: { message: 'bad key' } })
+		} as Response);
+
+	await assert.rejects(() => tts.fetchAudioBuffer('Hi.'), /OpenAI TTS/);
+});
+
+test('sends Authorization only when an API key is present', async () => {
+	const seen: (Record<string, string> | undefined)[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		seen.push(init.headers as Record<string, string>);
+		return mockFetchResponse();
+	};
+
+	await new OpenAITTS({ provider: 'openai-tts', apiKey: 'secret' }).fetchAudioBuffer('a');
+	await new OpenAITTS({ provider: 'local-tts' }).fetchAudioBuffer('b');
+
+	assert.equal(seen[0]?.Authorization, 'Bearer secret');
+	assert.equal('Authorization' in (seen[1] ?? {}), false);
 });

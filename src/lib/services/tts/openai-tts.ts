@@ -8,6 +8,7 @@ import {
 import {
 	getTTSBaseUrl,
 	getLocalTTSConnectionHint,
+	getOmniVoiceConnectionHint,
 	isLocalTTSProvider
 } from '../providers/local-endpoints.ts';
 import { providerErrorMessage } from './provider-utils.ts';
@@ -21,31 +22,39 @@ function getCurrentSiteOrigin(): string | undefined {
 }
 
 // Shared by OpenAI's hosted TTS and any OpenAI-compatible local server
-// (Kokoro-FastAPI, openedai-speech). The provider id decides URL normalization,
-// whether an API key is required, and the failure message.
+// (Kokoro-FastAPI, openedai-speech, the OmniVoice proxy). The provider id
+// decides URL normalization, whether an API key is required, the request
+// format, and the failure message.
 export class OpenAITTS implements ITTSProvider {
 	private apiKey: string;
 	private voiceId: string;
 	private model: string;
 	private speed: number;
+	private language: string;
 	private baseUrl: string;
 	private isLocal: boolean;
+	private isOmniVoice: boolean;
 
-	readonly capabilities = {
-		streaming: false,
-		emotion: false,
-		multilingual: false
-	};
+	readonly capabilities: { streaming: boolean; emotion: boolean; multilingual: boolean };
 
 	constructor(options: TTSOptions) {
+		this.isOmniVoice = options.provider === 'omnivoice';
 		this.apiKey = options.apiKey || '';
 		this.voiceId = options.voiceId || 'alloy';
-		this.model = options.model || 'tts-1';
+		this.model = options.model || (this.isOmniVoice ? 'omnivoice' : 'tts-1');
 		this.speed = options.speed ?? 1;
+		this.language = options.language || 'en';
 		this.isLocal = isLocalTTSProvider(options.provider);
 		this.baseUrl = this.isLocal
 			? getTTSBaseUrl(options.provider, options.baseUrl)
 			: ensureTrailingSlash(options.baseUrl || 'https://api.openai.com/v1/');
+
+		// Only OmniVoice takes a language hint per request.
+		this.capabilities = {
+			streaming: false,
+			emotion: false,
+			multilingual: this.isOmniVoice
+		};
 	}
 
 	getAudioContext(): AudioContext {
@@ -73,14 +82,18 @@ export class OpenAITTS implements ITTSProvider {
 					model: this.model,
 					input: text,
 					voice: this.voiceId,
+					...(this.isOmniVoice ? { language: options?.language ?? this.language } : {}),
 					speed: options?.speed ?? this.speed,
-					response_format: 'mp3'
+					response_format: this.isOmniVoice ? 'wav' : 'mp3'
 				}),
 				signal: options?.signal
 			});
 		} catch (err) {
 			// A thrown fetch is usually a refused connection or a CORS block, which
 			// is the exact failure mode that broke local LLMs before they were fixed.
+			if (this.isOmniVoice) {
+				throw new Error(getOmniVoiceConnectionHint(this.baseUrl, getCurrentSiteOrigin()));
+			}
 			if (this.isLocal) {
 				throw new Error(getLocalTTSConnectionHint(this.baseUrl, getCurrentSiteOrigin()));
 			}
@@ -88,7 +101,9 @@ export class OpenAITTS implements ITTSProvider {
 		}
 
 		if (!response.ok) {
-			if (this.isLocal) {
+			// OmniVoice returns structured JSON errors, so it uses the shared
+			// provider message rather than the generic local-server hint.
+			if (this.isLocal && !this.isOmniVoice) {
 				throw new Error(
 					`Local TTS server returned ${response.status} at ${this.baseUrl}. Check the model and voice are valid for this server.`
 				);
@@ -99,7 +114,9 @@ export class OpenAITTS implements ITTSProvider {
 			} catch {
 				// non-JSON error body
 			}
-			throw new Error(providerErrorMessage('OpenAI TTS', response.status, body));
+			throw new Error(
+				providerErrorMessage(this.isOmniVoice ? 'OmniVoice' : 'OpenAI TTS', response.status, body)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();

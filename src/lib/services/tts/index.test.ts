@@ -55,7 +55,6 @@ class MockAudioContext {
 globalThis.AudioContext = MockAudioContext;
 
 import { getTTSProvider } from './index.ts';
-import { OmniVoiceTTS } from './omnivoice.ts';
 import { OpenAITTS } from './openai-tts.ts';
 import { ElevenLabsTTS } from './elevenlabs.ts';
 
@@ -69,14 +68,20 @@ function mockFetchResponse() {
 
 globalThis.fetch = () => mockFetchResponse();
 
-test('factory returns OmniVoiceTTS for omnivoice provider', () => {
+test('factory serves omnivoice from the OpenAI client with multilingual enabled', () => {
 	const provider = getTTSProvider({ provider: 'omnivoice' });
-	assert.ok(provider instanceof OmniVoiceTTS);
+	assert.ok(provider instanceof OpenAITTS);
+	assert.equal(provider.capabilities?.multilingual, true);
 });
 
 test('factory returns OpenAITTS for openai-tts and local-tts providers', () => {
-	assert.ok(getTTSProvider({ provider: 'openai-tts' }) instanceof OpenAITTS);
-	assert.ok(getTTSProvider({ provider: 'local-tts' }) instanceof OpenAITTS);
+	const openai = getTTSProvider({ provider: 'openai-tts' });
+	const local = getTTSProvider({ provider: 'local-tts' });
+	assert.ok(openai instanceof OpenAITTS);
+	assert.ok(local instanceof OpenAITTS);
+	// Neither takes a language hint, unlike omnivoice.
+	assert.equal(openai.capabilities?.multilingual, false);
+	assert.equal(local.capabilities?.multilingual, false);
 });
 
 test('factory returns ElevenLabsTTS for elevenlabs provider', () => {

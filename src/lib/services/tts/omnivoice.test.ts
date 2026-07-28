@@ -54,7 +54,7 @@ class MockAudioContext {
 // @ts-expect-error globalThis.AudioContext is not available in Node test environment
 globalThis.AudioContext = MockAudioContext;
 
-import { OmniVoiceTTS } from './omnivoice.ts';
+import { OpenAITTS } from './openai-tts.ts';
 
 function parseBody(init?: RequestInit): Record<string, unknown> {
 	if (!init?.body) return {};
@@ -81,7 +81,7 @@ test('fetchAudioBuffer sends WAV request with base fields and no API key', async
 		return mockFetchResponse();
 	};
 
-	const tts = new OmniVoiceTTS({
+	const tts = new OpenAITTS({
 		provider: 'omnivoice',
 		voiceId: 'alloy',
 		language: 'de',
@@ -109,7 +109,7 @@ test('fetchAudioBuffer overrides language and speed from stream options', async 
 		return mockFetchResponse();
 	};
 
-	const tts = new OmniVoiceTTS({
+	const tts = new OpenAITTS({
 		provider: 'omnivoice',
 		voiceId: 'alloy',
 		language: 'en',
@@ -125,7 +125,7 @@ test('fetchAudioBuffer overrides language and speed from stream options', async 
 test('speak returns a source and analyser', async () => {
 	globalThis.fetch = () => mockFetchResponse();
 
-	const tts = new OmniVoiceTTS({
+	const tts = new OpenAITTS({
 		provider: 'omnivoice'
 	});
 
@@ -137,7 +137,7 @@ test('speak returns a source and analyser', async () => {
 test('connection error surfaces a local OmniVoice hint', async () => {
 	globalThis.fetch = () => Promise.reject(new Error('Failed to fetch'));
 
-	const tts = new OmniVoiceTTS({
+	const tts = new OpenAITTS({
 		provider: 'omnivoice',
 		baseUrl: 'http://localhost:8880/v1'
 	});
@@ -153,7 +153,7 @@ test('HTTP error surfaces providerErrorMessage-style detail', async () => {
 			json: () => Promise.resolve({ error: { message: 'bad request' } })
 		} as Response);
 
-	const tts = new OmniVoiceTTS({
+	const tts = new OpenAITTS({
 		provider: 'omnivoice'
 	});
 
