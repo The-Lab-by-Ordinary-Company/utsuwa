@@ -91,7 +91,7 @@ test('fetchAudioBuffer sends WAV request with base fields and no API key', async
 	await tts.fetchAudioBuffer('Hallo Welt.');
 
 	assert.equal(requests.length, 1);
-	assert.equal(requests[0].url, 'http://localhost:8880/v1/audio/speech');
+	assert.equal(requests[0].url, 'http://localhost:8881/v1/audio/speech');
 	assert.equal(requests[0].body.model, 'omnivoice');
 	assert.equal(requests[0].body.input, 'Hallo Welt.');
 	assert.equal(requests[0].body.voice, 'alloy');

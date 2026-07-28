@@ -116,7 +116,7 @@ test('normalizes OmniVoice base URL to a trailing-slash /v1 path', () => {
 	assert.equal(getTTSBaseUrl('omnivoice', 'http://localhost:8880/'), 'http://localhost:8880/v1/');
 	assert.equal(getTTSBaseUrl('omnivoice', 'http://localhost:8880/v1'), 'http://localhost:8880/v1/');
 	assert.equal(getTTSBaseUrl('omnivoice', 'http://localhost:8880/v1/'), 'http://localhost:8880/v1/');
-	assert.equal(getTTSBaseUrl('omnivoice'), 'http://localhost:8880/v1/');
+	assert.equal(getTTSBaseUrl('omnivoice'), 'http://localhost:8881/v1/');
 });
 
 test('provides OmniVoice troubleshooting hint with CORS guidance', () => {

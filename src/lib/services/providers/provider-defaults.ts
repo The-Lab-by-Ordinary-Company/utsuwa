@@ -41,5 +41,6 @@ export const DEFAULT_LOCAL_BASE_URLS: Record<string, string> = {
 	lmstudio: 'http://localhost:1234/v1',
 	'local-tts': 'http://localhost:8880/v1',
 	'local-stt': 'http://localhost:8000/v1',
-	omnivoice: 'http://localhost:8880/v1'
+	// Distinct port from local-tts so a running Kokoro server isn't mistaken for OmniVoice.
+	omnivoice: 'http://localhost:8881/v1'
 };

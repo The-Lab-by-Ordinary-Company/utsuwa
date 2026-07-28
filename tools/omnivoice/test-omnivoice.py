@@ -17,7 +17,7 @@ from pathlib import Path
 
 import requests
 
-BASE = "http://localhost:8880"
+BASE = "http://localhost:8881"
 
 
 def die(msg: str):

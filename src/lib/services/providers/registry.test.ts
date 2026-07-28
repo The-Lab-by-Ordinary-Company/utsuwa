@@ -27,7 +27,7 @@ test('OmniVoice provider is registered as keyless local proxy with preset voices
 	assert.ok(omnivoice, 'omnivoice should be registered');
 	assert.equal(omnivoice?.isLocal, true);
 	assert.equal(omnivoice?.requiresApiKey, false);
-	assert.equal(omnivoice?.defaultBaseUrl, 'http://localhost:8880/v1/');
+	assert.equal(omnivoice?.defaultBaseUrl, 'http://localhost:8881/v1/');
 	assert.ok((omnivoice?.voices?.length ?? 0) > 0, 'omnivoice should expose preset voices');
 	assert.ok(omnivoice?.voices?.some((v) => v.id === 'alloy'), 'alloy preset should exist');
 });

@@ -22,9 +22,9 @@ RUN mkdir -p /data/hf_cache \
 
 USER appuser
 
-EXPOSE 8880
+EXPOSE 8881
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=600s --retries=3 \
-    CMD curl -fsS http://localhost:8880/health >/dev/null || exit 1
+    CMD curl -fsS http://localhost:8881/health >/dev/null || exit 1
 
-CMD ["python", "omnivoice-proxy.py", "--host", "0.0.0.0", "--port", "8880", "--device", "cuda"]
+CMD ["python", "omnivoice-proxy.py", "--host", "0.0.0.0", "--port", "8881", "--device", "cuda"]

@@ -29,7 +29,7 @@ docker compose up -d
 The first start downloads the model from HuggingFace, which can take several minutes depending on your connection. Wait until the health endpoint returns `ok`:
 
 ```bash
-curl http://localhost:8880/health
+curl http://localhost:8881/health
 # {"status":"ok"}
 ```
 
@@ -41,9 +41,9 @@ If the model download is slow or you hit rate limits, set a `HF_TOKEN` environme
 2. Open Utsuwa and go to **Settings > Speech (TTS)**.
 3. Enable **Speech** and select **OmniVoice**.
 4. Set the base URL. The proxy binds to every interface, so any of these work once the model is loaded:
-   - `http://localhost:8880/v1/`
-   - `http://127.0.0.1:8880/v1/`
-   - `http://<your-machine-ip>:8880/v1/` (for example `http://192.168.1.42:8880/v1/`)
+   - `http://localhost:8881/v1/`
+   - `http://127.0.0.1:8881/v1/`
+   - `http://<your-machine-ip>:8881/v1/` (for example `http://192.168.1.42:8881/v1/`)
 
 If `localhost` does not resolve from your browser or from inside the development container, use the IP address of your network interface instead. The proxy already sends permissive CORS headers, so a hosted site or another origin can reach it as long as the browser allows the request.
 5. Choose a voice, language, and speed, then send a message.
@@ -55,7 +55,7 @@ If you do not have an NVIDIA GPU or `nvidia-container-toolkit`, remove the `depl
 ```bash
 cd tools/omnivoice
 docker compose run -d --rm --name omnivoice-proxy omnivoice-proxy \
-  python omnivoice-proxy.py --host 0.0.0.0 --port 8880 --device cpu
+  python omnivoice-proxy.py --host 0.0.0.0 --port 8881 --device cpu
 ```
 
 CPU synthesis is slower, especially on first load, but it does not require a GPU.

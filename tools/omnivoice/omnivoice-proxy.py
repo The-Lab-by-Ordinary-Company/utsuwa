@@ -4,7 +4,7 @@ omnivoice-proxy — Minimal OpenAI-compatible HTTP wrapper for k2-fsa/OmniVoice.
 
 Start:
   pip install -r tools/omnivoice/requirements.txt
-  python tools/omnivoice/omnivoice-proxy.py --port 8880
+  python tools/omnivoice/omnivoice-proxy.py --port 8881
 
 Endpoints:
   GET  /health              — 200 when ready, 503 during startup
@@ -188,7 +188,7 @@ async def speech(request: Request):
 def _parse_args():
     p = argparse.ArgumentParser(description="omnivoice-proxy")
     p.add_argument("--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)")
-    p.add_argument("--port", type=int, default=8880)
+    p.add_argument("--port", type=int, default=8881)
     p.add_argument("--device", default="cpu", choices=["cpu", "cuda", "auto"])
     p.add_argument("--model-id", default="k2-fsa/OmniVoice")
     p.add_argument("--max-concurrent", type=int, default=1, help="Max concurrent synthesis requests")

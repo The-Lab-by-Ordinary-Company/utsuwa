@@ -202,7 +202,7 @@ export const TTS_PROVIDERS: ProviderMetadata[] = [
 		icon: '🔊',
 		requiresApiKey: false,
 		isLocal: true,
-		defaultBaseUrl: 'http://localhost:8880/v1/',
+		defaultBaseUrl: 'http://localhost:8881/v1/',
 		models: [{ id: 'omnivoice', name: 'OmniVoice' }],
 		voices: [
 			{ id: 'alloy', name: 'Alloy' },
