@@ -9,7 +9,7 @@ const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 
 const highlighter = await createHighlighter({
 	themes: ['github-light', 'github-dark'],
-	langs: ['js', 'ts', 'bash', 'json', 'svelte', 'html', 'css', 'md']
+	langs: ['js', 'ts', 'bash', 'json', 'svelte', 'html', 'css', 'md', 'yaml']
 });
 
 /** @type {import('@sveltejs/kit').Config} */

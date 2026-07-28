@@ -6,7 +6,11 @@ services:
       context: .
       dockerfile: ./Dockerfile
     container_name: omnivoice-proxy
-    network_mode: host
+    # Published rather than network_mode: host, which is Linux-only and silently
+    # does nothing on Docker Desktop. Bind to 0.0.0.0 to reach it from another
+    # machine; see the setup guide before you do.
+    ports:
+      - "127.0.0.1:8881:8881"
     ipc: host
     shm_size: "2g"
     deploy:

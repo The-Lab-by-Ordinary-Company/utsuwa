@@ -40,22 +40,35 @@ If the model download is slow or you hit rate limits, set a `HF_TOKEN` environme
 1. Start the proxy.
 2. Open Utsuwa and go to **Settings > Speech (TTS)**.
 3. Enable **Speech** and select **OmniVoice**.
-4. Set the base URL. The proxy binds to every interface, so any of these work once the model is loaded:
+4. Set the base URL. The compose file publishes the proxy on loopback only, so use:
    - `http://localhost:8881/v1/`
    - `http://127.0.0.1:8881/v1/`
-   - `http://<your-machine-ip>:8881/v1/` (for example `http://192.168.1.42:8881/v1/`)
-
-If `localhost` does not resolve from your browser or from inside the development container, use the IP address of your network interface instead. The proxy already sends permissive CORS headers, so a hosted site or another origin can reach it as long as the browser allows the request.
 5. Choose a voice, language, and speed, then send a message.
+
+The proxy sends permissive CORS headers, so a hosted site can reach it as long as the browser allows the request.
+
+## Reaching the proxy from another machine
+
+The proxy has no authentication and accepts requests from any origin, so the compose file binds it to `127.0.0.1` and nothing outside your machine can reach it.
+
+If you want it available to other devices, change the port mapping in `tools/omnivoice/docker-compose.yaml`:
+
+```yaml
+ports:
+  - "8881:8881" # reachable from anything that can route to this machine
+```
+
+Only do this on a network you trust. Anyone who can reach the port can use your GPU to synthesise audio. The same applies when running outside Docker with `--host 0.0.0.0`; the default there is `127.0.0.1`.
+
+Once exposed, use `http://<your-machine-ip>:8881/v1/` as the base URL (for example `http://192.168.1.42:8881/v1/`). If you run Utsuwa in the development container, `localhost` inside the container is not the host machine, so you need this too.
 
 ## CPU-only mode
 
-If you do not have an NVIDIA GPU or `nvidia-container-toolkit`, remove the `deploy.resources.reservations.devices` block in `tools/omnivoice/docker-compose.yaml` and start with `--device cpu`:
+If you do not have an NVIDIA GPU or `nvidia-container-toolkit`, use the CPU compose file:
 
 ```bash
 cd tools/omnivoice
-docker compose run -d --rm --name omnivoice-proxy omnivoice-proxy \
-  python omnivoice-proxy.py --host 0.0.0.0 --port 8881 --device cpu
+docker compose -f docker-compose.cpu.yaml up -d
 ```
 
 CPU synthesis is slower, especially on first load, but it does not require a GPU.
@@ -99,9 +112,9 @@ Close other GPU applications, reduce `--max-concurrent` to `1`, or run with `--d
 
 ### Proxy is healthy but Utsuwa cannot reach it
 
-- Try the base URL with your machine's network IP instead of `localhost`.
+- Confirm you are using `localhost` or `127.0.0.1`. The proxy is bound to loopback by default, so a network IP will not reach it until you change the port mapping. See [Reaching the proxy from another machine](#reaching-the-proxy-from-another-machine).
 - If you use the hosted web app, the browser may ask for permission to access local-network devices; allow it.
-- If you run Utsuwa in the development Docker container, remember that `localhost` inside the container is not the host machine. Use the host IP or run the proxy on a network both can reach.
+- If you run Utsuwa in the development Docker container, remember that `localhost` inside the container is not the host machine. You need the host IP, which means exposing the port as described above.
 
 ## See also
 

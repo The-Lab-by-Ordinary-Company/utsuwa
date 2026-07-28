@@ -1,0 +1,25 @@
+name: omnivoice-proxy
+
+# CPU-only variant. Use this when you have no NVIDIA GPU or no
+# nvidia-container-toolkit:
+#   docker compose -f docker-compose.cpu.yaml up -d
+# Synthesis is noticeably slower, especially on the first load.
+
+services:
+  omnivoice-proxy:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: omnivoice-proxy
+    command:
+      ["python", "omnivoice-proxy.py", "--host", "0.0.0.0", "--port", "8881", "--device", "cpu"]
+    ports:
+      - "127.0.0.1:8881:8881"
+    ipc: host
+    shm_size: "2g"
+    volumes:
+      - omnivoice-cache:/data/hf_cache
+    restart: unless-stopped
+
+volumes:
+  omnivoice-cache:
