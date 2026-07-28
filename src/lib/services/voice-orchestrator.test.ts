@@ -202,3 +202,38 @@ test('interrupt stops playback and onComplete fires', async () => {
 	assert.equal(complete, true);
 	assert.equal(orchestrator.getIsPlaying(), false);
 });
+
+// --- alt-voice language selection ------------------------------------------
+// The companion pipeline must not invent a session language. When it is unset
+// the orchestrator infers the primary language from the first segment; pinning
+// it to 'en' inverts alt-voice selection for every non-English companion.
+
+async function altVoiceTags(sessionLanguage: string | undefined): Promise<(string | undefined)[]> {
+	globalThis.fetch = () => mockFetchResponse();
+
+	const orchestrator = new VoiceOrchestrator();
+	const tags: (string | undefined)[] = [];
+
+	await orchestrator.speakSegments(
+		[
+			{ text: 'これはテストです。', language: 'ja' },
+			{ text: 'This is a test.', language: 'en' }
+		],
+		{ ...baseOptions, altVoiceId: 'alt-voice', language: sessionLanguage },
+		{ onSegmentStart: (seg) => tags.push(seg.voiceId) }
+	);
+
+	return tags;
+}
+
+test('infers primary language from the first segment when none is configured', async () => {
+	// Japanese leads, so Japanese is primary and only the English line switches.
+	assert.deepEqual(await altVoiceTags(undefined), [undefined, 'alt']);
+});
+
+test('an explicitly configured primary language overrides inference', async () => {
+	// This is why the caller must send undefined rather than a default of 'en':
+	// pinning 'en' flips which line is treated as foreign.
+	assert.deepEqual(await altVoiceTags('en'), ['alt', undefined]);
+	assert.deepEqual(await altVoiceTags('ja'), [undefined, 'alt']);
+});

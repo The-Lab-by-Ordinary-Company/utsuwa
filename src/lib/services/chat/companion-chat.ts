@@ -338,7 +338,9 @@ export async function sendCompanionMessage(
 					model: (speechSettings.activeModel as string) || ttsConfig.modelId,
 					baseUrl: ttsConfig.baseUrl || ttsMeta?.defaultBaseUrl,
 					speed: (speechSettings.speed as number) ?? 1,
-					language: (speechSettings.activeLanguage as string) || 'en'
+					// Leave unset when the user hasn't picked one; the orchestrator
+					// infers the primary language from the first segment instead.
+					language: (speechSettings.activeLanguage as string) || undefined
 				});
 			}
 		}
