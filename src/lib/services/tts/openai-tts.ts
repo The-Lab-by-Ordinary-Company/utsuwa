@@ -34,6 +34,7 @@ export class OpenAITTS implements ITTSProvider {
 	private baseUrl: string;
 	private isLocal: boolean;
 	private isOmniVoice: boolean;
+	private isPlainLocal: boolean;
 
 	readonly capabilities: { streaming: boolean; emotion: boolean; multilingual: boolean };
 
@@ -45,6 +46,9 @@ export class OpenAITTS implements ITTSProvider {
 		this.speed = options.speed ?? 1;
 		this.language = options.language || 'en';
 		this.isLocal = isLocalTTSProvider(options.provider);
+		// omnivoice is a member of LOCAL_TTS_PROVIDERS, so isLocal alone sweeps it
+		// in. URL normalization does want that; the hints and error text do not.
+		this.isPlainLocal = this.isLocal && !this.isOmniVoice;
 		this.baseUrl = this.isLocal
 			? getTTSBaseUrl(options.provider, options.baseUrl)
 			: ensureTrailingSlash(options.baseUrl || 'https://api.openai.com/v1/');
@@ -94,7 +98,7 @@ export class OpenAITTS implements ITTSProvider {
 			if (this.isOmniVoice) {
 				throw new Error(getOmniVoiceConnectionHint(this.baseUrl, getCurrentSiteOrigin()));
 			}
-			if (this.isLocal) {
+			if (this.isPlainLocal) {
 				throw new Error(getLocalTTSConnectionHint(this.baseUrl, getCurrentSiteOrigin()));
 			}
 			throw err;
@@ -103,7 +107,7 @@ export class OpenAITTS implements ITTSProvider {
 		if (!response.ok) {
 			// OmniVoice returns structured JSON errors, so it uses the shared
 			// provider message rather than the generic local-server hint.
-			if (this.isLocal && !this.isOmniVoice) {
+			if (this.isPlainLocal) {
 				throw new Error(
 					`Local TTS server returned ${response.status} at ${this.baseUrl}. Check the model and voice are valid for this server.`
 				);
