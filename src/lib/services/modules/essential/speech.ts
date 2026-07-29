@@ -54,35 +54,6 @@ export const speechModule: ModuleDefinition = {
 				type: 'text',
 				label: 'Voice Instructions',
 				description: 'Natural-language description of the synthetic voice',
-				placeholder: 'female, young adult, moderate pitch, american accent'
-			},
-			{
-				key: 'gender',
-				type: 'text',
-				label: 'Voice Gender',
-				description: 'Gender used for synthetic voice design',
-				defaultValue: 'female'
-			},
-			{
-				key: 'age',
-				type: 'text',
-				label: 'Voice Age',
-				description: 'Age group used for synthetic voice design',
-				defaultValue: 'young adult'
-			},
-			{
-				key: 'pitch',
-				type: 'text',
-				label: 'Voice Pitch',
-				description: 'Pitch used for synthetic voice design',
-				defaultValue: 'moderate'
-			},
-			{
-				key: 'accent',
-				type: 'text',
-				label: 'Voice Accent',
-				description: 'Accent used for synthetic voice design',
-				defaultValue: 'american'
 			},
 			{
 				key: 'numStep',

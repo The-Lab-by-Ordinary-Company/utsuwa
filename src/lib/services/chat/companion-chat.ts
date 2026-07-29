@@ -344,11 +344,7 @@ export async function sendCompanionMessage(
 					instructions: (speechSettings.instructions as string) || undefined,
 					numStep: (speechSettings.numStep as number) ?? undefined,
 					positionTemperature: (speechSettings.positionTemperature as number) ?? undefined,
-					classTemperature: (speechSettings.classTemperature as number) ?? undefined,
-					gender: (speechSettings.gender as string) || undefined,
-					age: (speechSettings.age as string) || undefined,
-					pitch: (speechSettings.pitch as string) || undefined,
-					accent: (speechSettings.accent as string) || undefined
+					classTemperature: (speechSettings.classTemperature as number) ?? undefined
 				});
 			}
 		}

@@ -4,15 +4,7 @@
 	import type { ProviderMetadata } from '$lib/services/providers/registry';
 	import { getSharedAudioContext } from '$lib/services/tts';
 	import { getTTSBaseUrl } from '$lib/services/providers/local-endpoints';
-	import {
-		buildInstructions,
-		parseInstructions,
-		DEFAULT_OMNI_VOICE_DESIGN,
-		OMNI_VOICE_GENDERS,
-		OMNI_VOICE_AGES,
-		OMNI_VOICE_PITCHES,
-		OMNI_VOICE_ACCENTS
-	} from '$lib/stores/ai-services-settings-logic';
+	import { buildPresetInstructions } from '$lib/stores/ai-services-settings-logic';
 	import { getFocusableElements, handleModalKeydown } from './tts-modal-a11y';
 	import './ai-services-settings.css';
 
@@ -60,10 +52,7 @@
 		sv: 'Hej, detta är ett test av OmniVoice.'
 	};
 
-	const GENDERS = [...OMNI_VOICE_GENDERS];
-	const AGES = [...OMNI_VOICE_AGES];
-	const PITCHES = [...OMNI_VOICE_PITCHES];
-	const ACCENTS = [...OMNI_VOICE_ACCENTS];
+	const DEFAULT_PRESET_VOICE = 'alloy';
 
 	// ── Local UI state ───────────────────────────────────────────────────────
 
@@ -87,23 +76,7 @@
 	let proxyStatus = $state<'connected' | 'connecting' | 'disconnected' | 'checking'>('checking');
 	let proxyCheckTimer: ReturnType<typeof setInterval> | undefined;
 
-	// ── Derived voice design ─────────────────────────────────────────────────
-
-	const design = $derived.by<{
-		gender: string;
-		age: string;
-		pitch: string;
-		accent: string;
-	}>(() => {
-		const s = settings.speechSettings;
-		const fromInstructions = parseInstructions((s.instructions as string) || '');
-		return {
-			gender: (s.gender as string) || fromInstructions.gender || DEFAULT_OMNI_VOICE_DESIGN.gender,
-			age: (s.age as string) || fromInstructions.age || DEFAULT_OMNI_VOICE_DESIGN.age,
-			pitch: (s.pitch as string) || fromInstructions.pitch || DEFAULT_OMNI_VOICE_DESIGN.pitch,
-			accent: (s.accent as string) || fromInstructions.accent || DEFAULT_OMNI_VOICE_DESIGN.accent
-		};
-	});
+	// ── Derived voice state ──────────────────────────────────────────────────
 
 	const activeVoiceId = $derived.by(() => (settings.speechSettings.activeVoiceId as string) || '');
 	const isClone = $derived.by(() => activeVoiceId.startsWith('clone:'));
@@ -116,45 +89,44 @@
 		return getTTSBaseUrl('omnivoice', settingsStore.getProviderConfig(provider.id).baseUrl);
 	}
 
-	function pickOmniVoicePreset(gender: string): string {
-		return gender === 'male' ? 'onyx' : 'alloy';
+	const PRESET_ATTRIBUTES: Record<string, { gender: string; age: string; pitch: string; accent: string }> =
+		{
+			alloy: { gender: 'female', age: 'young adult', pitch: 'moderate', accent: 'american' },
+			ash: { gender: 'male', age: 'young adult', pitch: 'low', accent: 'american' },
+			ballad: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'british' },
+			cedar: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'american' },
+			coral: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'australian' },
+			echo: { gender: 'male', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
+			fable: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'british' },
+			marin: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
+			nova: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'american' },
+			onyx: { gender: 'male', age: 'middle-aged', pitch: 'very low', accent: 'british' },
+			sage: { gender: 'female', age: 'elderly', pitch: 'low', accent: 'british' },
+			shimmer: { gender: 'female', age: 'young adult', pitch: 'very high', accent: 'american' },
+			verse: { gender: 'male', age: 'young adult', pitch: 'moderate', accent: 'british' }
+		};
+
+	function deriveInstructions(voiceId: string, language: string): string {
+		return buildPresetInstructions(voiceId || DEFAULT_PRESET_VOICE, language, PRESET_ATTRIBUTES);
 	}
 
-	const PRESET_ATTRIBUTES: Record<
-		string,
-		{ gender: string; age: string; pitch: string; accent: string }
-	> = {
-		alloy: { gender: 'female', age: 'young adult', pitch: 'moderate', accent: 'american' },
-		ash: { gender: 'male', age: 'young adult', pitch: 'low', accent: 'american' },
-		ballad: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'british' },
-		cedar: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'american' },
-		coral: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'australian' },
-		echo: { gender: 'male', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
-		fable: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'british' },
-		marin: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
-		nova: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'american' },
-		onyx: { gender: 'male', age: 'middle-aged', pitch: 'very low', accent: 'british' },
-		sage: { gender: 'female', age: 'elderly', pitch: 'low', accent: 'british' },
-		shimmer: { gender: 'female', age: 'young adult', pitch: 'very high', accent: 'american' },
-		verse: { gender: 'male', age: 'young adult', pitch: 'moderate', accent: 'british' }
-	};
-
 	function handlePresetChange(voiceId: string) {
-		const attrs = PRESET_ATTRIBUTES[voiceId];
-		const nextGender = attrs?.gender ?? design.gender;
-		const nextAge = attrs?.age ?? design.age;
-		const nextPitch = attrs?.pitch ?? design.pitch;
-		const nextAccent = attrs?.accent ?? design.accent;
-		const instructions = buildInstructions(nextGender, nextAge, nextPitch, nextAccent);
-		if (attrs) {
-			settings.handleTTSInstructionsChange(instructions);
-			settings.handleTTSGenderChange(attrs.gender);
-			settings.handleTTSAgeChange(attrs.age);
-			settings.handleTTSPitchChange(attrs.pitch);
-			settings.handleTTSAccentChange(attrs.accent);
-		}
+		if (!voiceId) return;
+		const language = activeLanguage;
+		const instructions = deriveInstructions(voiceId, language);
+		settings.handleTTSInstructionsChange(instructions);
 		settings.handleTTSVoiceChange(voiceId);
-		initializeProfile(voiceId, instructions, (settings.speechSettings.activeLanguage as string) || 'en');
+		initializeProfile(voiceId, instructions, language);
+	}
+
+	function handleLanguageChange(language: string) {
+		settings.handleTTSLanguageChange(language);
+		if (isClone) return;
+		const voiceId = activeVoiceId || DEFAULT_PRESET_VOICE;
+		const instructions = deriveInstructions(voiceId, language);
+		settings.handleTTSInstructionsChange(instructions);
+		settings.handleTTSVoiceChange(voiceId);
+		initializeProfile(voiceId, instructions, language);
 	}
 
 	function parseSpeed(value: string): number | undefined {
@@ -165,24 +137,6 @@
 	function parseNumber(value: string): number | undefined {
 		const parsed = parseFloat(value);
 		return Number.isNaN(parsed) ? undefined : parsed;
-	}
-
-	function updateDesign(partial: Partial<{ gender: string; age: string; pitch: string; accent: string }>) {
-		const next = { ...design, ...partial };
-		settings.handleTTSInstructionsChange(
-			buildInstructions(next.gender, next.age, next.pitch, next.accent)
-		);
-		settings.handleTTSGenderChange(next.gender);
-		settings.handleTTSAgeChange(next.age);
-		settings.handleTTSPitchChange(next.pitch);
-		settings.handleTTSAccentChange(next.accent);
-		if (!isClone) {
-			initializeProfile(
-				activeVoiceId || pickOmniVoicePreset(next.gender),
-				buildInstructions(next.gender, next.age, next.pitch, next.accent),
-				(settings.speechSettings.activeLanguage as string) || 'en'
-			);
-		}
 	}
 
 	// ── Profile initialization & regeneration ────────────────────────────────
@@ -205,25 +159,22 @@
 
 	function initializePrimaryProfile() {
 		if (isClone) return;
-		const voice = activeVoiceId || pickOmniVoicePreset(design.gender);
+		const voice = activeVoiceId || DEFAULT_PRESET_VOICE;
 		const instructions =
-			(settings.speechSettings.instructions as string) ||
-			buildInstructions(design.gender, design.age, design.pitch, design.accent);
-		const language = (settings.speechSettings.activeLanguage as string) || 'en';
-		initializeProfile(voice, instructions, language);
+			(settings.speechSettings.instructions as string) || deriveInstructions(voice, activeLanguage);
+		initializeProfile(voice, instructions, activeLanguage);
 	}
 
 	async function regenerateProfile() {
 		regenerating = true;
 		profileError = '';
 		try {
-			const voiceId = activeVoiceId || pickOmniVoicePreset(design.gender);
+			const voiceId = activeVoiceId || DEFAULT_PRESET_VOICE;
 			const voice = isClone ? voiceId.replace('clone:', '') : voiceId;
 			const instructions = isClone
 				? undefined
-				: (settings.speechSettings.instructions as string) ||
-				  buildInstructions(design.gender, design.age, design.pitch, design.accent);
-			const language = (settings.speechSettings.activeLanguage as string) || 'en';
+				: (settings.speechSettings.instructions as string) || deriveInstructions(voiceId, activeLanguage);
+			const language = activeLanguage;
 
 			const body: Record<string, unknown> = { voice, language };
 			if (instructions) body.instructions = instructions;
@@ -289,7 +240,13 @@
 			settings.handleTTSLanguageChange('en');
 		}
 		if (!activeVoiceId && !isClone) {
-			settings.handleTTSVoiceChange(pickOmniVoicePreset(design.gender));
+			settings.handleTTSVoiceChange(DEFAULT_PRESET_VOICE);
+			settings.handleTTSInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, activeLanguage));
+		}
+		if (!(settings.speechSettings.instructions as string) && !isClone) {
+			settings.handleTTSInstructionsChange(
+				deriveInstructions(activeVoiceId || DEFAULT_PRESET_VOICE, activeLanguage)
+			);
 		}
 		fetchClonedVoices();
 		startHealthPolling();
@@ -308,12 +265,12 @@
 		previewLoading = true;
 		previewError = '';
 		try {
-			const lang = (settings.speechSettings.activeLanguage as string) || 'en';
+			const lang = activeLanguage;
 			const text = TEST_PHRASES[lang] || TEST_PHRASES.en;
 			const instructions = isClone
 				? undefined
 				: (settings.speechSettings.instructions as string) ||
-				  buildInstructions(design.gender, design.age, design.pitch, design.accent);
+				  deriveInstructions(activeVoiceId || DEFAULT_PRESET_VOICE, lang);
 
 			const body: Record<string, unknown> = {
 				model: 'omnivoice',
@@ -423,7 +380,8 @@
 		try {
 			await fetch(baseUrl() + 'voices/clone/' + cloneId, { method: 'DELETE' });
 			if (activeVoiceId === 'clone:' + cloneId) {
-				settings.handleTTSVoiceChange(pickOmniVoicePreset(design.gender));
+				settings.handleTTSVoiceChange(DEFAULT_PRESET_VOICE);
+				settings.handleTTSInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, activeLanguage));
 			}
 			await fetchClonedVoices();
 		} catch {
@@ -433,7 +391,8 @@
 	}
 
 	function switchToSynthetic() {
-		settings.handleTTSVoiceChange(pickOmniVoicePreset(design.gender));
+		settings.handleTTSVoiceChange(DEFAULT_PRESET_VOICE);
+		settings.handleTTSInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, activeLanguage));
 	}
 
 	function switchToClone() {
@@ -502,7 +461,7 @@
 			id="omnivoice-language"
 			class="api-key-input"
 			value={activeLanguage}
-			onchange={(e) => settings.handleTTSLanguageChange(e.currentTarget.value)}
+			onchange={(e) => handleLanguageChange(e.currentTarget.value)}
 		>
 			{#each languages as lang}
 				<option value={lang.code}>{lang.name}</option>
@@ -515,7 +474,7 @@
 		<select
 			id="omnivoice-preset"
 			class="api-key-input"
-			value={isClone ? '' : activeVoiceId || pickOmniVoicePreset(design.gender)}
+			value={isClone ? '' : activeVoiceId || DEFAULT_PRESET_VOICE}
 			onchange={(e) => handlePresetChange(e.currentTarget.value)}
 		>
 			<option value="" disabled selected={isClone}>
@@ -574,69 +533,6 @@
 			{/if}
 		</button>
 	</div>
-
-	{#if !isClone}
-		<div class="omnivoice-design">
-			<div class="omnivoice-design-row">
-				<span class="omnivoice-design-label">Gender</span>
-				{#each GENDERS as g}
-					<label class="omnivoice-radio">
-						<input
-							type="radio"
-							name="ov-gender"
-							value={g}
-							checked={design.gender === g}
-							onchange={() => updateDesign({ gender: g })}
-						/>
-						{g}
-					</label>
-				{/each}
-			</div>
-			<div class="omnivoice-design-row">
-				<span class="omnivoice-design-label">Age</span>
-				{#each AGES as a}
-					<label class="omnivoice-radio">
-						<input
-							type="radio"
-							name="ov-age"
-							value={a}
-							checked={design.age === a}
-							onchange={() => updateDesign({ age: a })}
-						/>
-						{a}
-					</label>
-				{/each}
-			</div>
-			<div class="omnivoice-design-row">
-				<span class="omnivoice-design-label">Pitch</span>
-				{#each PITCHES as p}
-					<label class="omnivoice-radio">
-						<input
-							type="radio"
-							name="ov-pitch"
-							value={p}
-							checked={design.pitch === p}
-							onchange={() => updateDesign({ pitch: p })}
-						/>
-						{p}
-					</label>
-				{/each}
-			</div>
-			<div class="omnivoice-design-row">
-				<span class="omnivoice-design-label">Accent</span>
-				<select
-					class="api-key-input"
-					style="flex:1;"
-					value={design.accent}
-					onchange={(e) => updateDesign({ accent: e.currentTarget.value })}
-				>
-					{#each ACCENTS as a}
-						<option value={a}>{a}</option>
-					{/each}
-				</select>
-			</div>
-		</div>
-	{/if}
 </div>
 
 <!-- Advanced card -->

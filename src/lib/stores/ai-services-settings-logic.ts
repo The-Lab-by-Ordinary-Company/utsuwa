@@ -77,6 +77,13 @@ export const DEFAULT_OMNI_VOICE_DESIGN: OmniVoiceDesign = {
 	accent: 'american'
 };
 
+export interface OmniVoicePresetAttributes {
+	gender: string;
+	age: string;
+	pitch: string;
+	accent: string;
+}
+
 /**
  * Builds the OmniVoice instruction string from voice design attributes.
  * Example: "female, young adult, moderate pitch, american accent".
@@ -89,6 +96,20 @@ export function buildInstructions(
 ): string {
 	const accentPart = accent && accent !== 'neutral' ? `, ${accent} accent` : '';
 	return `${gender}, ${age}, ${pitch} pitch${accentPart}`;
+}
+
+/**
+ * Builds the OmniVoice instruction string for a preset voice.
+ * If the active language is not 'en', the accent part is omitted.
+ */
+export function buildPresetInstructions(
+	voiceId: string,
+	language: string,
+	presetAttributes: Record<string, OmniVoicePresetAttributes>
+): string {
+	const attrs = presetAttributes[voiceId] ?? DEFAULT_OMNI_VOICE_DESIGN;
+	const accent = language === 'en' ? attrs.accent : '';
+	return buildInstructions(attrs.gender, attrs.age, attrs.pitch, accent);
 }
 
 /**

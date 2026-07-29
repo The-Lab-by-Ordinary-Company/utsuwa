@@ -349,21 +349,6 @@ export function createTtsSettingsState() {
 		modulesStore.setModuleSetting('speech', 'instructions', instructions ?? '');
 	}
 
-	function handleTTSGenderChange(gender: string) {
-		modulesStore.setModuleSetting('speech', 'gender', gender);
-	}
-
-	function handleTTSAgeChange(age: string) {
-		modulesStore.setModuleSetting('speech', 'age', age);
-	}
-
-	function handleTTSPitchChange(pitch: string) {
-		modulesStore.setModuleSetting('speech', 'pitch', pitch);
-	}
-
-	function handleTTSAccentChange(accent: string) {
-		modulesStore.setModuleSetting('speech', 'accent', accent);
-	}
 
 	function handleTTSNumStepChange(numStep: number | undefined) {
 		if (numStep !== undefined && Number.isNaN(numStep)) return;
@@ -426,10 +411,6 @@ export function createTtsSettingsState() {
 		handleTTSLanguageChange,
 		handleTTSSpeedChange,
 		handleTTSInstructionsChange,
-		handleTTSGenderChange,
-		handleTTSAgeChange,
-		handleTTSPitchChange,
-		handleTTSAccentChange,
 		handleTTSNumStepChange,
 		handleTTSPositionTemperatureChange,
 		handleTTSClassTemperatureChange,
