@@ -409,23 +409,21 @@
 
 <!-- Proxy card -->
 <div class="omnivoice-card">
-	<div class="omnivoice-card-label">OmniVoice Proxy</div>
-	<div class="omnivoice-proxy-hint">
-		<span class="omnivoice-proxy-status">
-			{#if proxyStatus === 'connected'}
-				<span class="omnivoice-dot omnivoice-dot-ok"></span> Connected
-			{:else if proxyStatus === 'connecting'}
-				<span class="omnivoice-dot omnivoice-dot-warn"></span> Connecting...
-			{:else if proxyStatus === 'disconnected'}
-				<span class="omnivoice-dot omnivoice-dot-err"></span> Not reachable
-			{:else}
-				<span class="omnivoice-dot"></span> Checking...
-			{/if}
-		</span>
-		<span class="omnivoice-proxy-cmd">python tools/omnivoice/omnivoice-proxy.py --device cuda</span>
-	</div>
 	<div class="omnivoice-field">
-		<label class="omnivoice-label" for="omnivoice-base-url">Base URL</label>
+		<label class="omnivoice-label" for="omnivoice-base-url">
+			<span>OmniVoice Proxy</span>
+			<span class="omnivoice-proxy-status">
+				{#if proxyStatus === 'connected'}
+					<span class="omnivoice-dot omnivoice-dot-ok"></span> Connected
+				{:else if proxyStatus === 'connecting'}
+					<span class="omnivoice-dot omnivoice-dot-warn"></span> Connecting...
+				{:else if proxyStatus === 'disconnected'}
+					<span class="omnivoice-dot omnivoice-dot-err"></span> Not reachable
+				{:else}
+					<span class="omnivoice-dot"></span> Checking...
+				{/if}
+			</span>
+		</label>
 		<input
 			id="omnivoice-base-url"
 			type="text"
@@ -455,35 +453,37 @@
 <div class="omnivoice-card">
 	<div class="omnivoice-card-label">Primary Voice</div>
 
-	<div class="omnivoice-field">
-		<label class="omnivoice-label" for="omnivoice-language">Language</label>
-		<select
-			id="omnivoice-language"
-			class="api-key-input"
-			value={activeLanguage}
-			onchange={(e) => handleLanguageChange(e.currentTarget.value)}
-		>
-			{#each languages as lang}
-				<option value={lang.code}>{lang.name}</option>
-			{/each}
-		</select>
-	</div>
+	<div class="omnivoice-design-grid-2">
+		<div class="omnivoice-field">
+			<label class="omnivoice-label" for="omnivoice-language">Language</label>
+			<select
+				id="omnivoice-language"
+				class="api-key-input"
+				value={activeLanguage}
+				onchange={(e) => handleLanguageChange(e.currentTarget.value)}
+			>
+				{#each languages as lang}
+					<option value={lang.code}>{lang.name}</option>
+				{/each}
+			</select>
+		</div>
 
-	<div class="omnivoice-field">
-		<label class="omnivoice-label" for="omnivoice-preset">Preset Voice</label>
-		<select
-			id="omnivoice-preset"
-			class="api-key-input"
-			value={isClone ? '' : activeVoiceId || DEFAULT_PRESET_VOICE}
-			onchange={(e) => handlePresetChange(e.currentTarget.value)}
-		>
-			<option value="" disabled selected={isClone}>
-				{isClone ? 'Current cloned voice' : 'Select a preset...'}
-			</option>
-			{#each provider.voices ?? [] as voice}
-				<option value={voice.id}>{voice.name}</option>
-			{/each}
-		</select>
+		<div class="omnivoice-field">
+			<label class="omnivoice-label" for="omnivoice-preset">Preset Voice</label>
+			<select
+				id="omnivoice-preset"
+				class="api-key-input"
+				value={isClone ? '' : activeVoiceId || DEFAULT_PRESET_VOICE}
+				onchange={(e) => handlePresetChange(e.currentTarget.value)}
+			>
+				<option value="" disabled selected={isClone}>
+					{isClone ? 'Current cloned voice' : 'Select a preset...'}
+				</option>
+				{#each provider.voices ?? [] as voice}
+					<option value={voice.id}>{voice.name}</option>
+				{/each}
+			</select>
+		</div>
 	</div>
 
 	<div class="omnivoice-voice-row">
@@ -509,27 +509,19 @@
 			Cloned
 		</label>
 		<span style="flex:1;"></span>
+		<button class="btn btn-sm btn-secondary" onclick={regenerateProfile} disabled={regenerating || isClone}
+			title={isClone ? 'Profile regeneration is only available for synthetic voices' : ''}>
+			{#if regenerating}
+				<span class="omnivoice-spinner"></span> Regenerating...
+			{:else}
+				↻ Regenerate
+			{/if}
+		</button>
 		<button class="btn btn-sm btn-primary" onclick={handlePreview} disabled={previewLoading}>
 			{#if previewLoading}
 				<span class="omnivoice-spinner"></span> Testing...
 			{:else}
 				▶ Test
-			{/if}
-		</button>
-	</div>
-
-	<div class="omnivoice-voice-row">
-		<span style="flex:1;"></span>
-		<button
-			class="btn btn-sm btn-secondary"
-			onclick={regenerateProfile}
-			disabled={regenerating || isClone}
-			title={isClone ? 'Profile regeneration is only available for synthetic voices' : ''}
-		>
-			{#if regenerating}
-				<span class="omnivoice-spinner"></span> Regenerating...
-			{:else}
-				↻ Regenerate profile
 			{/if}
 		</button>
 	</div>
@@ -539,7 +531,7 @@
 <div class="omnivoice-card">
 	<div class="omnivoice-card-label">Advanced</div>
 
-	<div class="omnivoice-design">
+	<div class="omnivoice-design-grid-2">
 		<div class="omnivoice-design-row">
 			<span class="omnivoice-design-label">Speed</span>
 			<input
@@ -765,35 +757,14 @@
 		align-items: center;
 	}
 
-	.omnivoice-proxy-hint {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.5rem 0.75rem;
-		background: var(--bg-secondary);
-		border-radius: var(--radius-lg);
-		font-size: 0.75rem;
-		color: var(--text-tertiary);
-		margin-bottom: 0.6rem;
-	}
-
 	.omnivoice-proxy-status {
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.3rem;
 		white-space: nowrap;
-		font-weight: 500;
-		color: var(--text-secondary);
-	}
-
-	.omnivoice-proxy-cmd {
-		font-family: var(--font-mono);
 		font-size: 0.7rem;
+		font-weight: 500;
 		color: var(--text-tertiary);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	.omnivoice-dot {
@@ -825,18 +796,16 @@
 		margin-bottom: 0.5rem;
 	}
 
+	.omnivoice-voice-row:last-child {
+		margin-bottom: 0;
+	}
+
 	.omnivoice-voice-row .btn {
 		white-space: nowrap;
 		flex-shrink: 0;
 	}
 
 	/* ── Voice Design ──────────────────────────────────── */
-
-	.omnivoice-design {
-		margin-top: 0.4rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--border-subtle);
-	}
 
 	.omnivoice-design-row {
 		display: flex;
@@ -890,12 +859,30 @@
 	}
 
 	.omnivoice-design-grid-2 {
-		margin-top: 0.4rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--border-subtle);
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 0.75rem;
+	}
+
+	.omnivoice-design-grid-2 + .omnivoice-design-grid-2 {
+		margin-top: 0.4rem;
+		padding-top: 0.5rem;
+		border-top: 1px solid var(--border-subtle);
+	}
+
+	.omnivoice-design-grid-2 .omnivoice-field {
+		margin-bottom: 0;
+	}
+
+	.omnivoice-design-grid-2 .omnivoice-design-row {
+		flex-wrap: nowrap;
+		min-width: 0;
+		margin-bottom: 0;
+	}
+
+	.omnivoice-design-grid-2 .omnivoice-design-label {
+		width: auto;
+		min-width: 3.2em;
 	}
 
 	.omnivoice-advanced-slider {
