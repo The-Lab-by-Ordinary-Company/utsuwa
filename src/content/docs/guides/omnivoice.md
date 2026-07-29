@@ -40,27 +40,37 @@ If the model download is slow or you hit rate limits, set a `HF_TOKEN` environme
 1. Start the proxy.
 2. Open Utsuwa and go to **Settings > Speech (TTS)**.
 3. Enable **Speech** and select **OmniVoice**.
-4. Set the base URL. The compose file publishes the proxy on loopback only, so use:
-   - `http://localhost:8881/v1/`
-   - `http://127.0.0.1:8881/v1/`
+4. Set the base URL. The compose file publishes the proxy on all interfaces by default, so use:
+   - `http://localhost:8881/v1/` from the same machine
+   - `http://<host-ip>:8881/v1/` from another device or from the Utsuwa dev container
 5. Choose a voice, language, and speed, then send a message.
 
 The proxy sends permissive CORS headers, so a hosted site can reach it as long as the browser allows the request.
 
 ## Reaching the proxy from another machine
 
-The proxy has no authentication and accepts requests from any origin, so the compose file binds it to `127.0.0.1` and nothing outside your machine can reach it.
+The proxy has no authentication and accepts requests from any origin. The compose file binds it to all interfaces by default so it is reachable from the Utsuwa development container and other devices on your network.
 
-If you want it available to other devices, change the port mapping in `tools/omnivoice/docker-compose.yaml`:
+If you only need local access, change the port mapping in `tools/omnivoice/docker-compose.yaml` to loopback:
 
 ```yaml
 ports:
-  - "8881:8881" # reachable from anything that can route to this machine
+  - "127.0.0.1:8881:8881" # localhost only
 ```
 
-Only do this on a network you trust. Anyone who can reach the port can use your GPU to synthesise audio. The same applies when running outside Docker with `--host 0.0.0.0`; the default there is `127.0.0.1`.
+Only expose the proxy to your LAN on a network you trust. Anyone who can reach the port can use your GPU to synthesise audio. The same applies when running outside Docker with `--host 0.0.0.0`; the default there is `127.0.0.1`.
 
-Once exposed, use `http://<your-machine-ip>:8881/v1/` as the base URL (for example `http://192.168.1.42:8881/v1/`). If you run Utsuwa in the development container, `localhost` inside the container is not the host machine, so you need this too.
+Once exposed, use `http://<your-machine-ip>:8881/v1/` as the base URL (for example `http://192.168.1.42:8881/v1/`).
+
+### Updating the proxy after code changes
+
+When the proxy source changes (for example after a `git pull`), rebuild and restart the container so the new code is copied into the image:
+
+```bash
+cd tools/omnivoice
+docker compose down
+docker compose up -d --build
+```
 
 ## CPU-only mode
 

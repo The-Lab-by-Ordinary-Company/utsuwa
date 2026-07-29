@@ -14,7 +14,7 @@ services:
     command:
       ["python", "omnivoice-proxy.py", "--host", "0.0.0.0", "--port", "8881", "--device", "cpu"]
     ports:
-      - "127.0.0.1:8881:8881"
+      - "8881:8881"
     ipc: host
     shm_size: "2g"
     volumes:
