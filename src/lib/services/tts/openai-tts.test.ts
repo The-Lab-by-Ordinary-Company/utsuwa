@@ -288,3 +288,47 @@ test('OmniVoice keeps its own hint when a plain local server would not', async (
 		/Local TTS server returned 400/
 	);
 });
+
+test('fetchAudioBuffer includes OmniVoice advanced parameters when set', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const tts = new OpenAITTS({
+		provider: 'omnivoice',
+		voiceId: 'alloy',
+		instructions: 'female, young adult, moderate pitch, american accent',
+		numStep: 16,
+		positionTemperature: 0.8,
+		classTemperature: 0.4
+	});
+
+	await tts.fetchAudioBuffer('Hello.');
+
+	assert.equal(requests[0].body.instructions, 'female, young adult, moderate pitch, american accent');
+	assert.equal(requests[0].body.num_step, 16);
+	assert.equal(requests[0].body.position_temperature, 0.8);
+	assert.equal(requests[0].body.class_temperature, 0.4);
+});
+
+test('fetchAudioBuffer omits instructions for cloned OmniVoice voices', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const tts = new OpenAITTS({
+		provider: 'omnivoice',
+		voiceId: 'clone:my_voice',
+		instructions: 'female, young adult, moderate pitch, american accent'
+	});
+
+	await tts.fetchAudioBuffer('Hello.');
+
+	assert.equal('instructions' in requests[0].body, false);
+});

@@ -8,10 +8,22 @@ export interface TTSOptions {
 	model?: string;
 	baseUrl?: string;
 	speed?: number;
-	pitch?: number;
 	volume?: number;
 	/** Primary language for multilingual TTS. */
 	language?: string;
+	/** Natural-language description of the synthetic voice (OmniVoice). */
+	instructions?: string;
+	/** OmniVoice synthesis quality steps. */
+	numStep?: number;
+	/** OmniVoice position temperature. */
+	positionTemperature?: number;
+	/** OmniVoice class temperature. */
+	classTemperature?: number;
+	/** Voice design attributes persisted for the UI. */
+	gender?: string;
+	age?: string;
+	pitch?: string;
+	accent?: string;
 	/** Alternative language that triggers the alternative voice. */
 	altLanguage?: string;
 	/** Voice ID used when the alternative language is active. */
@@ -98,7 +110,14 @@ export function getTTSProvider(options: TTSOptions): ITTSProvider {
 		currentOptions.model === options.model &&
 		currentOptions.baseUrl === options.baseUrl &&
 		currentOptions.speed === options.speed &&
-		currentOptions.language === options.language
+		currentOptions.language === options.language &&
+		currentOptions.instructions === options.instructions &&
+		currentOptions.numStep === options.numStep &&
+		currentOptions.positionTemperature === options.positionTemperature &&
+		currentOptions.classTemperature === options.classTemperature &&
+		currentOptions.gender === options.gender &&
+		currentOptions.age === options.age &&
+		currentOptions.accent === options.accent
 	) {
 		return currentProvider;
 	}

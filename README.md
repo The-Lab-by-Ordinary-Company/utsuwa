@@ -236,6 +236,7 @@ pnpm tauri dev
    - Select a TTS provider
    - Enter your API key
    - Configure voice settings
+   - For **OmniVoice**, design a synthetic voice (gender, age, pitch, accent), preview it, regenerate the persistent profile, or clone a new voice from a short audio sample
 4. Configure voice input in **Settings > STT** (optional):
    - Enter your Groq or OpenAI API key, or set a local Whisper server URL
 

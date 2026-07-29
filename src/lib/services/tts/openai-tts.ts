@@ -31,6 +31,10 @@ export class OpenAITTS implements ITTSProvider {
 	private model: string;
 	private speed: number;
 	private language: string;
+	private instructions: string;
+	private numStep: number;
+	private positionTemperature: number;
+	private classTemperature: number;
 	private baseUrl: string;
 	private isLocal: boolean;
 	private isOmniVoice: boolean;
@@ -45,6 +49,10 @@ export class OpenAITTS implements ITTSProvider {
 		this.model = options.model || (this.isOmniVoice ? 'omnivoice' : 'tts-1');
 		this.speed = options.speed ?? 1;
 		this.language = options.language || 'en';
+		this.instructions = options.instructions || '';
+		this.numStep = options.numStep ?? 32;
+		this.positionTemperature = options.positionTemperature ?? 1;
+		this.classTemperature = options.classTemperature ?? 0.2;
 		this.isLocal = isLocalTTSProvider(options.provider);
 		// omnivoice is a member of LOCAL_TTS_PROVIDERS, so isLocal alone sweeps it
 		// in. URL normalization does want that; the hints and error text do not.
@@ -88,7 +96,13 @@ export class OpenAITTS implements ITTSProvider {
 					voice: this.voiceId,
 					...(this.isOmniVoice ? { language: options?.language ?? this.language } : {}),
 					speed: options?.speed ?? this.speed,
-					response_format: this.isOmniVoice ? 'wav' : 'mp3'
+					response_format: this.isOmniVoice ? 'wav' : 'mp3',
+					...(this.isOmniVoice && this.instructions && !this.voiceId.startsWith('clone:')
+						? { instructions: this.instructions }
+						: {}),
+					...(this.isOmniVoice ? { num_step: this.numStep } : {}),
+					...(this.isOmniVoice ? { position_temperature: this.positionTemperature } : {}),
+					...(this.isOmniVoice ? { class_temperature: this.classTemperature } : {})
 				}),
 				signal: options?.signal
 			});

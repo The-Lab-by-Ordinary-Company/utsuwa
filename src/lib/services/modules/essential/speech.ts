@@ -48,6 +48,62 @@ export const speechModule: ModuleDefinition = {
 				label: 'Speed',
 				description: 'Speech rate (0.5-2.0)',
 				defaultValue: 1.0
+			},
+			{
+				key: 'instructions',
+				type: 'text',
+				label: 'Voice Instructions',
+				description: 'Natural-language description of the synthetic voice',
+				placeholder: 'female, young adult, moderate pitch, american accent'
+			},
+			{
+				key: 'gender',
+				type: 'text',
+				label: 'Voice Gender',
+				description: 'Gender used for synthetic voice design',
+				defaultValue: 'female'
+			},
+			{
+				key: 'age',
+				type: 'text',
+				label: 'Voice Age',
+				description: 'Age group used for synthetic voice design',
+				defaultValue: 'young adult'
+			},
+			{
+				key: 'pitch',
+				type: 'text',
+				label: 'Voice Pitch',
+				description: 'Pitch used for synthetic voice design',
+				defaultValue: 'moderate'
+			},
+			{
+				key: 'accent',
+				type: 'text',
+				label: 'Voice Accent',
+				description: 'Accent used for synthetic voice design',
+				defaultValue: 'american'
+			},
+			{
+				key: 'numStep',
+				type: 'number',
+				label: 'Num Steps',
+				description: 'OmniVoice quality steps (4-64)',
+				defaultValue: 32
+			},
+			{
+				key: 'positionTemperature',
+				type: 'number',
+				label: 'Position Temperature',
+				description: 'OmniVoice position temperature (0-2)',
+				defaultValue: 1.0
+			},
+			{
+				key: 'classTemperature',
+				type: 'number',
+				label: 'Class Temperature',
+				description: 'OmniVoice class temperature (0-2)',
+				defaultValue: 0.2
 			}
 		]
 	},
