@@ -60,7 +60,6 @@
 	let previewError = $state('');
 	let regenerating = $state(false);
 	let profileError = $state('');
-	let profileInitialized = $state(false);
 
 	let showCloneModal = $state(false);
 	let cloneVoiceId = $state('');
@@ -116,7 +115,6 @@
 		const instructions = deriveInstructions(voiceId, language);
 		settings.handleTTSInstructionsChange(instructions);
 		settings.handleTTSVoiceChange(voiceId);
-		initializeProfile(voiceId, instructions, language);
 	}
 
 	function handleLanguageChange(language: string) {
@@ -126,7 +124,6 @@
 		const instructions = deriveInstructions(voiceId, language);
 		settings.handleTTSInstructionsChange(instructions);
 		settings.handleTTSVoiceChange(voiceId);
-		initializeProfile(voiceId, instructions, language);
 	}
 
 	function parseSpeed(value: string): number | undefined {
@@ -155,14 +152,6 @@
 		} catch (err) {
 			profileError = err instanceof Error ? err.message : 'Profile initialization failed';
 		}
-	}
-
-	function initializePrimaryProfile() {
-		if (isClone) return;
-		const voice = activeVoiceId || DEFAULT_PRESET_VOICE;
-		const instructions =
-			(settings.speechSettings.instructions as string) || deriveInstructions(voice, activeLanguage);
-		initializeProfile(voice, instructions, activeLanguage);
 	}
 
 	async function regenerateProfile() {
@@ -235,6 +224,7 @@
 		}
 	}
 
+	// Default settings initialization: runs when speech settings change.
 	$effect(() => {
 		if (!languages.some((l) => l.code === settings.speechSettings.activeLanguage)) {
 			settings.handleTTSLanguageChange('en');
@@ -248,15 +238,25 @@
 				deriveInstructions(activeVoiceId || DEFAULT_PRESET_VOICE, activeLanguage)
 			);
 		}
+	});
+
+	// Health polling and clone list: only depends on the proxy endpoint.
+	$effect(() => {
+		const url = baseUrl();
 		fetchClonedVoices();
 		startHealthPolling();
-		if (!profileInitialized && !isClone) {
-			profileInitialized = true;
-			initializePrimaryProfile();
-		}
 		return () => {
 			stopHealthPolling();
 		};
+	});
+
+	// Profile initialization: runs when the active synthetic voice or language changes.
+	$effect(() => {
+		if (isClone) return;
+		const voice = activeVoiceId || DEFAULT_PRESET_VOICE;
+		const instructions =
+			(settings.speechSettings.instructions as string) || deriveInstructions(voice, activeLanguage);
+		initializeProfile(voice, instructions, activeLanguage);
 	});
 
 	// ── Preview ──────────────────────────────────────────────────────────────
