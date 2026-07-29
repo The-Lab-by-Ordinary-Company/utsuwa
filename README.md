@@ -152,6 +152,8 @@ If the setting is left off, Utsuwa keeps the historical defaults (10 retrieved t
 | **Cloud** | ElevenLabs, OpenAI TTS |
 | **Local** | Local TTS (Kokoro-FastAPI, openedai-speech, any OpenAI-compatible server), OmniVoice |
 
+OmniVoice is a fully local text-to-speech option that runs on your own GPU or CPU. It supports both built-in synthetic voices and custom voice clones, covers many languages, and can switch between two voices on demand for bilingual replies. Sentences are fetched in parallel during playback to keep gaps short. See [OmniVoice Setup](https://docs.utsuwa.ai/docs/guides/omnivoice) for installation instructions.
+
 ### STT Providers (4)
 
 | Category | Providers |

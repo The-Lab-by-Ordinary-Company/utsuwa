@@ -47,6 +47,28 @@ If the model download is slow or you hit rate limits, set a `HF_TOKEN` environme
 
 The proxy sends permissive CORS headers, so a hosted site can reach it as long as the browser allows the request.
 
+## Configure your voice
+
+After selecting OmniVoice in **Settings > Speech (TTS)**:
+
+- **Language**: Primary language for synthesis. OmniVoice supports many languages; pick the one your companion speaks most of the time.
+- **Preset Voice**: One of the built-in OmniVoice voices (for example `alloy`, `onyx`, or `nova`). Each preset has a fixed gender/age/pitch/accent profile that Utsuwa turns into an instructions string for the model.
+- **Mode**: Switch between **Synthetic** (built-in/preset voices) and **Cloned** (your own cloned voices).
+- **Regenerate**: Only available for synthetic voices. Deletes the cached persistent profile for the current preset and creates a fresh one with the same instructions. Use this to clear a corrupted profile or to get a slightly different speaker color from the same preset. Because cloned voices do not use cached profiles, the button is disabled in cloned mode.
+- **Test**: Plays a short test phrase in the selected language so you can verify the voice before chatting.
+
+### Advanced settings
+
+- **Speed**: Playback speed of the generated audio.
+- **Num Step**: Diffusion steps. Higher values can improve quality at the cost of slower generation.
+- **Position Temperature** / **Class Temperature**: Sampling temperatures for the audio tokenizer. Leave them at the defaults unless you want to experiment with pronunciation variation.
+
+Because OmniVoice is a diffusion model, the exact speaker color can vary slightly between sentences even for the same preset. Persistent preset profiles keep the variation small; cloned voices tend to sound more stable than synthetic presets.
+
+### Cloned voices
+
+Use **Clone New Voice** to upload a 3–10 second audio sample and the matching reference text. The proxy creates a voice clone that you can then select from the **Cloned Voices** list. Delete a clone with the **Delete** button next to the selected voice.
+
 ## Reaching the proxy from another machine
 
 The proxy has no authentication and accepts requests from any origin. The compose file binds it to all interfaces by default so it is reachable from the Utsuwa development container and other devices on your network.
