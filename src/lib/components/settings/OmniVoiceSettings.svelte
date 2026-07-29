@@ -107,6 +107,10 @@
 
 	const activeVoiceId = $derived.by(() => (settings.speechSettings.activeVoiceId as string) || '');
 	const isClone = $derived.by(() => activeVoiceId.startsWith('clone:'));
+	const activeLanguage = $derived.by(() => {
+		const lang = settings.speechSettings.activeLanguage as string;
+		return languages.some((l) => l.code === lang) ? lang : 'en';
+	});
 
 	function baseUrl(): string {
 		return getTTSBaseUrl('omnivoice', settingsStore.getProviderConfig(provider.id).baseUrl);
@@ -281,7 +285,7 @@
 	}
 
 	$effect(() => {
-		if (!settings.speechSettings.activeLanguage) {
+		if (!languages.some((l) => l.code === settings.speechSettings.activeLanguage)) {
 			settings.handleTTSLanguageChange('en');
 		}
 		if (!activeVoiceId && !isClone) {
@@ -497,7 +501,7 @@
 		<select
 			id="omnivoice-language"
 			class="api-key-input"
-			value={(settings.speechSettings.activeLanguage as string) || 'en'}
+			value={activeLanguage}
 			onchange={(e) => settings.handleTTSLanguageChange(e.currentTarget.value)}
 		>
 			{#each languages as lang}
@@ -511,9 +515,12 @@
 		<select
 			id="omnivoice-preset"
 			class="api-key-input"
-			value={activeVoiceId || pickOmniVoicePreset(design.gender)}
+			value={isClone ? '' : activeVoiceId || pickOmniVoicePreset(design.gender)}
 			onchange={(e) => handlePresetChange(e.currentTarget.value)}
 		>
+			<option value="" disabled selected={isClone}>
+				{isClone ? 'Current cloned voice' : 'Select a preset...'}
+			</option>
 			{#each provider.voices ?? [] as voice}
 				<option value={voice.id}>{voice.name}</option>
 			{/each}
