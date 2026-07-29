@@ -116,6 +116,43 @@
 		return gender === 'male' ? 'onyx' : 'alloy';
 	}
 
+	const PRESET_ATTRIBUTES: Record<
+		string,
+		{ gender: string; age: string; pitch: string; accent: string }
+	> = {
+		alloy: { gender: 'female', age: 'young adult', pitch: 'moderate', accent: 'american' },
+		ash: { gender: 'male', age: 'young adult', pitch: 'low', accent: 'american' },
+		ballad: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'british' },
+		cedar: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'american' },
+		coral: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'australian' },
+		echo: { gender: 'male', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
+		fable: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'british' },
+		marin: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
+		nova: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'american' },
+		onyx: { gender: 'male', age: 'middle-aged', pitch: 'very low', accent: 'british' },
+		sage: { gender: 'female', age: 'elderly', pitch: 'low', accent: 'british' },
+		shimmer: { gender: 'female', age: 'young adult', pitch: 'very high', accent: 'american' },
+		verse: { gender: 'male', age: 'young adult', pitch: 'moderate', accent: 'british' }
+	};
+
+	function handlePresetChange(voiceId: string) {
+		const attrs = PRESET_ATTRIBUTES[voiceId];
+		const nextGender = attrs?.gender ?? design.gender;
+		const nextAge = attrs?.age ?? design.age;
+		const nextPitch = attrs?.pitch ?? design.pitch;
+		const nextAccent = attrs?.accent ?? design.accent;
+		const instructions = buildInstructions(nextGender, nextAge, nextPitch, nextAccent);
+		if (attrs) {
+			settings.handleTTSInstructionsChange(instructions);
+			settings.handleTTSGenderChange(attrs.gender);
+			settings.handleTTSAgeChange(attrs.age);
+			settings.handleTTSPitchChange(attrs.pitch);
+			settings.handleTTSAccentChange(attrs.accent);
+		}
+		settings.handleTTSVoiceChange(voiceId);
+		initializeProfile(voiceId, instructions, (settings.speechSettings.activeLanguage as string) || 'en');
+	}
+
 	function parseSpeed(value: string): number | undefined {
 		const parsed = parseFloat(value);
 		return Number.isNaN(parsed) ? undefined : parsed;
@@ -135,10 +172,9 @@
 		settings.handleTTSAgeChange(next.age);
 		settings.handleTTSPitchChange(next.pitch);
 		settings.handleTTSAccentChange(next.accent);
-		settings.handleTTSVoiceChange(pickOmniVoicePreset(next.gender));
 		if (!isClone) {
 			initializeProfile(
-				pickOmniVoicePreset(next.gender),
+				activeVoiceId || pickOmniVoicePreset(next.gender),
 				buildInstructions(next.gender, next.age, next.pitch, next.accent),
 				(settings.speechSettings.activeLanguage as string) || 'en'
 			);
@@ -245,6 +281,12 @@
 	}
 
 	$effect(() => {
+		if (!settings.speechSettings.activeLanguage) {
+			settings.handleTTSLanguageChange('en');
+		}
+		if (!activeVoiceId && !isClone) {
+			settings.handleTTSVoiceChange(pickOmniVoicePreset(design.gender));
+		}
 		fetchClonedVoices();
 		startHealthPolling();
 		if (!profileInitialized && !isClone) {
@@ -455,7 +497,7 @@
 		<select
 			id="omnivoice-language"
 			class="api-key-input"
-			value={(settings.speechSettings.activeLanguage as string) ?? 'en'}
+			value={(settings.speechSettings.activeLanguage as string) || 'en'}
 			onchange={(e) => settings.handleTTSLanguageChange(e.currentTarget.value)}
 		>
 			{#each languages as lang}
@@ -464,8 +506,22 @@
 		</select>
 	</div>
 
+	<div class="omnivoice-field">
+		<label class="omnivoice-label" for="omnivoice-preset">Preset Voice</label>
+		<select
+			id="omnivoice-preset"
+			class="api-key-input"
+			value={activeVoiceId || pickOmniVoicePreset(design.gender)}
+			onchange={(e) => handlePresetChange(e.currentTarget.value)}
+		>
+			{#each provider.voices ?? [] as voice}
+				<option value={voice.id}>{voice.name}</option>
+			{/each}
+		</select>
+	</div>
+
 	<div class="omnivoice-voice-row">
-		<span class="omnivoice-design-label" style="width:auto;flex-shrink:0;">Voice</span>
+		<span class="omnivoice-design-label" style="width:auto;flex-shrink:0;">Mode</span>
 		<label class="omnivoice-radio">
 			<input
 				type="radio"
