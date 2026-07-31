@@ -2,7 +2,8 @@
 	import { T, useThrelte, useTask } from '@threlte/core';
 	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 	import { VRMLoaderPlugin, VRM, VRMUtils } from '@pixiv/three-vrm';
-	import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
+	import { createVRMAnimationClip } from '@pixiv/three-vrm-animation';
+	import { loadVrmAnimation } from '$lib/services/vrm-animations';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { ttsStore } from '$lib/stores/tts.svelte';
 	import { displayStore } from '$lib/stores/display.svelte';
@@ -241,22 +242,12 @@
 		lastIdleIndex = index;
 		const idleUrl = urls[index];
 
-		const loader = new GLTFLoader();
-		loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
-
-		loader.load(
-			idleUrl,
-			(gltf) => {
+		loadVrmAnimation(idleUrl)
+			.then((vrmAnimation) => {
 				// Model was swapped or unmounted while this animation loaded
 				if (mixer !== targetMixer) return;
 
-				const vrmAnimations = gltf.userData.vrmAnimations;
-				if (!vrmAnimations || vrmAnimations.length === 0) {
-					console.error('No idle animation found');
-					return;
-				}
-
-				const clip = createVRMAnimationClip(vrmAnimations[0], targetVrm);
+				const clip = createVRMAnimationClip(vrmAnimation, targetVrm);
 				const action = targetMixer.clipAction(clip);
 				action.setLoop(THREE.LoopRepeat, Infinity);
 				action.play();
@@ -265,15 +256,12 @@
 				if (photomodeStore.active) action.paused = true;
 				idleAction = action;
 
-
 				// Schedule next animation change
 				scheduleIdleCycle(targetVrm, targetMixer, clip.duration);
-			},
-			undefined,
-			(error) => {
+			})
+			.catch((error) => {
 				console.error('Error loading idle animation:', error);
-			}
-		);
+			});
 	}
 
 	// Schedule the next idle animation switch
@@ -303,38 +291,28 @@
 		lastIdleIndex = index;
 		const idleUrl = urls[index];
 
-		const loader = new GLTFLoader();
-		loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
-
-		loader.load(
-			idleUrl,
-			(gltf) => {
+		loadVrmAnimation(idleUrl)
+			.then((vrmAnimation) => {
 				// Model was swapped or unmounted while this animation loaded
 				if (mixer !== targetMixer) return;
-
-				const vrmAnimations = gltf.userData.vrmAnimations;
-				if (!vrmAnimations || vrmAnimations.length === 0) return;
 
 				// Fade out current idle
 				if (idleAction) {
 					idleAction.fadeOut(1.2);
 				}
 
-				const clip = createVRMAnimationClip(vrmAnimations[0], targetVrm);
+				const clip = createVRMAnimationClip(vrmAnimation, targetVrm);
 				const action = targetMixer.clipAction(clip);
 				action.setLoop(THREE.LoopRepeat, Infinity);
 				action.reset().fadeIn(1.2).play();
 				idleAction = action;
 
-
 				// Schedule next change
 				scheduleIdleCycle(targetVrm, targetMixer, clip.duration);
-			},
-			undefined,
-			(error) => {
+			})
+			.catch((error) => {
 				console.error('Error loading idle animation:', error);
-			}
-		);
+			});
 	}
 
 	// Load the talking animation clip (called once after model loads)
@@ -342,29 +320,16 @@
 		const talkingUrl = vrmStore.talkingAnimationUrl;
 		if (!talkingUrl) return;
 
-		const loader = new GLTFLoader();
-		loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
-
-		loader.load(
-			talkingUrl,
-			(gltf) => {
+		loadVrmAnimation(talkingUrl)
+			.then((vrmAnimation) => {
 				// Model was swapped or unmounted while this animation loaded
 				if (mixer !== targetMixer) return;
 
-				const vrmAnimations = gltf.userData.vrmAnimations;
-				if (!vrmAnimations || vrmAnimations.length === 0) {
-					console.error('No talking animation found');
-					return;
-				}
-
-				const clip = createVRMAnimationClip(vrmAnimations[0], targetVrm);
-				talkingClip = clip;
-			},
-			undefined,
-			(error) => {
+				talkingClip = createVRMAnimationClip(vrmAnimation, targetVrm);
+			})
+			.catch((error) => {
 				console.error('Error loading talking animation:', error);
-			}
-		);
+			});
 	}
 
 	// === Photo mode ===
@@ -664,18 +629,8 @@
 		if (!animationData?.url) return;
 
 		// Load emote VRMA file
-		const loader = new GLTFLoader();
-		loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
-
-		loader.load(
-			animationData.url,
-			(gltf) => {
-				const vrmAnimations = gltf.userData.vrmAnimations;
-				if (!vrmAnimations || vrmAnimations.length === 0) {
-					console.error('No VRM animations found in file');
-					return;
-				}
-
+		loadVrmAnimation(animationData.url)
+			.then((vrmAnimation) => {
 				untrack(() => {
 					if (!vrm || !mixer) return;
 
@@ -686,7 +641,7 @@
 					}
 
 					// Create and play emote
-					const clip = createVRMAnimationClip(vrmAnimations[0], vrm);
+					const clip = createVRMAnimationClip(vrmAnimation, vrm);
 					const action = mixer.clipAction(clip);
 					action.setLoop(THREE.LoopOnce, 1);
 					action.clampWhenFinished = true;
@@ -725,14 +680,11 @@
 						}
 					};
 					capturedMixer.addEventListener('finished', onFinished);
-
 				});
-			},
-			undefined,
-			(error) => {
+			})
+			.catch((error) => {
 				console.error('Error loading emote animation:', error);
-			}
-		);
+			});
 	});
 
 	// Load VRM when URL changes
