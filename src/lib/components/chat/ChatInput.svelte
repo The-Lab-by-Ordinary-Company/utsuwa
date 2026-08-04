@@ -3,6 +3,7 @@
 	import { sttStore } from '$lib/stores/stt.svelte';
 	import { chatDraftStore } from '$lib/stores/chat-draft.svelte';
 	import { queueFiles, showVisionHint } from './attach-files';
+	import { unlockAudioContext } from '$lib/services/tts';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 	import { pop, fadeFast } from '$lib/utils/motion';
@@ -56,6 +57,8 @@
 	// Single send path: text plus any queued images
 	function doSend() {
 		if (disabled) return;
+		// Inside the gesture, before any await: iOS Safari refuses later
+		unlockAudioContext();
 		const { text, images } = chatDraftStore.takeAll();
 		if (!text && images.length === 0) return;
 		onSend(text, images);
@@ -75,6 +78,7 @@
 	}
 
 	function handleMicClick() {
+		unlockAudioContext();
 		if (!sttStore.isSupported()) {
 			sttStore.showUnsupportedError();
 			return;

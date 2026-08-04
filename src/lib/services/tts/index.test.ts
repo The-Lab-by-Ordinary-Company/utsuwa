@@ -54,7 +54,7 @@ class MockAudioContext {
 // @ts-expect-error globalThis.AudioContext is not available in Node test environment
 globalThis.AudioContext = MockAudioContext;
 
-import { getTTSProvider } from './index.ts';
+import { getTTSProvider, getSharedAudioContext, unlockAudioContext } from './index.ts';
 import { OpenAITTS } from './openai-tts.ts';
 import { ElevenLabsTTS } from './elevenlabs.ts';
 
@@ -118,4 +118,28 @@ test('factory creates new OmniVoice provider when language changes', () => {
 		speed: 1.0
 	});
 	assert.notEqual(first, second);
+});
+
+test('unlockAudioContext resumes a suspended shared context', () => {
+	const ctx = getSharedAudioContext() as unknown as MockAudioContext;
+	let resumed = 0;
+	ctx.state = 'suspended';
+	ctx.resume = () => {
+		resumed++;
+		ctx.state = 'running';
+		return Promise.resolve();
+	};
+	unlockAudioContext();
+	assert.equal(resumed, 1);
+	// Already running: no second resume
+	unlockAudioContext();
+	assert.equal(resumed, 1);
+});
+
+test('unlockAudioContext is a no-op without AudioContext (SSR)', () => {
+	const saved = globalThis.AudioContext;
+	// @ts-expect-error simulating SSR
+	delete globalThis.AudioContext;
+	assert.doesNotThrow(() => unlockAudioContext());
+	globalThis.AudioContext = saved;
 });
