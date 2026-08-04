@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1] - 2026-08-03
+
+### Added
+- **Design your OmniVoice voice**: OmniVoice grew a proper settings panel. Pick a language and a preset voice side by side, or describe the voice you want by gender, age, pitch, and accent and let it build one. Sliders for speed and synthesis quality, a Test button that speaks a phrase in the active language, and a Regenerate button when a voice drifts and you want a fresh one. Voices now keep a persistent profile, so the speaker sounds like the same person from sentence to sentence instead of shifting between takes. You can also clone a voice from a few seconds of reference audio, manage your clones, and switch between synthetic and cloned modes. Contributed by @dezihh.
+
+### Fixed
+- **She speaks on iPhones again**: iOS Safari requires audio to start inside your tap, and her voice arrived just late enough to be refused, silently. The audio pipeline now unlocks the moment you hit send, so TTS works on iOS for every provider. One thing the fix cannot do: if the ring/silent switch is on, iOS mutes her anyway. Check the switch before assuming she has nothing to say.
+- Animation files are fetched once and reused instead of being downloaded again on every idle cycle. Less network chatter, quicker transitions.
+
 ## [0.13.0] - 2026-07-28
 
 ### Added
