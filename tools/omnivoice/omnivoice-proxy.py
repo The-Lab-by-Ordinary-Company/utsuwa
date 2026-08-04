@@ -27,6 +27,7 @@ import io
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -73,8 +74,9 @@ _voices_dir: Path | None = None
 _profile_locks: dict[str, asyncio.Lock] = {}
 
 # Path to the request audit log. Each line is JSON with timestamp, parameters
-# and the input text as received by /v1/audio/speech. Set to "" to disable.
-REQUEST_LOG_PATH = os.environ.get("OMNIVOICE_REQUEST_LOG", "/tmp/omnivoice-requests.log")
+# and the input text as received by /v1/audio/speech. Off by default: the log
+# contains full chat text. Opt in with OMNIVOICE_REQUEST_LOG=/path/to/file.
+REQUEST_LOG_PATH = os.environ.get("OMNIVOICE_REQUEST_LOG", "")
 
 # Text used to generate the initial reference audio for a preset profile.
 # Long enough to produce ~6 seconds of speech for a stable speaker embedding.
@@ -155,8 +157,10 @@ def _profile_key(voice: str, instructions: str, language: str) -> str:
     norm_instr = ", ".join(sorted(p.strip() for p in instructions.lower().split(",")))
     raw = f"{voice}|{norm_instr}|{language.lower()}"
     short_hash = hashlib.sha256(raw.encode()).hexdigest()[:12]
-    safe_voice = voice.replace(" ", "_")[:20]
-    safe_lang = (language or "auto").replace(" ", "_")[:10]
+    # voice and language come from the request body; allowlist them so the key
+    # can never contain path separators. Uniqueness lives in the hash.
+    safe_voice = re.sub(r"[^A-Za-z0-9_-]", "_", voice)[:20]
+    safe_lang = re.sub(r"[^A-Za-z0-9_-]", "_", language or "auto")[:10]
     return f"{safe_voice}_{safe_lang}_{short_hash}"
 
 
@@ -430,7 +434,11 @@ async def initialize_voice(request: Request):
     if not effective_instructions:
         raise HTTPException(status_code=400, detail=f"Unknown voice '{voice}' and no instructions provided")
 
-    profile = await _get_or_create_profile(voice or "custom", effective_instructions, language)
+    # Take the synthesis semaphore: profile generation is a full GPU job and
+    # must not run concurrently with /v1/audio/speech.
+    assert _semaphore is not None
+    async with _semaphore:
+        profile = await _get_or_create_profile(voice or "custom", effective_instructions, language)
     status = "ready" if profile is not None else "error"
     key = _profile_key(voice or "custom", effective_instructions, language)
     return {"status": status, "profile_key": key}
@@ -484,24 +492,23 @@ async def reset_profile(request: Request):
     if had_error_marker:
         err.unlink()
 
-    # Regenerate
-    try:
+    # Regenerate under the synthesis semaphore (a full GPU job, same as
+    # initialize). _get_or_create_profile reports failure by returning None
+    # (it catches internally), so roll back on None, not on exception.
+    assert _semaphore is not None
+    async with _semaphore:
         profile = await _get_or_create_profile(voice or "custom", effective_instructions, language)
-    except Exception:
-        # Restore the previous profile so the voice keeps working.
+    if profile is None:
+        # Restore the previous profile so the voice keeps working, and drop
+        # the error marker the failed attempt just wrote.
         if had_existing and backup.exists():
             shutil.move(str(backup), str(path))
-        elif backup.exists():
-            backup.unlink()
-        if had_error_marker:
-            err.touch()
-        raise
+            err.unlink(missing_ok=True)
+        return {"status": "error", "profile_key": key}
 
-    # Success: drop the backup.
     if backup.exists():
         backup.unlink()
-    status = "ready" if profile is not None else "error"
-    return {"status": status, "profile_key": key}
+    return {"status": "ready", "profile_key": key}
 
 
 @app.post("/v1/voices/clone", dependencies=[Depends(_verify_token)])

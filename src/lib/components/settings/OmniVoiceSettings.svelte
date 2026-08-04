@@ -88,6 +88,13 @@
 		return getTTSBaseUrl('omnivoice', settingsStore.getProviderConfig(provider.id).baseUrl);
 	}
 
+	// Mirrors the Bearer auth openai-tts.ts sends, for proxies running with
+	// OMNIVOICE_AUTH_TOKEN. Health stays unauthenticated (the endpoint is open).
+	function authHeaders(): Record<string, string> {
+		const apiKey = settingsStore.getProviderConfig(provider.id).apiKey;
+		return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+	}
+
 	const PRESET_ATTRIBUTES: Record<string, { gender: string; age: string; pitch: string; accent: string }> =
 		{
 			alloy: { gender: 'female', age: 'young adult', pitch: 'moderate', accent: 'american' },
@@ -142,7 +149,7 @@
 		try {
 			const res = await fetch(baseUrl() + 'voices/initialize', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', ...authHeaders() },
 				body: JSON.stringify({ voice, instructions, language })
 			});
 			if (!res.ok) {
@@ -170,7 +177,7 @@
 
 			const res = await fetch(baseUrl() + 'voices/profile/reset', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', ...authHeaders() },
 				body: JSON.stringify(body)
 			});
 			if (!res.ok) {
@@ -212,7 +219,7 @@
 
 	async function fetchClonedVoices() {
 		try {
-			const res = await fetch(baseUrl() + 'voices');
+			const res = await fetch(baseUrl() + 'voices', { headers: authHeaders() });
 			if (!res.ok) return;
 			const data = await res.json();
 			clonedVoices = (data.clones || []) as Array<{ id: string; name: string }>;
@@ -290,7 +297,7 @@
 
 			const res = await fetch(baseUrl() + 'audio/speech', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', ...authHeaders() },
 				body: JSON.stringify(body)
 			});
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -353,6 +360,7 @@
 
 			const res = await fetch(baseUrl() + 'voices/clone', {
 				method: 'POST',
+				headers: authHeaders(),
 				body: formData
 			});
 			if (!res.ok) {
@@ -378,7 +386,10 @@
 	async function deleteClone(cloneId: string) {
 		cloneDeleting = cloneId;
 		try {
-			await fetch(baseUrl() + 'voices/clone/' + cloneId, { method: 'DELETE' });
+			await fetch(baseUrl() + 'voices/clone/' + cloneId, {
+				method: 'DELETE',
+				headers: authHeaders()
+			});
 			if (activeVoiceId === 'clone:' + cloneId) {
 				settings.handleTTSVoiceChange(DEFAULT_PRESET_VOICE);
 				settings.handleTTSInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, activeLanguage));

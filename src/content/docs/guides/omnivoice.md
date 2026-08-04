@@ -71,16 +71,14 @@ Use **Clone New Voice** to upload a 3–10 second audio sample and the matching 
 
 ## Reaching the proxy from another machine
 
-The proxy has no authentication and accepts requests from any origin. The compose file binds it to all interfaces by default so it is reachable from the Utsuwa development container and other devices on your network.
-
-If you only need local access, change the port mapping in `tools/omnivoice/docker-compose.yaml` to loopback:
+The proxy has no authentication by default and now accepts voice uploads and deletions, so the compose file binds it to loopback. To reach it from the Utsuwa development container or another device, change the port mapping in `tools/omnivoice/docker-compose.yaml`:
 
 ```yaml
 ports:
-  - "127.0.0.1:8881:8881" # localhost only
+  - "8881:8881" # all interfaces
 ```
 
-Only expose the proxy to your LAN on a network you trust. Anyone who can reach the port can use your GPU to synthesise audio. The same applies when running outside Docker with `--host 0.0.0.0`; the default there is `127.0.0.1`.
+Only expose the proxy to your LAN on a network you trust, and set `OMNIVOICE_AUTH_TOKEN` when you do; enter the same token as the API key in Utsuwa's OmniVoice settings. Anyone who can reach an unauthenticated port can use your GPU, upload reference audio, and delete cloned voices. The same applies when running outside Docker with `--host 0.0.0.0`; the default there is `127.0.0.1`.
 
 Once exposed, use `http://<your-machine-ip>:8881/v1/` as the base URL (for example `http://192.168.1.42:8881/v1/`).
 

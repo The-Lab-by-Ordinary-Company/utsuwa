@@ -7,11 +7,12 @@ services:
       dockerfile: ./Dockerfile
     container_name: omnivoice-proxy
     # Published rather than network_mode: host, which is Linux-only and silently
-    # does nothing on Docker Desktop. The default binds to all interfaces so the
-    # proxy is reachable from the Utsuwa dev container and other LAN devices.
-    # Change to "127.0.0.1:8881:8881" if you only need local access.
+    # does nothing on Docker Desktop. Loopback-only by default: the proxy has no
+    # auth token out of the box and now accepts uploads and deletions. Change to
+    # "8881:8881" to reach it from a dev container or another LAN device, and
+    # set OMNIVOICE_AUTH_TOKEN when you do; see the setup guide.
     ports:
-      - "8881:8881"
+      - "127.0.0.1:8881:8881"
     ipc: host
     shm_size: "2g"
     deploy:
