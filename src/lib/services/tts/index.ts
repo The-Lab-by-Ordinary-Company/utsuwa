@@ -82,10 +82,12 @@ export function getSharedAudioContext(): AudioContext {
 // iOS Safari keeps an AudioContext suspended unless resume() runs inside a
 // user gesture; the providers' own resume calls happen after the TTS fetch,
 // which no longer counts. Call this synchronously from send and mic handlers.
+// Checks !== 'running' rather than === 'suspended' because Safari also reports
+// a nonstandard 'interrupted' state after calls or backgrounding.
 export function unlockAudioContext(): void {
 	if (typeof AudioContext === 'undefined') return;
 	const ctx = getSharedAudioContext();
-	if (ctx.state === 'suspended') void ctx.resume();
+	if (ctx.state !== 'running') ctx.resume().catch(() => {});
 }
 
 // Import individual providers
