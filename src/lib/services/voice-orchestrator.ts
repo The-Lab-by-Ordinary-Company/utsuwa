@@ -5,6 +5,7 @@ import {
 	type StreamOptions,
 	type ITTSProvider
 } from './tts/index.ts';
+import { getSpeakableText } from '../utils/speech-content.ts';
 
 /**
  * Metadata attached to each speech segment by the response parser.
@@ -28,6 +29,60 @@ export interface SpeechSegment {
 	volume?: number;
 	/** Voice selector: 'default' | 'alt' | literal voice ID. Resolved by orchestrator. */
 	voiceId?: string;
+}
+
+/** Result of resolving whether a segment should use the alternative voice. */
+export interface VoiceResolution {
+	voiceId?: string;
+	inferredPrimaryLang: string | undefined;
+	lastSegmentLang: string | undefined;
+}
+
+/**
+ * Decide whether a segment should switch to the alternative voice.
+ *
+ * The switch only happens when the user explicitly enabled the alternative
+ * voice (`enableAltLanguage === true`) and configured an `altVoiceId`. The
+ * segment must not already have an explicit voice selector. An alternative
+ * language equal to the primary language is treated as unset so the switch
+ * can never consume the whole conversation.
+ *
+ * Keeps the inferred primary language and last-segment-language state so the
+ * caller can update its session bookkeeping.
+ */
+export function resolveSegmentVoice(
+	segment: SpeechSegment,
+	sessionOptions: TTSOptions,
+	inferredPrimaryLang: string | undefined,
+	lastSegmentLang: string | undefined
+): VoiceResolution {
+	let voiceId = segment.voiceId;
+	let newInferredPrimaryLang = inferredPrimaryLang;
+	const newLastSegmentLang = segment.language !== undefined ? segment.language : lastSegmentLang;
+
+	if (
+		!voiceId &&
+		sessionOptions.enableAltLanguage === true &&
+		sessionOptions.altVoiceId &&
+		segment.language
+	) {
+		if (newInferredPrimaryLang === undefined) {
+			newInferredPrimaryLang = segment.language;
+		}
+		const primaryLang = sessionOptions.language || newInferredPrimaryLang;
+		const altLang =
+			sessionOptions.altLanguage && sessionOptions.altLanguage !== primaryLang
+				? sessionOptions.altLanguage
+				: undefined;
+		const shouldUseAlt = altLang
+			? segment.language === altLang
+			: segment.language !== primaryLang;
+		if (shouldUseAlt) {
+			voiceId = 'alt';
+		}
+	}
+
+	return { voiceId, inferredPrimaryLang: newInferredPrimaryLang, lastSegmentLang: newLastSegmentLang };
 }
 
 /** Callbacks the orchestrator fires so the UI can react synchronously. */
@@ -245,29 +300,19 @@ export class VoiceOrchestrator {
 
 		// Skip segments that contain only emoji, whitespace, or punctuation — these produce
 		// no meaningful speech but still incur full TTS generation overhead.
-		const textContent = segment.text.replace(
-			/[\p{Emoji_Presentation}\p{Extended_Pictographic}\s\p{P}]/gu,
-			''
-		);
-		if (!textContent.trim()) return;
+		if (!getSpeakableText(segment.text)) return;
 
-		// Auto-assign alt voice when language differs from the configured primary language.
-		// Requires sessionOptions.language or at least one segment to provide a language hint.
-		if (!segment.voiceId && this.sessionOptions.altVoiceId && segment.language) {
-			if (this.inferredPrimaryLang === undefined) {
-				this.inferredPrimaryLang = segment.language;
-				this.lastSegmentLang = segment.language;
-			}
-			const primaryLang = this.sessionOptions.language || this.inferredPrimaryLang;
-			const altLang = this.sessionOptions.altLanguage;
-			const shouldUseAlt = altLang
-				? segment.language === altLang
-				: segment.language !== primaryLang;
-			if (shouldUseAlt) {
-				segment = { ...segment, voiceId: 'alt' };
-			}
-		}
-		this.lastSegmentLang = segment.language !== undefined ? segment.language : this.lastSegmentLang;
+		// Auto-assign alt voice when the user explicitly enabled the alternative
+		// voice and configured an altVoiceId.
+		const resolution = resolveSegmentVoice(
+			segment,
+			this.sessionOptions,
+			this.inferredPrimaryLang,
+			this.lastSegmentLang
+		);
+		segment = { ...segment, voiceId: resolution.voiceId };
+		this.inferredPrimaryLang = resolution.inferredPrimaryLang;
+		this.lastSegmentLang = resolution.lastSegmentLang;
 
 		const provider = getTTSProvider(this.sessionOptions);
 		const abort = this.pipelineAbort;
@@ -402,6 +447,10 @@ export class VoiceOrchestrator {
 
 				if (!buffer || this.pipelineAbort?.signal.aborted) continue;
 
+				// Near-empty audio (OmniVoice returns a few samples for very short
+				// inputs) would play as a click; skip it silently.
+				if (buffer.duration < 0.05) continue;
+
 				if (item.segment.action) callbacks?.onAction?.(item.segment.action);
 
 				const playbackRate = clientSideSpeed
@@ -441,16 +490,52 @@ export class VoiceOrchestrator {
 		segment: SpeechSegment,
 		signal: AbortSignal
 	): Promise<AudioBuffer | null> {
+		const resolvedVoiceId = this.resolveVoiceId(segment.voiceId);
+		const isAlt = !!resolvedVoiceId && resolvedVoiceId === this.sessionOptions?.altVoiceId;
+
 		const streamOpts: StreamOptions = {
 			emotion: segment.emotion,
 			exaggeration: segment.exaggeration,
 			language: segment.language,
-			speed: segment.speed ?? this.sessionOptions?.speed,
+			speed: segment.speed
+				?? (isAlt ? this.sessionOptions?.altSpeed : undefined)
+				?? this.sessionOptions?.speed,
 			pitch: segment.pitch,
 			volume: segment.volume,
-			voiceId: this.resolveVoiceId(segment.voiceId),
+			voiceId: resolvedVoiceId,
 			signal
 		};
+		if (this.sessionOptions?.provider === 'omnivoice') {
+			const instr = isAlt
+				? this.sessionOptions.altInstructions
+				: this.sessionOptions.instructions;
+			if (instr) {
+				streamOpts.instructions = instr;
+			}
+
+			if (this.sessionOptions.numStep != null || this.sessionOptions.altNumStep != null) {
+				streamOpts.numStep = (isAlt ? this.sessionOptions.altNumStep : undefined)
+					?? this.sessionOptions.numStep;
+			}
+			if (
+				this.sessionOptions.positionTemperature != null ||
+				this.sessionOptions.altPositionTemperature != null
+			) {
+				streamOpts.positionTemperature = (isAlt
+					? this.sessionOptions.altPositionTemperature
+					: undefined
+				) ?? this.sessionOptions.positionTemperature;
+			}
+			if (
+				this.sessionOptions.classTemperature != null ||
+				this.sessionOptions.altClassTemperature != null
+			) {
+				streamOpts.classTemperature = (isAlt
+					? this.sessionOptions.altClassTemperature
+					: undefined
+				) ?? this.sessionOptions.classTemperature;
+			}
+		}
 
 		if (signal.aborted) return null;
 

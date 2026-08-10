@@ -45,7 +45,8 @@ class MockAudioContext {
 		} as unknown as AudioBuffer;
 	}
 	async decodeAudioData(buffer: ArrayBuffer) {
-		return this.createBuffer(1, 480, 48000);
+		// 1 second of audio so the near-empty-buffer guard never skips it.
+		return this.createBuffer(1, 48000, 48000);
 	}
 	resume() {
 		return Promise.resolve();
@@ -64,7 +65,8 @@ function mockFetchResponse() {
 	return Promise.resolve({
 		ok: true,
 		status: 200,
-		arrayBuffer: () => Promise.resolve(new ArrayBuffer(8))
+		// Realistic WAV size so the near-empty-buffer guard never kicks in.
+		arrayBuffer: () => Promise.resolve(new ArrayBuffer(95120))
 	} as Response);
 }
 
@@ -208,7 +210,11 @@ test('interrupt stops playback and onComplete fires', async () => {
 // the orchestrator infers the primary language from the first segment; pinning
 // it to 'en' inverts alt-voice selection for every non-English companion.
 
-async function altVoiceTags(sessionLanguage: string | undefined): Promise<(string | undefined)[]> {
+async function altVoiceTags(
+	sessionLanguage: string | undefined,
+	enableAlt = true,
+	altLanguage?: string
+): Promise<(string | undefined)[]> {
 	globalThis.fetch = () => mockFetchResponse();
 
 	const orchestrator = new VoiceOrchestrator();
@@ -219,7 +225,13 @@ async function altVoiceTags(sessionLanguage: string | undefined): Promise<(strin
 			{ text: 'これはテストです。', language: 'ja' },
 			{ text: 'This is a test.', language: 'en' }
 		],
-		{ ...baseOptions, altVoiceId: 'alt-voice', language: sessionLanguage },
+		{
+			...baseOptions,
+			altVoiceId: 'alt-voice',
+			language: sessionLanguage,
+			enableAltLanguage: enableAlt,
+			altLanguage
+		},
 		{ onSegmentStart: (seg) => tags.push(seg.voiceId) }
 	);
 
@@ -236,4 +248,78 @@ test('an explicitly configured primary language overrides inference', async () =
 	// pinning 'en' flips which line is treated as foreign.
 	assert.deepEqual(await altVoiceTags('en'), ['alt', undefined]);
 	assert.deepEqual(await altVoiceTags('ja'), [undefined, 'alt']);
+});
+
+test('does not switch voices while the alternative voice is disabled', async () => {
+	// The switch must only happen when the user explicitly enabled it, even if
+	// the segments carry different languages.
+	assert.deepEqual(await altVoiceTags(undefined, false), [undefined, undefined]);
+	assert.deepEqual(await altVoiceTags('en', false), [undefined, undefined]);
+});
+
+test('only the configured alternative language switches voices', async () => {
+	// altLanguage restricts the switch: segments in that language get the alt
+	// voice, every other language keeps the primary voice.
+	assert.deepEqual(await altVoiceTags('ja', true, 'en'), [undefined, 'alt']);
+	assert.deepEqual(await altVoiceTags('ja', true, 'es'), [undefined, undefined]);
+});
+
+test('an alternative language equal to the primary language falls back to auto-switching', async () => {
+	// An explicit alt === primary is a misconfiguration the UI prevents; the
+	// orchestrator treats it as unset, so only segments differing from the
+	// primary language switch (never the primary-language segments themselves).
+	assert.deepEqual(await altVoiceTags('en', true, 'en'), ['alt', undefined]);
+});
+
+test('applies alternative-voice synthesis parameters to alt segments only', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const orchestrator = new VoiceOrchestrator();
+	await orchestrator.speakSegments(
+		[
+			{ text: 'Das ist deutsch.', language: 'de' },
+			{ text: 'Esto es español.', language: 'es' }
+		],
+		{
+			provider: 'omnivoice',
+			voiceId: 'alloy',
+			altVoiceId: 'onyx',
+			enableAltLanguage: true,
+			altLanguage: 'es',
+			language: 'de',
+			speed: 1.2,
+			instructions: 'female voice',
+			altInstructions: 'male voice',
+			numStep: 32,
+			altNumStep: 16,
+			positionTemperature: 1.0,
+			altPositionTemperature: 0.7,
+			classTemperature: 0.4,
+			altClassTemperature: 0.6
+		},
+		{}
+	);
+
+	assert.equal(requests.length, 2);
+	const de = requests[0].body;
+	const es = requests[1].body;
+
+	// Primary segment: primary voice and primary synthesis parameters.
+	assert.equal(de.voice, 'alloy');
+	assert.equal(de.instructions, 'female voice');
+	assert.equal(de.num_step, 32);
+	assert.equal(de.position_temperature, 1.0);
+	assert.equal(de.class_temperature, 0.4);
+
+	// Alternative segment: alternative voice and alternative parameters.
+	assert.equal(es.voice, 'onyx');
+	assert.equal(es.instructions, 'male voice');
+	assert.equal(es.num_step, 16);
+	assert.equal(es.position_temperature, 0.7);
+	assert.equal(es.class_temperature, 0.6);
 });

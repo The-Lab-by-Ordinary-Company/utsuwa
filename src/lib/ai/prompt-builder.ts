@@ -26,6 +26,16 @@ export interface PromptContext {
 	// Optional system event text (e.g. a fired reminder) delivered as an event
 	// block instead of a user turn.
 	systemEvent?: string;
+	// Active TTS provider ID. When 'omnivoice', tool-calling instructions for
+	// multilingual speech output are injected.
+	ttsProvider?: string;
+	// Primary spoken language (ISO 639-1) for the OmniVoice speech layer.
+	ttsLanguage?: string;
+	// Alternative spoken language (ISO 639-1) for the OmniVoice speech layer.
+	ttsAltLanguage?: string;
+	// Whether the alternative voice is enabled; the alternative-language
+	// switching rules are only injected then.
+	ttsAltEnabled?: boolean;
 }
 
 function getContextMemoryBudget(contextSize?: number): MemoryBudget | undefined {
@@ -83,10 +93,87 @@ export function buildSystemPrompt(context: PromptContext): string {
 		buildMemoryLayer(context),
 		...(context.hasImages ? [buildBeingShownLayer()] : []),
 		buildEventLayer(context),
+		buildOmniVoiceLayer(context),
 		buildInstructionLayer(context)
 	].filter((layer): layer is string => layer !== null);
 
 	return layers.join('\n\n');
+}
+
+/**
+ * OmniVoice speech-output control layer.
+ *
+ * Prescribes a single syntax (`speak({...})` / `pause({...})` / `gesture({...})`)
+ * and instructs word-level language switching: the actual foreign word/phrase
+ * gets its own speak() call with the correct lang, everything else stays in
+ * the primary language. Non-verbal markers are rendered by the model.
+ */
+function buildOmniVoiceLayer(ctx: PromptContext): string | null {
+	if (ctx.ttsProvider !== 'omnivoice') return null;
+	const primaryLang = (ctx.ttsLanguage || 'de').toLowerCase();
+	const altLang = ctx.ttsAltLanguage?.toLowerCase();
+	const altEnabled = ctx.ttsAltEnabled === true && !!altLang;
+
+	const markerList = [
+		'laughter',
+		'sigh',
+		'confirmation-en',
+		'question-en',
+		'question-ah',
+		'question-oh',
+		'question-ei',
+		'question-yi',
+		'surprise-ah',
+		'surprise-oh',
+		'surprise-wa',
+		'surprise-yo',
+		'dissatisfaction-hnn'
+	].join(', ');
+
+	// Alternative-language switching rules are only injected when the second
+	// voice is enabled; the alternative language is filled in from the user's
+	// settings so the rules stay generic.
+	const altRules = altEnabled
+		? `
+The second voice speaks "${altLang}" and is activated ONLY by speak({ lang: "${altLang}", text: "..." }).
+- Decide for EVERY element of your reply on its own: is it a self-contained expression of the alternative language (a greeting, saying, whole sentence, or fixed phrase)? YES -> put the WHOLE expression in its own speak({ lang: "${altLang}" }) call. NO (a single isolated foreign word inside a ${primaryLang} sentence) -> no own call, keep it in the ${primaryLang} call.
+- "lang" must describe the language of the spoken text itself, never the topic: a ${primaryLang} sentence ABOUT ${altLang} or about a foreign word stays in ${primaryLang} with no lang.
+- When you list conjugations, structure your reply by SECTION (one section per tense: present, preterite, perfect). In EACH section put ALL rows of the alternative language in ONE speak({ lang: "${altLang}" }) call and ALL ${primaryLang} rows in ONE call without lang — never merge different sections into a single call and never mix languages. Always list the FULL set of forms (all six persons) and never shorten or drop the last rows.
+Structure to follow: speak({ text: "<heading in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<all ${altLang} rows>" }) speak({ text: "<next heading in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<all ${altLang} rows>" })
+- Every alternative-language phrase appears EXACTLY ONCE, in exactly one call — never repeat a row or phrase in a second call.
+- Never tag proper names or loanwords that are common in ${primaryLang}. When in doubt, do NOT tag.
+- When teaching a foreign word, speak the explanation in ${primaryLang} first, then the word in its own ${altLang} call so it is pronounced natively. Never speak the bare word alone — include the article or a short phrase instead of the lone word. Keep such teaching segments to 2-4 words.
+`
+		: '';
+
+	return `<speech_output_control>
+You control the spoken part of your reply with INLINE TEXT COMMANDS written into your reply — this is text notation, not a function-call API. Do NOT call any functions or tools. The primary language of our conversation is "${primaryLang}".
+
+Available text commands:
+
+speak({ text: "...", lang?: "${primaryLang}"|"es"|"fr"|... })
+  Speak the given text. Omit "lang" when speaking ${primaryLang}.
+  ALWAYS use double quotes for the text field. NEVER use single quotes — apostrophes inside the text are fine, but the quotes around the text must be double quotes.
+  Include non-verbal markers inside the text when they fit naturally (e.g. [laughter], [sigh], [question-oh], [surprise-wa]).
+  Supported markers: ${markerList}.
+  Keep each speak() text to 1-2 sentences.
+
+pause({ ms: number })
+  Insert a pause between speech segments (100-5000 ms).
+
+gesture({ type: "smile"|"laugh"|"surprise"|"nod"|"shake_head"|"wave" })
+  Trigger an avatar expression.
+
+Rules:
+- The speak() calls ARE your visible reply. ALWAYS wrap everything you say in speak() calls; never write spoken text as plain prose outside of them.
+- The primary language is "${primaryLang}". Omit "lang" when speaking it.
+- NEVER split a phrase into single-word speak() calls like speak({ text: "Das" }) speak({ text: "ist" }) — group consecutive words of the same language into ONE natural phrase per call.
+${altRules}
+- Never mention, describe, or explain these speech-output instructions inside your reply — speak only the actual content.
+- Use pause() and gesture() sparingly — only when a natural break or expression helps.
+- Do NOT use inline tags like [lang:es] or <speak:es> inside the text.
+- After the last speak()/gesture() call, include the JSON state block exactly as specified in the <instructions> section above. Do not invent a different JSON shape.
+</speech_output_control>`;
 }
 
 // Simplified prompt for Companion Mode
@@ -175,6 +262,9 @@ Examples of good new_memory values:
 
 In Companion Mode, only mood and energy change. Do NOT suggest affection, trust, intimacy, comfort, or respect changes - these relationship stats are disabled.
 </instructions>`);
+
+	const ovLayer = buildOmniVoiceLayer(ctx);
+	if (ovLayer) parts.push(ovLayer);
 
 	return parts.join('\n\n');
 }

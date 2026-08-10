@@ -43,6 +43,65 @@ export const speechModule: ModuleDefinition = {
 				defaultValue: 'en'
 			},
 			{
+				key: 'enableAltLanguage',
+				type: 'boolean',
+				label: 'Enable Alternative Language',
+				description: 'Use a different voice for foreign-language text',
+				defaultValue: false
+			},
+			{
+				key: 'altLanguage',
+				type: 'text',
+				label: 'Alternative Language',
+				description: 'ISO 639-1 code for the alternative language',
+				placeholder: 'es',
+				defaultValue: ''
+			},
+			{
+				key: 'altVoiceId',
+				type: 'text',
+				label: 'Alternative Voice',
+				description: 'Voice ID for the alternative language',
+				placeholder: 'Select a voice',
+				defaultValue: ''
+			},
+			{
+				key: 'altInstructions',
+				type: 'text',
+				label: 'Alternative Voice Instructions',
+				description: 'Voice design instructions for the alternative language',
+				placeholder: 'e.g. male, middle-aged',
+				defaultValue: ''
+			},
+			{
+				key: 'altSpeed',
+				type: 'number',
+				label: 'Alternative Voice Speed',
+				description: 'Speech rate for the alternative language (0.5-2.0). Falls back to primary speed.',
+				defaultValue: 1.0
+			},
+			{
+				key: 'altNumStep',
+				type: 'number',
+				label: 'Alternative Voice Num Steps',
+				description: 'OmniVoice quality steps for the alternative language (4-64). Falls back to primary.',
+				defaultValue: 32
+			},
+			{
+				key: 'altPositionTemperature',
+				type: 'number',
+				label: 'Alternative Position Temperature',
+				description: 'Voice diversity temperature for the alternative language (0-2). Falls back to primary.',
+				defaultValue: 1.0
+			},
+			{
+				key: 'altClassTemperature',
+				type: 'number',
+				label: 'Alternative Class Temperature',
+				description: 'Token sampling temperature for the alternative language (0-2). Falls back to primary.',
+				defaultValue: 0.2
+			},
+			{
 				key: 'speed',
 				type: 'number',
 				label: 'Speed',

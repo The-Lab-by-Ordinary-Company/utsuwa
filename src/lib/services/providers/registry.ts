@@ -37,7 +37,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '🤖',
 		requiresApiKey: true,
 		supportsVision: true,
-		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.openai
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.openai,
 	},
 	{
 		id: 'anthropic',
@@ -67,7 +67,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		category: 'llm',
 		icon: '🔍',
 		requiresApiKey: true,
-		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.deepseek
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.deepseek,
 	},
 	{
 		id: 'xai',
@@ -77,7 +77,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		icon: '𝕏',
 		requiresApiKey: true,
 		supportsVision: true,
-		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.xai
+		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.xai,
 	},
 	// Local LLMs discover installed models from the user's running local server.
 	{
@@ -89,7 +89,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		requiresApiKey: false,
 		isLocal: true,
 		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.ollama,
-		models: []
+		models: [],
 	},
 	{
 		id: 'lmstudio',
@@ -100,7 +100,7 @@ export const LLM_PROVIDERS: ProviderMetadata[] = [
 		requiresApiKey: false,
 		isLocal: true,
 		defaultBaseUrl: DEFAULT_CHAT_BASE_URLS.lmstudio,
-		models: []
+		models: [],
 	},
 	{
 		id: 'openai-compatible',

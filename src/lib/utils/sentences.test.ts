@@ -36,6 +36,32 @@ test('strips inline JSON state-update blocks', () => {
 	assert.equal(cleaned, 'Hello. Goodbye.');
 });
 
+test('strips state blocks with single-quoted keys (JS-style models)', () => {
+	const text = "Hello. {'mood_change':{'emotion':'happy'}} Goodbye.";
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'Hello. Goodbye.');
+});
+
+test('strips fenced state blocks with a bare fence', () => {
+	const text = 'Hello. ```\n{"mood_change":{}}\n``` Goodbye.';
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'Hello. Goodbye.');
+});
+
+test('strips dangling fences and leftover fence tokens at end of stream', () => {
+	// No closing fence (stream cut): the fence token must vanish and the
+	// state object must be stripped so no literal "json" is spoken.
+	const text = 'Hello. ```json {"mood_change":{"emotion":"happy"}}';
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'Hello.');
+});
+
+test('strips inline code fences anywhere in the text', () => {
+	const text = '```json {"energy_delta":1}``` and ``` more```';
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'and more');
+});
+
 test('removes markdown asterisks and arrows', () => {
 	const text = 'This is *bold* and → there.';
 	const { cleaned } = stripForSpeech(text);

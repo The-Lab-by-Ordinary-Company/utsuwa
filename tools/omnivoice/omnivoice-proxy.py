@@ -340,7 +340,24 @@ async def _generate(
             position_temperature,
             class_temperature,
         )
-        audio = await loop.run_in_executor(None, lambda: _model.generate(text, **kw))
+        # The diffusion model occasionally returns (near-)empty audio for very
+        # short inputs (single words or short phrases). Retry a few times so
+        # the word is actually spoken instead of being dropped silently.
+        # Minimum of ~100 ms of audio at 24 kHz: shorter results are garbage.
+        audio = None
+        for attempt in range(3):
+            result = await loop.run_in_executor(None, lambda: _model.generate(text, **kw))
+            if len(result[0]) >= 2400:
+                audio = result
+                break
+            logger.warning(
+                "Near-empty synthesis result (attempt %d/3, %d samples) for text=%r",
+                attempt + 1,
+                len(result[0]),
+                text[:80],
+            )
+        if audio is None:
+            audio = result
 
     buf = io.BytesIO()
     sf.write(buf, audio[0], 24000, format="WAV", subtype="FLOAT")

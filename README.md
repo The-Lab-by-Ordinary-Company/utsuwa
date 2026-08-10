@@ -68,7 +68,7 @@
 - **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
 - **LLM Integration**: Support for 8 LLM providers: OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, ...)
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
-- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech), and local OmniVoice. Sentences are fetched in parallel with playback so gaps between sentences stay short
+- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech), and local OmniVoice. OmniVoice streams: speech starts while the model is still writing, and foreign words can be spoken per word in their own language and voice
 - **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
@@ -152,7 +152,7 @@ If the setting is left off, Utsuwa keeps the historical defaults (10 retrieved t
 | **Cloud** | ElevenLabs, OpenAI TTS |
 | **Local** | Local TTS (Kokoro-FastAPI, openedai-speech, any OpenAI-compatible server), OmniVoice |
 
-OmniVoice is a fully local text-to-speech option that runs on your own GPU or CPU. It supports both built-in synthetic voices and custom voice clones, covers many languages, and can switch between two voices on demand for bilingual replies. Sentences are fetched in parallel during playback to keep gaps short. See [OmniVoice Setup](https://docs.utsuwa.ai/docs/guides/omnivoice) for installation instructions.
+OmniVoice is a fully local text-to-speech option that runs on your own GPU or CPU. It supports both built-in synthetic voices and custom voice clones, covers many languages, and can switch between two voices **per word**: when you are learning a language, foreign words and phrases are spoken in their own language and dialect (with an optional second voice), while the surrounding explanation stays in the primary voice. Speech starts while the model is still writing — complete sentences are synthesised as soon as they arrive. See [OmniVoice Setup](https://docs.utsuwa.ai/docs/guides/omnivoice) for installation instructions.
 
 ### STT Providers (4)
 
@@ -238,7 +238,7 @@ pnpm tauri dev
    - Select a TTS provider
    - Enter your API key
    - Configure voice settings
-   - For **OmniVoice**, design a synthetic voice (gender, age, pitch, accent), preview it, regenerate the persistent profile, or clone a new voice from a short audio sample
+   - For **OmniVoice**, design a synthetic voice (gender, age, pitch, accent), preview it, regenerate the persistent profile, or clone a new voice from a short audio sample. Optionally enable the **Alternative Voice** so foreign words are spoken in their own language with a second voice
 4. Configure voice input in **Settings > STT** (optional):
    - Enter your Groq or OpenAI API key, or set a local Whisper server URL
 

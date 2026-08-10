@@ -23,6 +23,18 @@ export interface TTSOptions {
 	altLanguage?: string;
 	/** Voice ID used when the alternative language is active. */
 	altVoiceId?: string;
+	/** Whether the alternative voice/language switch is enabled by the user. */
+	enableAltLanguage?: boolean;
+	/** Alternative voice speed (0.5-2.0). Falls back to `speed` when unset. */
+	altSpeed?: number;
+	/** Voice design instructions for the alternative language (OmniVoice). */
+	altInstructions?: string;
+	/** Alternative voice quality / diffusion steps (OmniVoice). Falls back to `numStep` when unset. */
+	altNumStep?: number;
+	/** Alternative voice diversity temperature (OmniVoice). Falls back to `positionTemperature` when unset. */
+	altPositionTemperature?: number;
+	/** Alternative voice token sampling temperature (OmniVoice). Falls back to `classTemperature` when unset. */
+	altClassTemperature?: number;
 }
 
 // Result from TTS speak method
@@ -43,6 +55,10 @@ export interface StreamOptions {
 	speed?: number;
 	pitch?: number;
 	volume?: number;
+	instructions?: string;
+	numStep?: number;
+	positionTemperature?: number;
+	classTemperature?: number;
 	signal?: AbortSignal;
 }
 

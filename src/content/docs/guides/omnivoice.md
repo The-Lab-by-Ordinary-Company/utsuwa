@@ -59,11 +59,36 @@ After selecting OmniVoice in **Settings > Speech (TTS)**:
 
 ### Advanced settings
 
+The primary voice card carries its own synthesis parameters:
+
 - **Speed**: Playback speed of the generated audio.
 - **Num Step**: Diffusion steps. Higher values can improve quality at the cost of slower generation.
 - **Position Temperature** / **Class Temperature**: Sampling temperatures for the audio tokenizer. Leave them at the defaults unless you want to experiment with pronunciation variation.
 
+The **Alternative Voice** card has the same four parameters with an **Alt** prefix; unset values fall back to the primary voice's settings.
+
 Because OmniVoice is a diffusion model, the exact speaker color can vary slightly between sentences even for the same preset. Persistent preset profiles keep the variation small; cloned voices tend to sound more stable than synthetic presets.
+
+### Alternative language & voice
+
+Enable **Alternative Voice** to give foreign-language words their own voice. This is built for language training: when the companion explains a foreign word, the word itself is spoken in its own language and dialect, while the surrounding explanation stays in the primary voice.
+
+- **Enable toggle**: Turns the switch on. Without it, everything is spoken with the primary voice (foreign words still get the correct dialect, but no voice change).
+- **Language**: The foreign language (for example `es`). The primary language is excluded here; the two must differ.
+- **Preset Voice / Mode**: Same choices as the primary voice — synthetic presets or one of your cloned voices.
+- **Alt Speed / Alt Num Step / Alt Position & Class Temperature**: Optional synthesis parameters for the alternative voice. Each falls back to the primary voice's value when unset.
+- **Test Alt Voice**: Plays a short test phrase in the alternative language so you can verify the voice before chatting.
+- **Profile pre-warming**: When you enable the alternative voice, Utsuwa pre-generates the persistent profile for that language in the background, so the first foreign word in a chat is not delayed by on-demand profile generation.
+
+The switch is per word: with tool-capable models Utsuwa hands the LLM native speech tools (otherwise it uses `speak({...})` syntax), and every language change becomes its own segment — a reply like "Das spanische Wort für Auto ist **el coche**." plays the German part with the primary voice and "el coche" with the alternative voice.
+
+### Streaming & expressive speech
+
+OmniVoice replies start speaking while the model is still writing: complete sentences are synthesised as soon as they arrive, and long text is split at sentence boundaries. Lip-sync follows the real audio.
+
+For expressive speech the model can insert non-verbal markers into the spoken text — e.g. `[laughter]`, `[sigh]`, `[question-oh]`, `[surprise-wa]`. These are rendered as audio (in both voices) and automatically removed from the visible chat bubble.
+
+Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). To keep isolated words stable, the companion is instructed to speak them with their article or a short phrase (for example "el oído" rather than "oído") — the model applies this when it emits the speak segments.
 
 ### Cloned voices
 

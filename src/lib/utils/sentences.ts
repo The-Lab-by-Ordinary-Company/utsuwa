@@ -7,7 +7,7 @@ import type { SpeechSegment } from '$lib/services/voice-orchestrator';
 export function splitIntoSentences(text: string): string[] {
 	if (!text.trim()) return [];
 	const parts = text
-		.split(/(?<=[.!?…])\s+/)
+		.split(/(?<=[.!?…。！？])\s*/u)
 		.map((s) => s.trim())
 		.filter((s) => s.length > 0);
 	return parts.length > 0 ? parts : [text.trim()];
@@ -21,11 +21,10 @@ export function splitIntoSentences(text: string): string[] {
 export function stripSpeechArtifacts(text: string): { cleaned: string; removed: string[] } {
 	const removed: string[] = [];
 
-	// Remove fenced JSON blocks
-	let cleaned = text.replace(/```json\s*([\s\S]*?)\s*```/gi, (_match, content) => {
-		removed.push('```json' + (content ? ' ' + content.slice(0, 200) : '') + '```');
-		return '';
-	});
+	// Remove Markdown code-fence markers (```, ```json, ````, ...). Fence
+	// tokens are never speech content; the state-object stripper below removes
+	// the block itself, tolerating dangling fences at end of stream.
+	let cleaned = text.replace(/```+[a-zA-Z]*/g, '');
 
 	// Remove inline JSON state-update blocks with brace balancing.
 	cleaned = stripStateUpdateBlocks(cleaned, removed);
@@ -39,8 +38,9 @@ export function stripSpeechArtifacts(text: string): { cleaned: string; removed: 
 	// Ensure a space after sentence/clause punctuation when followed by a letter.
 	cleaned = cleaned.replace(/([.,;:!?])([a-zA-ZäöüÄÖÜß])/g, '$1 $2');
 
-	// Collapse multiple spaces but keep leading/trailing whitespace for streaming.
-	cleaned = cleaned.replace(/  +/g, ' ');
+	// Collapse whitespace runs (fence removal leaves newline gaps) but keep
+	// leading/trailing whitespace for streaming.
+	cleaned = cleaned.replace(/\s{2,}/g, ' ');
 
 	return { cleaned, removed: removed.filter((r) => r.trim().length > 0) };
 }
@@ -67,8 +67,22 @@ const STATE_UPDATE_KEYS = [
 	'structured_fact_seen'
 ];
 
+const STATE_KEY_FRAGMENT_RE = new RegExp(
+	`["']?(?:${STATE_UPDATE_KEYS.join('|')})["']?\\s*[:}]`
+);
+
+/**
+ * True when `text` contains a state-update key fragment. State blocks that
+ * arrive without the outer braces (or that survive block stripping as key
+ * fragments) must never be spoken; callers use this to drop such segments.
+ */
+export function hasStateBlockFragment(text: string): boolean {
+	return STATE_KEY_FRAGMENT_RE.test(text);
+}
+
 function stripStateUpdateBlocks(text: string, removed: string[]): string {
-	const keyPattern = new RegExp(`"(?:${STATE_UPDATE_KEYS.join('|')})"`);
+	// Keys may be double- or single-quoted; JS-style models emit single quotes.
+	const keyPattern = new RegExp(`["'](?:${STATE_UPDATE_KEYS.join('|')})["']`);
 	let result = '';
 	let i = 0;
 
@@ -102,7 +116,7 @@ function stripStateUpdateBlocks(text: string, removed: string[]): string {
 				escape = true;
 				continue;
 			}
-			if (c === '"') {
+			if (c === '"' || c === "'") {
 				inString = !inString;
 				continue;
 			}

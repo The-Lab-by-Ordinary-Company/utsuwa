@@ -268,6 +268,24 @@
 
 	// ── Preview ──────────────────────────────────────────────────────────────
 
+	async function playPreviewAudio(body: Record<string, unknown>) {
+		const res = await fetch(baseUrl() + 'audio/speech', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', ...authHeaders() },
+			body: JSON.stringify(body)
+		});
+		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+		const arrayBuffer = await res.arrayBuffer();
+		const ctx = getSharedAudioContext();
+		if (ctx.state === 'suspended') await ctx.resume();
+		const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+		const source = ctx.createBufferSource();
+		source.buffer = audioBuffer;
+		source.connect(ctx.destination);
+		source.start(0);
+	}
+
 	async function handlePreview() {
 		previewLoading = true;
 		previewError = '';
@@ -282,7 +300,8 @@
 			const body: Record<string, unknown> = {
 				model: 'omnivoice',
 				input: text,
-				response_format: 'wav'
+				response_format: 'wav',
+				language: lang
 			};
 			if (activeVoiceId) body.voice = activeVoiceId;
 			if (instructions) body.instructions = instructions;
@@ -295,21 +314,107 @@
 			const ct = settings.speechSettings.classTemperature as number;
 			if (ct != null) body.class_temperature = ct;
 
-			const res = await fetch(baseUrl() + 'audio/speech', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', ...authHeaders() },
-				body: JSON.stringify(body)
-			});
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			await playPreviewAudio(body);
+		} catch (err) {
+			previewError = err instanceof Error ? err.message : 'Preview failed';
+		} finally {
+			previewLoading = false;
+		}
+	}
 
-			const arrayBuffer = await res.arrayBuffer();
-			const ctx = getSharedAudioContext();
-			if (ctx.state === 'suspended') await ctx.resume();
-			const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-			const source = ctx.createBufferSource();
-			source.buffer = audioBuffer;
-			source.connect(ctx.destination);
-			source.start(0);
+	// ── Alternative voice ────────────────────────────────────────────────────
+
+	const altEnabled = $derived.by(() => (settings.speechSettings.enableAltLanguage as boolean) ?? false);
+	const altLanguage = $derived.by(() => {
+		const lang = settings.speechSettings.altLanguage as string;
+		return languages.some((l) => l.code === lang) ? lang : '';
+	});
+	const altVoiceId = $derived.by(() => (settings.speechSettings.altVoiceId as string) || '');
+	const altIsClone = $derived.by(() => altVoiceId.startsWith('clone:'));
+
+	function altLangOrDefault(): string {
+		return altLanguage || 'es';
+	}
+
+	function handleAltLanguageChange(language: string) {
+		settings.handleTTSAltLanguageChange(language);
+		if (altIsClone) return;
+		const voiceId = altVoiceId || DEFAULT_PRESET_VOICE;
+		settings.handleTTSAltInstructionsChange(deriveInstructions(voiceId, language));
+	}
+
+	function handleAltPresetChange(voiceId: string) {
+		if (!voiceId) return;
+		settings.handleTTSAltInstructionsChange(deriveInstructions(voiceId, altLangOrDefault()));
+		settings.handleTTSAltVoiceChange(voiceId);
+	}
+
+	function switchAltToSynthetic() {
+		settings.handleTTSAltVoiceChange(DEFAULT_PRESET_VOICE);
+		settings.handleTTSAltInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, altLangOrDefault()));
+	}
+
+	function switchAltToClone() {
+		if (altIsClone) return;
+		const first = clonedVoices[0];
+		if (first) {
+			settings.handleTTSAltVoiceChange(first.id);
+		} else {
+			openCloneModal();
+		}
+	}
+
+	// Defaults: picking sensible values the first time the alt voice is enabled.
+	$effect(() => {
+		if (!altEnabled) return;
+		const lang = altLangOrDefault();
+		if (!altLanguage) settings.handleTTSAltLanguageChange(lang);
+		if (!altVoiceId) {
+			settings.handleTTSAltVoiceChange(DEFAULT_PRESET_VOICE);
+			settings.handleTTSAltInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, lang));
+		}
+	});
+
+	// Profile initialization: pre-warm the alternative-language profile so the
+	// first foreign word in a chat does not stall on on-demand generation.
+	$effect(() => {
+		if (!altEnabled || altIsClone || !altLanguage) return;
+		const voice = altVoiceId || DEFAULT_PRESET_VOICE;
+		const instructions =
+			(settings.speechSettings.altInstructions as string) ||
+			deriveInstructions(voice, altLanguage);
+		initializeProfile(voice, instructions, altLanguage);
+	});
+
+	async function handleAltPreview() {
+		previewLoading = true;
+		previewError = '';
+		try {
+			const lang = altLangOrDefault();
+			const text = TEST_PHRASES[lang] || TEST_PHRASES.en;
+			const instructions = altIsClone
+				? undefined
+				: (settings.speechSettings.altInstructions as string) ||
+				  deriveInstructions(altVoiceId || DEFAULT_PRESET_VOICE, lang);
+
+			const body: Record<string, unknown> = {
+				model: 'omnivoice',
+				input: text,
+				response_format: 'wav',
+				language: lang
+			};
+			if (altVoiceId) body.voice = altVoiceId;
+			if (instructions) body.instructions = instructions;
+			const speed = (settings.speechSettings.altSpeed as number) ?? 1;
+			if (speed != null) body.speed = speed;
+			const ns = (settings.speechSettings.altNumStep as number) ?? 32;
+			if (ns != null) body.num_step = ns;
+			const apt = settings.speechSettings.altPositionTemperature as number;
+			if (apt != null) body.position_temperature = apt;
+			const act = settings.speechSettings.altClassTemperature as number;
+			if (act != null) body.class_temperature = act;
+
+			await playPreviewAudio(body);
 		} catch (err) {
 			previewError = err instanceof Error ? err.message : 'Preview failed';
 		} finally {
@@ -383,16 +488,21 @@
 
 	// ── Delete clone ─────────────────────────────────────────────────────────
 
-	async function deleteClone(cloneId: string) {
+	async function deleteClone(cloneId: string, target: 'primary' | 'alt' = 'primary') {
 		cloneDeleting = cloneId;
 		try {
 			await fetch(baseUrl() + 'voices/clone/' + cloneId, {
 				method: 'DELETE',
 				headers: authHeaders()
 			});
-			if (activeVoiceId === 'clone:' + cloneId) {
-				settings.handleTTSVoiceChange(DEFAULT_PRESET_VOICE);
-				settings.handleTTSInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, activeLanguage));
+			if (target === 'primary') {
+				if (activeVoiceId === 'clone:' + cloneId) {
+					settings.handleTTSVoiceChange(DEFAULT_PRESET_VOICE);
+					settings.handleTTSInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, activeLanguage));
+				}
+			} else if (altVoiceId === 'clone:' + cloneId) {
+				settings.handleTTSAltVoiceChange(DEFAULT_PRESET_VOICE);
+				settings.handleTTSAltInstructionsChange(deriveInstructions(DEFAULT_PRESET_VOICE, altLangOrDefault()));
 			}
 			await fetchClonedVoices();
 		} catch {
@@ -407,6 +517,7 @@
 	}
 
 	function switchToClone() {
+		if (isClone) return;
 		const first = clonedVoices[0];
 		if (first) {
 			settings.handleTTSVoiceChange(first.id);
@@ -417,6 +528,61 @@
 </script>
 
 <svelte:window onkeydown={handleCloneModalKeydown} />
+
+<!-- Shared voice selector field: Synthetic mode lists the presets, Cloned
+     mode lists the cloned voices with clone management buttons. Used
+     identically for primary and alternative voice. -->
+{#snippet voiceSelect(opts: {
+	voiceId: string;
+	isClone: boolean;
+	selectId: string;
+	onVoiceChange: (id: string) => void;
+	onDeleteClone: (cloneId: string) => void;
+})}
+	<div class="omnivoice-field">
+		<label class="omnivoice-label" for={opts.selectId}>Voice</label>
+		{#if opts.isClone}
+			<div class="omnivoice-voice-row" style="flex-wrap:wrap;">
+				<select
+					id={opts.selectId}
+					class="api-key-input"
+					style="flex:1;min-width:0;"
+					value={opts.voiceId}
+					onchange={(e) => opts.onVoiceChange(e.currentTarget.value)}
+				>
+					{#if clonedVoices.length === 0}
+						<option value="" disabled>No cloned voices yet</option>
+					{/if}
+					{#each clonedVoices as v}
+						<option value={v.id}>{v.name}</option>
+					{/each}
+				</select>
+				<button class="btn btn-sm btn-secondary" onclick={openCloneModal}>Clone New</button>
+				{#if opts.voiceId}
+					{@const cloneId = opts.voiceId.replace('clone:', '')}
+					<button
+						class="btn btn-sm btn-danger omnivoice-delete-btn"
+						onclick={() => opts.onDeleteClone(cloneId)}
+						disabled={cloneDeleting === cloneId}
+					>
+						{#if cloneDeleting === cloneId}...{:else}Delete{/if}
+					</button>
+				{/if}
+			</div>
+		{:else}
+			<select
+				id={opts.selectId}
+				class="api-key-input"
+				value={opts.voiceId || DEFAULT_PRESET_VOICE}
+				onchange={(e) => opts.onVoiceChange(e.currentTarget.value)}
+			>
+				{#each provider.voices ?? [] as voice}
+					<option value={voice.id}>{voice.name}</option>
+				{/each}
+			</select>
+		{/if}
+	</div>
+{/snippet}
 
 <!-- Proxy card -->
 <div class="omnivoice-card">
@@ -479,22 +645,16 @@
 			</select>
 		</div>
 
-		<div class="omnivoice-field">
-			<label class="omnivoice-label" for="omnivoice-preset">Preset Voice</label>
-			<select
-				id="omnivoice-preset"
-				class="api-key-input"
-				value={isClone ? '' : activeVoiceId || DEFAULT_PRESET_VOICE}
-				onchange={(e) => handlePresetChange(e.currentTarget.value)}
-			>
-				<option value="" disabled selected={isClone}>
-					{isClone ? 'Current cloned voice' : 'Select a preset...'}
-				</option>
-				{#each provider.voices ?? [] as voice}
-					<option value={voice.id}>{voice.name}</option>
-				{/each}
-			</select>
-		</div>
+		{@render voiceSelect({
+			voiceId: activeVoiceId,
+			isClone,
+			selectId: 'omnivoice-voice',
+			onVoiceChange: (id) => {
+				if (isClone) settings.handleTTSVoiceChange(id);
+				else handlePresetChange(id);
+			},
+			onDeleteClone: (cloneId) => deleteClone(cloneId, 'primary')
+		})}
 	</div>
 
 	<div class="omnivoice-voice-row">
@@ -536,11 +696,6 @@
 			{/if}
 		</button>
 	</div>
-</div>
-
-<!-- Advanced card -->
-<div class="omnivoice-card">
-	<div class="omnivoice-card-label">Advanced</div>
 
 	<div class="omnivoice-design-grid-2">
 		<div class="omnivoice-design-row">
@@ -611,38 +766,155 @@
 	</div>
 </div>
 
-<!-- Cloned voices card -->
+<!-- Alternative voice card -->
 <div class="omnivoice-card">
-	<div class="omnivoice-card-label">Cloned Voices</div>
+	<div class="omnivoice-card-label">Alternative Voice</div>
 
-	{#if clonedVoices.length > 0}
-		<div class="omnivoice-voice-row">
-			<select
-				class="omnivoice-clone-select"
-				style="flex:1;"
-				value={activeVoiceId}
-				onchange={(e) => settings.handleTTSVoiceChange(e.currentTarget.value)}
-			>
-				{#each clonedVoices as v}
-					<option value={v.id}>{v.name}</option>
-				{/each}
-			</select>
-			<button class="btn btn-sm btn-secondary" onclick={openCloneModal}>Clone New</button>
-			{#if isClone}
-				{@const cloneId = activeVoiceId.replace('clone:', '')}
-				<button
-					class="btn btn-sm btn-danger omnivoice-delete-btn"
-					onclick={() => deleteClone(cloneId)}
-					disabled={cloneDeleting === cloneId}
-				>
-					{#if cloneDeleting === cloneId}...{:else}Delete{/if}
-				</button>
+	<div class="omnivoice-voice-row">
+		<label class="omnivoice-radio">
+			<input
+				type="checkbox"
+				checked={altEnabled}
+				onchange={(e) => settings.handleTTSEnableAltLanguageChange(e.currentTarget.checked)}
+			/>
+			Speak foreign words with a second voice
+		</label>
+		<span style="flex:1;"></span>
+		<button
+			class="btn btn-sm btn-primary"
+			onclick={handleAltPreview}
+			disabled={previewLoading || !altEnabled}
+			title={altEnabled ? '' : 'Enable the alternative voice first'}
+		>
+			{#if previewLoading}
+				<span class="omnivoice-spinner"></span> Testing...
+			{:else}
+				▶ Test Alt Voice
 			{/if}
+		</button>
+	</div>
+
+	{#if altEnabled}
+		<div class="omnivoice-design-grid-2">
+			<div class="omnivoice-field">
+				<label class="omnivoice-label" for="omnivoice-alt-language">Language</label>
+				<select
+					id="omnivoice-alt-language"
+					class="api-key-input"
+					value={altLanguage}
+					onchange={(e) => handleAltLanguageChange(e.currentTarget.value)}
+				>
+					<option value="" disabled selected={!altLanguage}>Select a language...</option>
+					{#each languages as lang}
+						{#if lang.code !== activeLanguage}
+							<option value={lang.code}>{lang.name}</option>
+						{/if}
+					{/each}
+				</select>
+			</div>
+
+			{@render voiceSelect({
+				voiceId: altVoiceId,
+				isClone: altIsClone,
+				selectId: 'omnivoice-alt-voice',
+				onVoiceChange: (id) => {
+					if (altIsClone) settings.handleTTSAltVoiceChange(id);
+					else handleAltPresetChange(id);
+				},
+				onDeleteClone: (cloneId) => deleteClone(cloneId, 'alt')
+			})}
 		</div>
-	{:else}
+
 		<div class="omnivoice-voice-row">
-			<span class="omnivoice-no-clones">No cloned voices yet.</span>
-			<button class="btn btn-sm btn-primary" onclick={openCloneModal}>Clone New Voice</button>
+			<span class="omnivoice-design-label" style="width:auto;flex-shrink:0;">Mode</span>
+			<label class="omnivoice-radio">
+				<input
+					type="radio"
+					name="ov-alt-mode"
+					value="synth"
+					checked={!altIsClone}
+					onchange={switchAltToSynthetic}
+				/>
+				Synthetic
+			</label>
+			<label class="omnivoice-radio">
+				<input
+					type="radio"
+					name="ov-alt-mode"
+					value="clone"
+					checked={altIsClone}
+					onchange={switchAltToClone}
+				/>
+				Cloned
+			</label>
+		</div>
+
+		<div class="omnivoice-design-grid-2">
+			<div class="omnivoice-design-row">
+				<span class="omnivoice-design-label">Alt Speed</span>
+				<input
+					type="range"
+					min="0.5"
+					max="2.0"
+					step="0.1"
+					class="omnivoice-slider"
+					value={(settings.speechSettings.altSpeed as number) ?? 1}
+					oninput={(e) => settings.handleTTSAltSpeedChange(parseSpeed(e.currentTarget.value))}
+				/>
+				<span class="omnivoice-slider-val">{(settings.speechSettings.altSpeed as number) ?? 1}</span>
+			</div>
+			<div class="omnivoice-design-row">
+				<span class="omnivoice-design-label">Alt Num Step</span>
+				<input
+					type="range"
+					min="4"
+					max="64"
+					step="1"
+					class="omnivoice-slider"
+					value={(settings.speechSettings.altNumStep as number) ?? 32}
+					oninput={(e) => settings.handleTTSAltNumStepChange(parseNumber(e.currentTarget.value))}
+				/>
+				<span class="omnivoice-slider-val">{(settings.speechSettings.altNumStep as number) ?? 32}</span>
+			</div>
+		</div>
+
+		<div class="omnivoice-design-grid-2">
+			<div class="omnivoice-advanced-slider">
+				<span class="omnivoice-advanced-label">Alt Position Temperature</span>
+				<div class="omnivoice-advanced-row">
+					<input
+						type="range"
+						min="0"
+						max="2"
+						step="0.1"
+						class="omnivoice-slider"
+						value={(settings.speechSettings.altPositionTemperature as number) ?? 1}
+						oninput={(e) =>
+							settings.handleTTSAltPositionTemperatureChange(parseNumber(e.currentTarget.value))}
+					/>
+					<span class="omnivoice-slider-val">
+						{(settings.speechSettings.altPositionTemperature as number) ?? 1}
+					</span>
+				</div>
+			</div>
+			<div class="omnivoice-advanced-slider">
+				<span class="omnivoice-advanced-label">Alt Class Temperature</span>
+				<div class="omnivoice-advanced-row">
+					<input
+						type="range"
+						min="0"
+						max="2"
+						step="0.1"
+						class="omnivoice-slider"
+						value={(settings.speechSettings.altClassTemperature as number) ?? 0.2}
+						oninput={(e) =>
+							settings.handleTTSAltClassTemperatureChange(parseNumber(e.currentTarget.value))}
+					/>
+					<span class="omnivoice-slider-val">
+						{(settings.speechSettings.altClassTemperature as number) ?? 0.2}
+					</span>
+				</div>
+			</div>
 		</div>
 	{/if}
 </div>
@@ -881,10 +1153,6 @@
 		border-top: 1px solid var(--border-subtle);
 	}
 
-	.omnivoice-design-grid-2 .omnivoice-field {
-		margin-bottom: 0;
-	}
-
 	.omnivoice-design-grid-2 .omnivoice-design-row {
 		flex-wrap: nowrap;
 		min-width: 0;
@@ -968,27 +1236,6 @@
 	}
 
 	/* ── Cloned voices ──────────────────────────────────── */
-
-	.omnivoice-no-clones {
-		font-size: 0.75rem;
-		color: var(--text-tertiary);
-		flex: 1;
-	}
-
-	.omnivoice-clone-select {
-		font-size: 0.8rem;
-		background: var(--bg-secondary);
-		color: var(--text-primary);
-		border: 1px solid transparent;
-		border-radius: var(--radius-lg);
-		padding: 0.5rem 0.75rem;
-	}
-
-	.omnivoice-clone-select:focus {
-		border-color: var(--accent);
-		outline: none;
-		box-shadow: 0 0 0 3px var(--accent-muted);
-	}
 
 	.omnivoice-delete-btn {
 		padding: 0.25rem 0.5rem;

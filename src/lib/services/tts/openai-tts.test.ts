@@ -332,3 +332,37 @@ test('fetchAudioBuffer omits instructions for cloned OmniVoice voices', async ()
 
 	assert.equal('instructions' in requests[0].body, false);
 });
+
+test('fetchAudioBuffer treats near-empty WAV responses as silence instead of throwing', async () => {
+	// OmniVoice returns header-plus-a-few-samples WAVs for very short inputs;
+	// decodeAudioData can reject those. The client must not surface a decode
+	// error for them.
+	let decodeCalled = 0;
+	const tts = new OpenAITTS({ provider: 'omnivoice' });
+	const ctx = tts.getAudioContext() as unknown as MockAudioContext;
+	ctx.decodeAudioData = async () => {
+		decodeCalled++;
+		return ctx.createBuffer(1, 48000, 48000);
+	};
+
+	globalThis.fetch = () =>
+		Promise.resolve({
+			ok: true,
+			status: 200,
+			arrayBuffer: () => Promise.resolve(new ArrayBuffer(80))
+		} as Response);
+
+	const buffer = await tts.fetchAudioBuffer('es');
+	assert.ok(buffer);
+	assert.equal(decodeCalled, 0);
+
+	// A normal-size response still goes through decodeAudioData.
+	globalThis.fetch = () =>
+		Promise.resolve({
+			ok: true,
+			status: 200,
+			arrayBuffer: () => Promise.resolve(new ArrayBuffer(95120))
+		} as Response);
+	await tts.fetchAudioBuffer('Hallo Welt.');
+	assert.equal(decodeCalled, 1);
+});
