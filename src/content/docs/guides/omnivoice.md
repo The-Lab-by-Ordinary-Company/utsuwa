@@ -88,7 +88,7 @@ OmniVoice replies start speaking while the model is still writing: complete sent
 
 For expressive speech the model can insert non-verbal markers into the spoken text — e.g. `[laughter]`, `[sigh]`, `[question-oh]`, `[surprise-wa]`. These are rendered as audio (in both voices) and automatically removed from the visible chat bubble.
 
-Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). To keep isolated words stable, the companion is instructed to speak them with their article or a short phrase (for example "el oído" rather than "oído") — and because the diffusion model occasionally returns empty audio for one-word inputs, Utsuwa repeats them internally (`ir` is synthesised as "ir, ir."). Quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
+Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). Because the diffusion model returns empty audio for very short foreign-language inputs surprisingly often (up to 100 % for two-word phrases, unaffected by `num_step`, temperature or speed), Utsuwa wraps them in a short native carrier phrase — `por favor` is synthesised as "Se dice: por favor — por favor.", which you will hear as a teacher-style repetition. Primary-language fragments are stable and stay untouched; quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
 
 ### When the model forgets to tag
 
