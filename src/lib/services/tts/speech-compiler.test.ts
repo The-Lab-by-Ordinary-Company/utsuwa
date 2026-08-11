@@ -10,6 +10,7 @@ import {
 	compileFromText,
 	parsePseudoToolCalls,
 	scanPseudoToolCalls,
+	parseXmlSpeakTags,
 	type ToolCall
 } from './speech-compiler.ts';
 
@@ -542,3 +543,20 @@ test('scanPseudoToolCalls ignores calls with non-object arguments', () => {
 	assert.equal(result[0].args.text, 'ok');
 });
 
+
+test('parseXmlSpeakTags creates a pause call from <pause ms="..."/>', () => {
+	// Regression: <pause> was stripped from the text but produced no pause
+	// segment, so long pauses between XML-style speech tags were lost.
+	const result = parseXmlSpeakTags('<speak text="Hallo" /><pause ms="300" /><gesture type="smile" />');
+	assert.deepEqual(result.calls, [
+		{ name: 'speak', arguments: { text: 'Hallo', lang: undefined } },
+		{ name: 'pause', arguments: { ms: 300 } },
+		{ name: 'gesture', arguments: { type: 'smile' } }
+	]);
+	assert.equal(result.cleanedText, '');
+});
+
+test('parseXmlSpeakTags ignores pause tags without a numeric ms attribute', () => {
+	const result = parseXmlSpeakTags('<pause /><pause ms="abc" />');
+	assert.deepEqual(result.calls, []);
+});

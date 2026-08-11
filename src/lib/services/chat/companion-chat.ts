@@ -14,7 +14,7 @@ import { personaStore } from '$lib/stores/persona.svelte';
 import { vrmStore } from '$lib/stores/vrm.svelte';
 import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 import { type TTSOptions } from '$lib/services/tts';
-import { cleanSpeechMarkers } from '$lib/services/tts/chat-text';
+import { cleanSpeechMarkers, hasIncompleteTrailingMarkup } from '$lib/services/tts/chat-text';
 import { streamChatDirect } from '$lib/services/chat/client-chat';
 
 import { processCompanionTurn } from '$lib/services/chat/companion-turn';
@@ -51,19 +51,6 @@ export interface CompanionChatHooks {
  * an incomplete legacy language tag. Used by the streaming delta cleaner to
  * decide whether it can flush the current chunk or needs to wait for more data.
  */
-function hasIncompleteTrailingMarkup(text: string): boolean {
-	const trimmed = text.trimEnd();
-	// Incomplete call: speak( ... without closing brace/paren
-	if (/(speak|pause|gesture)\s*\([^)]*$/.test(trimmed)) return true;
-	// Incomplete <lang ...> opening
-	if (/<lang(\s+code=["']?)?$/i.test(trimmed)) return true;
-	// Incomplete {"actions":[...] JSON envelope
-	if (/\{\s*"actions"\s*:[^{}]*$/.test(trimmed)) return true;
-	// Incomplete XML speech tag (<speak text="..." without closing >)
-	if (/<(speak|gesture)[a-z]*[^>]*$/.test(trimmed)) return true;
-	return false;
-}
-
 async function buildCompanionPrompt(
 	userMessage: string,
 	hasImages: boolean,

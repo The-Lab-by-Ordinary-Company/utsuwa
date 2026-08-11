@@ -4,7 +4,8 @@ import {
 	cleanSpeechMarkers,
 	stripReasoningLeaks,
 	looksLikeAltLanguage,
-	stripAngleBlocks
+	stripAngleBlocks,
+	hasIncompleteTrailingMarkup
 } from './chat-text.ts';
 
 // ── cleanSpeechMarkers ─────────────────────────────────────
@@ -166,4 +167,29 @@ test('cleanSpeechMarkers inlines XML open/close tags and unescapes quotes', () =
 		'<speak lang="es">Un adjetivo es \\"enojado\\"</speak>.'
 	);
 	assert.equal(result, 'Un adjetivo es "enojado".');
+});
+
+// ── hasIncompleteTrailingMarkup ───────────────────────────
+
+test('hasIncompleteTrailingMarkup flags an unfinished speak call', () => {
+	assert.equal(hasIncompleteTrailingMarkup('Hallo speak({"text":"Hallo'), true);
+});
+
+test('hasIncompleteTrailingMarkup ignores a closing paren inside the text', () => {
+	// Regression: ")" inside the text argument used to close the call early,
+	// letting raw incomplete syntax through to the chat bubble.
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"hallo) und'), true);
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"(hallo"'), true);
+});
+
+test('hasIncompleteTrailingMarkup passes complete calls and plain text', () => {
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"Hallo"})'), false);
+	assert.equal(hasIncompleteTrailingMarkup('Hallo Welt.'), false);
+	assert.equal(hasIncompleteTrailingMarkup(''), false);
+});
+
+test('hasIncompleteTrailingMarkup flags unfinished lang, actions and XML tags', () => {
+	assert.equal(hasIncompleteTrailingMarkup('<lang'), true);
+	assert.equal(hasIncompleteTrailingMarkup('{"actions":[{"function":"speak","args":{'), true);
+	assert.equal(hasIncompleteTrailingMarkup('<speak text="Hallo'), true);
 });

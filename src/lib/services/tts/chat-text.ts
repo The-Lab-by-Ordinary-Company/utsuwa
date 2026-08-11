@@ -183,3 +183,51 @@ export function cleanSpeechMarkers(text: string): string {
 	const withLegacy = stripLegacyTags(stripNonVerbalMarkers(withXml));
 	return stripReasoningLeaks(stripAngleBlocks(withLegacy));
 }
+
+/**
+ * Returns true when `text` ends with an incomplete speak/pause/gesture call or
+ * an incomplete legacy language tag. Used by the streaming delta cleaner to
+ * decide whether it can flush the current chunk or needs to wait for more data.
+ *
+ * Parentheses and braces are balanced from the last call opener onwards,
+ * skipping double-quoted strings, so a ")" or "}" inside the text argument
+ * (e.g. `speak({"text":"(hallo"`) does not count as the closing delimiter.
+ */
+export function hasIncompleteTrailingMarkup(text: string): boolean {
+	const trimmed = text.trimEnd();
+	// Incomplete call: speak( ... without closing brace/paren
+	const callRe = /(speak|pause|gesture)\s*\(/gi;
+	let callMatch: RegExpExecArray | null;
+	let lastCallStart: number | null = null;
+	while ((callMatch = callRe.exec(trimmed)) !== null) {
+		lastCallStart = callMatch.index + callMatch[0].length;
+	}
+	if (lastCallStart !== null) {
+		let depth = 1;
+		let inString = false;
+		for (let i = lastCallStart; i < trimmed.length; i++) {
+			const ch = trimmed[i];
+			if (ch === '"') inString = !inString;
+			else if (!inString && ch === '(') depth++;
+			else if (!inString && ch === ')') {
+				depth--;
+				if (depth === 0) break;
+			}
+		}
+		if (depth > 0) return true;
+	}
+	// Incomplete <lang ...> opening
+	if (/<lang(\s+code=["']?)?$/i.test(trimmed)) return true;
+	// Incomplete {"actions":[...] JSON envelope
+	if (/\{\s*"actions"\s*:/i.test(trimmed)) {
+		let depth = 0;
+		for (const ch of trimmed) {
+			if (ch === '{') depth++;
+			else if (ch === '}') depth--;
+		}
+		if (depth > 0) return true;
+	}
+	// Incomplete XML speech tag (<speak text="..." without closing >)
+	if (/<(speak|gesture)[a-z]*[^>]*$/.test(trimmed)) return true;
+	return false;
+}

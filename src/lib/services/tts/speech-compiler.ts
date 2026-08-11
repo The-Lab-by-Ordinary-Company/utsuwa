@@ -632,6 +632,11 @@ export function parseXmlSpeakTags(text: string): XmlTagParseResult {
 			if (value.trim()) {
 				calls.push({ name: 'speak', arguments: { text: value, lang: attrs.lang } });
 			}
+		} else if (name === 'pause' && attrs.ms !== undefined) {
+			const ms = Number(attrs.ms);
+			if (!Number.isNaN(ms)) {
+				calls.push({ name: 'pause', arguments: { ms } });
+			}
 		} else if (attrs.type) {
 			calls.push({ name: 'gesture', arguments: { type: attrs.type } });
 		}
