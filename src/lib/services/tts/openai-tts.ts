@@ -18,6 +18,48 @@ function ensureTrailingSlash(url: string): string {
 	return url.endsWith('/') ? url : url + '/';
 }
 
+/**
+ * Quote marks must never reach OmniVoice: measured against the live proxy,
+ * inputs wrapped in double quotes ("es", „es") always return empty audio.
+ * Guillemets and quoting apostrophes are dropped as well; apostrophes
+ * between letters (l'osso) are kept because they shape pronunciation.
+ */
+const QUOTE_CHARS_RE = /["„“”«»]/g;
+const QUOTING_APOSTROPHE_RE = /(?<![\p{L}\p{N}])['’]|['’](?![\p{L}\p{N}])/gu;
+
+/** True when the text contains at least one letter or number to speak. */
+function hasSpeakableChar(text: string): boolean {
+	return /[\p{L}\p{N}]/u.test(text);
+}
+
+/**
+ * Sanitise the text sent to OmniVoice.
+ *
+ * - Quote marks around words are removed (they produce empty audio).
+ * - One-word inputs are repeated ("ir" -> "ir, ir."): measured against the
+ *   live proxy, very short inputs randomly return empty audio (~20 %), the
+ *   repeated form synthesised reliably across languages.
+ *
+ * Pure function, exported for unit tests. Applied to OmniVoice requests only.
+ */
+export function sanitizeOmniVoiceInput(text: string): string {
+	const clean = text
+		.replace(QUOTE_CHARS_RE, '')
+		.replace(QUOTING_APOSTROPHE_RE, '')
+		.replace(/\s{2,}/g, ' ')
+		.trim();
+	if (!hasSpeakableChar(clean)) return clean;
+
+	const words = clean.split(/\s+/);
+	if (words.length !== 1) return clean;
+
+	const wordMatch = /[\p{L}\p{N}](?:[\p{L}\p{N}'’-]*[\p{L}\p{N}])?/u.exec(clean);
+	if (!wordMatch) return clean;
+	const core = wordMatch[0];
+	const trailing = clean.slice((wordMatch.index ?? 0) + core.length);
+	return `${core}, ${core}${trailing || '.'}`;
+}
+
 function getCurrentSiteOrigin(): string | undefined {
 	return typeof window !== 'undefined' ? window.location.origin : undefined;
 }
@@ -52,7 +94,9 @@ export function buildOpenAITTSRequestBody(
 	const effectiveVoiceId = streamOptions?.voiceId ?? voiceId;
 	const body: Record<string, unknown> = {
 		model,
-		input: text,
+		// OmniVoice gets a sanitised input: quote marks render as silence and
+		// one-word inputs are unstable — see sanitizeOmniVoiceInput.
+		input: isOmnivoice ? sanitizeOmniVoiceInput(text) : text,
 		voice: effectiveVoiceId,
 		speed: streamOptions?.speed ?? speed,
 		response_format: isOmnivoice ? 'wav' : 'mp3'
@@ -144,6 +188,12 @@ export class OpenAITTS implements ITTSProvider {
 	}
 
 	async fetchAudioBuffer(text: string, options?: StreamOptions): Promise<AudioBuffer> {
+		// Segments without any speakable character (a bare ".", an empty
+		// fragment) would only synthesise noise — skip the request entirely.
+		if (this.isOmniVoice && !hasSpeakableChar(sanitizeOmniVoiceInput(text))) {
+			return this.getAudioContext().createBuffer(1, 1, 24000);
+		}
+
 		const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 		// Local servers don't need a key; only send auth when we actually have one.
 		if (this.apiKey) {

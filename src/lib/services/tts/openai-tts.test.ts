@@ -54,7 +54,7 @@ class MockAudioContext {
 // @ts-expect-error globalThis.AudioContext is not available in Node test environment
 globalThis.AudioContext = MockAudioContext;
 
-import { OpenAITTS } from './openai-tts.ts';
+import { OpenAITTS, sanitizeOmniVoiceInput } from './openai-tts.ts';
 
 function parseBody(init?: RequestInit): Record<string, unknown> {
 	if (!init?.body) return {};
@@ -365,4 +365,70 @@ test('fetchAudioBuffer treats near-empty WAV responses as silence instead of thr
 		} as Response);
 	await tts.fetchAudioBuffer('Hallo Welt.');
 	assert.equal(decodeCalled, 1);
+});
+
+// ── OmniVoice input sanitizing (quote marks, short words) ─────────────
+
+test('sanitizeOmniVoiceInput strips double quotes OmniVoice would render as silence', () => {
+	// Measured against the live proxy: inputs like "es" (with quotes) always
+	// return an empty WAV, while the bare word synthesises fine.
+	assert.equal(sanitizeOmniVoiceInput('"es"'), 'es, es.');
+	assert.equal(sanitizeOmniVoiceInput('„es"'), 'es, es.');
+	assert.equal(sanitizeOmniVoiceInput('Das Wort "ir" bedeutet gehen.'), 'Das Wort ir bedeutet gehen.');
+});
+
+test('sanitizeOmniVoiceInput keeps apostrophes inside words', () => {
+	// Elisions (l'osso, rock 'n' roll) must keep their apostrophes; only
+	// quoting marks around a word are dropped.
+	assert.equal(sanitizeOmniVoiceInput("l'osso significa Knochen."), "l'osso significa Knochen.");
+	assert.equal(sanitizeOmniVoiceInput("'ir'"), 'ir, ir.');
+});
+
+test('sanitizeOmniVoiceInput enriches single-word inputs by repetition', () => {
+	// Measured against the live proxy: one-word inputs randomly return empty
+	// audio (~20 %), the repeated form "X, X." synthesised reliably.
+	assert.equal(sanitizeOmniVoiceInput('ir'), 'ir, ir.');
+	assert.equal(sanitizeOmniVoiceInput('decir'), 'decir, decir.');
+	assert.equal(sanitizeOmniVoiceInput('go'), 'go, go.');
+	assert.equal(sanitizeOmniVoiceInput('行く'), '行く, 行く.');
+});
+
+test('sanitizeOmniVoiceInput leaves multi-word inputs untouched', () => {
+	assert.equal(sanitizeOmniVoiceInput('por favor'), 'por favor');
+	assert.equal(sanitizeOmniVoiceInput('Das war gehen.'), 'Das war gehen.');
+});
+
+test('OmniVoice request body contains the sanitised input, OpenAI stays untouched', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const omni = new OpenAITTS({ provider: 'omnivoice', voiceId: 'alloy', language: 'es' });
+	await omni.fetchAudioBuffer('"ir"');
+	assert.equal(requests[0].body.input, 'ir, ir.');
+
+	const openai = new OpenAITTS({ provider: 'openai-tts', apiKey: 'k', voiceId: 'nova' });
+	await openai.fetchAudioBuffer('"Hello."');
+	assert.equal(requests[1].body.input, '"Hello."');
+});
+
+test('fetchAudioBuffer skips the HTTP request when nothing speakable remains', async () => {
+	// A bare "." (or an empty segment) has no speakable content; sending it
+	// only produces noise. No request must leave the client.
+	let fetchCalls = 0;
+	globalThis.fetch = () => {
+		fetchCalls++;
+		return mockFetchResponse();
+	};
+
+	const tts = new OpenAITTS({ provider: 'omnivoice' });
+	const buffer = await tts.fetchAudioBuffer('.');
+	assert.ok(buffer);
+	assert.equal(fetchCalls, 0);
+
+	await tts.fetchAudioBuffer('Hallo.');
+	assert.equal(fetchCalls, 1);
 });
