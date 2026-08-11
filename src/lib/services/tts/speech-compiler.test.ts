@@ -11,6 +11,7 @@ import {
 	parsePseudoToolCalls,
 	scanPseudoToolCalls,
 	parseXmlSpeakTags,
+	parseJsonArgs,
 	type ToolCall
 } from './speech-compiler.ts';
 
@@ -559,4 +560,41 @@ test('parseXmlSpeakTags creates a pause call from <pause ms="..."/>', () => {
 test('parseXmlSpeakTags ignores pause tags without a numeric ms attribute', () => {
 	const result = parseXmlSpeakTags('<pause /><pause ms="abc" />');
 	assert.deepEqual(result.calls, []);
+});
+
+// ── nested double quotes inside the text field ───────────────────────
+
+test('parseJsonArgs repairs nested unescaped double quotes in the text value', () => {
+	// A language teacher reply quotes the foreign word: {"text":"Das Wort "ir"
+	// bedeutet gehen."} — strict JSON.parse fails and the call would be dropped.
+	const args = parseJsonArgs('{"text":"Das Wort "ir" bedeutet gehen.","lang":"de"}');
+	assert.equal(args.text, 'Das Wort "ir" bedeutet gehen.');
+	assert.equal(args.lang, 'de');
+});
+
+test('parseJsonArgs repairs multiple nested quotes in one string', () => {
+	const args = parseJsonArgs('{"text":"Er sagte "hallo" und "adios" laut.","lang":"de"}');
+	assert.equal(args.text, 'Er sagte "hallo" und "adios" laut.');
+});
+
+test('parseJsonArgs keeps valid JSON untouched', () => {
+	const args = parseJsonArgs('{"text":"Hallo Welt.","lang":"de"}');
+	assert.equal(args.text, 'Hallo Welt.');
+	assert.equal(args.lang, 'de');
+});
+
+test('parseJsonArgs keeps the actions envelope parseable', () => {
+	// Regression: the structural-quote heuristic must not break nested arrays.
+	const raw = '{"actions":[{"function":"speak","args":{"text":"Hallo!","lang":"de"}}]}';
+	const parsed = parseJsonArgs(raw) as { actions?: { function?: string }[] };
+	assert.equal(parsed.actions?.[0]?.function, 'speak');
+});
+
+test('parsePseudoToolCalls extracts a speak call whose text quotes a word', () => {
+	const text = 'speak({"text":"Das Wort "ir" bedeutet gehen.","lang":"de"})';
+	const parsed = parsePseudoToolCalls(text);
+	assert.equal(parsed.calls.length, 1);
+	assert.equal(parsed.calls[0].arguments.text, 'Das Wort "ir" bedeutet gehen.');
+	assert.equal(parsed.calls[0].arguments.lang, 'de');
+	assert.equal(parsed.cleanedText, 'Das Wort "ir" bedeutet gehen.');
 });

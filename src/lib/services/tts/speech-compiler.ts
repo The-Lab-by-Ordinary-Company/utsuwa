@@ -250,12 +250,13 @@ function repairJsObjectLiteral(raw: string): string {
 			}
 		}
 
-		// Double-quoted string: copy as-is.
+		// Double-quoted string: copy as-is, but repair nested unescaped quotes
+		// (e.g. a quoted foreign word inside the text) by escaping them.
 		if (ch === '"') {
-			const end = findStringEnd(raw, i, '"');
-			if (end !== -1) {
-				result += raw.slice(i, end + 1);
-				i = end + 1;
+			const collected = copyDoubleQuotedString(raw, i);
+			if (collected !== null) {
+				result += collected.text;
+				i = collected.end + 1;
 				continue;
 			}
 		}
@@ -278,20 +279,57 @@ function repairJsObjectLiteral(raw: string): string {
 	return result;
 }
 
-function findStringEnd(raw: string, start: number, quote: string): number {
-	let escaped = false;
-	for (let j = start + 1; j < raw.length; j++) {
-		if (escaped) {
-			escaped = false;
-			continue;
-		}
-		if (raw[j] === '\\') {
-			escaped = true;
-			continue;
-		}
-		if (raw[j] === quote) return j;
+/**
+ * True when the double quote at `i` is a structural string boundary, i.e. the
+ * next non-whitespace character is a JSON/JS delimiter: `}`, `)`, `]`, `:`,
+ * or `,` that starts a new key (`,"key":`) or closes the object (`,}`).
+ * Quotes followed by anything else are content (e.g. a quoted foreign word
+ * inside the text) and must not terminate the string.
+ */
+function isStructuralQuote(text: string, i: number): boolean {
+	let j = i + 1;
+	while (j < text.length && /\s/.test(text[j])) j++;
+	const next = text[j];
+	if (next === '}' || next === ')' || next === ']' || next === ':') return true;
+	if (next === ',') {
+		let k = j + 1;
+		while (k < text.length && /\s/.test(text[k])) k++;
+		if (text[k] === '}' || text[k] === ']') return true;
+		// A new key after the comma, quoted ("key":) or unquoted (key:).
+		return /^"?([a-zA-Z_$][a-zA-Z0-9_$]*)"?\s*:/.test(text.slice(k));
 	}
-	return -1;
+	return false;
+}
+
+/**
+ * Copy a double-quoted string starting at `start` (which points at the
+ * opening quote). Nested unescaped quotes that are not structural string
+ * boundaries are escaped, so a text like `"Das Wort "ir" bedeutet gehen."`
+ * becomes valid JSON. Returns the copied string including both quotes and
+ * the index of the closing quote, or null when no structural close exists.
+ */
+function copyDoubleQuotedString(raw: string, start: number): { text: string; end: number } | null {
+	let result = '"';
+	let i = start + 1;
+	while (i < raw.length) {
+		const ch = raw[i];
+		if (ch === '\\') {
+			result += raw.slice(i, i + 2);
+			i += 2;
+			continue;
+		}
+		if (ch === '"') {
+			if (isStructuralQuote(raw, i)) {
+				return { text: result + '"', end: i };
+			}
+			result += '\\"';
+			i++;
+			continue;
+		}
+		result += ch;
+		i++;
+	}
+	return null;
 }
 
 /**
@@ -328,7 +366,12 @@ function findSingleQuoteClose(text: string, start: number): number {
 	return -1;
 }
 
-/** Skip a double-quoted string, returning the index of the closing quote. */
+/**
+ * Skip a double-quoted string, returning the index of the closing quote.
+ * Nested unescaped quotes that are not structural boundaries (e.g. a quoted
+ * word inside the text) are treated as content, mirroring the repair in
+ * copyDoubleQuotedString, so the brace scan stays aligned.
+ */
 function skipDoubleQuotedString(text: string, start: number): number {
 	let escaped = false;
 	for (let j = start + 1; j < text.length; j++) {
@@ -340,7 +383,7 @@ function skipDoubleQuotedString(text: string, start: number): number {
 			escaped = true;
 			continue;
 		}
-		if (text[j] === '"') return j;
+		if (text[j] === '"' && isStructuralQuote(text, j)) return j;
 	}
 	return text.length - 1;
 }
