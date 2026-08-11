@@ -90,6 +90,15 @@ For expressive speech the model can insert non-verbal markers into the spoken te
 
 Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). To keep isolated words stable, the companion is instructed to speak them with their article or a short phrase (for example "el oído" rather than "oído") — and because the diffusion model occasionally returns empty audio for one-word inputs, Utsuwa repeats them internally (`ir` is synthesised as "ir, ir."). Quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
 
+### When the model forgets to tag
+
+The language switch depends on the LLM marking foreign words with `speak({ lang: ... })`. Some models do this inconsistently — for example packing "el gato" into a German sentence instead of giving it its own call — so the word is then spoken with the primary voice and dialect. Utsuwa corrects what can be proven deterministically (diacritics and scripts), but an unmarked foreign word without diacritics cannot be detected safely and stays in the primary voice.
+
+If you hit this often, the lever is the model, not the voice settings:
+
+- **Lower the LLM temperature** (towards 0.2–0.4). Format discipline improves noticeably at lower temperatures; creative phrasing suffers only slightly for a teaching use case.
+- **Switch to a model with stronger instruction following.** Criteria that matter here: reliable adherence to structured output formats (the model should not drop or mangle the `speak({...})` syntax), explicit tool-calling or JSON-mode support, and solid multilingual training. Small distilled models tend to skip tagging exactly when a sentence gets complex (side-by-side variants, conjugation tables); if you see missing tags mostly in long teaching answers, the model is usually the bottleneck.
+
 ### Cloned voices
 
 Use **Clone New Voice** to upload a 3–10 second audio sample and the matching reference text. The proxy creates a voice clone that you can then select from the **Cloned Voices** list. Delete a clone with the **Delete** button next to the selected voice.
