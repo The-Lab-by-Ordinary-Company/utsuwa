@@ -102,9 +102,9 @@
 			ballad: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'british' },
 			cedar: { gender: 'male', age: 'middle-aged', pitch: 'low', accent: 'american' },
 			coral: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'australian' },
-			echo: { gender: 'male', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
+			echo: { gender: 'male', age: 'middle-aged', pitch: 'moderate', accent: 'canadian' },
 			fable: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'british' },
-			marin: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'american' },
+			marin: { gender: 'female', age: 'middle-aged', pitch: 'moderate', accent: 'canadian' },
 			nova: { gender: 'female', age: 'young adult', pitch: 'high', accent: 'american' },
 			onyx: { gender: 'male', age: 'middle-aged', pitch: 'very low', accent: 'british' },
 			sage: { gender: 'female', age: 'elderly', pitch: 'low', accent: 'british' },
@@ -198,7 +198,7 @@
 	async function checkProxyHealth() {
 		proxyStatus = 'connecting';
 		try {
-			const healthUrl = baseUrl().replace(/\/v1\/$/, '') + '/health';
+			const healthUrl = baseUrl().replace(/\/v1\/$/, '').replace(/\/+$/, '') + '/health';
 			const res = await fetch(healthUrl, { signal: AbortSignal.timeout(3000) });
 			proxyStatus = res.ok ? 'connected' : res.status === 503 ? 'connecting' : 'disconnected';
 		} catch {
@@ -556,6 +556,9 @@
 					{#each clonedVoices as v}
 						<option value={v.id}>{v.name}</option>
 					{/each}
+					{#if opts.voiceId && !clonedVoices.some((v) => v.id === opts.voiceId)}
+						<option value={opts.voiceId}>cloned {opts.voiceId.replace('clone:', '')} (loading)</option>
+					{/if}
 				</select>
 				<button class="btn btn-sm btn-secondary" onclick={openCloneModal}>Clone New</button>
 				{#if opts.voiceId}

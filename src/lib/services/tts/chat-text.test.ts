@@ -188,6 +188,18 @@ test('hasIncompleteTrailingMarkup passes complete calls and plain text', () => {
 	assert.equal(hasIncompleteTrailingMarkup(''), false);
 });
 
+test('hasIncompleteTrailingMarkup flags unbalanced JSON braces in speak calls', () => {
+	// Regression: a closing paren with an unclosed JSON object used to count as
+	// a complete call, letting raw syntax through to the chat bubble.
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"Hallo")'), true);
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"Hallo"}'), true);
+});
+
+test('hasIncompleteTrailingMarkup ignores braces inside the text string', () => {
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"{hallo}"})'), false);
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"a) } (b"})'), false);
+});
+
 test('hasIncompleteTrailingMarkup flags unfinished lang, actions and XML tags', () => {
 	assert.equal(hasIncompleteTrailingMarkup('<lang'), true);
 	assert.equal(hasIncompleteTrailingMarkup('{"actions":[{"function":"speak","args":{'), true);

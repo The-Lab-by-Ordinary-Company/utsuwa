@@ -203,18 +203,19 @@ export function hasIncompleteTrailingMarkup(text: string): boolean {
 		lastCallStart = callMatch.index + callMatch[0].length;
 	}
 	if (lastCallStart !== null) {
-		let depth = 1;
+		let parenDepth = 1;
+		let braceDepth = 0;
 		let inString = false;
 		for (let i = lastCallStart; i < trimmed.length; i++) {
 			const ch = trimmed[i];
 			if (ch === '"') inString = !inString;
-			else if (!inString && ch === '(') depth++;
-			else if (!inString && ch === ')') {
-				depth--;
-				if (depth === 0) break;
-			}
+			else if (!inString && ch === '(') parenDepth++;
+			else if (!inString && ch === ')') parenDepth--;
+			else if (!inString && ch === '{') braceDepth++;
+			else if (!inString && ch === '}') braceDepth--;
+			if (!inString && parenDepth === 0 && braceDepth === 0) break;
 		}
-		if (depth > 0) return true;
+		if (parenDepth > 0 || braceDepth > 0) return true;
 	}
 	// Incomplete <lang ...> opening
 	if (/<lang(\s+code=["']?)?$/i.test(trimmed)) return true;

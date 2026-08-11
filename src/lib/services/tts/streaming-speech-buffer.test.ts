@@ -63,6 +63,26 @@ test('does not emit while inside an open JSON block', () => {
 	assert.equal(segments[1].text, 'Goodbye.');
 });
 
+test('ignores braces inside JSON string values when tracking depth', () => {
+	// Regression: {"...":"{hello}"} used to count the braces inside the string
+	// value, leaving the depth stuck at >0 and blocking TTS for later text.
+	const { buffer, segments } = createBuffer();
+	buffer.feed('Hi. {"mood_change":{"text":"{hel');
+	assert.equal(segments.length, 1);
+	assert.equal(segments[0].text, 'Hi.');
+	buffer.feed('lo}"}} Goodbye.');
+	assert.equal(segments.length, 2);
+	assert.equal(segments[1].text, 'Goodbye.');
+});
+
+test('keeps string state across chunk boundaries', () => {
+	const { buffer, segments } = createBuffer();
+	buffer.feed('Hi. {"mood_change":{"note":"a {');
+	buffer.feed('b} c"}} Bye.');
+	assert.equal(segments.length, 2);
+	assert.equal(segments[1].text, 'Bye.');
+});
+
 test('reset clears pending text', () => {
 	const { buffer, segments } = createBuffer();
 	buffer.feed('Pending');

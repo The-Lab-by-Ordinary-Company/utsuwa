@@ -88,6 +88,11 @@ export class StreamingSpeechBuffer {
 	// Tracks depth of curly braces so JSON state-update blocks that span
 	// multiple streaming chunks are held back from TTS until fully received.
 	private jsonDepth = 0;
+	// True while a double-quoted string value is open inside the JSON state
+	// tracking, so braces inside string values (e.g. {"text":"{hello}"}) are
+	// not counted and cannot leave the depth wrong. Kept across chunks because
+	// strings can be split by the stream.
+	private jsonStringOpen = false;
 	private flushTimer: ReturnType<typeof setTimeout> | null = null;
 	private readonly FLUSH_TIMEOUT_MS = 1500;
 	private readonly options: StreamingSpeechBufferOptions;
@@ -98,10 +103,21 @@ export class StreamingSpeechBuffer {
 
 	feed(chunk: string): void {
 		// Track curly-brace depth across chunks so we never emit text that is
-		// inside an open JSON state-update block.
-		for (const ch of chunk) {
-			if (ch === '{') this.jsonDepth++;
-			else if (ch === '}') this.jsonDepth--;
+		// inside an open JSON state-update block. Braces inside double-quoted
+		// string values are ignored so e.g. {"text":"{hello}"} does not leave
+		// the depth wrong and block TTS for the following text.
+		for (let i = 0; i < chunk.length; i++) {
+			const ch = chunk[i];
+			if (this.jsonStringOpen) {
+				if (ch === '\\') i++;
+				else if (ch === '"') this.jsonStringOpen = false;
+			} else if (ch === '"') {
+				this.jsonStringOpen = true;
+			} else if (ch === '{') {
+				this.jsonDepth++;
+			} else if (ch === '}') {
+				this.jsonDepth--;
+			}
 		}
 		this.buffer += chunk;
 
@@ -160,6 +176,7 @@ export class StreamingSpeechBuffer {
 		this.buffer = '';
 		this.emittedLength = 0;
 		this.jsonDepth = 0;
+		this.jsonStringOpen = false;
 		this.clearFlushTimer();
 	}
 
