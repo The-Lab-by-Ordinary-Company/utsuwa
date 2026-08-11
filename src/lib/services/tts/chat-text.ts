@@ -235,6 +235,11 @@ export function hasIncompleteTrailingMarkup(text: string): boolean {
 		let inString = false;
 		for (let i = lastCallStart; i < trimmed.length; i++) {
 			const ch = trimmed[i];
+			// Skip escaped characters so \" does not toggle the string state.
+			if (inString && ch === '\\') {
+				i++;
+				continue;
+			}
 			if (ch === '"') inString = !inString;
 			else if (!inString && ch === '(') parenDepth++;
 			else if (!inString && ch === ')') parenDepth--;
@@ -256,6 +261,6 @@ export function hasIncompleteTrailingMarkup(text: string): boolean {
 		if (depth > 0) return true;
 	}
 	// Incomplete XML speech tag (<speak text="..." without closing >)
-	if (/<(speak|gesture)[a-z]*[^>]*$/.test(trimmed)) return true;
+	if (/<(speak|gesture|pause)[a-z]*[^>]*$/.test(trimmed)) return true;
 	return false;
 }

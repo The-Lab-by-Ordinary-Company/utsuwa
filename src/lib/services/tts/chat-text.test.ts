@@ -231,3 +231,18 @@ test('hasIncompleteTrailingMarkup flags unfinished lang, actions and XML tags', 
 	assert.equal(hasIncompleteTrailingMarkup('{"actions":[{"function":"speak","args":{'), true);
 	assert.equal(hasIncompleteTrailingMarkup('<speak text="Hallo'), true);
 });
+
+test('hasIncompleteTrailingMarkup flags an unfinished pause tag', () => {
+	// Regression: the XML check only matched speak|gesture, so a partial
+	// <pause tag slipped through to the chat bubble.
+	assert.equal(hasIncompleteTrailingMarkup('<pause ms="30'), true);
+	assert.equal(hasIncompleteTrailingMarkup('<pause'), true);
+	assert.equal(hasIncompleteTrailingMarkup('<pause ms="300" />'), false);
+});
+
+test('hasIncompleteTrailingMarkup ignores escaped quotes inside the string', () => {
+	// Regression: \" used to toggle the string state, so a complete call with
+	// an escaped quote was misread as still open.
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"Er sagte \\"hi\\"."})'), false);
+	assert.equal(hasIncompleteTrailingMarkup('speak({"text":"Er sagte \\"hi'), true);
+});
