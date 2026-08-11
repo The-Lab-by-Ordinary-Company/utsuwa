@@ -75,6 +75,11 @@ export function sanitizeOmniVoiceInput(
 		.trim();
 	if (!hasSpeakableChar(clean)) return clean;
 
+	// Non-verbal markers ([laughter], [sigh], ...) are rendered by OmniVoice
+	// itself; enriching them would destroy the marker syntax and read the
+	// marker word aloud instead.
+	if (/^(?:\[[^\]]+\]\s*)+$/.test(clean)) return clean;
+
 	const words = clean.split(/\s+/);
 	if (words.length > 2) return clean;
 

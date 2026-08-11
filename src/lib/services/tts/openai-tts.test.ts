@@ -437,6 +437,14 @@ test('sanitizeOmniVoiceInput repeats short foreign inputs without a carrier entr
 	assert.equal(sanitizeOmniVoiceInput('dzień dobry', 'pl', 'de'), 'dzień dobry, dzień dobry.');
 });
 
+test('sanitizeOmniVoiceInput never enriches non-verbal markers', () => {
+	// [laughter] is rendered by OmniVoice as audio; enriching it to
+	// "laughter, laughter." would read the marker word aloud instead.
+	assert.equal(sanitizeOmniVoiceInput('[laughter]'), '[laughter]');
+	assert.equal(sanitizeOmniVoiceInput('[laughter]', 'es', 'de'), '[laughter]');
+	assert.equal(sanitizeOmniVoiceInput('[sigh] [laughter]', 'es', 'de'), '[sigh] [laughter]');
+});
+
 test('OmniVoice request body contains the sanitised input, OpenAI stays untouched', async () => {
 	const requests: { body: Record<string, unknown> }[] = [];
 	// @ts-expect-error global fetch mock
