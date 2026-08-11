@@ -131,6 +131,20 @@ test('OmniVoice speech layer names the primary language and hard rules', () => {
 	assert.ok(prompt.includes('never write spoken text as plain prose'));
 	assert.ok(prompt.includes('Never speak the bare word alone'));
 	assert.ok(prompt.includes('its own speak({ lang:'));
+	// Quote marks around words break the speech synthesis — the prompt bans them.
+	assert.ok(prompt.includes('never wrap a word in quote marks'));
+});
+
+test('OmniVoice speech layer sends taught single words to the alternative voice', () => {
+	// A language teacher explains single foreign words mid-sentence; those must
+	// get their own alt-language call (with the word enriched), not stay in the
+	// primary call.
+	const prompt = buildSystemPrompt(
+		makeContext({ ttsProvider: 'omnivoice', ttsLanguage: 'de', ttsAltLanguage: 'es', ttsAltEnabled: true })
+	);
+	assert.ok(prompt.includes('EVERY word you teach, explain or quote'));
+	// A concrete call pattern teaches the model the expected shape.
+	assert.ok(prompt.includes('Pattern: speak({ text:'));
 });
 
 test('empty memories fall back to an explicit no-memory block', () => {

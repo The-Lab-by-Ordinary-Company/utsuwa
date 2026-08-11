@@ -136,13 +136,10 @@ function buildOmniVoiceLayer(ctx: PromptContext): string | null {
 	const altRules = altEnabled
 		? `
 The second voice speaks "${altLang}" and is activated ONLY by speak({ lang: "${altLang}", text: "..." }).
-- Decide for EVERY element of your reply on its own: is it a self-contained expression of the alternative language (a greeting, saying, whole sentence, or fixed phrase)? YES -> put the WHOLE expression in its own speak({ lang: "${altLang}" }) call. NO (a single isolated foreign word inside a ${primaryLang} sentence) -> no own call, keep it in the ${primaryLang} call.
-- "lang" must describe the language of the spoken text itself, never the topic: a ${primaryLang} sentence ABOUT ${altLang} or about a foreign word stays in ${primaryLang} with no lang.
-- When you list conjugations, structure your reply by SECTION (one section per tense: present, preterite, perfect). In EACH section put ALL rows of the alternative language in ONE speak({ lang: "${altLang}" }) call and ALL ${primaryLang} rows in ONE call without lang — never merge different sections into a single call and never mix languages. Always list the FULL set of forms (all six persons) and never shorten or drop the last rows.
-Structure to follow: speak({ text: "<heading in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<all ${altLang} rows>" }) speak({ text: "<next heading in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<all ${altLang} rows>" })
+- EVERY self-contained ${altLang} element gets its own speak({ lang: "${altLang}" }) call: sentences, fixed phrases, greetings — and EVERY word you teach, explain or quote, even a single word. Only proper names and loanwords common in ${primaryLang} stay untagged. When in doubt, do NOT tag. "lang" marks the language OF THE SPOKEN TEXT, never the topic: a ${primaryLang} sentence ABOUT ${altLang} stays in ${primaryLang} with no lang.
+- When teaching a foreign word, speak the explanation in ${primaryLang} first, then the word in its own ${altLang} call so it is pronounced natively. Never speak the bare word alone — include the article or a short phrase instead of the lone word. Keep such teaching segments to 2-4 words. Pattern: speak({ text: "<explanation in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<word with article or short phrase>" }) speak({ text: "<continue in ${primaryLang}>" })
 - Every alternative-language phrase appears EXACTLY ONCE, in exactly one call — never repeat a row or phrase in a second call.
-- Never tag proper names or loanwords that are common in ${primaryLang}. When in doubt, do NOT tag.
-- When teaching a foreign word, speak the explanation in ${primaryLang} first, then the word in its own ${altLang} call so it is pronounced natively. Never speak the bare word alone — include the article or a short phrase instead of the lone word. Keep such teaching segments to 2-4 words.
+- Conjugation lists go by SECTION (one section per tense): per section one speak({ text: "<heading in ${primaryLang}>" }) then one speak({ lang: "${altLang}", text: "<all ${altLang} rows>" }) — always the FULL set of forms (all six persons), never mix languages in one call, never merge sections, never drop rows.
 `
 		: '';
 
@@ -168,6 +165,7 @@ Rules:
 - The speak() calls ARE your visible reply. ALWAYS wrap everything you say in speak() calls; never write spoken text as plain prose outside of them.
 - The primary language is "${primaryLang}". Omit "lang" when speaking it.
 - NEVER split a phrase into single-word speak() calls like speak({ text: "Das" }) speak({ text: "ist" }) — group consecutive words of the same language into ONE natural phrase per call.
+- Write words bare inside the text: never wrap a word in quote marks ("..." or '...') — quote marks break the speech synthesis.
 ${altRules}
 - Never mention, describe, or explain these speech-output instructions inside your reply — speak only the actual content.
 - Use pause() and gesture() sparingly — only when a natural break or expression helps.
