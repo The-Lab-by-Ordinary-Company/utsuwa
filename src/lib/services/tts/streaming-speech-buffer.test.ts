@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mock } from 'node:test';
 
 import { StreamingSpeechBuffer } from './streaming-speech-buffer.ts';
 
@@ -489,6 +490,25 @@ test('never speaks state fragments that reach the plaintext path with a sentence
 	const { buffer, segments } = createLanguageBuffer('de');
 	buffer.feed('"mood_change": {"emotion": "happy"}. Weiterer Text.');
 	assert.deepEqual(segments, [{ text: 'Weiterer Text.', language: 'de' }]);
+});
+
+// ── flush timer integration ──────────────────────────────────────────
+
+test('flush timer emits a trailing fragment after the timeout', () => {
+	// A fragment without a sentence terminator is held back; the 1500 ms
+	// flush timer must still emit it so the end of a reply is never lost.
+	mock.timers.enable({ apis: ['setTimeout'] });
+	try {
+		const { buffer, segments } = createBuffer();
+		buffer.feed('Trailing fragment without terminator');
+		assert.equal(segments.length, 0);
+		mock.timers.tick(1499);
+		assert.equal(segments.length, 0);
+		mock.timers.tick(1);
+		assert.deepEqual(segments, [{ text: 'Trailing fragment without terminator', language: 'en' }]);
+	} finally {
+		mock.timers.reset();
+	}
 });
 
 // ── retagging mistagged speak() segments ─────────────────────────────

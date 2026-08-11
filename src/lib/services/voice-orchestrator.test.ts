@@ -56,7 +56,7 @@ class MockAudioContext {
 // @ts-expect-error globalThis.AudioContext is not available in Node test environment
 globalThis.AudioContext = MockAudioContext;
 
-import { VoiceOrchestrator, type SpeechSegment } from './voice-orchestrator.ts';
+import { VoiceOrchestrator, resolveSegmentVoice, type SpeechSegment } from './voice-orchestrator.ts';
 import type { TTSOptions } from './tts/index.ts';
 
 const baseOptions: TTSOptions = { provider: 'openai-tts', apiKey: 'test-key' };
@@ -348,4 +348,58 @@ test('applies alternative-voice synthesis parameters to alt segments only', asyn
 	assert.equal(es.num_step, 16);
 	assert.equal(es.position_temperature, 0.7);
 	assert.equal(es.class_temperature, 0.6);
+});
+
+test('alt segments fall back to primary synthesis parameters when alt values are unset', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const orchestrator = new VoiceOrchestrator();
+	await orchestrator.speakSegments(
+		[
+			{ text: 'Das ist deutsch.', language: 'de' },
+			{ text: 'Esto es español.', language: 'es' }
+		],
+		{
+			provider: 'omnivoice',
+			voiceId: 'alloy',
+			altVoiceId: 'onyx',
+			enableAltLanguage: true,
+			altLanguage: 'es',
+			language: 'de',
+			speed: 1.3,
+			numStep: 24
+		},
+		{}
+	);
+
+	assert.equal(requests.length, 2);
+	// Both segments use the primary speed/num_step: unset alt values must
+	// never produce an undefined override.
+	assert.equal(requests[0].body.speed, 1.3);
+	assert.equal(requests[0].body.num_step, 24);
+	assert.equal(requests[1].body.speed, 1.3);
+	assert.equal(requests[1].body.num_step, 24);
+});
+
+test('resolveSegmentVoice treats an alt language equal to the primary as unset', () => {
+	// Misconfiguration guard: altLanguage === language must never tag primary
+	// segments as alternative, otherwise the whole conversation switches.
+	const res = resolveSegmentVoice(
+		{ text: 'Hallo Welt.', language: 'de' },
+		{
+			provider: 'omnivoice',
+			voiceId: 'alloy',
+			altVoiceId: 'onyx',
+			enableAltLanguage: true,
+			language: 'de',
+			altLanguage: 'de'
+		},
+		undefined
+	);
+	assert.equal(res.voiceId, undefined);
 });
