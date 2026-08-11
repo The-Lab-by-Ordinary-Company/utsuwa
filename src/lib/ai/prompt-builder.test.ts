@@ -145,6 +145,9 @@ test('OmniVoice speech layer sends taught single words to the alternative voice'
 	assert.ok(prompt.includes('EVERY word you teach, explain or quote'));
 	// A concrete call pattern teaches the model the expected shape.
 	assert.ok(prompt.includes('Pattern: speak({ text:'));
+	// Side-by-side variants (gender forms, regional alternatives) must not
+	// ride inside a primary-language sentence either.
+	assert.ok(prompt.includes('each es variant gets its own speak({ lang: "es" }) call'));
 });
 
 test('empty memories fall back to an explicit no-memory block', () => {
