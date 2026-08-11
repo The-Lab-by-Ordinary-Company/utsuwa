@@ -38,6 +38,11 @@ export interface VoiceResolution {
 	lastSegmentLang: string | undefined;
 }
 
+/** Primary subtag of a BCP-47-ish language tag ("es-ES" -> "es"). */
+function primarySubtag(lang: string): string {
+	return lang.toLowerCase().split('-')[0];
+}
+
 /**
  * Decide whether a segment should switch to the alternative voice.
  *
@@ -45,7 +50,9 @@ export interface VoiceResolution {
  * voice (`enableAltLanguage === true`) and configured an `altVoiceId`. The
  * segment must not already have an explicit voice selector. An alternative
  * language equal to the primary language is treated as unset so the switch
- * can never consume the whole conversation.
+ * can never consume the whole conversation. Language codes are compared by
+ * their primary subtag, so a model emitting "es-ES" still matches a
+ * configured "es".
  *
  * Keeps the inferred primary language and last-segment-language state so the
  * caller can update its session bookkeeping.
@@ -74,9 +81,10 @@ export function resolveSegmentVoice(
 			sessionOptions.altLanguage && sessionOptions.altLanguage !== primaryLang
 				? sessionOptions.altLanguage
 				: undefined;
+		const segLang = primarySubtag(segment.language);
 		const shouldUseAlt = altLang
-			? segment.language === altLang
-			: segment.language !== primaryLang;
+			? segLang === primarySubtag(altLang)
+			: segLang !== primarySubtag(primaryLang ?? '');
 		if (shouldUseAlt) {
 			voiceId = 'alt';
 		}

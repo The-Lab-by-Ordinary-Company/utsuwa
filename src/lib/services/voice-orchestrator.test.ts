@@ -264,6 +264,32 @@ test('only the configured alternative language switches voices', async () => {
 	assert.deepEqual(await altVoiceTags('ja', true, 'es'), [undefined, undefined]);
 });
 
+test('regional language tags match the configured alternative language', async () => {
+	// Models sometimes send BCP-47 regional tags ("es-ES") although the user
+	// configured the bare code ("es"). The switch compares primary subtags.
+	const tags = await (async () => {
+		globalThis.fetch = () => mockFetchResponse();
+		const orchestrator = new VoiceOrchestrator();
+		const collected: (string | undefined)[] = [];
+		await orchestrator.speakSegments(
+			[
+				{ text: 'Das Wort bedeutet gehen.', language: 'de' },
+				{ text: 'el verbo ir', language: 'es-ES' }
+			],
+			{
+				...baseOptions,
+				altVoiceId: 'alt-voice',
+				language: 'de',
+				enableAltLanguage: true,
+				altLanguage: 'es'
+			},
+			{ onSegmentStart: (seg) => collected.push(seg.voiceId) }
+		);
+		return collected;
+	})();
+	assert.deepEqual(tags, [undefined, 'alt']);
+});
+
 test('an alternative language equal to the primary language falls back to auto-switching', async () => {
 	// An explicit alt === primary is a misconfiguration the UI prevents; the
 	// orchestrator treats it as unset, so only segments differing from the
