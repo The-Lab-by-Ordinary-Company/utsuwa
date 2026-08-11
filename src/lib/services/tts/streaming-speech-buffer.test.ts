@@ -511,6 +511,50 @@ test('flush timer emits a trailing fragment after the timeout', () => {
 	}
 });
 
+// ── code fences split across chunks ──────────────────────────────────
+
+test('a code fence split before its language label never speaks the label', () => {
+	// Regression: the model wrapped its state block in a ```json fence and
+	// the fence arrived alone at a chunk boundary; stripping it immediately
+	// orphaned the label, which was then spoken as the word "json".
+	const { buffer, segments } = createBuffer();
+	buffer.feed('Du bist fleißig!\n\n```');
+	buffer.feed('json\n{"mood_change":{"emotion":"happy"}}\n```');
+	buffer.flush();
+	assert.deepEqual(
+		segments.map((s) => s.text),
+		['Du bist fleißig!']
+	);
+});
+
+test('a flushed naked fence does not orphan the label in a later chunk', () => {
+	// Same split, but the flush timer fires between the two chunks.
+	mock.timers.enable({ apis: ['setTimeout'] });
+	try {
+		const { buffer, segments } = createBuffer();
+		buffer.feed('Erster Satz. ```');
+		mock.timers.tick(2000);
+		buffer.feed('json\n{"mood_change":{"emotion":"happy"}}\n```');
+		buffer.flush();
+		assert.deepEqual(
+			segments.map((s) => s.text),
+			['Erster Satz.']
+		);
+	} finally {
+		mock.timers.reset();
+	}
+});
+
+test('a complete fenced state block in one chunk is fully suppressed', () => {
+	const { buffer, segments } = createBuffer();
+	buffer.feed('Alles klar. ```json\n{"mood_change":{"emotion":"happy"}}\n```');
+	buffer.flush();
+	assert.deepEqual(
+		segments.map((s) => s.text),
+		['Alles klar.']
+	);
+});
+
 // ── retagging mistagged speak() segments ─────────────────────────────
 
 test('speak call without lang but clear alt diacritics is retagged', () => {

@@ -254,15 +254,25 @@ export class StreamingSpeechBuffer {
 			text = text.slice(0, braceIndex);
 		}
 
+		// A trailing run of backticks may be an incomplete code fence whose
+		// language label arrives in the next chunk ("```" then "json").
+		// Stripping it now would orphan the label and speak it as a word, so
+		// it is excluded from the artifact pass and kept in the buffer.
+		const trailingFence = /`{3,}\s*$/.exec(text);
+		const fenceTail = trailingFence ? text.slice(trailingFence.index) : '';
+		const body = trailingFence ? text.slice(0, trailingFence.index) : text;
+
 		// Strip any completed JSON state-update block(s) from the current tail.
 		// Use the non-trimming variant so trailing whitespace is preserved for the
 		// next streaming chunk. Angle-bracket sections (< Text >) are unwrapped
 		// here, before sentence splitting would cut them apart.
-		let { cleaned } = stripSpeechArtifacts(text);
+		let { cleaned } = stripSpeechArtifacts(body);
 		cleaned = stripAngleBlocks(cleaned);
-		if (cleaned !== text) {
-			this.buffer = this.buffer.slice(0, this.emittedLength) + cleaned;
+		if (cleaned !== body) {
+			this.buffer = this.buffer.slice(0, this.emittedLength) + cleaned + fenceTail;
 			text = cleaned;
+		} else {
+			text = body;
 		}
 
 		const paraBreak = text.indexOf('\n\n');
@@ -476,7 +486,10 @@ export class StreamingSpeechBuffer {
 		return (
 			/(?:speak|pause|gesture)\s*\(/.test(text) ||
 			hasIncompleteActionsEnvelope(text) ||
-			hasIncompleteXmlTag(text)
+			hasIncompleteXmlTag(text) ||
+			// Trailing naked backticks: the fence label may arrive in the next
+			// chunk, so the text is not yet safe to flush.
+			/`{3,}\s*$/.test(text)
 		);
 	}
 }
