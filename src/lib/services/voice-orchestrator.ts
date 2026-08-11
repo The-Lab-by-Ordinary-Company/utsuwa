@@ -35,7 +35,6 @@ export interface SpeechSegment {
 export interface VoiceResolution {
 	voiceId?: string;
 	inferredPrimaryLang: string | undefined;
-	lastSegmentLang: string | undefined;
 }
 
 /** Primary subtag of a BCP-47-ish language tag ("es-ES" -> "es"). */
@@ -54,18 +53,16 @@ function primarySubtag(lang: string): string {
  * their primary subtag, so a model emitting "es-ES" still matches a
  * configured "es".
  *
- * Keeps the inferred primary language and last-segment-language state so the
- * caller can update its session bookkeeping.
+ * Keeps the inferred primary language so the caller can update its session
+ * bookkeeping.
  */
 export function resolveSegmentVoice(
 	segment: SpeechSegment,
 	sessionOptions: TTSOptions,
-	inferredPrimaryLang: string | undefined,
-	lastSegmentLang: string | undefined
+	inferredPrimaryLang: string | undefined
 ): VoiceResolution {
 	let voiceId = segment.voiceId;
 	let newInferredPrimaryLang = inferredPrimaryLang;
-	const newLastSegmentLang = segment.language !== undefined ? segment.language : lastSegmentLang;
 
 	if (
 		!voiceId &&
@@ -90,7 +87,7 @@ export function resolveSegmentVoice(
 		}
 	}
 
-	return { voiceId, inferredPrimaryLang: newInferredPrimaryLang, lastSegmentLang: newLastSegmentLang };
+	return { voiceId, inferredPrimaryLang: newInferredPrimaryLang };
 }
 
 /** Callbacks the orchestrator fires so the UI can react synchronously. */
@@ -227,7 +224,6 @@ export class VoiceOrchestrator {
 	private sessionOptions: TTSOptions | null = null;
 	private pipelineIndex = 0;
 	private inferredPrimaryLang: string | undefined = undefined;
-	private lastSegmentLang: string | undefined = undefined;
 	private pipelineDoneResolve: (() => void) | null = null;
 	private pipelineDoneReject: ((err: unknown) => void) | null = null;
 	private pipelineDone: Promise<void> = Promise.resolve();
@@ -276,7 +272,6 @@ export class VoiceOrchestrator {
 		this.pipelineAbort = new AbortController();
 		this.pipelineIndex = 0;
 		this.inferredPrimaryLang = undefined;
-		this.lastSegmentLang = undefined;
 		this.bufferedStreamingSegments = [];
 		this.channel = new PipelineQueue();
 
@@ -315,12 +310,10 @@ export class VoiceOrchestrator {
 		const resolution = resolveSegmentVoice(
 			segment,
 			this.sessionOptions,
-			this.inferredPrimaryLang,
-			this.lastSegmentLang
+			this.inferredPrimaryLang
 		);
 		segment = { ...segment, voiceId: resolution.voiceId };
 		this.inferredPrimaryLang = resolution.inferredPrimaryLang;
-		this.lastSegmentLang = resolution.lastSegmentLang;
 
 		const provider = getTTSProvider(this.sessionOptions);
 		const abort = this.pipelineAbort;
