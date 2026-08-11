@@ -80,7 +80,7 @@ Enable **Alternative Voice** to give foreign-language words their own voice. Thi
 - **Test Alt Voice**: Plays a short test phrase in the alternative language so you can verify the voice before chatting.
 - **Profile pre-warming**: When you enable the alternative voice, Utsuwa pre-generates the persistent profile for that language in the background, so the first foreign word in a chat is not delayed by on-demand profile generation.
 
-The switch is per word: with tool-capable models Utsuwa hands the LLM native speech tools (otherwise it uses `speak({...})` syntax), and every language change becomes its own segment — a reply like "Das spanische Wort für Auto ist **el coche**." plays the German part with the primary voice and "el coche" with the alternative voice.
+The switch is per word: with tool-capable models Utsuwa hands the LLM native speech tools (otherwise it uses `speak({...})` syntax), and every language change becomes its own segment — a reply like "Das spanische Wort für Auto ist **el coche**." plays the German part with the primary voice and "el coche" with the alternative voice. Regional language tags from the model (`es-ES`) still match the configured language, and languages written in non-Latin scripts (Japanese, Korean, Chinese, Russian, Arabic, Thai, ...) are detected from their script when the model omits explicit markup.
 
 ### Streaming & expressive speech
 
@@ -88,7 +88,7 @@ OmniVoice replies start speaking while the model is still writing: complete sent
 
 For expressive speech the model can insert non-verbal markers into the spoken text — e.g. `[laughter]`, `[sigh]`, `[question-oh]`, `[surprise-wa]`. These are rendered as audio (in both voices) and automatically removed from the visible chat bubble.
 
-Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). To keep isolated words stable, the companion is instructed to speak them with their article or a short phrase (for example "el oído" rather than "oído") — the model applies this when it emits the speak segments.
+Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). To keep isolated words stable, the companion is instructed to speak them with their article or a short phrase (for example "el oído" rather than "oído") — and because the diffusion model occasionally returns empty audio for one-word inputs, Utsuwa repeats them internally (`ir` is synthesised as "ir, ir."). Quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
 
 ### Cloned voices
 
