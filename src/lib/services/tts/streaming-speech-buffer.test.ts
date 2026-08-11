@@ -490,3 +490,66 @@ test('never speaks state fragments that reach the plaintext path with a sentence
 	buffer.feed('"mood_change": {"emotion": "happy"}. Weiterer Text.');
 	assert.deepEqual(segments, [{ text: 'Weiterer Text.', language: 'de' }]);
 });
+
+// ── retagging mistagged speak() segments ─────────────────────────────
+
+test('speak call without lang but clear alt diacritics is retagged', () => {
+	// The model forgot the lang tag; the diacritics prove the language, so
+	// the segment must not be synthesised in the primary voice.
+	const segments: { text: string; language?: string }[] = [];
+	const b = new StreamingSpeechBuffer({
+		defaultLanguage: 'de',
+		altLanguage: 'es',
+		onSegment: (seg) => segments.push(seg)
+	});
+	b.feed('speak({"text":"¿Cómo estás?"})');
+	assert.deepEqual(segments, [{ text: '¿Cómo estás?', language: 'es' }]);
+});
+
+test('speak call with a wrong primary lang but alt diacritics is retagged', () => {
+	const segments: { text: string; language?: string }[] = [];
+	const b = new StreamingSpeechBuffer({
+		defaultLanguage: 'de',
+		altLanguage: 'es',
+		onSegment: (seg) => segments.push(seg)
+	});
+	b.feed('speak({"text":"¿Qué tal?","lang":"de"})');
+	assert.deepEqual(segments, [{ text: '¿Qué tal?', language: 'es' }]);
+});
+
+test('speak call without lang but alt script is retagged', () => {
+	const segments: { text: string; language?: string }[] = [];
+	const b = new StreamingSpeechBuffer({
+		defaultLanguage: 'de',
+		altLanguage: 'ja',
+		onSegment: (seg) => segments.push(seg)
+	});
+	b.feed('speak({"text":"行きます"})');
+	assert.deepEqual(segments, [{ text: '行きます', language: 'ja' }]);
+});
+
+test('German umlaut text in a primary call is never retagged', () => {
+	// Precision guard: "für" contains ü; the segment must stay primary even
+	// though ü appears in Spanish words like "bilingüe".
+	const segments: { text: string; language?: string }[] = [];
+	const b = new StreamingSpeechBuffer({
+		defaultLanguage: 'de',
+		altLanguage: 'es',
+		onSegment: (seg) => segments.push(seg)
+	});
+	b.feed('speak({"text":"Das ist für dich.","lang":"de"})');
+	assert.deepEqual(segments, [{ text: 'Das ist für dich.', language: 'de' }]);
+});
+
+test('explicit alt lang is never flipped back by missing diacritics', () => {
+	// Asymmetry: an explicit alt tag stays even when the text has no
+	// diacritics ("el coche" proves nothing either way).
+	const segments: { text: string; language?: string }[] = [];
+	const b = new StreamingSpeechBuffer({
+		defaultLanguage: 'de',
+		altLanguage: 'es',
+		onSegment: (seg) => segments.push(seg)
+	});
+	b.feed('speak({"text":"el coche","lang":"es"})');
+	assert.deepEqual(segments, [{ text: 'el coche', language: 'es' }]);
+});

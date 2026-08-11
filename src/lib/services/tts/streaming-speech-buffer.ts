@@ -423,13 +423,23 @@ export class StreamingSpeechBuffer {
 	 * Convert a validated speak() tool call into one or more segments. Long
 	 * calls are split at sentence boundaries so the first sentence can be
 	 * synthesised immediately.
+	 *
+	 * Models forget or mistype the lang tag. Diacritics and scripts never lie,
+	 * so a segment tagged with the primary language whose text clearly shows
+	 * the alternative language's characters is retagged. Never the reverse:
+	 * missing diacritics prove nothing ("el coche" stays as tagged).
 	 */
 	private segmentsFromParsedToolCall(parsed: ToolCall): SpeechSegment[] {
 		if (parsed.name !== 'speak') return [];
 		const { text: rawText, lang } = parsed.arguments as { text?: string; lang?: string };
 		const text = (rawText ?? '').trim();
 		if (!text) return [];
-		const language = lang || this.options.defaultLanguage || 'de';
+		const primary = this.options.defaultLanguage || 'de';
+		const alt = this.options.altLanguage;
+		let language = lang || primary;
+		if (language === primary && alt && looksLikeAltLanguage(text, alt)) {
+			language = alt;
+		}
 
 		const split = splitLongSegments([{ name: 'speak', arguments: { text, lang: language } }]);
 		return split

@@ -113,6 +113,32 @@ test('looksLikeAltLanguage detects Spanish diacritics', () => {
 	assert.equal(looksLikeAltLanguage('Hallo', 'unknown-lang'), false);
 });
 
+test('looksLikeAltLanguage keeps Germanic letters out of the Romance lists', () => {
+	// Precision over recall: ü/ä/ö are rare in Spanish/French but ubiquitous
+	// in German — a German sentence must never flip to the Romance language.
+	assert.equal(looksLikeAltLanguage('Das ist für dich.', 'es'), false);
+	assert.equal(looksLikeAltLanguage('Das ist für dich.', 'fr'), false);
+	assert.equal(looksLikeAltLanguage('schöne Häuser', 'fr'), false);
+	// Turkish keeps ç ğ ı ş (German shares ö ü with Turkish — dropped there).
+	assert.equal(looksLikeAltLanguage('für', 'tr'), false);
+	assert.equal(looksLikeAltLanguage('şık', 'tr'), true);
+});
+
+test('looksLikeAltLanguage detects non-Latin scripts', () => {
+	// Languages without Latin diacritics are matched by their Unicode script,
+	// so a Japanese teacher reply can be tagged without explicit markup.
+	assert.equal(looksLikeAltLanguage('行きます', 'ja'), true);
+	assert.equal(looksLikeAltLanguage('こんにちは', 'ja'), true);
+	assert.equal(looksLikeAltLanguage('안녕하세요', 'ko'), true);
+	assert.equal(looksLikeAltLanguage('Привет', 'ru'), true);
+	assert.equal(looksLikeAltLanguage('مرحبا', 'ar'), true);
+	assert.equal(looksLikeAltLanguage('สวัสดี', 'th'), true);
+	assert.equal(looksLikeAltLanguage('Hallo Welt', 'ja'), false);
+	// Han ideographs are shared: they tag Chinese, not Japanese.
+	assert.equal(looksLikeAltLanguage('你好', 'zh'), true);
+	assert.equal(looksLikeAltLanguage('你好', 'ja'), false);
+});
+
 test('cleanSpeechMarkers removes bare closing speak tags', () => {
 	const result = cleanSpeechMarkers('Hallo.</speak> Wie geht es?</speak>');
 	assert.equal(result, 'Hallo. Wie geht es?');

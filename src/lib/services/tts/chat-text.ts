@@ -70,23 +70,50 @@ export function stripReasoningLeaks(text: string): string {
  * Diacritics that are characteristic for the supported alternative languages.
  * Used as a lightweight heuristic to tag text sections the model emitted with
  * only closing `</speak>` separators (no opening tag carrying lang).
+ *
+ * Precision over recall: only characters that distinguish the language from
+ * common partner languages are listed. Germanic letters (ä ö ü ë ï) were
+ * removed from the Romance lists — they are rare there ("bilingüe") but
+ * extremely common in German, so a German sentence with "für" must never be
+ * tagged as Spanish or French.
  */
 const ALT_LANG_DIACRITICS: Record<string, RegExp> = {
-	es: /[¿¡ñáéíóúü]/i,
-	fr: /[çàâäéèêëîïôöûùüœ]/i,
+	es: /[¿¡ñáéíóú]/i,
+	fr: /[çàâéèêëîïôûùœ]/i,
 	it: /[àèéìíîòóù]/i,
 	pt: /[ãõçáàâéêíóôú]/i,
 	de: /[äöüß]/i,
-	nl: /[ëïöü]/i,
+	nl: /[ëï]/i,
 	pl: /[ąćęłńóśźż]/i,
-	tr: /[çğıöşü]/i,
-	sv: /[åäö]/i
+	tr: /[çğış]/i,
+	sv: /[å]/i
+};
+
+/**
+ * Unicode script ranges for languages without characteristic Latin
+ * diacritics — the plaintext heuristic works for them too. Japanese matches
+ * kana only (Han is shared with Chinese); Chinese matches Han ideographs.
+ */
+const ALT_LANG_SCRIPTS: Record<string, RegExp> = {
+	ja: /[぀-ヿ]/,
+	ko: /[ᄀ-ᅟ가-힯]/,
+	zh: /[一-鿿]/,
+	ru: /[Ѐ-ӿ]/,
+	uk: /[Ѐ-ӿ]/,
+	bg: /[Ѐ-ӿ]/,
+	ar: /[؀-ۿ]/,
+	fa: /[؀-ۿ]/,
+	he: /[֐-ֿ]/,
+	th: /[฀-๿]/,
+	hi: /[ऀ-ॿ]/,
+	el: /[Ͱ-Ͽ]/
 };
 
 /** True when the text shows clear diacritics of the configured alternative language. */
 export function looksLikeAltLanguage(text: string, altLanguage?: string): boolean {
 	if (!altLanguage) return false;
-	const re = ALT_LANG_DIACRITICS[altLanguage.toLowerCase()];
+	const key = altLanguage.toLowerCase();
+	const re = ALT_LANG_DIACRITICS[key] ?? ALT_LANG_SCRIPTS[key];
 	if (!re) return false;
 	return re.test(text);
 }
