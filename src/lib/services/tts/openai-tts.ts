@@ -32,17 +32,42 @@ function hasSpeakableChar(text: string): boolean {
 	return /[\p{L}\p{N}]/u.test(text);
 }
 
+/** Primary subtag of a BCP-47-ish language tag ("es-ES" -> "es"). */
+function primarySubtag(lang: string): string {
+	return lang.toLowerCase().split('-')[0];
+}
+
+/**
+ * Carrier phrases for very short foreign-language inputs. Measured against
+ * the live proxy: one- and two-word inputs in a non-primary language return
+ * empty audio up to 100 % of the time ("por favor" was silent in 5/5 runs);
+ * neither num_step, temperatures nor speed help — only surrounding phonetic
+ * context does. A short native carrier ("Se dice: X — X.") synthesised
+ * reliably in every measurement and doubles as teacher-style repetition.
+ */
+const SHORT_INPUT_CARRIERS: Record<string, (text: string) => string> = {
+	de: (t) => `Das Wort ist: ${t} — ${t}.`,
+	en: (t) => `The phrase is: ${t} — ${t}.`,
+	es: (t) => `Se dice: ${t} — ${t}.`,
+	fr: (t) => `L'expression est : ${t} — ${t}.`
+};
+
 /**
  * Sanitise the text sent to OmniVoice.
  *
  * - Quote marks around words are removed (they produce empty audio).
- * - One-word inputs are repeated ("ir" -> "ir, ir."): measured against the
- *   live proxy, very short inputs randomly return empty audio (~20 %), the
- *   repeated form synthesised reliably across languages.
+ * - Very short foreign-language inputs (<= 2 words) are wrapped in a carrier
+ *   phrase of their own language; without one, a threefold repetition is
+ *   used. Primary-language fragments are left alone (measured stable), only
+ *   a lone single word is repeated ("ir" -> "ir, ir.").
  *
  * Pure function, exported for unit tests. Applied to OmniVoice requests only.
  */
-export function sanitizeOmniVoiceInput(text: string): string {
+export function sanitizeOmniVoiceInput(
+	text: string,
+	language?: string,
+	primaryLanguage?: string
+): string {
 	const clean = text
 		.replace(QUOTE_CHARS_RE, '')
 		.replace(QUOTING_APOSTROPHE_RE, '')
@@ -51,16 +76,28 @@ export function sanitizeOmniVoiceInput(text: string): string {
 	if (!hasSpeakableChar(clean)) return clean;
 
 	const words = clean.split(/\s+/);
-	if (words.length !== 1) return clean;
+	if (words.length > 2) return clean;
+
+	const isForeign =
+		!!language && !!primaryLanguage && primarySubtag(language) !== primarySubtag(primaryLanguage);
+	const core = clean.replace(/[.!?…。！？]+\s*$/, '');
+	const carrier = isForeign ? SHORT_INPUT_CARRIERS[primarySubtag(language)] : undefined;
+	if (carrier) return carrier(core);
+
+	if (words.length === 2) {
+		// Foreign two-word phrase without a carrier entry: repeat it. Primary
+		// two-word fragments are measured stable and stay untouched.
+		return isForeign ? `${core}, ${core}.` : clean;
+	}
 
 	const wordMatch = /[\p{L}\p{N}](?:[\p{L}\p{N}'’-]*[\p{L}\p{N}])?/u.exec(clean);
 	if (!wordMatch) return clean;
-	const core = wordMatch[0];
+	const word = wordMatch[0];
 	// Keep only a trailing sentence terminator ("go!" -> "go, go!"); other
 	// trailing punctuation (",", ":") is dropped so the result never ends
 	// mid-phrase.
-	const trailing = /[.!?…。！？]+$/.exec(clean.slice((wordMatch.index ?? 0) + core.length))?.[0];
-	return `${core}, ${core}${trailing ?? '.'}`;
+	const trailing = /[.!?…。！？]+$/.exec(clean.slice((wordMatch.index ?? 0) + word.length))?.[0];
+	return `${word}, ${word}${trailing ?? '.'}`;
 }
 
 function getCurrentSiteOrigin(): string | undefined {
@@ -95,19 +132,23 @@ export function buildOpenAITTSRequestBody(
 	// Per-segment voice overrides (e.g. alternative language voice) take precedence
 	// over the provider's default/primary voice.
 	const effectiveVoiceId = streamOptions?.voiceId ?? voiceId;
+	// Sanitising needs the per-segment language (foreign short inputs get a
+	// carrier phrase of their own language).
+	const segmentLanguage = streamOptions?.language ?? sessionOptions.language;
 	const body: Record<string, unknown> = {
 		model,
 		// OmniVoice gets a sanitised input: quote marks render as silence and
-		// one-word inputs are unstable — see sanitizeOmniVoiceInput.
-		input: isOmnivoice ? sanitizeOmniVoiceInput(text) : text,
+		// very short foreign inputs are unstable — see sanitizeOmniVoiceInput.
+		input: isOmnivoice
+			? sanitizeOmniVoiceInput(text, segmentLanguage, sessionOptions.language)
+			: text,
 		voice: effectiveVoiceId,
 		speed: streamOptions?.speed ?? speed,
 		response_format: isOmnivoice ? 'wav' : 'mp3'
 	};
 
 	if (isOmnivoice) {
-		const language = streamOptions?.language ?? sessionOptions.language;
-		if (language) body.language = language;
+		if (segmentLanguage) body.language = segmentLanguage;
 
 		const instructions = streamOptions?.instructions ?? sessionOptions.instructions;
 		if (instructions && !effectiveVoiceId.startsWith('clone:')) {

@@ -411,6 +411,32 @@ test('sanitizeOmniVoiceInput handles punctuation edge cases', () => {
 	assert.equal(sanitizeOmniVoiceInput(''), '');
 });
 
+test('sanitizeOmniVoiceInput wraps short foreign inputs in a carrier phrase', () => {
+	// Measured against the live proxy: two-word foreign inputs like "por
+	// favor" returned empty audio in 5/5 runs; a native carrier phrase of the
+	// segment language synthesised reliably.
+	assert.equal(sanitizeOmniVoiceInput('ir', 'es', 'de'), 'Se dice: ir — ir.');
+	assert.equal(sanitizeOmniVoiceInput('por favor', 'es', 'de'), 'Se dice: por favor — por favor.');
+	assert.equal(sanitizeOmniVoiceInput('yes', 'en', 'de'), 'The phrase is: yes — yes.');
+	assert.equal(sanitizeOmniVoiceInput('ja', 'de', 'es'), 'Das Wort ist: ja — ja.');
+	// Regional tags resolve to the same carrier.
+	assert.equal(sanitizeOmniVoiceInput('oui', 'fr-FR', 'de'), "L'expression est : oui — oui.");
+});
+
+test('sanitizeOmniVoiceInput leaves primary-language fragments alone', () => {
+	// German primary fragments are measured stable; only a lone single word
+	// gets the mild repetition.
+	assert.equal(sanitizeOmniVoiceInput('danke schön', 'de', 'de'), 'danke schön');
+	assert.equal(sanitizeOmniVoiceInput('Das war', 'de', 'de'), 'Das war');
+	assert.equal(sanitizeOmniVoiceInput('es', 'de', 'de'), 'es, es.');
+});
+
+test('sanitizeOmniVoiceInput repeats short foreign inputs without a carrier entry', () => {
+	// Languages without a carrier entry (e.g. Polish) fall back to repetition.
+	assert.equal(sanitizeOmniVoiceInput('cześć', 'pl', 'de'), 'cześć, cześć.');
+	assert.equal(sanitizeOmniVoiceInput('dzień dobry', 'pl', 'de'), 'dzień dobry, dzień dobry.');
+});
+
 test('OmniVoice request body contains the sanitised input, OpenAI stays untouched', async () => {
 	const requests: { body: Record<string, unknown> }[] = [];
 	// @ts-expect-error global fetch mock
