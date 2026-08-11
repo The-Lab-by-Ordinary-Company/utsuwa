@@ -483,3 +483,198 @@ export function parsePseudoToolCalls(text: string): ParsedCalls {
 		chunks
 	};
 }
+
+/**
+ * Parse the `{"actions":[{"function":"speak","args":{...}}]}` JSON envelope
+ * some models emit instead of speak() pseudo-calls. Returns the extracted
+ * tool calls and the text with the envelope removed. Never throws; an
+ * incomplete envelope yields no calls and is left in place.
+ */
+export function parseActionsEnvelope(text: string): { calls: ToolCall[]; cleanedText: string } {
+	const calls: ToolCall[] = [];
+	const spans: Array<[number, number]> = [];
+	const openerRe = /\{\s*"actions"\s*:/g;
+	let match: RegExpExecArray | null;
+
+	while ((match = openerRe.exec(text)) !== null) {
+		const openIndex = match.index;
+		const closeIndex = findClosingBrace(text, openIndex);
+		if (closeIndex === null) continue;
+
+		const raw = text.slice(openIndex, closeIndex + 1);
+		const parsed = parseJsonArgs(raw);
+		const actions = parsed.actions;
+		if (Array.isArray(actions)) {
+			for (const action of actions) {
+				if (!action || typeof action !== 'object') continue;
+				const record = action as Record<string, unknown>;
+				const name = String(record.function ?? record.name ?? '');
+				const args = record.args;
+				if (typeof args !== 'object' || args === null) continue;
+				if (name === 'speak' || name === 'pause' || name === 'gesture') {
+					calls.push({ name, arguments: args as Record<string, unknown> });
+				}
+			}
+		}
+
+		spans.push([openIndex, closeIndex + 1]);
+	}
+
+	// Remove spans in reverse order so indices stay valid.
+	let cleaned = text;
+	for (let i = spans.length - 1; i >= 0; i--) {
+		cleaned = cleaned.slice(0, spans[i][0]) + ' ' + cleaned.slice(spans[i][1]);
+	}
+
+	return { calls, cleanedText: cleaned.replace(/\s+/g, ' ').trim() };
+}
+
+/**
+ * Parse XML-style attributes (`text="..."`, `lang="es"`, `type="smile"`),
+ * honouring escaped quotes inside the values. Shared by the XML-tag parser and
+ * the display cleaner.
+ */
+export function parseXmlAttributes(attrs: string): Record<string, string> {
+	const result: Record<string, string> = {};
+	const attrRe = /([a-zA-Z]+)\s*=\s*("([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)')/g;
+	let m: RegExpExecArray | null;
+	while ((m = attrRe.exec(attrs)) !== null) {
+		const raw = m[3] ?? m[4] ?? '';
+		result[m[1]] = raw.replace(/\\"/g, '"').replace(/\\'/g, "'");
+	}
+	return result;
+}
+
+export interface XmlTagParseResult {
+	calls: ToolCall[];
+	/** Text with all complete tags removed (prose around the tags kept). */
+	cleanedText: string;
+	/** Offset just past the last complete tag, relative to the input text. */
+	endOffset: number;
+	/** True when the last tag is incomplete (no closing `>` or `</speak>`). */
+	incomplete: boolean;
+}
+
+export interface TagOpener {
+	index: number;
+	tag: string;
+}
+
+/**
+ * Find the last `<`-opener that could be the start of an unfinished tag:
+ * a `<` followed by a letter, a space, or the end of the text. `<3` (digit)
+ * and standalone comparisons like `a < b` mid-text are excluded when a letter
+ * follows, but a trailing `< ` is held back until more of the tag arrives.
+ */
+export function findLastTagOpener(text: string): TagOpener | null {
+	for (let i = text.length - 1; i >= 0; i--) {
+		if (text[i] !== '<') continue;
+		const next = text[i + 1];
+		if (next === undefined || next === ' ' || /[a-z]/i.test(next)) {
+			const letters = (text.slice(i + 1).match(/[a-zA-Z]*/) ?? [''])[0];
+			return { index: i, tag: '<' + letters };
+		}
+	}
+	return null;
+}
+
+/**
+ * Parse XML-style speech tags some models emit instead of speak() pseudo-calls:
+ *
+ *   <speak text="..." lang="es" />
+ *   <speak lang="es" text="...">inner text</speak>
+ *   <gesture type="smile" />
+ *
+ * Returns the extracted tool calls and the text with the tags removed. Never
+ * throws; an incomplete trailing tag yields no calls for it and is left in
+ * place.
+ */
+export function parseXmlSpeakTags(text: string): XmlTagParseResult {
+	const calls: ToolCall[] = [];
+	const spans: Array<[number, number]> = [];
+	let endOffset = 0;
+	let incomplete = false;
+	let incompleteStart: number | null = null;
+
+	const openRe = /<(speak|gesture|pause)[a-z]*/gi;
+	let m: RegExpExecArray | null;
+	while ((m = openRe.exec(text)) !== null) {
+		const name = m[1] as 'speak' | 'gesture' | 'pause';
+		const gt = text.indexOf('>', m.index + m[0].length);
+		if (gt === -1) {
+			incomplete = true;
+			incompleteStart = m.index;
+			break;
+		}
+		const tagInner = text.slice(m.index + m[0].length, gt);
+		const attrs = parseXmlAttributes(tagInner);
+		const selfClosing = /\/\s*$/.test(tagInner);
+		// Some models open <speak text="..."> without `/>` and without a
+		// closing tag; the text is complete inside the attribute, so the tag
+		// is finished at `>`.
+		const hasTextAttr = typeof attrs.text === 'string' && attrs.text.trim().length > 0;
+		let tagEnd = gt + 1;
+		let innerText = '';
+
+		if (!selfClosing && !hasTextAttr && name === 'speak') {
+			const close = text.indexOf('</speak>', gt + 1);
+			if (close === -1) {
+				incomplete = true;
+				incompleteStart = m.index;
+				break;
+			}
+			innerText = text.slice(gt + 1, close);
+			tagEnd = close + '</speak>'.length;
+		}
+
+		if (name === 'speak') {
+			const value = (attrs.text ?? innerText).replace(/\\"/g, '"');
+			if (value.trim()) {
+				calls.push({ name: 'speak', arguments: { text: value, lang: attrs.lang } });
+			}
+		} else if (attrs.type) {
+			calls.push({ name: 'gesture', arguments: { type: attrs.type } });
+		}
+
+		spans.push([m.index, tagEnd]);
+		endOffset = Math.max(endOffset, tagEnd);
+	}
+
+	// Remove spans in reverse order so indices stay valid.
+	let cleaned = text;
+	for (let i = spans.length - 1; i >= 0; i--) {
+		cleaned = cleaned.slice(0, spans[i][0]) + ' ' + cleaned.slice(spans[i][1]);
+	}
+
+	// Any "<letter" opener after the last complete tag might be a tag name in
+	// progress (<g, <spe) that streaming has not finished yet. Hold it so raw
+	// fragments are never spoken; the incomplete tail must not count as prose.
+	if (!incomplete) {
+		const lastAny = findLastTagOpener(text);
+		if (lastAny && lastAny.index >= endOffset) {
+			const gt = text.indexOf('>', lastAny.index);
+			if (gt === -1) {
+				incomplete = true;
+				incompleteStart = lastAny.index;
+			}
+		}
+	}
+
+	// The incomplete tail (from the last unfinished tag on) must not count as
+	// prose: the caller holds it back until the tag completes. Prose after a
+	// complete tag stays.
+	if (incompleteStart !== null) {
+		let removedBefore = 0;
+		for (const [s, e] of spans) {
+			if (e <= incompleteStart) removedBefore += e - s;
+		}
+		cleaned = cleaned.slice(0, incompleteStart - removedBefore);
+	}
+
+	return {
+		calls,
+		cleanedText: cleaned.replace(/\s+/g, ' ').trim(),
+		endOffset,
+		incomplete
+	};
+}
