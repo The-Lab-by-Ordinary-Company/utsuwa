@@ -56,8 +56,11 @@ export function sanitizeOmniVoiceInput(text: string): string {
 	const wordMatch = /[\p{L}\p{N}](?:[\p{L}\p{N}'’-]*[\p{L}\p{N}])?/u.exec(clean);
 	if (!wordMatch) return clean;
 	const core = wordMatch[0];
-	const trailing = clean.slice((wordMatch.index ?? 0) + core.length);
-	return `${core}, ${core}${trailing || '.'}`;
+	// Keep only a trailing sentence terminator ("go!" -> "go, go!"); other
+	// trailing punctuation (",", ":") is dropped so the result never ends
+	// mid-phrase.
+	const trailing = /[.!?…。！？]+$/.exec(clean.slice((wordMatch.index ?? 0) + core.length))?.[0];
+	return `${core}, ${core}${trailing ?? '.'}`;
 }
 
 function getCurrentSiteOrigin(): string | undefined {

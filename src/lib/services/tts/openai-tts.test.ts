@@ -398,6 +398,19 @@ test('sanitizeOmniVoiceInput leaves multi-word inputs untouched', () => {
 	assert.equal(sanitizeOmniVoiceInput('Das war gehen.'), 'Das war gehen.');
 });
 
+test('sanitizeOmniVoiceInput handles punctuation edge cases', () => {
+	// A trailing sentence terminator is kept, other trailing punctuation is
+	// dropped so the enriched input never ends mid-phrase.
+	assert.equal(sanitizeOmniVoiceInput('go!'), 'go, go!');
+	assert.equal(sanitizeOmniVoiceInput('café?'), 'café, café?');
+	assert.equal(sanitizeOmniVoiceInput('ir,'), 'ir, ir.');
+	assert.equal(sanitizeOmniVoiceInput('ir:'), 'ir, ir.');
+	// No speakable character: returned as-is (the caller skips the request).
+	assert.equal(sanitizeOmniVoiceInput('.'), '.');
+	assert.equal(sanitizeOmniVoiceInput('!!!'), '!!!');
+	assert.equal(sanitizeOmniVoiceInput(''), '');
+});
+
 test('OmniVoice request body contains the sanitised input, OpenAI stays untouched', async () => {
 	const requests: { body: Record<string, unknown> }[] = [];
 	// @ts-expect-error global fetch mock
