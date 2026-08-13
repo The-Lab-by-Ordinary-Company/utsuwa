@@ -165,7 +165,7 @@ export const POST: RequestHandler = async ({ request }) => {
 							const text = value.text;
 							// Detect start of a JSON state block and suppress all
 							// subsequent deltas until the block closes.
-							if (!inStateBlock && /^\{?\s*["'](?:mood_change|new_memory|energy_delta)["']/.test(text)) {
+							if (!inStateBlock && /["'](?:mood_change|new_memory|energy_delta)["']\s*:/i.test(text)) {
 								inStateBlock = true;
 							}
 							if (inStateBlock) {

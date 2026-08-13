@@ -26,6 +26,10 @@ export function stripSpeechArtifacts(text: string): { cleaned: string; removed: 
 	// the block itself, tolerating dangling fences at end of stream.
 	let cleaned = text.replace(/```+[a-zA-Z]*/g, '');
 
+	// Remove reminder/task tags the LLM uses for scheduling
+	// ([reminder:5min]text[/reminder]).
+	cleaned = cleaned.replace(/\[reminder:\d+[a-z]*\].*?\[\/reminder\]/gi, ' ');
+
 	// Remove inline JSON state-update blocks with brace balancing.
 	cleaned = stripStateUpdateBlocks(cleaned, removed);
 
