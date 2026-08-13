@@ -38,28 +38,14 @@ function primarySubtag(lang: string): string {
 }
 
 /**
- * Carrier phrases for very short foreign-language inputs. Measured against
- * the live proxy: one- and two-word inputs in a non-primary language return
- * empty audio up to 100 % of the time ("por favor" was silent in 5/5 runs);
- * neither num_step, temperatures nor speed help — only surrounding phonetic
- * context does. A short native carrier ("Se dice: X — X.") synthesised
- * reliably in every measurement and doubles as teacher-style repetition.
- */
-const SHORT_INPUT_CARRIERS: Record<string, (text: string) => string> = {
-	de: (t) => `Das Wort ist: ${t} — ${t}.`,
-	en: (t) => `The phrase is: ${t} — ${t}.`,
-	es: (t) => `Se dice: ${t} — ${t}.`,
-	fr: (t) => `L'expression est : ${t} — ${t}.`
-};
-
 /**
  * Sanitise the text sent to OmniVoice.
  *
  * - Quote marks around words are removed (they produce empty audio).
- * - Very short foreign-language inputs (<= 2 words) are wrapped in a carrier
- *   phrase of their own language; without one, a threefold repetition is
- *   used. Primary-language fragments are left alone (measured stable), only
- *   a lone single word is repeated ("ir" -> "ir, ir.").
+ * - Very short foreign-language inputs (<= 2 words) are capitalised and given
+ *   a closing period ("ir" -> "Ir.") to signal a natural utterance boundary.
+ *   This is more reliable than the old carrier-phrase approach and avoids
+ *   the "Se dice: X — X." repetition pattern.
  *
  * Pure function, exported for unit tests. Applied to OmniVoice requests only.
  */
@@ -85,24 +71,19 @@ export function sanitizeOmniVoiceInput(
 
 	const isForeign =
 		!!language && !!primaryLanguage && primarySubtag(language) !== primarySubtag(primaryLanguage);
+	if (!isForeign) return clean;
+
+	// Short foreign input: capitalise first letter, add a trailing period
+	// so the model sees a natural utterance boundary instead of a bare word.
 	const core = clean.replace(/[.!?…。！？]+\s*$/, '');
-	const carrier = isForeign ? SHORT_INPUT_CARRIERS[primarySubtag(language)] : undefined;
-	if (carrier) return carrier(core);
-
-	if (words.length === 2) {
-		// Foreign two-word phrase without a carrier entry: repeat it. Primary
-		// two-word fragments are measured stable and stay untouched.
-		return isForeign ? `${core}, ${core}.` : clean;
+	if (words.length === 1) {
+		const capped = core.charAt(0).toUpperCase() + core.slice(1);
+		return capped + '.';
 	}
-
-	const wordMatch = /[\p{L}\p{N}](?:[\p{L}\p{N}'’-]*[\p{L}\p{N}])?/u.exec(clean);
-	if (!wordMatch) return clean;
-	const word = wordMatch[0];
-	// Keep only a trailing sentence terminator ("go!" -> "go, go!"); other
-	// trailing punctuation (",", ":") is dropped so the result never ends
-	// mid-phrase.
-	const trailing = /[.!?…。！？]+$/.exec(clean.slice((wordMatch.index ?? 0) + word.length))?.[0];
-	return `${word}, ${word}${trailing ?? '.'}`;
+	// Two-word foreign phrase: capitalise the first word, keep the rest,
+	// add a trailing period.
+	const first = core.charAt(0).toUpperCase() + core.slice(1);
+	return first + '.';
 }
 
 function getCurrentSiteOrigin(): string | undefined {
@@ -155,6 +136,11 @@ export function buildOpenAITTSRequestBody(
 	if (isOmnivoice) {
 		if (segmentLanguage) body.language = segmentLanguage;
 
+		const isForeign =
+			!!segmentLanguage &&
+			!!sessionOptions.language &&
+			primarySubtag(segmentLanguage) !== primarySubtag(sessionOptions.language);
+
 		const instructions = streamOptions?.instructions ?? sessionOptions.instructions;
 		if (instructions && !effectiveVoiceId.startsWith('clone:')) {
 			body.instructions = instructions;
@@ -172,6 +158,20 @@ export function buildOpenAITTSRequestBody(
 		const classTemperature = streamOptions?.classTemperature ?? sessionOptions.classTemperature;
 		if (classTemperature != null) {
 			body.class_temperature = classTemperature;
+		}
+		// Foreign (alt-language) segments get a higher guidance scale and
+		// disabled silence removal to prevent the model from dropping short
+		// words or producing empty audio.
+		if (isForeign) {
+			body.guidance_scale = 6.0;
+			body.postprocess_output = false;
+		}
+		// Per-segment overrides, if set, take precedence over the defaults.
+		if (streamOptions?.guidanceScale != null) {
+			body.guidance_scale = streamOptions.guidanceScale;
+		}
+		if (streamOptions?.postprocessOutput != null) {
+			body.postprocess_output = streamOptions.postprocessOutput;
 		}
 	}
 	return body;

@@ -44,6 +44,9 @@ importers:
       dexie:
         specifier: ^4.0.11
         version: 4.2.1
+      eld:
+        specifier: ^2.0.3
+        version: 2.0.3
       force-graph:
         specifier: ^1.51.0
         version: 1.51.0
@@ -1137,6 +1140,9 @@ packages:
 
   dexie@4.2.1:
     resolution: {integrity: sha512-Ckej0NS6jxQ4Po3OrSQBFddayRhTCic2DoCAG5zacOfOVB9P2Q5Xc5uL/nVa7ZVs+HdMnvUPzLFCB/JwpB6Csg==}
+
+  eld@2.0.3:
+    resolution: {integrity: sha512-KiwFrycPPJ2XgKb7MGsJ3m3grUFXq6+55R8ZuS9fj+Qv0WRFgeEBhmorHO/YwHV9VqhdJURKFGJ+CY24sEikOw==}
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -2583,6 +2589,8 @@ snapshots:
       dequal: 2.0.3
 
   dexie@4.2.1: {}
+
+  eld@2.0.3: {}
 
   end-of-stream@1.4.5:
     dependencies:

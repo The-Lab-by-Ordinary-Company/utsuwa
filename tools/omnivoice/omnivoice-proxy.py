@@ -284,6 +284,9 @@ async def _generate(
     num_step: int | None = None,
     position_temperature: float | None = None,
     class_temperature: float | None = None,
+    postprocess_output: bool | None = None,
+    duration: float | None = None,
+    guidance_scale: float | None = None,
 ) -> bytes:
     """Run OmniVoice TTS and return WAV bytes (24 kHz, float32)."""
     assert _model is not None
@@ -301,6 +304,12 @@ async def _generate(
             kw["position_temperature"] = position_temperature
         if class_temperature is not None:
             kw["class_temperature"] = class_temperature
+        if postprocess_output is not None:
+            kw["postprocess_output"] = postprocess_output
+        if duration is not None:
+            kw["duration"] = duration
+        if guidance_scale is not None:
+            kw["guidance_scale"] = float(guidance_scale)
 
         if voice.startswith("clone:"):
             clone_id = voice.replace("clone:", "", 1)
@@ -622,6 +631,9 @@ async def speech(request: Request):
     num_step = body.get("num_step")
     position_temperature = body.get("position_temperature")
     class_temperature = body.get("class_temperature")
+    postprocess_output = body.get("postprocess_output")
+    duration = body.get("duration")
+    guidance_scale = body.get("guidance_scale")
 
     log_speech_request(body)
 
@@ -634,6 +646,9 @@ async def speech(request: Request):
         num_step=int(num_step) if num_step is not None else None,
         position_temperature=float(position_temperature) if position_temperature is not None else None,
         class_temperature=float(class_temperature) if class_temperature is not None else None,
+        postprocess_output=postprocess_output,
+        duration=float(duration) if duration is not None else None,
+        guidance_scale=float(guidance_scale) if guidance_scale is not None else None,
     )
     return Response(content=wav, media_type="audio/wav")
 

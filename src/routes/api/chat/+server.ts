@@ -11,7 +11,7 @@ import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-default
 const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
 
 export const POST: RequestHandler = async ({ request }) => {
-	const { messages, provider, model, apiKey, baseURL, systemPrompt, temperature, maxTokens, topP, presencePenalty, frequencyPenalty } = await request.json();
+	const { messages, provider, model, apiKey, baseURL, systemPrompt, temperature, maxTokens, topP, presencePenalty, frequencyPenalty, tools } = await request.json();
 
 	if (!Array.isArray(messages)) {
 		return new Response(JSON.stringify({ error: 'messages must be an array' }), {
@@ -83,6 +83,20 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		let result;
 		try {
+			// @xsai/stream-text requires an `execute` function on every tool
+			// (called via `tool.execute`, NOT `tool.function.execute`). We do NOT
+			// want the tool executed here — the speak_segment tool call is just
+			// streamed to the client as speech instructions. Provide a no-op that
+			// returns the parsed args so xsai doesn't crash with "tool.execute is
+			// not a function".
+			const toolsWithExecute = Array.isArray(tools) && tools.length > 0
+				? tools.map((t) => ({
+						...t,
+						function: t.function as Record<string, unknown>,
+						execute: async (args: unknown) => ({ result: args })
+					}))
+				: undefined;
+
 			result = streamText({
 				// Keyless custom endpoints must not receive a fabricated bearer;
 				// strict gateways reject 'Bearer not-needed'. xsai omits the
@@ -92,12 +106,13 @@ export const POST: RequestHandler = async ({ request }) => {
 				model,
 				messages: messagesWithSystem,
 				headers,
-				...(typedProvider === 'openai-compatible' && {
+				...(typedProvider !== 'anthropic' && {
 					...(temperature !== undefined && { temperature }),
 					...(maxTokens !== undefined && { max_tokens: maxTokens }),
 					...(topP !== undefined && { top_p: topP }),
 					...(presencePenalty !== undefined && { presence_penalty: presencePenalty }),
-					...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty })
+					...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty }),
+					...(toolsWithExecute !== undefined && { tools: toolsWithExecute })
 				})
 			});
 		} catch (err) {
@@ -116,18 +131,22 @@ export const POST: RequestHandler = async ({ request }) => {
 		result.totalUsage?.catch?.(silentCatch);
 		result.usage?.catch?.(silentCatch);
 		// Consume errored ReadableStreams so they don't become unhandled
-		result.fullStream?.getReader().read().catch(silentCatch);
+		// fullStream is consumed by the SSE reader below – do NOT consume it here.
 		result.reasoningTextStream?.getReader().read().catch(silentCatch);
 
-		const { textStream } = result;
+		const { fullStream } = result;
 
 		// Create a readable stream for SSE
 		const encoder = new TextEncoder();
+		// Track whether we are inside a JSON state block across text-delta
+		// boundaries so fragments don't leak even when the block is split
+		// across multiple deltas (M3).
+		let inStateBlock = false;
 		const stream = new ReadableStream({
 			async start(controller) {
 				let reader;
 				try {
-					reader = textStream.getReader();
+					reader = fullStream.getReader();
 				} catch (err) {
 					const msg = err instanceof Error ? err.message : 'Failed to start stream';
 					controller.enqueue(
@@ -141,8 +160,33 @@ export const POST: RequestHandler = async ({ request }) => {
 					while (true) {
 						const { done, value } = await reader.read();
 						if (done) break;
-						const data = `0:${JSON.stringify(value)}\n`;
-						controller.enqueue(encoder.encode(data));
+
+						if (value.type === 'text-delta') {
+							const text = value.text;
+							// Detect start of a JSON state block and suppress all
+							// subsequent deltas until the block closes.
+							if (!inStateBlock && /^\{?\s*["'](?:mood_change|new_memory|energy_delta)["']/.test(text)) {
+								inStateBlock = true;
+							}
+							if (inStateBlock) {
+								// Count braces to detect the end of the block.
+								if (text.includes('}')) inStateBlock = false;
+								continue;
+							}
+							const data = `0:${JSON.stringify(text)}\n`;
+							controller.enqueue(encoder.encode(data));
+						} else if (value.type === 'tool-call' && value.toolName === 'speak_segment') {
+							// Convert native tool calls to pseudo-call text so the
+							// client-side streaming speech buffer can process them.
+							const args = typeof value.args === 'string' ? JSON.parse(value.args) : value.args;
+							const text = (args as Record<string, unknown>)?.text as string ?? '';
+							const lang = (args as Record<string, unknown>)?.language as string ?? '';
+							const pseudo = lang
+								? `speak({"text":${JSON.stringify(text)},"lang":"${lang}"})`
+								: `speak({"text":${JSON.stringify(text)}})`;
+							const data = `0:${JSON.stringify(pseudo)}\n`;
+							controller.enqueue(encoder.encode(data));
+						}
 					}
 					controller.close();
 				} catch (error) {

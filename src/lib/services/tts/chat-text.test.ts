@@ -113,6 +113,41 @@ test('looksLikeAltLanguage detects Spanish diacritics', () => {
 	assert.equal(looksLikeAltLanguage('Hallo', 'unknown-lang'), false);
 });
 
+test('looksLikeAltLanguage detects Spanish function words without diacritics', () => {
+	// "el amigo" has no accented characters but is clearly Spanish.
+	assert.equal(looksLikeAltLanguage('el amigo', 'es'), true);
+	assert.equal(looksLikeAltLanguage('la puerta', 'es'), true);
+	assert.equal(looksLikeAltLanguage('los libros', 'es'), true);
+	assert.equal(looksLikeAltLanguage('un perro', 'es'), true);
+	// Pure German without Spanish function words stays untagged.
+	assert.equal(looksLikeAltLanguage('Das ist ein Tisch', 'es'), false);
+	assert.equal(looksLikeAltLanguage('Der Hund bellt laut', 'es'), false);
+});
+
+test('looksLikeAltLanguage with primaryLanguage avoids false positives', () => {
+	// "Der Freund heißt el amigo" has "der" (German) and "el" (Spanish).
+	// With primaryLanguage='de', German function words outnumber Spanish → stays DE.
+	assert.equal(looksLikeAltLanguage('Der Freund heißt el amigo', 'es', 'de'), false);
+	assert.equal(looksLikeAltLanguage('Das ist la casa', 'es', 'de'), false);
+	// "Mi amigo vive en Madrid" has more Spanish than German words → ES.
+	assert.equal(looksLikeAltLanguage('Mi amigo vive en Madrid', 'es', 'de'), true);
+	assert.equal(looksLikeAltLanguage('El sol brilla intensamente', 'es', 'de'), true);
+	// Pure Spanish without German context → ES.
+	assert.equal(looksLikeAltLanguage('la mesa', 'es', 'de'), true);
+});
+
+test('looksLikeAltLanguage detects French function words without diacritics', () => {
+	assert.equal(looksLikeAltLanguage('le livre', 'fr'), true);
+	assert.equal(looksLikeAltLanguage('la maison', 'fr'), true);
+	assert.equal(looksLikeAltLanguage('les enfants', 'fr'), true);
+	assert.equal(looksLikeAltLanguage('un chien', 'fr'), true);
+});
+
+test('looksLikeAltLanguage detects German function words', () => {
+	assert.equal(looksLikeAltLanguage('der Tisch', 'de'), true);
+	assert.equal(looksLikeAltLanguage('die Lampe', 'de'), true);
+});
+
 test('looksLikeAltLanguage keeps Germanic letters out of the Romance lists', () => {
 	// Precision over recall: ü/ä/ö are rare in Spanish/French but ubiquitous
 	// in German — a German sentence must never flip to the Romance language.

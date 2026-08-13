@@ -330,6 +330,36 @@ export async function sendCompanionMessage(
 			: {};
 
 		let fullContent = '';
+		// Tool definitions for OmniVoice speech segments.
+		// When the LLM supports function calling, speak_segment provides
+		// structured language tags instead of pseudo-calls in the text.
+		// Build the language enum from the configured primary + alternative
+		// languages so the tool only ever suggests what the user has set up.
+		const primaryLang = (displaySpeechSettings.activeLanguage as string)?.toLowerCase() || 'de';
+		const altLang = (displaySpeechSettings.altLanguage as string)?.toLowerCase();
+		const toolLanguages = Array.from(new Set([primaryLang, altLang].filter(Boolean))) as string[];
+
+		const ttsTools = displayTtsProvider === 'omnivoice'
+			&& (displaySpeechSettings.enableAltLanguage as boolean) === true
+			&& (displaySpeechSettings.enableToolCalling as boolean) !== false
+			? [{
+					type: 'function' as const,
+					function: {
+						name: 'speak_segment',
+						description: 'Speak exactly ONE short phrase. Call separately for each phrase. language is REQUIRED.',
+						parameters: {
+							type: 'object',
+							properties: {
+								text: { type: 'string', description: 'One short phrase to speak. Max 1 sentence.' },
+								language: { type: 'string', enum: toolLanguages,
+									description: 'Language of the text. REQUIRED.' }
+							},
+							required: ['text', 'language']
+						}
+					}
+				}]
+			: undefined;
+
 		if (isTauri() || providerMeta?.isLocal) {
 			// Desktop and local providers call the provider API directly.
 			await new Promise<void>((resolve, reject) => {
@@ -341,6 +371,7 @@ export async function sendCompanionMessage(
 						apiKey: apiKey || undefined,
 						baseURL,
 						systemPrompt,
+						tools: ttsTools,
 						...advancedParams
 					},
 					(text) => {
@@ -348,7 +379,20 @@ export async function sendCompanionMessage(
 						onDelta(fullContent);
 					},
 					(error) => reject(new Error(error)),
-					() => resolve()
+					() => resolve(),
+					// Convert native tool calls to pseudo-call text so the existing
+					// streaming speech buffer can process them.
+					ttsTools ? (name, args) => {
+						if (name === 'speak_segment') {
+							const text = args.text as string ?? '';
+							const lang = args.language as string ?? '';
+							const pseudo = lang
+								? `speak({"text":${JSON.stringify(text)},"lang":"${lang}"})`
+								: `speak({"text":${JSON.stringify(text)}})`;
+							fullContent += pseudo;
+							onDelta(fullContent);
+						}
+					} : undefined
 				);
 			});
 		} else {
@@ -361,6 +405,7 @@ export async function sendCompanionMessage(
 					apiKey: apiKey || (providerMeta?.custom ? undefined : 'not-needed'),
 					baseURL,
 					systemPrompt,
+					tools: ttsTools,
 					...advancedParams
 				},
 				onDelta

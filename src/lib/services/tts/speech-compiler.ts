@@ -533,7 +533,7 @@ export function parsePseudoToolCalls(text: string): ParsedCalls {
  * tool calls and the text with the envelope removed. Never throws; an
  * incomplete envelope yields no calls and is left in place.
  */
-export function parseActionsEnvelope(text: string): { calls: ToolCall[]; cleanedText: string } {
+export function parseActionsEnvelope(text: string): { calls: ToolCall[]; cleanedText: string; spans: Array<[number, number]> } {
 	const calls: ToolCall[] = [];
 	const spans: Array<[number, number]> = [];
 	const openerRe = /\{\s*"actions"\s*:/g;
@@ -569,7 +569,7 @@ export function parseActionsEnvelope(text: string): { calls: ToolCall[]; cleaned
 		cleaned = cleaned.slice(0, spans[i][0]) + ' ' + cleaned.slice(spans[i][1]);
 	}
 
-	return { calls, cleanedText: cleaned.replace(/\s+/g, ' ').trim() };
+	return { calls, cleanedText: cleaned.replace(/\s+/g, ' ').trim(), spans };
 }
 
 /**
@@ -596,6 +596,10 @@ export interface XmlTagParseResult {
 	endOffset: number;
 	/** True when the last tag is incomplete (no closing `>` or `</speak>`). */
 	incomplete: boolean;
+	/** Offset of the incomplete tag start, or null when no incomplete tag. */
+	incompleteStart: number | null;
+	/** [start, end) spans of every complete tag, in source order. */
+	spans: Array<[number, number]>;
 }
 
 export interface TagOpener {
@@ -670,21 +674,29 @@ export function parseXmlSpeakTags(text: string): XmlTagParseResult {
 			tagEnd = close + '</speak>'.length;
 		}
 
+		let createdCall = false;
 		if (name === 'speak') {
 			const value = (attrs.text ?? innerText).replace(/\\"/g, '"');
 			if (value.trim()) {
 				calls.push({ name: 'speak', arguments: { text: value, lang: attrs.lang } });
+				createdCall = true;
 			}
 		} else if (name === 'pause' && attrs.ms !== undefined) {
 			const ms = Number(attrs.ms);
 			if (!Number.isNaN(ms)) {
 				calls.push({ name: 'pause', arguments: { ms } });
+				createdCall = true;
 			}
 		} else if (attrs.type) {
 			calls.push({ name: 'gesture', arguments: { type: attrs.type } });
+			createdCall = true;
 		}
 
-		spans.push([m.index, tagEnd]);
+		// Only record the span when it produced a call, so `spans` stays
+		// aligned with `calls` (M-1: interleaving relies on the pairing).
+		if (createdCall) {
+			spans.push([m.index, tagEnd]);
+		}
 		endOffset = Math.max(endOffset, tagEnd);
 	}
 
@@ -723,6 +735,8 @@ export function parseXmlSpeakTags(text: string): XmlTagParseResult {
 		calls,
 		cleanedText: cleaned.replace(/\s+/g, ' ').trim(),
 		endOffset,
-		incomplete
+		incomplete,
+		incompleteStart,
+		spans
 	};
 }

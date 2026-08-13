@@ -75,48 +75,41 @@ test('OmniVoice speech layer is only injected for the omnivoice provider', () =>
 	assert.ok(!prompt.includes('<speech_output_control>'));
 });
 
-test('OmniVoice speech layer marks the speak() calls as text notation', () => {
+test('OmniVoice speech layer marks the speak() calls as text commands', () => {
 	const prompt = buildSystemPrompt(
 		makeContext({ ttsProvider: 'omnivoice', ttsLanguage: 'de' })
 	);
-	assert.ok(prompt.includes('INLINE TEXT COMMANDS'));
-	assert.ok(prompt.includes('not a function-call API'));
+	assert.ok(prompt.includes('speak() commands'));
+	assert.ok(prompt.includes('<speech_output_control>'));
 });
 
 test('OmniVoice speech layer omits alternative-language rules when disabled', () => {
 	const prompt = buildSystemPrompt(
 		makeContext({ ttsProvider: 'omnivoice', ttsLanguage: 'de', ttsAltLanguage: 'es' })
 	);
-	assert.ok(!prompt.includes('second voice'));
-	assert.ok(!prompt.includes('activated ONLY by speak'));
-	// The language-neutral quality rules stay active even without the
-	// alternative voice, so existing users see no behavioural change.
-	assert.ok(prompt.includes('NEVER split a phrase into single-word speak() calls'));
+	// No alt-language rules when alt is not enabled
+	assert.ok(!prompt.includes('get their own speak({ lang: "es" }) call'));
+	// The base rules stay active
+	assert.ok(prompt.includes('Group same-language words into one natural phrase per call'));
 });
 
 test('OmniVoice speech layer includes generic alternative-language rules when enabled', () => {
 	const prompt = buildSystemPrompt(
 		makeContext({ ttsProvider: 'omnivoice', ttsLanguage: 'de', ttsAltLanguage: 'fr', ttsAltEnabled: true })
 	);
-	assert.ok(prompt.includes('second voice speaks "fr"'));
-	assert.ok(prompt.includes('activated ONLY by speak({ lang: "fr"'));
-	assert.ok(prompt.includes('EXACTLY ONCE'));
-	assert.ok(prompt.includes('When in doubt, do NOT tag'));
-	// The vocabulary-teaching pattern: explanation first, then the word in
-	// its own alt-language call, never the bare word alone.
-	assert.ok(prompt.includes('speak the explanation in de first'));
-	assert.ok(prompt.includes('Keep such teaching segments to 2-4 words'));
-	// The rules must stay generic — no hard-coded example words of one language.
-	assert.ok(!prompt.includes('yo voy'));
-	assert.ok(!prompt.includes('el oído'));
-	assert.ok(prompt.includes('<all fr rows>'));
+	assert.ok(prompt.includes('get their own speak({ lang: "fr" }) call'));
+	assert.ok(prompt.includes('even single words'));
+	assert.ok(prompt.includes('Pattern: speak({ text:'));
+	assert.ok(prompt.includes('<explain in de>'));
+	assert.ok(prompt.includes('<fr word or phrase>'));
+	assert.ok(prompt.includes('<all fr rows>') || prompt.includes('ALL rows'));
 });
 
 test('OmniVoice speech layer ignores alt rules without a configured language', () => {
 	const prompt = buildSystemPrompt(
 		makeContext({ ttsProvider: 'omnivoice', ttsLanguage: 'de', ttsAltEnabled: true })
 	);
-	assert.ok(!prompt.includes('second voice'));
+	assert.ok(!prompt.includes('get their own speak({ lang:'));
 });
 
 test('OmniVoice speech layer names the primary language and hard rules', () => {
@@ -124,30 +117,23 @@ test('OmniVoice speech layer names the primary language and hard rules', () => {
 		makeContext({ ttsProvider: 'omnivoice', ttsLanguage: 'de', ttsAltLanguage: 'es', ttsAltEnabled: true })
 	);
 	assert.ok(prompt.includes('<speech_output_control>'));
-	// The concrete primary language must be stated so omitted lang resolves correctly.
-	assert.ok(prompt.includes('primary language of our conversation is "de"'));
-	// Hardened rules: double quotes only, per-sentence lang calls, no bare words.
-	assert.ok(prompt.includes('ALWAYS use double quotes for the text field'));
-	assert.ok(prompt.includes('never write spoken text as plain prose'));
-	assert.ok(prompt.includes('Never speak the bare word alone'));
-	assert.ok(prompt.includes('its own speak({ lang:'));
-	// Quote marks around words break the speech synthesis — the prompt bans them.
-	assert.ok(prompt.includes('never wrap a word in quote marks'));
+	assert.ok(prompt.includes('Primary language: "de"'));
+	assert.ok(prompt.includes('EVERYTHING in speak() calls'));
+	assert.ok(prompt.includes('no plain text outside them'));
+	assert.ok(prompt.includes('never a bare word alone'));
+	assert.ok(prompt.includes('its own speak({ lang:') || prompt.includes('get their own speak({ lang:'));
+	assert.ok(prompt.includes('No quote marks inside text'));
 });
 
 test('OmniVoice speech layer sends taught single words to the alternative voice', () => {
 	// A language teacher explains single foreign words mid-sentence; those must
-	// get their own alt-language call (with the word enriched), not stay in the
-	// primary call.
+	// get their own alt-language call, not stay in the primary call.
 	const prompt = buildSystemPrompt(
 		makeContext({ ttsProvider: 'omnivoice', ttsLanguage: 'de', ttsAltLanguage: 'es', ttsAltEnabled: true })
 	);
-	assert.ok(prompt.includes('EVERY word you teach, explain or quote'));
+	assert.ok(prompt.includes('even single words'));
 	// A concrete call pattern teaches the model the expected shape.
 	assert.ok(prompt.includes('Pattern: speak({ text:'));
-	// Side-by-side variants (gender forms, regional alternatives) must not
-	// ride inside a primary-language sentence either.
-	assert.ok(prompt.includes('each es variant gets its own speak({ lang: "es" }) call'));
 });
 
 test('empty memories fall back to an explicit no-memory block', () => {

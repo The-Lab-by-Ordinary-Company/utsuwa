@@ -325,6 +325,7 @@
 	// ── Alternative voice ────────────────────────────────────────────────────
 
 	const altEnabled = $derived.by(() => (settings.speechSettings.enableAltLanguage as boolean) ?? false);
+	const toolCallingEnabled = $derived.by(() => (settings.speechSettings.enableToolCalling as boolean) ?? true);
 	const altLanguage = $derived.by(() => {
 		const lang = settings.speechSettings.altLanguage as string;
 		return languages.some((l) => l.code === lang) ? lang : '';
@@ -828,6 +829,16 @@
 			})}
 		</div>
 
+		<label class="omnivoice-radio" style="display:flex;align-items:center;gap:0.5rem;">
+			<input
+				type="checkbox"
+				checked={toolCallingEnabled}
+				onchange={(e) => settings.handleTTSEnableToolCallingChange(e.currentTarget.checked)}
+			/>
+			<span>Force language per segment</span>
+			<span class="tooltip" data-tooltip="More reliable; needs LLM tool support">ⓘ</span>
+		</label>
+
 		<div class="omnivoice-voice-row">
 			<span class="omnivoice-design-label" style="width:auto;flex-shrink:0;">Mode</span>
 			<label class="omnivoice-radio">
@@ -1127,6 +1138,39 @@
 	.omnivoice-radio input {
 		accent-color: var(--accent);
 		margin: 0;
+	}
+
+	.tooltip {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1rem;
+		height: 1rem;
+		font-size: 0.65rem;
+		color: var(--text-secondary);
+		cursor: help;
+		opacity: 0.8;
+	}
+	.tooltip::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		bottom: 125%;
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--bg-secondary, #2a2f3a);
+		color: var(--text-primary);
+		padding: 0.3rem 0.5rem;
+		border-radius: 4px;
+		font-size: 0.68rem;
+		white-space: nowrap;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s;
+		z-index: 10;
+	}
+	.tooltip:hover::after {
+		opacity: 1;
 	}
 
 	.omnivoice-slider {

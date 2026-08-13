@@ -62,6 +62,7 @@
 		"@xsai/stream-text": "^0.4.2",
 		"bits-ui": "^2.15.4",
 		"dexie": "^4.0.11",
+		"eld": "^2.0.3",
 		"force-graph": "^1.51.0",
 		"localforage": "^1.10.0",
 		"simple-icons": "^16.6.0",

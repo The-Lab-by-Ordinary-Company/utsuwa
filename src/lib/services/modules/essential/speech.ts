@@ -50,6 +50,13 @@ export const speechModule: ModuleDefinition = {
 				defaultValue: false
 			},
 			{
+				key: 'enableToolCalling',
+				type: 'boolean',
+				label: 'Enable Function Calling',
+				description: 'Force language per speech segment (more reliable, but requires LLM function-calling support)',
+				defaultValue: true
+			},
+			{
 				key: 'altLanguage',
 				type: 'text',
 				label: 'Alternative Language',

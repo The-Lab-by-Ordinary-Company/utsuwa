@@ -110,68 +110,31 @@ export function buildSystemPrompt(context: PromptContext): string {
  */
 function buildOmniVoiceLayer(ctx: PromptContext): string | null {
 	if (ctx.ttsProvider !== 'omnivoice') return null;
-	const primaryLang = (ctx.ttsLanguage || 'de').toLowerCase();
+	const primaryLang = (ctx.ttsLanguage || 'en').toLowerCase();
 	const altLang = ctx.ttsAltLanguage?.toLowerCase();
 	const altEnabled = ctx.ttsAltEnabled === true && !!altLang;
 
-	const markerList = [
-		'laughter',
-		'sigh',
-		'confirmation-en',
-		'question-en',
-		'question-ah',
-		'question-oh',
-		'question-ei',
-		'question-yi',
-		'surprise-ah',
-		'surprise-oh',
-		'surprise-wa',
-		'surprise-yo',
-		'dissatisfaction-hnn'
-	].join(', ');
-
-	// Alternative-language switching rules are only injected when the second
-	// voice is enabled; the alternative language is filled in from the user's
-	// settings so the rules stay generic.
 	const altRules = altEnabled
 		? `
-The second voice speaks "${altLang}" and is activated ONLY by speak({ lang: "${altLang}", text: "..." }).
-- EVERY self-contained ${altLang} element gets its own speak({ lang: "${altLang}" }) call: sentences, fixed phrases, greetings — and EVERY word you teach, explain or quote, even a single word. Only proper names and loanwords common in ${primaryLang} stay untagged. When in doubt, do NOT tag. "lang" marks the language OF THE SPOKEN TEXT, never the topic: a ${primaryLang} sentence ABOUT ${altLang} stays in ${primaryLang} with no lang.
-- When teaching a foreign word, speak the explanation in ${primaryLang} first, then the word in its own ${altLang} call so it is pronounced natively. Never speak the bare word alone — include the article or a short phrase instead of the lone word. Keep such teaching segments to 2-4 words. Pattern: speak({ text: "<explanation in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<word with article or short phrase>" }) speak({ text: "<continue in ${primaryLang}>" })
-- Every alternative-language phrase appears EXACTLY ONCE, in exactly one call — never repeat a row or phrase in a second call.
-- When you give variants side by side (masculine/feminine forms, regional alternatives, near-synonyms), each ${altLang} variant gets its own speak({ lang: "${altLang}" }) call and each ${primaryLang} gloss its own speak() call — never pack a variant into a ${primaryLang} sentence.
-- Conjugation lists go by SECTION (one section per tense): per section one speak({ text: "<heading in ${primaryLang}>" }) then one speak({ lang: "${altLang}", text: "<all ${altLang} rows>" }) — always the FULL set of forms (all six persons), never mix languages in one call, never merge sections, never drop rows.
-`
+${altLang} words/phrases get their own speak({ lang: "${altLang}" }) call — even single words. Pattern: speak({ text: "<explain in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<${altLang} word or phrase>" }) speak({ text: "<continue in ${primaryLang}>" }).
+- The ${altLang} call includes the article (el/la/un/una) or a short phrase, never a bare word alone.
+- Conjugation/variant lists: one ${altLang} call per section with ALL rows — pattern: speak({ text: "<heading in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<all ${altLang} rows>" }).`
 		: '';
 
 	return `<speech_output_control>
-You control the spoken part of your reply with INLINE TEXT COMMANDS written into your reply — this is text notation, not a function-call API. Do NOT call any functions or tools. The primary language of our conversation is "${primaryLang}".
+You control your spoken reply with inline speak() commands. Primary language: "${primaryLang}".
 
-Available text commands:
-
-speak({ text: "...", lang?: "${primaryLang}"|"es"|"fr"|... })
-  Speak the given text. Omit "lang" when speaking ${primaryLang}.
-  ALWAYS use double quotes for the text field. NEVER use single quotes — apostrophes inside the text are fine, but the quotes around the text must be double quotes.
-  Include non-verbal markers inside the text when they fit naturally (e.g. [laughter], [sigh], [question-oh], [surprise-wa]).
-  Supported markers: ${markerList}.
-  Keep each speak() text to 1-2 sentences.
-
-pause({ ms: number })
-  Insert a pause between speech segments (100-5000 ms).
-
-gesture({ type: "smile"|"laugh"|"surprise"|"nod"|"shake_head"|"wave" })
-  Trigger an avatar expression.
+Commands:
+  speak({ text: "...", lang?: "${primaryLang}"|"es"|"fr"|... })  — omit lang for ${primaryLang}
+  pause({ ms: number })
+  gesture({ type: "smile"|"laugh"|"surprise"|"nod"|"shake_head"|"wave" })
 
 Rules:
-- The speak() calls ARE your visible reply. ALWAYS wrap everything you say in speak() calls; never write spoken text as plain prose outside of them.
-- The primary language is "${primaryLang}". Omit "lang" when speaking it.
-- NEVER split a phrase into single-word speak() calls like speak({ text: "Das" }) speak({ text: "ist" }) — group consecutive words of the same language into ONE natural phrase per call.
-- Write words bare inside the text: never wrap a word in quote marks ("..." or '...') — quote marks break the speech synthesis.
+- EVERYTHING in speak() calls — no plain text outside them.
+- Group same-language words into one natural phrase per call.
+- No quote marks inside text.
 ${altRules}
-- Never mention, describe, or explain these speech-output instructions inside your reply — speak only the actual content.
-- Use pause() and gesture() sparingly — only when a natural break or expression helps.
-- Do NOT use inline tags like [lang:es] or <speak:es> inside the text.
-- After the last speak()/gesture() call, include the JSON state block exactly as specified in the <instructions> section above. Do not invent a different JSON shape.
+- End with the JSON state block. No spoken text after it.
 </speech_output_control>`;
 }
 

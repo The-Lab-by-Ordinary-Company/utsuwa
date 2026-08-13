@@ -6,6 +6,7 @@ import {
 	type ITTSProvider
 } from './tts/index.ts';
 import { getSpeakableText } from '../utils/speech-content.ts';
+import { validateLanguageTag, initLanguageDetector } from './tts/language-detector.ts';
 
 /**
  * Metadata attached to each speech segment by the response parser.
@@ -79,6 +80,9 @@ export function resolveSegmentVoice(
 				? sessionOptions.altLanguage
 				: undefined;
 		const segLang = primarySubtag(segment.language);
+		// Only switch to the alternative voice when the segment language matches
+		// the configured alternative language. When no alt language is configured
+		// (auto-switch), any non-primary language still goes to the alt voice.
 		const shouldUseAlt = altLang
 			? segLang === primarySubtag(altLang)
 			: segLang !== primarySubtag(primaryLang ?? '');
@@ -304,6 +308,19 @@ export class VoiceOrchestrator {
 		// Skip segments that contain only emoji, whitespace, or punctuation — these produce
 		// no meaningful speech but still incur full TTS generation overhead.
 		if (!getSpeakableText(segment.text)) return;
+
+		// ELD validation: run BEFORE resolveSegmentVoice so the language is
+		// corrected before the voice is assigned (M2). If the segment's declared
+		// language doesn't match the detected language, fall back to the primary
+		// language to avoid speaking with a wrong accent.
+		if (this.sessionOptions.enableAltLanguage === true && this.sessionOptions.language) {
+			const languages = [this.sessionOptions.language];
+			if (this.sessionOptions.altLanguage) languages.push(this.sessionOptions.altLanguage);
+			void initLanguageDetector(languages);
+			if (segment.language && segment.language !== this.sessionOptions.language) {
+				segment = { ...segment, language: validateLanguageTag(segment.text ?? '', segment.language) };
+			}
+		}
 
 		// Auto-assign alt voice when the user explicitly enabled the alternative
 		// voice and configured an altVoiceId.

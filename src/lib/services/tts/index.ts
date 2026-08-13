@@ -35,6 +35,8 @@ export interface TTSOptions {
 	altPositionTemperature?: number;
 	/** Alternative voice token sampling temperature (OmniVoice). Falls back to `classTemperature` when unset. */
 	altClassTemperature?: number;
+	/** Force a language per speech segment via LLM function calling (OmniVoice). */
+	enableToolCalling?: boolean;
 }
 
 // Result from TTS speak method
@@ -59,6 +61,8 @@ export interface StreamOptions {
 	numStep?: number;
 	positionTemperature?: number;
 	classTemperature?: number;
+	guidanceScale?: number;
+	postprocessOutput?: boolean;
 	signal?: AbortSignal;
 }
 

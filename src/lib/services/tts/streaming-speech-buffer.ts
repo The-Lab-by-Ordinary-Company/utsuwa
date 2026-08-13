@@ -10,7 +10,7 @@ import {
 	type ToolCall
 } from './speech-compiler.ts';
 import { parseToolCall } from './tool-definitions.ts';
-import { stripReasoningLeaks, looksLikeAltLanguage, stripAngleBlocks } from './chat-text.ts';
+import { stripReasoningLeaks, looksLikeAltLanguage, stripAngleBlocks, cleanSpeechMarkers } from './chat-text.ts';
 import { splitIntoSegments, stripSpeechArtifacts, stripForSpeech, hasStateBlockFragment } from '../../utils/sentences.ts';
 
 export interface StreamingSpeechBufferOptions {
@@ -116,7 +116,9 @@ export class StreamingSpeechBuffer {
 			} else if (ch === '{') {
 				this.jsonDepth++;
 			} else if (ch === '}') {
-				this.jsonDepth--;
+				// Never go negative on a stray '}' (m1): an unmatched closing
+				// brace must not flip the depth into a blocking state.
+				if (this.jsonDepth > 0) this.jsonDepth--;
 			}
 		}
 		this.buffer += chunk;
@@ -126,7 +128,9 @@ export class StreamingSpeechBuffer {
 		// plaintext emission, which would speak raw syntax.
 		if (this.tryEmitLanguageCalls()) {
 			this.compact();
-			this.clearFlushTimer();
+			// Arm the flush timer so trailing content after a complete speak()
+			// call is spoken even if no further chunks arrive (e.g. at stream end).
+			this.armFlushTimer();
 			return;
 		}
 
@@ -143,11 +147,19 @@ export class StreamingSpeechBuffer {
 		// no speak actions) so their JSON is never spoken.
 		remaining = parseActionsEnvelope(remaining).cleanedText;
 
+		// If the tail contains incomplete markup (a truncated speak() call that
+		// was still streaming when the stream ended), extract whatever speakable
+		// text is already there instead of discarding the whole fragment (H3).
+		let speakable = remaining;
+		if (this.hasIncompleteMarkup(speakable)) {
+			speakable = this.extractIncompleteSpeakText(speakable);
+		}
+
 		// Only speak remaining plaintext if it does not contain raw or incomplete
 		// markup syntax. Anything that looks like a call or tag has already been
 		// handled; leftover fragments are discarded.
-		if (remaining && !this.hasIncompleteMarkup(remaining)) {
-			const { cleaned } = stripForSpeech(remaining);
+		if (speakable && !this.hasIncompleteMarkup(speakable)) {
+			const { cleaned } = stripForSpeech(speakable);
 			for (const seg of this.tagAltLanguage(
 				splitIntoSegments(
 					stripAngleBlocks(stripReasoningLeaks(cleaned.trim().replace(/<\/speak>/g, ' '))),
@@ -168,8 +180,30 @@ export class StreamingSpeechBuffer {
 			this.emittedLength = this.buffer.length;
 		}
 
-		this.jsonDepth = 0;
 		this.clearFlushTimer();
+	}
+
+	/**
+	 * Pull the speakable text out of a truncated speak() call that was still
+	 * streaming at end-of-stream, e.g. `speak({"text":"Hallo` -> `Hallo`.
+	 * This stops the last sentence from being silently dropped (H3).
+	 */
+	private extractIncompleteSpeakText(text: string): string {
+		// Match a trailing incomplete speak/pause/gesture call and pull out the
+		// `text:"..."` value already present. scanPseudoToolCalls skips
+		// incomplete calls, so we parse the fragment directly.
+		//
+		// Handles both orderings:
+		//   speak({"text":"Hallo, wie geht es dir
+		//   speak({"lang":"es","text":"Hallo
+		//   speak({"text":"Hallo","lang":"es"  (text closed, more keys follow)
+		const incompleteCallRe = /(?:speak|pause|gesture)\s*\(\s*\{[^{}]*"text"\s*:\s*"([^"]*)/;
+		const m = incompleteCallRe.exec(text);
+		if (m && m[1]) return m[1];
+		// Fallback: strip an incomplete call opener that has no text value yet.
+		const noText = /(?:speak|pause|gesture)\s*\(\s*\{[^{}]*$/;
+		if (noText.test(text)) return '';
+		return text;
 	}
 
 	reset(): void {
@@ -238,9 +272,10 @@ export class StreamingSpeechBuffer {
 	/** Tag plaintext segments whose diacritics match the alternative language. */
 	private tagAltLanguage(segments: SpeechSegment[]): SpeechSegment[] {
 		const alt = this.options.altLanguage;
+		const primary = this.options.defaultLanguage;
 		if (!alt) return segments;
 		return segments.map((seg) =>
-			looksLikeAltLanguage(seg.text, alt) ? { ...seg, language: alt } : seg
+			looksLikeAltLanguage(seg.text, alt, primary) ? { ...seg, language: alt } : seg
 		);
 	}
 
@@ -350,22 +385,32 @@ export class StreamingSpeechBuffer {
 		let envelopeIncomplete = false;
 		const envelope = parseActionsEnvelope(unprocessed.slice(consumed));
 		if (envelope.calls.length > 0) {
-			// Prose around the envelope is spoken as plaintext segments; the
-			// envelope's speak actions follow as their own groups.
-			const prose = envelope.cleanedText;
-			if (prose.trim()) {
-				groups.push(this.segmentsFromPlaintext(prose));
-			}
-			for (const call of envelope.calls) {
-				const validated = parseToolCall(call);
+			// Interleave prose and envelope calls in their original order so
+			// prose before the envelope precedes the calls and prose after the
+			// last envelope follows them (order inversion fix).
+			let cursor = 0;
+			for (let i = 0; i < envelope.calls.length; i++) {
+				const span = envelope.spans[i];
+				const before = cleanSpeechMarkers(unprocessed.slice(consumed + cursor, consumed + (span ? span[0] : envelope.spans[envelope.spans.length - 1][1])).trim());
+				if (before) {
+					groups.push(this.segmentsFromPlaintext(before));
+				}
+				const validated = parseToolCall(envelope.calls[i]);
 				if (validated) {
 					groups.push(this.segmentsFromParsedToolCall(validated));
 				}
+				cursor = span ? span[1] : cursor;
 			}
-			// Re-scan for the envelope's end offset in the buffer so prose that
-			// follows the envelope is left for the next pass.
-			const envelopeEnd = findEnvelopeEnd(unprocessed.slice(consumed));
-			markupEnd = consumed + envelopeEnd;
+			const lastSpanEnd = envelope.spans.length > 0 ? envelope.spans[envelope.spans.length - 1][1] : cursor;
+			const tail = unprocessed.slice(consumed + lastSpanEnd);
+			// Mirror of the XML guard: don't advance past incomplete markup.
+			const incompleteMatch = tail.match(/<(?:speak|pause|gesture)|(?:speak|pause|gesture)\s*\(/);
+			const proseEnd = incompleteMatch ? incompleteMatch.index! : tail.length;
+			const after = cleanSpeechMarkers(tail.slice(0, proseEnd).trim());
+			if (after) {
+				groups.push(this.segmentsFromPlaintext(after));
+			}
+			markupEnd = consumed + lastSpanEnd + proseEnd;
 		} else if (hasIncompleteActionsEnvelope(unprocessed.slice(consumed))) {
 			envelopeIncomplete = true;
 		}
@@ -377,17 +422,40 @@ export class StreamingSpeechBuffer {
 		let xmlIncomplete = false;
 		const xml = parseXmlSpeakTags(unprocessed.slice(markupEnd));
 		if (xml.calls.length > 0) {
-			const prose = xml.cleanedText;
-			if (prose.trim()) {
-				groups.push(this.segmentsFromPlaintext(prose));
-			}
-			for (const call of xml.calls) {
-				const validated = parseToolCall(call);
+			// Interleave prose and tag calls in their original order so trailing
+			// prose is not spoken before the preceding tag text (order inversion).
+			const xmlSlice = unprocessed.slice(markupEnd);
+			let cursor = 0;
+			for (let i = 0; i < xml.calls.length; i++) {
+				const span = xml.spans[i];
+				const before = cleanSpeechMarkers(xmlSlice.slice(cursor, span ? span[0] : xmlSlice.length).trim());
+				if (before) {
+					groups.push(this.segmentsFromPlaintext(before));
+				}
+				const validated = parseToolCall(xml.calls[i]);
 				if (validated) {
 					groups.push(this.segmentsFromParsedToolCall(validated));
 				}
+				cursor = span ? span[1] : cursor;
 			}
-			markupEnd = markupEnd + xml.endOffset;
+			// Prose after the last complete tag — but never past an incomplete
+			// tag's start (its raw syntax must stay held for the next chunk).
+			const afterEnd = xml.incomplete && xml.incompleteStart != null ? xml.incompleteStart : xmlSlice.length;
+			const after = cleanSpeechMarkers(xmlSlice.slice(cursor, afterEnd).trim());
+			if (after) {
+				groups.push(this.segmentsFromPlaintext(after));
+			}
+			// Advance past all complete tags AND any prose emitted before an
+			// incomplete tag, so neither is re-emitted on the next pass (M-1).
+			if (xml.incomplete && xml.incompleteStart != null) {
+				markupEnd = markupEnd + xml.incompleteStart;
+			} else {
+				markupEnd = markupEnd + xml.endOffset;
+				const tail = unprocessed.slice(markupEnd);
+				if (!hasIncompleteXmlTag(tail) && !/(?:speak|pause|gesture)\s*\(/.test(tail)) {
+					markupEnd = unprocessed.length;
+				}
+			}
 		} else if (xml.incomplete || hasIncompleteXmlTag(unprocessed.slice(markupEnd))) {
 			xmlIncomplete = true;
 		}
@@ -447,7 +515,7 @@ export class StreamingSpeechBuffer {
 		const primary = this.options.defaultLanguage || 'de';
 		const alt = this.options.altLanguage;
 		let language = lang || primary;
-		if (language === primary && alt && looksLikeAltLanguage(text, alt)) {
+		if (language === primary && alt && looksLikeAltLanguage(text, alt, primary)) {
 			language = alt;
 		}
 

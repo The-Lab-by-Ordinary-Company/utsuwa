@@ -82,17 +82,36 @@ Enable **Alternative Voice** to give foreign-language words their own voice. Thi
 
 The switch is per word: with tool-capable models Utsuwa hands the LLM native speech tools (otherwise it uses `speak({...})` syntax), and every language change becomes its own segment — a reply like "Das spanische Wort für Auto ist **el coche**." plays the German part with the primary voice and "el coche" with the alternative voice. Regional language tags from the model (`es-ES`) still match the configured language, and languages written in non-Latin scripts (Japanese, Korean, Chinese, Russian, Arabic, Thai, ...) are detected from their script when the model omits explicit markup.
 
+### Function Calling (tool support)
+
+When the alternative voice is enabled, Utsuwa can optionally use **LLM function calling** to force a language code on every speech segment. This is more reliable than asking the LLM to write `speak({...})` syntax, because the language field is schema-required and cannot be forgotten. The toggle **Force language per segment** in the settings controls this:
+
+- **On** (default): The LLM receives a `speak_segment` tool with `language` as a required enum field. Every speech segment must specify its language. Supported by OpenAI, OpenRouter, DeepSeek, and most modern providers.
+- **Off**: Falls back to the text-based `speak({...})` syntax. Use this if your LLM provider does not support function calling or rejects unknown parameters.
+
+The icon ⓘ shows the tooltip: *More reliable; needs LLM tool support*.
+
+**Known limitation (mixed output order):** When function calling is enabled, Utsuwa streams text deltas immediately but delivers tool calls in a separate pass at the end of the response. This works correctly when a model replies *either* with tool calls *or* with text — which is the normal behaviour for OpenAI-compatible APIs (`finish_reason: "tool_calls"` vs. `"stop"`). If a model ever emits a **mixed** response that interleaves text and tool calls, the speech order may not match the intended sequence. This is an accepted edge case; if you observe out-of-order speech, disable the **Force language per segment** toggle to fall back to inline `speak({...})` syntax.
+
+### Language detection & validation
+
+Utsuwa validates every segment's declared language against the actual text using **ELD** (Efficient Language Detector, [nitotm/eld](https://github.com/nitotm/efficient-language-detector)). If the detected language differs from the declared one (e.g. the LLM tagged Spanish text as German), the segment falls back to the primary voice. This catches inconsistent LLM behaviour without relying on the model alone.
+
+The validation only considers the two active languages (primary and alternative), which makes it highly accurate even for single words. Common function words (`el la un una por para` for Spanish, `der die das ein` for German) are used as a secondary heuristic when the text lacks characteristic diacritics.
+
 ### Streaming & expressive speech
 
 OmniVoice replies start speaking while the model is still writing: complete sentences are synthesised as soon as they arrive, and long text is split at sentence boundaries. Lip-sync follows the real audio.
 
 For expressive speech the model can insert non-verbal markers into the spoken text — e.g. `[laughter]`, `[sigh]`, `[question-oh]`, `[surprise-wa]`. These are rendered as audio (in both voices) and automatically removed from the visible chat bubble.
 
-Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). Because the diffusion model returns empty audio for very short foreign-language inputs surprisingly often (up to 100 % for two-word phrases, unaffected by `num_step`, temperature or speed), Utsuwa wraps them in a short native carrier phrase — `por favor` is synthesised as "Se dice: por favor — por favor.", which you will hear as a teacher-style repetition. Primary-language fragments are stable and stay untouched; quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
+Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). Because the diffusion model can return empty audio for very short foreign-language inputs, Utsuwa capitalises the word and adds a closing period (`"ir"` → `"Ir."`) and disables the model's built-in silence removal. A higher guidance scale (`guidance_scale=6`) is set on foreign segments to improve pronunciation stability. Primary-language fragments are stable and stay untouched; quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
+
+> **Beta note:** The multilingual feature is actively developed and tested for **DE, ES, EN, FR**. Other languages may work, but language-dependent heuristics (function-word detection, voice-clone interaction) are less mature. The toggle **Force language per segment** requires an LLM with function-calling support; disable it for models that reject unknown parameters.
 
 ### When the model forgets to tag
 
-The language switch depends on the LLM marking foreign words with `speak({ lang: ... })`. Some models do this inconsistently — for example packing "el gato" into a German sentence instead of giving it its own call — so the word is then spoken with the primary voice and dialect. Utsuwa corrects what can be proven deterministically (diacritics and scripts), but an unmarked foreign word without diacritics cannot be detected safely and stays in the primary voice.
+The language switch depends on the LLM marking foreign words with a language. With function calling enabled this is schema-enforced; otherwise Utsuwa relies on `speak({ lang: ... })` syntax. Some models still tag inconsistently — for example packing "el gato" into a German sentence instead of giving it its own call. Utsuwa corrects what can be proven deterministically via ELD validation (diacritics, scripts, and function words), but an unmarked foreign word without any distinguishing feature cannot be detected safely and stays in the primary voice.
 
 If you hit this often, the lever is the model, not the voice settings:
 

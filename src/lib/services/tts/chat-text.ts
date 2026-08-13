@@ -90,6 +90,29 @@ const ALT_LANG_DIACRITICS: Record<string, RegExp> = {
 };
 
 /**
+ * Common function words per language — spoken in almost every sentence and
+ * rarely ambiguous with other European languages. Used as a secondary
+ * heuristic when diacritics alone don't match (e.g. "el amigo" has no
+ * accented characters but is clearly Spanish).
+ */
+const ALT_LANG_FUNCTION_WORDS: Record<string, string[]> = {
+	es: ['el', 'la', 'los', 'las', 'un', 'una', 'del', 'por', 'para', 'con', 'sin',
+		'y', 'o', 'pero', 'porque', 'también', 'es', 'son', 'está', 'hay', 'que',
+		'de', 'en', 'al', 'se', 'no', 'su', 'lo', 'mi', 'tu', 'más', 'muy', 'todo',
+		'este', 'esta', 'entre', 'hasta', 'durante', 'sin', 'según', 'mediante'],
+	fr: ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'au', 'aux', 'dans', 'avec',
+		'pour', 'sur', 'par', 'sans', 'et', 'ou', 'mais', 'donc', 'que', 'est',
+		'sont', 'ce', 'se', 'ne', 'pas', 'de', 'en', 'il', 'elle', 'ces', 'mes',
+		'tes', 'ses', 'nos', 'vos', 'leur', 'cette', 'plus', 'très', 'tout'],
+	de: ['der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'und', 'oder',
+		'aber', 'mit', 'nach', 'bei', 'von', 'aus', 'durch', 'für', 'gegen',
+		'ist', 'sind', 'hat', 'haben', 'wird', 'gibt', 'sich', 'nicht', 'auch',
+		'noch', 'schon', 'mal', 'sehr', 'viel', 'wenig', 'einfach', 'bitte',
+		'danke', 'nein', 'ja', 'so', 'nur', 'hier', 'dort', 'immer', 'wieder',
+		'doch', 'wohl', 'eigentlich', 'natürlich', 'vielleicht', 'genau']
+};
+
+/**
  * Unicode script ranges for languages without characteristic Latin
  * diacritics — the plaintext heuristic works for them too. Japanese matches
  * kana only (Han is shared with Chinese); Chinese matches Han ideographs.
@@ -109,13 +132,28 @@ const ALT_LANG_SCRIPTS: Record<string, RegExp> = {
 	el: /[Ͱ-Ͽ]/
 };
 
-/** True when the text shows clear diacritics of the configured alternative language. */
-export function looksLikeAltLanguage(text: string, altLanguage?: string): boolean {
+/** True when the text shows clear diacritics or function words of the configured alternative language. */
+export function looksLikeAltLanguage(text: string, altLanguage?: string, primaryLanguage?: string): boolean {
 	if (!altLanguage) return false;
 	const key = altLanguage.toLowerCase();
+	// 1. Diacritics (highest precision)
 	const re = ALT_LANG_DIACRITICS[key] ?? ALT_LANG_SCRIPTS[key];
-	if (!re) return false;
-	return re.test(text);
+	if (re && re.test(text)) return true;
+	// 2. Function words (lower precision, catches "el amigo" without accents)
+	const altWords = ALT_LANG_FUNCTION_WORDS[key];
+	if (!altWords) return false;
+	const tokens = text.toLowerCase().split(/\s+/);
+	const altCount = tokens.filter((t) => altWords.includes(t.replace(/[^a-zäöüßéàèêëîïôùûçñ]/g, ''))).length;
+	// If a primary language is given, compare counts to avoid false positives
+	// (e.g. "Der Freund heißt el amigo" has "der" in German and "el" in Spanish).
+	if (primaryLanguage) {
+		const primaryWords = ALT_LANG_FUNCTION_WORDS[primaryLanguage.toLowerCase()];
+		if (primaryWords) {
+			const primaryCount = tokens.filter((t) => primaryWords.includes(t.replace(/[^a-zäöüßéàèêëîïôùûçñ]/g, ''))).length;
+			return altCount > primaryCount;
+		}
+	}
+	return altCount >= 1;
 }
 
 /**

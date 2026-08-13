@@ -178,11 +178,28 @@ test('never speaks raw or incomplete speak syntax', () => {
 	assert.deepEqual(segments, [{ text: 'Hallo', language: 'de' }]);
 });
 
-test('does not speak incomplete tool calls on explicit flush', () => {
+test('extracts speakable text from an incomplete tool call on flush (H3)', () => {
+	// The last speak() call may be truncated at end-of-stream (missing the
+	// closing `})`). Its text must still be spoken instead of silently dropped.
 	const { buffer, segments } = createLanguageBuffer();
-	buffer.feed('speak({"text":"Hal');
+	buffer.feed('speak({"text":"Hallo, wie geht es dir');
+	buffer.flush();
+	assert.deepEqual(segments, [{ text: 'Hallo, wie geht es dir', language: 'de' }]);
+});
+
+test('does not speak a bare incomplete call with no text on flush', () => {
+	// No text value present yet — nothing speakable to extract.
+	const { buffer, segments } = createLanguageBuffer();
+	buffer.feed('speak({"text":');
 	buffer.flush();
 	assert.equal(segments.length, 0);
+});
+
+test('extracts text when lang precedes text in a truncated call (H3)', () => {
+	const { buffer, segments } = createLanguageBuffer();
+	buffer.feed('speak({"lang":"es","text":"Hola');
+	buffer.flush();
+	assert.deepEqual(segments, [{ text: 'Hola', language: 'de' }]);
 });
 
 test('plaintext before a speak call is still emitted', () => {
@@ -368,6 +385,18 @@ test('never speaks an incomplete XML tag', () => {
 	assert.equal(segments.length, 0);
 });
 
+test('does not re-emit prose that follows a complete XML tag (M-1)', () => {
+	// Regression: after <speak .../> the trailing prose must be spoken exactly
+	// once, not again on a later flush.
+	const { buffer, segments } = createLanguageBuffer('de');
+	buffer.feed('<speak text="Hola" lang="es"/> und weiter.');
+	buffer.flush();
+	const texts = segments.map((s) => s.text);
+	const undCount = texts.filter((t) => t === 'und weiter.').length;
+	assert.equal(undCount, 1, `"und weiter." must appear exactly once, got ${JSON.stringify(texts)}`);
+	assert.ok(texts.includes('Hola'), `"Hola" must be spoken, got ${JSON.stringify(texts)}`);
+});
+
 test('emits an open/close XML tag spread across chunks only when complete', () => {
 	const { buffer, segments } = createLanguageBuffer();
 	buffer.feed('<speak lang="es">Hola, ¿c');
@@ -397,6 +426,17 @@ test('never speaks a bare < at the end of a streaming chunk', () => {
 		{ text: 'Hola.', language: 'es' },
 		{ text: 'Hallo.', language: 'de' }
 	]);
+});
+
+test('does not re-emit prose between a complete and an incomplete XML tag (M-1 streaming)', () => {
+	const { buffer, segments } = createLanguageBuffer('de');
+	buffer.feed('<speak text="Hola" lang="es"/> und weiter <speak text="noch');
+	// The complete tag is emitted, the prose before the incomplete tag is emitted
+	// once, and the incomplete tag itself stays held.
+	const texts = segments.map((s) => s.text);
+	assert.equal(texts.filter((t) => t === 'und weiter').length, 1, JSON.stringify(texts));
+	buffer.feed('nicht');
+	assert.equal(segments.length, 2);
 });
 
 test('emits <speak text="..."> tags opened without self-closing', () => {

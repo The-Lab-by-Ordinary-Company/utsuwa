@@ -348,6 +348,10 @@ export function createTtsSettingsState() {
 		modulesStore.setModuleSetting('speech', 'enableAltLanguage', enabled);
 	}
 
+	function handleTTSEnableToolCallingChange(enabled: boolean) {
+		modulesStore.setModuleSetting('speech', 'enableToolCalling', enabled);
+	}
+
 	function handleTTSAltLanguageChange(language: string) {
 		modulesStore.setModuleSetting('speech', 'altLanguage', language);
 	}
@@ -450,6 +454,7 @@ export function createTtsSettingsState() {
 	handleTTSVoiceChange,
 	handleTTSLanguageChange,
 	handleTTSEnableAltLanguageChange,
+	handleTTSEnableToolCallingChange,
 	handleTTSAltLanguageChange,
 	handleTTSAltVoiceChange,
 	handleTTSAltInstructionsChange,
