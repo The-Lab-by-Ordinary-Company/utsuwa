@@ -125,7 +125,7 @@ ${altLang} words/phrases get their own speak({ lang: "${altLang}" }) call — ev
 You control your spoken reply with inline speak() commands. Primary language: "${primaryLang}".
 
 Commands:
-  speak({ text: "...", lang?: "${primaryLang}"|"es"|"fr"|... })  — omit lang for ${primaryLang}
+  speak({ text: "...", lang?: "${primaryLang}"${altEnabled ? `|"${altLang}"` : ""}|... })  — omit lang for ${primaryLang}
   pause({ ms: number })
   gesture({ type: "smile"|"laugh"|"surprise"|"nod"|"shake_head"|"wave" })
 

@@ -107,7 +107,7 @@ For expressive speech the model can insert non-verbal markers into the spoken te
 
 Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). Because the diffusion model can return empty audio for very short foreign-language inputs, Utsuwa capitalises the word and adds a closing period (`"ir"` → `"Ir."`) and disables the model's built-in silence removal. A higher guidance scale (`guidance_scale=6`) is set on foreign segments to improve pronunciation stability. Primary-language fragments are stable and stay untouched; quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
 
-> **Beta note:** The multilingual feature is actively developed and tested for **DE, ES, EN, FR**. Other languages may work, but language-dependent heuristics (function-word detection, voice-clone interaction) are less mature. The toggle **Force language per segment** requires an LLM with function-calling support; disable it for models that reject unknown parameters.
+> **Beta note:** The multilingual feature is actively developed and tested for **DE, ES, EN**. Other languages may work, but language-dependent heuristics (function-word detection, voice-clone interaction) are less mature. The toggle **Force language per segment** requires an LLM with function-calling support; disable it for models that reject unknown parameters.
 
 ### When the model forgets to tag
 
