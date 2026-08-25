@@ -70,10 +70,16 @@ import { checkTTSProviderHealth } from '$lib/services/providers/health-check';
 					<input
 						type="text"
 						class="api-key-input"
-						placeholder="Custom Voice ID (optional)"
-						value={settingsStore.elevenLabsVoiceId}
-						onchange={(e) => settingsStore.setElevenLabsVoiceId(e.currentTarget.value)}
+						list="elevenlabs-voices"
+						placeholder="Voice ID"
+						value={state.speechSettings.activeVoiceId as string ?? ''}
+						onchange={(e) => state.handleTTSVoiceChange(e.currentTarget.value)}
 					/>
+					<datalist id="elevenlabs-voices">
+						{#each provider?.voices ?? [] as voice}
+							<option value={voice.id}>{voice.name}</option>
+						{/each}
+					</datalist>
 				</div>
 			{/if}
 

@@ -9,6 +9,24 @@ export function defaultVoiceForProvider(
 	return provider?.voices?.[0]?.id ?? '';
 }
 
+// Until 0.13.1 the ElevenLabs "custom voice id" box wrote to the provider
+// config while the pipeline read the speech module's activeVoiceId, which the
+// provider switch had already set to the first declared voice. Returns the
+// legacy id to move across when it was never in effect, otherwise null.
+export function legacyVoiceToAdopt(
+	activeProvider: string | undefined,
+	activeVoiceId: string | undefined,
+	legacyVoiceId: string | undefined,
+	provider?: { voices?: Array<{ id: string }> } | null
+): string | null {
+	if (activeProvider !== 'elevenlabs') return null;
+	const legacy = legacyVoiceId?.trim();
+	if (!legacy) return null;
+	const current = activeVoiceId ?? '';
+	if (current !== '' && current !== defaultVoiceForProvider(provider)) return null;
+	return legacy;
+}
+
 const MAX_DETAIL_LENGTH = 160;
 
 // Builds a human-readable error out of a TTS API failure, keeping the API's

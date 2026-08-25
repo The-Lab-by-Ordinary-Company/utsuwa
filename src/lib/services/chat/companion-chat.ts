@@ -334,7 +334,7 @@ export async function sendCompanionMessage(
 				ttsStore.speak(turn.dialogue, {
 					provider: ttsProvider,
 					apiKey: ttsConfig.apiKey,
-					voiceId: (speechSettings.activeVoiceId as string) || ttsConfig.voiceId,
+					voiceId: (speechSettings.activeVoiceId as string) || undefined,
 					model: (speechSettings.activeModel as string) || ttsConfig.modelId,
 					baseUrl: ttsConfig.baseUrl || ttsMeta?.defaultBaseUrl,
 					speed: (speechSettings.speed as number) ?? 1,

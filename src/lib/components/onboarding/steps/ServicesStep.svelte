@@ -292,6 +292,10 @@
 		}
 	}
 
+	function handleTTSVoiceChange(voiceId: string) {
+		modulesStore.setModuleSetting('speech', 'activeVoiceId', voiceId.trim());
+	}
+
 	function handleTTSModelChange(modelId: string) {
 		modulesStore.setModuleSetting('speech', 'activeModel', modelId);
 	}
@@ -503,10 +507,16 @@
 				<input
 					type="text"
 					class="api-key-input"
-					placeholder="Custom Voice ID (optional)"
-					value={settingsStore.elevenLabsVoiceId}
-					oninput={(e) => settingsStore.setElevenLabsVoiceId(e.currentTarget.value)}
+					list="elevenlabs-voices"
+					placeholder="Voice ID"
+					value={ttsSettings.activeVoiceId as string ?? ''}
+					oninput={(e) => handleTTSVoiceChange(e.currentTarget.value)}
 				/>
+				<datalist id="elevenlabs-voices">
+					{#each ttsProvider?.voices ?? [] as voice}
+						<option value={voice.id}>{voice.name}</option>
+					{/each}
+				</datalist>
 			{/if}
 
 			{#if ttsProvider?.isLocal}
