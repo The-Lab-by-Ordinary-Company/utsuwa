@@ -24,16 +24,24 @@
 	let importMode = $state<'merge' | 'replace'>('replace');
 	let importError = $state<string | null>(null);
 	let importSuccess = $state<{ imported: number; skipped: number } | null>(null);
+	let exportMessage = $state<{ kind: 'success' | 'error'; text: string } | null>(null);
 
 	let fileInput: HTMLInputElement;
 
 	async function handleExport() {
 		isExporting = true;
+		exportMessage = null;
 		try {
 			const saveFile = await exportSave();
-			downloadSaveFile(saveFile);
+			const { filename, savedToDownloads } = await downloadSaveFile(saveFile);
+			// The browser shows its own download UI; the desktop app writes silently,
+			// so tell the user where the file went.
+			if (savedToDownloads) {
+				exportMessage = { kind: 'success', text: `Saved to your Downloads folder as ${filename}` };
+			}
 		} catch (e) {
 			console.error('Export failed:', e);
+			exportMessage = { kind: 'error', text: `Export failed: ${e instanceof Error ? e.message : String(e)}` };
 		} finally {
 			isExporting = false;
 		}
@@ -178,6 +186,15 @@
 					{/if}
 				{/snippet}
 			</Button>
+			{#if exportMessage}
+				<div
+					class={exportMessage.kind === 'error' ? 'error-message' : 'success-message'}
+					transition:pop={{ duration: 200, y: 6 }}
+				>
+					<Icon name={exportMessage.kind === 'error' ? 'alert' : 'check-circle'} size={16} />
+					<span>{exportMessage.text}</span>
+				</div>
+			{/if}
 		</div>
 
 		<!-- Import -->

@@ -11,7 +11,7 @@
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { loadPoseManifest, type PoseEntry } from '$lib/services/poses';
 	import { keepImage } from '$lib/services/storage/keepsakes';
-	import { isTauri } from '$lib/services/platform';
+	import { saveToDownloads } from '$lib/utils/save-to-downloads';
 	import { BACKGROUND_PRESETS, presetSwatch } from '$lib/services/scene-backgrounds';
 
 	type Tab = 'pose' | 'face' | 'scene' | 'camera' | 'sticker';
@@ -120,21 +120,10 @@
 			// the browser via a download, the desktop app by writing directly to
 			// the Downloads folder. The keepsake-store copy is kept either way.
 			const filename = `utsuwa-photo-${Date.now()}.png`;
-			if (isTauri()) {
-				try {
-					const { writeFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
-					const bytes = new Uint8Array(await blob.arrayBuffer());
-					await writeFile(filename, bytes, { baseDir: BaseDirectory.Download });
-				} catch (e) {
-					console.error('[PhotoMode] Could not write to Downloads:', e);
-				}
-			} else {
-				const url = URL.createObjectURL(blob);
-				const link = document.createElement('a');
-				link.download = filename;
-				link.href = url;
-				link.click();
-				URL.revokeObjectURL(url);
+			try {
+				await saveToDownloads(filename, blob);
+			} catch (e) {
+				console.error('[PhotoMode] Could not write to Downloads:', e);
 			}
 
 			savedTick = true;
