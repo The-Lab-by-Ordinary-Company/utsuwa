@@ -83,3 +83,28 @@ test('creates segments with default language', () => {
 test('returns empty array for empty text', () => {
 	assert.deepEqual(splitIntoSegments('', 'en'), []);
 });
+
+// --- regressions caught while reviewing the multilingual TTS work ---
+
+test('does not split inside decimals, URLs, or version numbers', () => {
+	assert.deepEqual(splitIntoSentences('Pi is 3.14 exactly.'), ['Pi is 3.14 exactly.']);
+	assert.deepEqual(splitIntoSentences('Visit example.com today.'), ['Visit example.com today.']);
+	assert.deepEqual(splitIntoSentences('We shipped v0.13.1 yesterday.'), ['We shipped v0.13.1 yesterday.']);
+});
+
+test('splits after CJK sentence marks even without a following space', () => {
+	assert.deepEqual(splitIntoSentences('こんにちは。元気ですか？'), ['こんにちは。', '元気ですか？']);
+});
+
+test('strips state blocks whose double-quoted strings contain apostrophes', () => {
+	const text = `Sure thing! {"affection_delta": 1, "new_memory": "user's dog is named Rex"} That's all.`;
+	const { cleaned, removed } = stripForSpeech(text);
+	assert.equal(cleaned, "Sure thing! That's all.");
+	assert.equal(removed.length, 1);
+});
+
+test('strips fenced JSON blocks even when they are not state updates', () => {
+	const text = 'Here is the config: ```json\n{"port": 8080, "host": "localhost"}\n``` done.';
+	const { cleaned } = stripForSpeech(text);
+	assert.equal(cleaned, 'Here is the config: done.');
+});

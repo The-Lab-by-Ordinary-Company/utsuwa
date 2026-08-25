@@ -2,12 +2,14 @@ import type { SpeechSegment } from '$lib/services/voice-orchestrator';
 
 /**
  * Split text into sentence-like chunks using punctuation followed by whitespace
- * or end-of-string. Falls back to the whole trimmed text if no boundary is found.
+ * or end-of-string. CJK full-width marks split on their own since those scripts
+ * don't put a space after them. Falls back to the whole trimmed text if no
+ * boundary is found.
  */
 export function splitIntoSentences(text: string): string[] {
 	if (!text.trim()) return [];
 	const parts = text
-		.split(/(?<=[.!?…。！？])\s*/u)
+		.split(/(?<=[.!?…])\s+|(?<=[。！？])\s*/u)
 		.map((s) => s.trim())
 		.filter((s) => s.length > 0);
 	return parts.length > 0 ? parts : [text.trim()];
@@ -21,10 +23,14 @@ export function splitIntoSentences(text: string): string[] {
 export function stripSpeechArtifacts(text: string): { cleaned: string; removed: string[] } {
 	const removed: string[] = [];
 
-	// Remove Markdown code-fence markers (```, ```json, ````, ...). Fence
-	// tokens are never speech content; the state-object stripper below removes
-	// the block itself, tolerating dangling fences at end of stream.
-	let cleaned = text.replace(/```+[a-zA-Z]*/g, '');
+	// Remove complete fenced JSON blocks first (state or otherwise; JSON is
+	// never speech), then any leftover fence markers so a fence cut off by the
+	// end of the stream doesn't get read out as "json".
+	let cleaned = text.replace(/```json\s*([\s\S]*?)\s*```/gi, (_match, content) => {
+		removed.push('```json' + (content ? ' ' + content.slice(0, 200) : '') + '```');
+		return '';
+	});
+	cleaned = cleaned.replace(/```+[a-zA-Z]*/g, '');
 
 	// Remove reminder/task tags the LLM uses for scheduling
 	// ([reminder:5min]text[/reminder]).
@@ -107,7 +113,9 @@ function stripStateUpdateBlocks(text: string, removed: string[]): string {
 		}
 
 		let depth = 1;
-		let inString = false;
+		// Remember which quote opened the string so an apostrophe inside a
+		// double-quoted value ("user's dog") doesn't end it early.
+		let quote: string | null = null;
 		let escape = false;
 		let j = i + 1;
 		for (; j < text.length && depth > 0; j++) {
@@ -120,11 +128,14 @@ function stripStateUpdateBlocks(text: string, removed: string[]): string {
 				escape = true;
 				continue;
 			}
-			if (c === '"' || c === "'") {
-				inString = !inString;
+			if (quote) {
+				if (c === quote) quote = null;
 				continue;
 			}
-			if (inString) continue;
+			if (c === '"' || c === "'") {
+				quote = c;
+				continue;
+			}
 			if (c === '{') depth++;
 			else if (c === '}') depth--;
 		}
