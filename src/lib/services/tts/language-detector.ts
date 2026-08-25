@@ -1,4 +1,8 @@
-import eld from 'eld/medium';
+// eld/medium carries ~2 MB of ngram data, so it is loaded on demand the first
+// time a session actually needs language validation instead of riding along
+// in the main bundle for everyone.
+type Eld = typeof import('eld/medium').default;
+let eld: Eld | null = null;
 
 // Singleton state for the language detector. Uses a promise so concurrent
 // callers share one initialization and never race (M4).
@@ -23,7 +27,7 @@ export function initLanguageDetector(languages: string[]): Promise<void> {
 	if (!initPromise) {
 		initPromise = (async () => {
 			try {
-				// eld/medium loads the ngrams statically (browser-safe).
+				if (!eld) eld = (await import('eld/medium')).default;
 				activeLanguages = langs;
 				eld.setLanguageSubset(langs);
 				loaded = true;
@@ -40,7 +44,7 @@ export function initLanguageDetector(languages: string[]): Promise<void> {
 }
 
 export function detectLanguage(text: string): string | null {
-	if (!loaded) return null;
+	if (!loaded || !eld) return null;
 	try {
 		const result = eld.detect(text);
 		return result?.language ?? null;
@@ -50,7 +54,7 @@ export function detectLanguage(text: string): string | null {
 }
 
 export function isReliable(text: string): boolean {
-	if (!loaded) return false;
+	if (!loaded || !eld) return false;
 	try {
 		const result = eld.detect(text);
 		return result?.isReliable() ?? false;

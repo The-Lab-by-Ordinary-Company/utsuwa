@@ -279,6 +279,14 @@ export class VoiceOrchestrator {
 		this.bufferedStreamingSegments = [];
 		this.channel = new PipelineQueue();
 
+		// Kick off the on-demand detector load now so it is usually ready by the
+		// time the first segment needs validating.
+		if (options.enableAltLanguage === true && options.language) {
+			const languages = [options.language];
+			if (options.altLanguage) languages.push(options.altLanguage);
+			void initLanguageDetector(languages);
+		}
+
 		// Apply provider-specific concurrency limit (e.g. OmniVoice = 2)
 		const provider = getTTSProvider(options);
 		const limit = provider.capabilities?.maxConcurrentSynthesis ?? DEFAULT_MAX_CONCURRENT_SYNTHESIS;
