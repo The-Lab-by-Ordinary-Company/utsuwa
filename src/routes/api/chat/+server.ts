@@ -106,14 +106,15 @@ export const POST: RequestHandler = async ({ request }) => {
 				model,
 				messages: messagesWithSystem,
 				headers,
-				...(typedProvider !== 'anthropic' && {
+				...(typedProvider === 'openai-compatible' && {
 					...(temperature !== undefined && { temperature }),
 					...(maxTokens !== undefined && { max_tokens: maxTokens }),
 					...(topP !== undefined && { top_p: topP }),
 					...(presencePenalty !== undefined && { presence_penalty: presencePenalty }),
-					...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty }),
-					...(toolsWithExecute !== undefined && { tools: toolsWithExecute })
-				})
+					...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty })
+				}),
+				// Tool definitions are OpenAI-shaped; Anthropic keeps the speak() text fallback
+				...(typedProvider !== 'anthropic' && toolsWithExecute !== undefined && { tools: toolsWithExecute })
 			});
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to connect to provider';
@@ -138,10 +139,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Create a readable stream for SSE
 		const encoder = new TextEncoder();
-		// Track whether we are inside a JSON state block across text-delta
-		// boundaries so fragments don't leak even when the block is split
-		// across multiple deltas (M3).
-		let inStateBlock = false;
 		const stream = new ReadableStream({
 			async start(controller) {
 				let reader;
@@ -162,18 +159,9 @@ export const POST: RequestHandler = async ({ request }) => {
 						if (done) break;
 
 						if (value.type === 'text-delta') {
-							const text = value.text;
-							// Detect start of a JSON state block and suppress all
-							// subsequent deltas until the block closes.
-							if (!inStateBlock && /["'](?:mood_change|new_memory|energy_delta)["']\s*:/i.test(text)) {
-								inStateBlock = true;
-							}
-							if (inStateBlock) {
-								// Count braces to detect the end of the block.
-								if (text.includes('}')) inStateBlock = false;
-								continue;
-							}
-							const data = `0:${JSON.stringify(text)}\n`;
+							// Forward text as-is. The client parses the JSON state block out of
+							// the full reply, so nothing may be dropped here.
+							const data = `0:${JSON.stringify(value.text)}\n`;
 							controller.enqueue(encoder.encode(data));
 						} else if (value.type === 'tool-call' && value.toolName === 'speak_segment') {
 							// Convert native tool calls to pseudo-call text so the
