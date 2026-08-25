@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { defaultVoiceForProvider, providerErrorMessage } from './provider-utils.ts';
+import { defaultVoiceForProvider, legacyVoiceToAdopt, providerErrorMessage } from './provider-utils.ts';
 
 // --- defaultVoiceForProvider ---
 
@@ -44,4 +44,33 @@ test('falls back to a generic message field, a string body, or status only', () 
 test('long details are truncated so toasts stay readable', () => {
 	const message = providerErrorMessage('TTS', 400, { message: 'x'.repeat(500) });
 	assert.ok(message.length <= 'TTS error 400: '.length + 160);
+});
+
+// --- legacy ElevenLabs custom voice migration ---
+
+const elevenlabs = { voices: [{ id: '21m00Tcm4TlvDq8ikWAM' }, { id: 'EXAVITQu4vr4xnSDxMaL' }] };
+
+test('adopts the legacy custom voice when the active voice is still the provider default', () => {
+	assert.equal(legacyVoiceToAdopt('elevenlabs', '21m00Tcm4TlvDq8ikWAM', 'tnVKC6NjwhdRxoQIfKue', elevenlabs), 'tnVKC6NjwhdRxoQIfKue');
+});
+
+test('adopts the legacy custom voice when no active voice is set', () => {
+	assert.equal(legacyVoiceToAdopt('elevenlabs', '', 'tnVKC6NjwhdRxoQIfKue', elevenlabs), 'tnVKC6NjwhdRxoQIfKue');
+	assert.equal(legacyVoiceToAdopt('elevenlabs', undefined, 'tnVKC6NjwhdRxoQIfKue', elevenlabs), 'tnVKC6NjwhdRxoQIfKue');
+});
+
+test('leaves a voice the user picked on purpose alone', () => {
+	assert.equal(legacyVoiceToAdopt('elevenlabs', 'EXAVITQu4vr4xnSDxMaL', 'tnVKC6NjwhdRxoQIfKue', elevenlabs), null);
+	assert.equal(legacyVoiceToAdopt('elevenlabs', 'someOtherCustomId', 'tnVKC6NjwhdRxoQIfKue', elevenlabs), null);
+});
+
+test('never carries an ElevenLabs voice onto another provider', () => {
+	assert.equal(legacyVoiceToAdopt('openai', '', 'tnVKC6NjwhdRxoQIfKue', elevenlabs), null);
+	assert.equal(legacyVoiceToAdopt(undefined, '', 'tnVKC6NjwhdRxoQIfKue', elevenlabs), null);
+});
+
+test('nothing to adopt when the legacy slot is empty or whitespace', () => {
+	assert.equal(legacyVoiceToAdopt('elevenlabs', '', '', elevenlabs), null);
+	assert.equal(legacyVoiceToAdopt('elevenlabs', '', '   ', elevenlabs), null);
+	assert.equal(legacyVoiceToAdopt('elevenlabs', '', undefined, elevenlabs), null);
 });

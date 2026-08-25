@@ -241,7 +241,11 @@ export function createTtsSettingsState() {
 
 	let ttsIsLoading = $state(false);
 	let ttsFetchError = $state<string | null>(null);
-	let ttsDynamicModels = $state<ModelInfo[] | null>(null);
+	// Start from the cached list so a provider without static models (ElevenLabs)
+	// shows the saved model instead of the placeholder until someone hits refresh.
+	let ttsDynamicModels = $state<ModelInfo[] | null>(
+		getCachedModelsForProvider(modulesStore.getModuleSettings('speech').activeProvider as string)
+	);
 
 	const staticTTSModels = $derived.by(() => {
 		const providerId = speechSettings.activeProvider as string;
@@ -333,7 +337,7 @@ export function createTtsSettingsState() {
 	}
 
 	function handleTTSVoiceChange(voiceId: string) {
-		modulesStore.setModuleSetting('speech', 'activeVoiceId', voiceId);
+		modulesStore.setModuleSetting('speech', 'activeVoiceId', voiceId.trim());
 	}
 
 	function handleTTSLanguageChange(language: string) {

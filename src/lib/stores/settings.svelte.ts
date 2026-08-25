@@ -177,10 +177,6 @@ function createSettingsStore() {
 		return providerConfigs.elevenlabs?.apiKey ?? '';
 	}
 
-	function getElevenLabsVoiceId(): string {
-		return providerConfigs.elevenlabs?.voiceId ?? '';
-	}
-
 	// Legacy compatibility setters
 	function setAnthropicApiKey(key: string) {
 		setProviderConfig('anthropic', { apiKey: key });
@@ -195,10 +191,6 @@ function createSettingsStore() {
 	function setElevenLabsApiKey(key: string) {
 		setProviderConfig('elevenlabs', { apiKey: key });
 		markProviderAdded('elevenlabs');
-	}
-
-	function setElevenLabsVoiceId(id: string) {
-		setProviderConfig('elevenlabs', { voiceId: id });
 	}
 
 	// Cached models management
@@ -252,9 +244,6 @@ function createSettingsStore() {
 		get elevenLabsApiKey() {
 			return getElevenLabsApiKey();
 		},
-		get elevenLabsVoiceId() {
-			return getElevenLabsVoiceId();
-		},
 
 		// Provider management
 		setProviderConfig,
@@ -270,7 +259,6 @@ function createSettingsStore() {
 		setAnthropicApiKey,
 		setOpenaiApiKey,
 		setElevenLabsApiKey,
-		setElevenLabsVoiceId,
 
 		// Cached models
 		setCachedModels,

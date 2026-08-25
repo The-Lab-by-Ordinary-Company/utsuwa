@@ -6,6 +6,7 @@
 	import { goto } from '$app/navigation';
 	import { modulesStore } from '$lib/stores/modules.svelte';
 	import { moduleRegistry } from '$lib/services/modules';
+	import { migrateLegacyElevenLabsVoice } from '$lib/services/tts/legacy-voice-migration';
 	import { isDesktopBuild } from '$lib/services/platform/platform';
 	import { SITE_URL } from '$lib/config/site';
 
@@ -27,6 +28,7 @@
 		for (const mod of moduleRegistry) {
 			modulesStore.registerModule(mod);
 		}
+		migrateLegacyElevenLabsVoice();
 
 		// React to system theme changes in real-time when using "system" mode
 		const themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
