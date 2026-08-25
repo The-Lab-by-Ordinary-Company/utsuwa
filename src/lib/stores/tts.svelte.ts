@@ -49,7 +49,7 @@ function createTTSStore() {
 	}
 
 	function buildCompiledSegments(text: string, options: TTSOptions): CompiledSegment[] {
-		const primaryLang = options.language || 'de';
+		const primaryLang = options.language || 'en';
 
 		if (options.provider === 'omnivoice') {
 			// First try real tool-call syntax emitted by the model.
@@ -130,7 +130,7 @@ function createTTSStore() {
 
 		stop();
 		const sessionId = ++streamingSessionId;
-		streamingDefaultLanguage = options.language || 'de';
+		streamingDefaultLanguage = options.language || 'en';
 		streamingBuffer = new StreamingSpeechBuffer({
 			defaultLanguage: streamingDefaultLanguage,
 			altLanguage: options.altLanguage,

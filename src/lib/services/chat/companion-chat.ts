@@ -59,6 +59,8 @@ async function buildCompanionPrompt(
 ): Promise<string> {
 	const workingMemory = getWorkingMemory();
 	const speechSettings = modulesStore.getModuleSettings('speech');
+	// Speech switched off means no speak() instructions, whatever provider is picked
+	const speechEnabled = modulesStore.getModuleState('speech')?.enabled === true;
 	const context: PromptContext = {
 		persona: personaStore.activeCard,
 		state: characterStore.state,
@@ -70,7 +72,7 @@ async function buildCompanionPrompt(
 		pendingReminders: reminderStore.upcoming.map((r) => ({ triggerAt: r.triggerAt, content: r.content })),
 		sessionStartedAt: workingMemory.sessionStartedAt,
 		systemEvent,
-		ttsProvider: speechSettings.activeProvider as string | undefined,
+		ttsProvider: speechEnabled ? (speechSettings.activeProvider as string | undefined) : undefined,
 		ttsLanguage: (speechSettings.activeLanguage as string) || undefined,
 		ttsAltLanguage: (speechSettings.altLanguage as string) || undefined,
 		ttsAltEnabled: (speechSettings.enableAltLanguage as boolean) ?? false
@@ -335,11 +337,12 @@ export async function sendCompanionMessage(
 		// structured language tags instead of pseudo-calls in the text.
 		// Build the language enum from the configured primary + alternative
 		// languages so the tool only ever suggests what the user has set up.
-		const primaryLang = (displaySpeechSettings.activeLanguage as string)?.toLowerCase() || 'de';
+		const primaryLang = (displaySpeechSettings.activeLanguage as string)?.toLowerCase() || 'en';
 		const altLang = (displaySpeechSettings.altLanguage as string)?.toLowerCase();
 		const toolLanguages = Array.from(new Set([primaryLang, altLang].filter(Boolean))) as string[];
 
-		const ttsTools = displayTtsProvider === 'omnivoice'
+		const ttsTools = speechState?.enabled === true
+			&& displayTtsProvider === 'omnivoice'
 			&& (displaySpeechSettings.enableAltLanguage as boolean) === true
 			&& (displaySpeechSettings.enableToolCalling as boolean) !== false
 			? [{
