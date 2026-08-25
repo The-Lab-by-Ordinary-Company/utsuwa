@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.2] - 2026-08-25
+
+### Fixed
+- **Your ElevenLabs voice is actually yours now**: the custom Voice ID box was saving to a setting the speech pipeline never read, so everyone heard the default voice no matter what they pasted. The field now drives the voice that plays, offers the built-in voices as suggestions, carries over any ID you had already entered, and a wrong ID tells you so instead of quietly falling back. Reported by @Jessika07.
+- The TTS model dropdown no longer forgets your selection every time you open the tab.
+- **Download Save File works in the desktop app**: it writes the file straight into your Downloads folder and shows you the filename. A brand-new profile also could not export at all, on web or desktop; that is fixed too.
+
 ## [0.13.1] - 2026-08-03
 
 ### Added
