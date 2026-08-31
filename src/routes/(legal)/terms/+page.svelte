@@ -28,7 +28,7 @@
 	<p>
 		Thanks for using Utsuwa. These terms cover the Utsuwa website and hosted services at
 		utsuwa.ai (including app.utsuwa.ai and docs.utsuwa.ai) and the Utsuwa desktop app, operated by
-		Ordinary Company Group LLC ("we", "us"), a limited liability company formed in Ohio, USA.
+		Juice Boxx Games LLC ("we", "us"), a limited liability company formed in Ohio, USA.
 		Utsuwa's source code is open source and separately licensed under the
 		<a href={`${GITHUB_REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">GNU AGPL-3.0-or-later</a>; nothing in these terms limits the rights that license gives you. By using Utsuwa,
 		you agree to these terms.
@@ -68,7 +68,7 @@
 	<p>
 		Use Utsuwa lawfully. Don't interfere with, disrupt, or overload our hosted services or attempt
 		to circumvent their protections; don't use our relay to violate your AI provider's policies;
-		and don't misrepresent yourself as affiliated with Utsuwa or Ordinary Company Group LLC.
+		and don't misrepresent yourself as affiliated with Utsuwa or Juice Boxx Games LLC.
 	</p>
 
 	<h2 id="no-crypto">No crypto, ever</h2>
@@ -83,7 +83,7 @@
 		Utsuwa's code is licensed under the
 		<a href={`${GITHUB_REPO}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">GNU AGPL-3.0-or-later</a>, and these terms don't restrict what that license permits you to do with the code.
 		These terms govern your use of our website and hosted services. The Utsuwa name, logo, and
-		branding belong to Ordinary Company Group LLC; please don't use them in ways that imply
+		branding belong to Juice Boxx Games LLC; please don't use them in ways that imply
 		endorsement or affiliation. Avatar models, animations, and other assets you import remain
 		yours, subject to whatever licenses they came with.
 	</p>
@@ -104,7 +104,7 @@
 
 	<h2 id="liability">Limitation of liability</h2>
 	<p>
-		To the maximum extent permitted by law, Ordinary Company Group LLC and its members and
+		To the maximum extent permitted by law, Juice Boxx Games LLC and its members and
 		contributors will not be liable for any indirect, incidental, special, consequential, or
 		exemplary damages, or for lost profits, data, or goodwill, arising from your use of Utsuwa.
 		Our total liability for any claim relating to Utsuwa will not exceed fifty US dollars (US $50)

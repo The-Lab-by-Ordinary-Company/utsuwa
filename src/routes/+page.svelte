@@ -142,7 +142,7 @@
 		license: 'https://www.gnu.org/licenses/agpl-3.0.html',
 		author: {
 			'@type': 'Organization',
-			name: 'Ordinary Company Group LLC',
+			name: 'Juice Boxx Games LLC',
 			url: SITE_URL
 		}
 	})}</script>`}

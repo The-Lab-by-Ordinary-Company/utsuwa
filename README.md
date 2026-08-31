@@ -1,5 +1,5 @@
 > [!WARNING]
-> Utsuwa and The Lab by Ordinary Company have not minted, launched, endorsed, or authorized any cryptocurrency, token, coin, NFT, or blockchain project. We never will. If you see crypto associated with Utsuwa or The Lab, it is a scam. This repository is the only authentic Utsuwa project repository.
+> Utsuwa and Juice Boxx Games have not minted, launched, endorsed, or authorized any cryptocurrency, token, coin, NFT, or blockchain project. We never will. If you see crypto associated with Utsuwa or The Lab, it is a scam. This repository is the only authentic Utsuwa project repository.
 
 <p align="center">
   <img alt="Utsuwa, an open-source AI companion you can see and talk to" src="static/brand-assets/banner-light.avif" width="100%">
