@@ -18,7 +18,7 @@ This guide walks you through using Utsuwa, whether on the hosted version at [uts
 ### Installation
 
 ```bash
-git clone https://github.com/The-Lab-by-Ordinary-Company/utsuwa.git
+git clone https://github.com/JuiceBoxxGames/utsuwa.git
 cd utsuwa
 pnpm install
 pnpm dev

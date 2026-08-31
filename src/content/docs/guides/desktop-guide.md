@@ -13,7 +13,7 @@ Available for **macOS**, **Windows**, and **Linux**.
 
 ### Download
 
-Head to the [GitHub Releases](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases) page and grab the build for your platform:
+Head to the [GitHub Releases](https://github.com/JuiceBoxxGames/utsuwa/releases) page and grab the build for your platform:
 
 | Platform | File | Install |
 |----------|------|---------|
@@ -42,7 +42,7 @@ If you prefer to build it yourself:
 
 ```bash
 # Clone the repo
-git clone https://github.com/The-Lab-by-Ordinary-Company/utsuwa.git
+git clone https://github.com/JuiceBoxxGames/utsuwa.git
 cd utsuwa
 
 # Install dependencies
@@ -143,14 +143,14 @@ If not installed, run:
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-If you downloaded a release binary and it won't launch, try downloading it again or check the [GitHub Issues](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/issues) page.
+If you downloaded a release binary and it won't launch, try downloading it again or check the [GitHub Issues](https://github.com/JuiceBoxxGames/utsuwa/issues) page.
 
 ### Overlay background not transparent
 
 This can happen if the renderer isn't properly configured. Try:
 
 1. Exit and relaunch the app
-2. Make sure you're on the latest version from [Releases](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases)
+2. Make sure you're on the latest version from [Releases](https://github.com/JuiceBoxxGames/utsuwa/releases)
 
 ### Character facing wrong direction
 

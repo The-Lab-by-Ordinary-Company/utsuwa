@@ -14,24 +14,24 @@
   ·
   <a href="https://utsuwa.ai/blog">Blog</a>
   ·
-  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases">Releases</a>
+  <a href="https://github.com/JuiceBoxxGames/utsuwa/releases">Releases</a>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0"></a>
-  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases"><img src="https://img.shields.io/github/v/release/The-Lab-by-Ordinary-Company/utsuwa?label=Release&color=00b2ff" alt="Latest release"></a>
+  <a href="https://github.com/JuiceBoxxGames/utsuwa/releases"><img src="https://img.shields.io/github/v/release/JuiceBoxxGames/utsuwa?label=Release&color=00b2ff" alt="Latest release"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22+-green.svg" alt="Node.js 22+"></a>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
+  <a href="https://github.com/JuiceBoxxGames/utsuwa/releases/latest">
     <img alt="Download for macOS" src="static/brand-assets/download-buttons/macos-light.avif" width="31%">
   </a>
-  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
+  <a href="https://github.com/JuiceBoxxGames/utsuwa/releases/latest">
     <img alt="Download for Windows" src="static/brand-assets/download-buttons/windows-light.avif" width="31%">
   </a>
-  <a href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases/latest">
+  <a href="https://github.com/JuiceBoxxGames/utsuwa/releases/latest">
     <img alt="Download for Linux" src="static/brand-assets/download-buttons/linux-light.avif" width="31%">
   </a>
 </p>
@@ -175,7 +175,7 @@ Use Utsuwa directly at **[app.utsuwa.ai](https://app.utsuwa.ai)**. No installati
 
 ### Download the Desktop App
 
-Native desktop builds (with transparent overlay mode) are available for all three platforms on the [GitHub Releases](https://github.com/The-Lab-by-Ordinary-Company/utsuwa/releases) page:
+Native desktop builds (with transparent overlay mode) are available for all three platforms on the [GitHub Releases](https://github.com/JuiceBoxxGames/utsuwa/releases) page:
 
 | Platform | Download |
 |----------|----------|
@@ -202,7 +202,7 @@ If you prefer to run Utsuwa locally or host your own instance:
 
 ```bash
 # Clone the repository
-git clone https://github.com/The-Lab-by-Ordinary-Company/utsuwa.git
+git clone https://github.com/JuiceBoxxGames/utsuwa.git
 cd utsuwa
 
 # Install dependencies
@@ -392,10 +392,10 @@ Releases up to and including 0.12.0 were published under the MIT License and rem
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=The-Lab-by-Ordinary-Company%2Futsuwa&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=JuiceBoxxGames%2Futsuwa&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=The-Lab-by-Ordinary-Company/utsuwa&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=The-Lab-by-Ordinary-Company/utsuwa&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=The-Lab-by-Ordinary-Company/utsuwa&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=JuiceBoxxGames/utsuwa&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=JuiceBoxxGames/utsuwa&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=JuiceBoxxGames/utsuwa&type=date&legend=top-left" />
  </picture>
 </a>
