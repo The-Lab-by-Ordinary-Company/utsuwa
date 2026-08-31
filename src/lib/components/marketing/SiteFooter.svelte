@@ -51,7 +51,7 @@
 		</div>
 
 		<div class="site-footer-bottom">
-			<span>&copy; 2026 Ordinary Company Group LLC. Open source under AGPL-3.0.</span>
+			<span>&copy; 2026 Juice Boxx Games LLC. Open source under AGPL-3.0.</span>
 			<div class="site-footer-actions">
 				<button
 					type="button"

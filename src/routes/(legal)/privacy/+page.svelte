@@ -38,7 +38,7 @@
 	<p>
 		Utsuwa is an open-source AI companion built to be local-first. This policy explains what
 		happens to your data when you use the Utsuwa website and hosted web app (utsuwa.ai and its
-		subdomains) and the Utsuwa desktop app, operated by Ordinary Company Group LLC. The short
+		subdomains) and the Utsuwa desktop app, operated by Juice Boxx Games LLC. The short
 		version: your companion lives on your device, and we like it that way.
 	</p>
 
@@ -146,7 +146,7 @@
 	<p>
 		The fastest way to reach us is on
 		<a href={`${GITHUB_REPO}/issues`} target="_blank" rel="noopener noreferrer">GitHub</a>. Utsuwa
-		is maintained by Ordinary Company Group LLC, a limited liability company formed in Ohio, USA.
+		is maintained by Juice Boxx Games LLC, a limited liability company formed in Ohio, USA.
 	</p>
 </article>
 

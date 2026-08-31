@@ -2,7 +2,7 @@
 name = "utsuwa"
 version = "0.13.3"
 description = "Open Source AI Soul Vessel - VRM Avatar Companion"
-authors = ["Ordinary Company Group LLC"]
+authors = ["Juice Boxx Games LLC"]
 edition = "2021"
 rust-version = "1.70"
 
