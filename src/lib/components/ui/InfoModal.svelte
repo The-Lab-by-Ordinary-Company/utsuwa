@@ -109,7 +109,7 @@
 		<!-- Links -->
 		<nav class="link-list">
 			<a
-				href="https://github.com/The-Lab-by-Ordinary-Company/utsuwa"
+				href="https://github.com/JuiceBoxxGames/utsuwa"
 				target="_blank"
 				rel="noopener"
 				class="link-row"

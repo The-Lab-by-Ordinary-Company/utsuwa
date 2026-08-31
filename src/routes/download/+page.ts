@@ -2,7 +2,7 @@ import type { PageLoad } from './$types';
 
 export const prerender = true;
 
-const REPO = 'The-Lab-by-Ordinary-Company/utsuwa';
+const REPO = 'JuiceBoxxGames/utsuwa';
 
 // Resolve the latest release's real asset URLs at build time so the download
 // buttons point straight at the files instead of fetching from the browser.
