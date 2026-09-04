@@ -31,17 +31,16 @@
 		font-family: var(--font-sans);
 	}
 
-	/* Main content. Top padding matches the hero rhythm on the landing and
-	   download pages so every marketing page starts at the same height. */
+	/* The wider editorial canvas matches the shared nav/footer shell. */
 	.blog-main {
-		max-width: 64rem;
+		max-width: 83rem;
 		margin: 0 auto;
-		padding: clamp(3rem, 8vw, 5rem) 1.5rem clamp(4rem, 8vw, 6rem);
+		padding: clamp(4rem, 8vw, 6.5rem) 1.5rem clamp(6rem, 10vw, 9rem);
 	}
 
 	@media (max-width: 768px) {
 		.blog-main {
-			padding: 2.5rem 1rem 3rem;
+			padding: 3rem 1rem 5rem;
 		}
 	}
 </style>
