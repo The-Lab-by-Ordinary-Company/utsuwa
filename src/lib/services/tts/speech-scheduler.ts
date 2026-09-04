@@ -53,7 +53,7 @@ export class SpeechScheduler {
 		this.abortController = new AbortController();
 		this.clearTimers();
 
-		this.orchestrator.beginSession(options, {
+		await this.orchestrator.beginSession(options, {
 			onSegmentStart: (segment: SpeechSegment) => {
 				this.storeSubtitle.text = segment.text;
 			},

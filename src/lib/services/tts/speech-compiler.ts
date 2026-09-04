@@ -431,6 +431,13 @@ export interface ScannedCall {
 	rawArgsStr: string;
 	startIndex: number;
 	afterIndex: number;
+	/**
+	 * True when the closing paren was present in the scanned text. False means
+	 * the call body is complete but the ")" is still streaming (afterIndex ends
+	 * at "}"); streaming callers must hold such a call so the paren is not
+	 * orphaned into the plaintext path.
+	 */
+	hasClosingParen: boolean;
 }
 
 /**
@@ -465,7 +472,8 @@ export function scanPseudoToolCalls(text: string): ScannedCall[] {
 			args: parseJsonArgs(rawArgsStr),
 			rawArgsStr,
 			startIndex: match.index,
-			afterIndex: after
+			afterIndex: after,
+			hasClosingParen: parenMatch !== null
 		});
 		callStartRe.lastIndex = after;
 	}
@@ -525,6 +533,40 @@ export function parsePseudoToolCalls(text: string): ParsedCalls {
 		cleanedText: parts.join(' ').trim(),
 		chunks
 	};
+}
+
+/** Gesture types the speech prompt and the gesture_segment tool teach. */
+export const GESTURE_TYPES = ['smile', 'laugh', 'surprise', 'nod', 'shake_head', 'wave'] as const;
+
+/**
+ * Convert a native tool call (speak_segment / pause_segment / gesture_segment)
+ * to its inline pseudo-call text so the streaming speech buffer can process it
+ * like model-written markup. Returns null for unknown tools or invalid args —
+ * callers drop those silently. Keeping this lenient is intentional: a native
+ * call arrives whole, so there is no chunk-boundary risk on this path.
+ */
+export function pseudoCallFromTool(name: string, args: Record<string, unknown> | null | undefined): string | null {
+	if (!args) return null;
+	if (name === 'speak_segment') {
+		const text = typeof args.text === 'string' ? args.text : '';
+		const lang = typeof args.language === 'string' ? args.language : '';
+		return `speak({"text":${JSON.stringify(text)}${lang ? `,"lang":${JSON.stringify(lang)}` : ''}})`;
+	}
+	if (name === 'pause_segment') {
+		// Finite numbers are clamped to the taught range (100-5000 ms) so a
+		// pause intent survives; wrong-typed values drop the call entirely.
+		const ms = typeof args.ms === 'number' && Number.isFinite(args.ms) ? Math.round(Math.min(5000, Math.max(100, args.ms))) : null;
+		if (ms == null) return null;
+		return `pause({"ms":${ms}})`;
+	}
+	if (name === 'gesture_segment') {
+		// Validate against the taught gesture set: an unknown type would be
+		// ignored by the avatar anyway and must not reach the pseudo-call path.
+		const type = typeof args.type === 'string' ? args.type.trim() : '';
+		if (!(GESTURE_TYPES as readonly string[]).includes(type)) return null;
+		return `gesture({"type":${JSON.stringify(type)}})`;
+	}
+	return null;
 }
 
 /**

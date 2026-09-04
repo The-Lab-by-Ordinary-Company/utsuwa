@@ -452,13 +452,14 @@ test('emits <speak text="..."> tags opened without self-closing', () => {
 	]);
 });
 
-test('sections separated by bare </speak> tags are tagged by diacritics', () => {
+test('sections separated by bare </speak> tags keep the default language', () => {
 	// Some models emit only closing tags as section separators; the sections
-	// are plaintext and get their language from the alt-language heuristic.
+	// are plaintext and get the default language here. The orchestrator's
+	// validateAndSplitSegment re-validates and re-tags them against the
+	// session's ELD subset (see language-sim.test.ts for the golden cases).
 	const segments: { text: string; language?: string }[] = [];
 	const b = new StreamingSpeechBuffer({
 		defaultLanguage: 'de',
-		altLanguage: 'es',
 		onSegment: (seg) => segments.push(seg)
 	});
 	b.feed(
@@ -469,9 +470,9 @@ test('sections separated by bare </speak> tags are tagged by diacritics', () => 
 	assert.deepEqual(segments, [
 		{ text: 'Hier ist die Konjugation.', language: 'de' },
 		{ text: 'Präsens: ich gehe – du gehst.', language: 'de' },
-		{ text: 'Aquí tienes la conjugación.', language: 'es' },
-		{ text: 'Presente: yo voy – tú vas.', language: 'es' },
-		{ text: '¡Perfecto!', language: 'es' }
+		{ text: 'Aquí tienes la conjugación.', language: 'de' },
+		{ text: 'Presente: yo voy – tú vas.', language: 'de' },
+		{ text: '¡Perfecto!', language: 'de' }
 	]);
 });
 
@@ -485,11 +486,10 @@ test('bare </speak> tags are never spoken', () => {
 	]);
 });
 
-test('angle-bracket < text > sections are spoken without the brackets and tagged', () => {
+test('angle-bracket < text > sections are spoken without the brackets', () => {
 	const segments: { text: string; language?: string }[] = [];
 	const b = new StreamingSpeechBuffer({
 		defaultLanguage: 'de',
-		altLanguage: 'es',
 		onSegment: (seg) => segments.push(seg)
 	});
 	b.feed(
@@ -498,9 +498,9 @@ test('angle-bracket < text > sections are spoken without the brackets and tagged
 	b.flush();
 	assert.deepEqual(segments, [
 		{ text: 'Hier ist die Konjugation.', language: 'de' },
-		{ text: 'Aquí tienes la conjugación.', language: 'es' },
-		{ text: 'Presente: yo voy, tú vas.', language: 'es' },
-		{ text: '¡Perfecto!', language: 'es' }
+		{ text: 'Aquí tienes la conjugación.', language: 'de' },
+		{ text: 'Presente: yo voy, tú vas.', language: 'de' },
+		{ text: '¡Perfecto!', language: 'de' }
 	]);
 });
 
@@ -595,65 +595,178 @@ test('a complete fenced state block in one chunk is fully suppressed', () => {
 	);
 });
 
-// ── retagging mistagged speak() segments ─────────────────────────────
+// ── speak() language pass-through ────────────────────────────────
+// The buffer no longer pre-tags segments: the orchestrator's
+// validateAndSplitSegment is the single arbiter (ELD subset + alt-run
+// splitting). These tests pin the pass-through contract.
 
-test('speak call without lang but clear alt diacritics is retagged', () => {
-	// The model forgot the lang tag; the diacritics prove the language, so
-	// the segment must not be synthesised in the primary voice.
+test('speak call without lang keeps the default language', () => {
 	const segments: { text: string; language?: string }[] = [];
 	const b = new StreamingSpeechBuffer({
 		defaultLanguage: 'de',
-		altLanguage: 'es',
 		onSegment: (seg) => segments.push(seg)
 	});
 	b.feed('speak({"text":"¿Cómo estás?"})');
-	assert.deepEqual(segments, [{ text: '¿Cómo estás?', language: 'es' }]);
+	assert.deepEqual(segments, [{ text: '¿Cómo estás?', language: 'de' }]);
 });
 
-test('speak call with a wrong primary lang but alt diacritics is retagged', () => {
+test('speak call with a lang tag keeps the declared language', () => {
 	const segments: { text: string; language?: string }[] = [];
 	const b = new StreamingSpeechBuffer({
 		defaultLanguage: 'de',
-		altLanguage: 'es',
 		onSegment: (seg) => segments.push(seg)
 	});
-	b.feed('speak({"text":"¿Qué tal?","lang":"de"})');
-	assert.deepEqual(segments, [{ text: '¿Qué tal?', language: 'es' }]);
+	b.feed('speak({"text":"¿Qué tal?","lang":"es"}) speak({"text":"Das ist für dich.","lang":"de"})');
+	assert.deepEqual(segments, [
+		{ text: '¿Qué tal?', language: 'es' },
+		{ text: 'Das ist für dich.', language: 'de' }
+	]);
 });
 
-test('speak call without lang but alt script is retagged', () => {
-	const segments: { text: string; language?: string }[] = [];
-	const b = new StreamingSpeechBuffer({
-		defaultLanguage: 'de',
-		altLanguage: 'ja',
-		onSegment: (seg) => segments.push(seg)
-	});
-	b.feed('speak({"text":"行きます"})');
-	assert.deepEqual(segments, [{ text: '行きます', language: 'ja' }]);
+// --- split-at-every-position harness (streaming leak net) ---
+
+const CORPUS: { name: string; text: string }[] = [
+	{
+		name: 'calls with alts',
+		text: 'speak({"text":"Guten Tag, wie geht es dir?","lang":"de"}) speak({"text":"¿Hola, cómo estás?","lang":"es"})'
+	},
+	{
+		name: 'call + state block + prose',
+		text: 'speak({"text":"Hallo!"})\n```json\n{"mood_change":{"text":"na ja","params":{}}}\n```\nGuten Tag. Wie geht es dir?'
+	},
+	{
+		name: 'fence between calls',
+		text: 'speak({"text":"Eins.","lang":"de"})\n```json\n{"mood_change":{"text":"na ja","params":{}}}\n```\nspeak({"text":"Zwei!","lang":"es"})'
+	},
+	{
+		name: 'xml self-closing + prose',
+		text: '<speak text="Hola" lang="es"/> Was machst du gerade?'
+	},
+	{
+		name: 'xml + call handoff',
+		text: '<speak text="Hi"/> speak({"text":"Hallo!","lang":"es"}) Bis bald.'
+	},
+	{
+		name: 'mixed tag-call syntax',
+		text: '<speak({"text":"Hallo!","lang":"es"}) Tschüss!'
+	},
+	{
+		name: 'pause + gesture + call',
+		text: 'speak({"text":"Hmm.","lang":"de"}) pause({"ms":300}) gesture({"name":"nod"}) speak({"text":"Tschüss!","lang":"es"})'
+	},
+	{
+		name: 'actions envelope',
+		text: '{"actions":[{"function":"speak","args":{"text":"Hola, todo bien!","lang":"es"}}]}'
+	}
+];
+
+const LEAK_MARKERS = ['```', 'peak(', 'speak(', 'gesture(', 'pause(', '<speak', '<s', '"text":', 'mood_change'];
+const LEAK_WORDS = ['json', 'son', 'jso', 'spea', 'peak'];
+
+function assertNoLeaks(
+	entry: { name: string; text: string },
+	split: number | 'byte',
+	segments: { text: string; language?: string }[]
+) {
+	const spoken = segments.map((seg) => seg.text).join('\n');
+	for (const marker of LEAK_MARKERS) {
+		assert.ok(
+			!spoken.includes(marker),
+			`[${entry.name}] split=${split}: leak "${marker}" in ${JSON.stringify(spoken)}`
+		);
+	}
+	for (const word of LEAK_WORDS) {
+		const re = new RegExp(`\\b${word}\\b`);
+		assert.ok(!re.test(spoken), `[${entry.name}] split=${split}: leak "${word}" in ${JSON.stringify(spoken)}`);
+	}
+	for (const seg of segments) {
+		assert.ok(
+			seg.language === undefined || seg.language === 'de' || seg.language === 'es',
+			`[${entry.name}] split=${split}: odd language ${seg.language} for ${JSON.stringify(seg.text)}`
+		);
+		assert.ok(
+			/[\p{L}\p{N}]/u.test(seg.text),
+			`[${entry.name}] split=${split}: punctuation-only segment ${JSON.stringify(seg.text)}`
+		);
+	}
+}
+
+test('split-at-every-position: byte-by-byte leaks nothing', () => {
+	for (const entry of CORPUS) {
+		const segments: { text: string; language?: string }[] = [];
+		const buffer = new StreamingSpeechBuffer({
+			defaultLanguage: 'de',
+			onSegment: (seg) => segments.push(seg)
+		});
+		for (const ch of entry.text) buffer.feed(ch);
+		buffer.flush();
+		assertNoLeaks(entry, 'byte', segments);
+	}
 });
 
-test('German umlaut text in a primary call is never retagged', () => {
-	// Precision guard: "für" contains ü; the segment must stay primary even
-	// though ü appears in Spanish words like "bilingüe".
-	const segments: { text: string; language?: string }[] = [];
-	const b = new StreamingSpeechBuffer({
-		defaultLanguage: 'de',
-		altLanguage: 'es',
-		onSegment: (seg) => segments.push(seg)
-	});
-	b.feed('speak({"text":"Das ist für dich.","lang":"de"})');
-	assert.deepEqual(segments, [{ text: 'Das ist für dich.', language: 'de' }]);
+test('split-at-every-position: single boundary leaks nothing', () => {
+	for (const entry of CORPUS) {
+		for (let i = 1; i < entry.text.length; i++) {
+			const segments: { text: string; language?: string }[] = [];
+			const buffer = new StreamingSpeechBuffer({
+				defaultLanguage: 'de',
+				onSegment: (seg) => segments.push(seg)
+			});
+			buffer.feed(entry.text.slice(0, i));
+			buffer.flush();
+			assertNoLeaks(entry, i, segments);
+		}
+	}
 });
 
-test('explicit alt lang is never flipped back by missing diacritics', () => {
-	// Asymmetry: an explicit alt tag stays even when the text has no
-	// diacritics ("el coche" proves nothing either way).
+function collectSegments(feeds: string[]): { text: string; language?: string }[] {
 	const segments: { text: string; language?: string }[] = [];
-	const b = new StreamingSpeechBuffer({
+	const buffer = new StreamingSpeechBuffer({
 		defaultLanguage: 'de',
-		altLanguage: 'es',
 		onSegment: (seg) => segments.push(seg)
 	});
-	b.feed('speak({"text":"el coche","lang":"es"})');
-	assert.deepEqual(segments, [{ text: 'el coche', language: 'es' }]);
+	for (const feed of feeds) buffer.feed(feed);
+	buffer.flush();
+	return segments;
+}
+
+test('regression: stray ")" from a }|) boundary is consumed with the call', () => {
+	// Maintainer observation: a split between "}" and ")" of a speak call
+	// leaked the ")" into the text path as a spoken segment.
+	const segments = collectSegments(['speak({"text":"Hallo"}', ')']);
+	assert.deepEqual(segments.map((seg) => seg.text), ['Hallo']);
+});
+
+test('regression: split fence label never leaks "son" (tagged es)', () => {
+	// Maintainer observation: byte-by-byte streaming of "```json" split as
+	// "```j" + "son" leaked "son" as a Spanish-tagged word, because the
+	// stripper removed "```j" but orphaned the label remainder.
+	const segments = collectSegments(['```', 'j', 'son\n{"mood_change":{"text":"na ja"}}', '\n']);
+	const spoken = segments.map((seg) => seg.text).join('\n');
+	assert.ok(!/\bson\b/.test(spoken), `leaked "son" in ${JSON.stringify(spoken)}`);
+	assert.ok(!/```/.test(spoken), `leaked fence syntax in ${JSON.stringify(spoken)}`);
+});
+
+test('regression: mixed <speak({ syntax never leaks "peak("', () => {
+	// Maintainer observation: the XML-to-call handoff could end up speaking
+	// 'peak({"text":...' literally when "<speak" met a call opener.
+	const segments = collectSegments(['<speak({"text":"Hallo!","lang":"es"})']);
+	assert.deepEqual(segments.map((seg) => seg.text), ['Hallo!']);
+});
+
+test('explicit primary lang passes through unchanged', () => {
+	// Regression: "es" in "wie geht es dir?" must never flip an explicitly
+	// German-tagged segment. The buffer passes tags through; the orchestrator
+	// re-validates against the ELD subset (see language-sim.test.ts).
+	const segments = collectSegments(['speak({"text":"Guten Tag, wie geht es dir?","lang":"de"})']);
+	assert.deepEqual(segments.map((seg) => seg.language), ['de']);
+});
+
+test('flush keeps capitalized prose words but drops lowercase marker names', () => {
+	// "Pause" is a German noun — legitimate prose; a lowercase "pause" at
+	// end-of-stream is an aborted call opener and must not be spoken.
+	const prose = collectSegments(['Wie wäre es mit einer Pause']);
+	assert.equal(prose.map((seg) => seg.text).join(' '), 'Wie wäre es mit einer Pause');
+	const aborted = collectSegments(['Und dann pause']);
+	assert.equal(aborted.map((seg) => seg.text).join(' '), 'Und dann');
 });

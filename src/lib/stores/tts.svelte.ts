@@ -125,7 +125,7 @@ function createTTSStore() {
 		await runQueue(engine);
 	}
 
-	function beginStreaming(options: TTSOptions): boolean {
+	async function beginStreaming(options: TTSOptions): Promise<boolean> {
 		if (options.provider !== 'omnivoice' || !canSpeak(options)) return false;
 
 		stop();
@@ -133,12 +133,11 @@ function createTTSStore() {
 		streamingDefaultLanguage = options.language || 'en';
 		streamingBuffer = new StreamingSpeechBuffer({
 			defaultLanguage: streamingDefaultLanguage,
-			altLanguage: options.altLanguage,
 			onSegment: (segment) => {
 				if (sessionId === streamingSessionId) orchestrator.pushSegment(segment);
 			}
 		});
-		orchestrator.beginSession(options, {
+		await orchestrator.beginSession(options, {
 			onAnalyserUpdate: (analyser) => {
 				if (sessionId === streamingSessionId) currentAnalyser = analyser;
 			}

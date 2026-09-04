@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { initLanguageDetector } from './tts/language-detector.ts';
 
 // Mock the browser AudioContext before importing the orchestrator.
 class MockAudioBufferSourceNode {
@@ -192,7 +193,7 @@ test('interrupt stops playback and onComplete fires', async () => {
 	const orchestrator = new VoiceOrchestrator();
 	let complete = false;
 
-	orchestrator.beginSession(baseOptions, {
+	await orchestrator.beginSession(baseOptions, {
 		onComplete: () => {
 			complete = true;
 		}
@@ -294,6 +295,10 @@ test('an alternative language equal to the primary language falls back to auto-s
 	// An explicit alt === primary is a misconfiguration the UI prevents; the
 	// orchestrator treats it as unset, so only segments differing from the
 	// primary language switch (never the primary-language segments themselves).
+	// Isolate the ELD subset first: it is module-global and shared within this
+	// file — a stale subset excluding 'en' would force "This is a test." to a
+	// wrong reliable result and flip it to the alt voice (flaky across order).
+	await initLanguageDetector(['en', 'ja', 'de', 'es']);
 	assert.deepEqual(await altVoiceTags('en', true, 'en'), ['alt', undefined]);
 });
 
@@ -384,6 +389,54 @@ test('alt segments fall back to primary synthesis parameters when alt values are
 	assert.equal(requests[0].body.num_step, 24);
 	assert.equal(requests[1].body.speed, 1.3);
 	assert.equal(requests[1].body.num_step, 24);
+});
+
+test('beginSession/pushSegment splits and voices mixed language before first chunk plays', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const orchestrator = new VoiceOrchestrator();
+	await orchestrator.beginSession(
+		{
+			provider: 'omnivoice',
+			voiceId: 'alloy',
+			altVoiceId: 'onyx',
+			enableAltLanguage: true,
+			altLanguage: 'es',
+			language: 'de',
+			speed: 1.2,
+			altSpeed: 1.2
+		},
+		{}
+	);
+
+	// Push a single segment that mixes German and Spanish. The detector must
+	// run before validation so the Spanish chunks are not left with the
+	// default language tag.
+	orchestrator.pushSegment({
+		text: 'la maceta das ist der Blumentopf. el árbol das ist der Baum. mi vida?',
+		language: 'de'
+	});
+	await orchestrator.endSession();
+
+	const inputs = requests.map((r) => (typeof r.body.input === 'string' ? r.body.input.toLowerCase() : ''));
+	const voices = requests.map((r) => r.body.voice);
+	const langs = requests.map((r) => r.body.language);
+
+	assert.ok(inputs.some((i) => i.includes('la maceta')));
+	assert.ok(inputs.some((i) => i.includes('el árbol')));
+	assert.ok(inputs.some((i) => i.includes('mi vida')));
+
+	const esIndex = inputs.findIndex(
+		(i) => i.includes('la maceta') || i.includes('el árbol') || i.includes('mi vida')
+	);
+	assert.notEqual(esIndex, -1);
+	assert.equal(voices[esIndex], 'onyx');
+	assert.equal(langs[esIndex], 'es');
 });
 
 test('resolveSegmentVoice treats an alt language equal to the primary as unset', () => {

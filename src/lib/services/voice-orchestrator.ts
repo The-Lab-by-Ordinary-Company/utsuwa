@@ -6,7 +6,7 @@ import {
 	type ITTSProvider
 } from './tts/index.ts';
 import { getSpeakableText } from '../utils/speech-content.ts';
-import { validateLanguageTag, initLanguageDetector } from './tts/language-detector.ts';
+import { initLanguageDetector, splitByDetectedLanguage } from './tts/language-detector.ts';
 
 /**
  * Metadata attached to each speech segment by the response parser.
@@ -233,6 +233,7 @@ export class VoiceOrchestrator {
 	private pipelineDone: Promise<void> = Promise.resolve();
 	private pipelineDoneResolved = true;
 	private pipelineErrors: unknown[] = [];
+	private detectorReady: Promise<void> = Promise.resolve();
 
 	// Limits parallel TTS synthesis requests (important for single-GPU diffusion models)
 	private synthesisLimiter = new Semaphore(Infinity);
@@ -254,7 +255,7 @@ export class VoiceOrchestrator {
 		options: TTSOptions,
 		callbacks?: OrchestratorCallbacks
 	): Promise<void> {
-		this.beginSession(options, callbacks);
+		await this.beginSession(options, callbacks);
 		for (const seg of segments) {
 			this.pushSegment(seg);
 		}
@@ -269,7 +270,7 @@ export class VoiceOrchestrator {
 	 * Start a new speech session.
 	 * Any in-progress session is interrupted first.
 	 */
-	beginSession(options: TTSOptions, callbacks?: OrchestratorCallbacks): void {
+	async beginSession(options: TTSOptions, callbacks?: OrchestratorCallbacks): Promise<void> {
 		this.interrupt();
 
 		this.sessionOptions = options;
@@ -279,12 +280,18 @@ export class VoiceOrchestrator {
 		this.bufferedStreamingSegments = [];
 		this.channel = new PipelineQueue();
 
-		// Kick off the on-demand detector load now so it is usually ready by the
-		// time the first segment needs validating.
+		// Kick off the on-demand detector load for this session's language pair.
+		// Kept as a field so the promise (and any later await) can never surface
+		// an unhandled rejection when the optional eld model fails to load.
 		if (options.enableAltLanguage === true && options.language) {
 			const languages = [options.language];
 			if (options.altLanguage) languages.push(options.altLanguage);
-			void initLanguageDetector(languages);
+			this.detectorReady = initLanguageDetector(languages).catch((err) => {
+				// Detection is best-effort: fall back to the declared language.
+				console.warn('[VoiceOrchestrator] language detector failed to load:', err);
+			});
+		} else {
+			this.detectorReady = Promise.resolve();
 		}
 
 		// Apply provider-specific concurrency limit (e.g. OmniVoice = 2)
@@ -304,6 +311,11 @@ export class VoiceOrchestrator {
 				console.error('[VoiceOrchestrator] Pipeline error:', err);
 			}
 		});
+
+		// Wait until the language detector is ready before callers start pushing
+		// segments. This avoids classifying the first chunk before ELD has loaded
+		// its subset for the active language pair.
+		await this.detectorReady;
 	}
 
 	/**
@@ -317,19 +329,43 @@ export class VoiceOrchestrator {
 		// no meaningful speech but still incur full TTS generation overhead.
 		if (!getSpeakableText(segment.text)) return;
 
-		// ELD validation: run BEFORE resolveSegmentVoice so the language is
-		// corrected before the voice is assigned (M2). If the segment's declared
-		// language doesn't match the detected language, fall back to the primary
-		// language to avoid speaking with a wrong accent.
-		if (this.sessionOptions.enableAltLanguage === true && this.sessionOptions.language) {
-			const languages = [this.sessionOptions.language];
-			if (this.sessionOptions.altLanguage) languages.push(this.sessionOptions.altLanguage);
-			void initLanguageDetector(languages);
-			if (segment.language && segment.language !== this.sessionOptions.language) {
-				segment = { ...segment, language: validateLanguageTag(segment.text ?? '', segment.language) };
-			}
+		for (const seg of this.validateAndSplitSegment(segment)) {
+			this.enqueueSegment(seg);
 		}
+	}
 
+	/**
+	 * Teacher-style splitting and ELD validation (M2/M4): run BEFORE
+	 * resolveSegmentVoice so mixed-language segments are split and every
+	 * fragment is re-validated before a voice is assigned. Validation happens
+	 * per fragment inside splitByDetectedLanguage; the segment's declared tag
+	 * is passed through as-is. A whole-segment verdict is deliberately not
+	 * taken here: on mixed sentences it is arbitrary (the splitter resolves
+	 * the same question per fragment), and it would cost one extra ELD call
+	 * per segment.
+	 */
+	private validateAndSplitSegment(segment: SpeechSegment): SpeechSegment[] {
+		if (this.sessionOptions?.enableAltLanguage !== true || !this.sessionOptions.language) return [segment];
+		const declared = segment.language ?? this.sessionOptions.language;
+		const fragments = splitByDetectedLanguage(
+			segment.text ?? '',
+			declared,
+			this.sessionOptions.language,
+			this.sessionOptions.altLanguage
+		);
+		if (fragments.length === 0) return [segment];
+		if (fragments.length === 1) return [{ ...segment, language: fragments[0].language }];
+		// A separator-only fragment (e.g. a lone ". " between two languages)
+		// must not enqueue an empty TTS segment.
+		return fragments
+			.filter((f) => getSpeakableText(f.text))
+			.map((f) => ({ ...segment, text: f.text, language: f.language }));
+	}
+
+	private enqueueSegment(segment: SpeechSegment): void {
+		// Guaranteed by pushSegment (the only caller); narrows the optional
+		// fields for the type checker.
+		if (!this.channel || !this.sessionOptions) return;
 		// Auto-assign alt voice when the user explicitly enabled the alternative
 		// voice and configured an altVoiceId.
 		const resolution = resolveSegmentVoice(

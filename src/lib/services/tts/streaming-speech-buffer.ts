@@ -10,13 +10,11 @@ import {
 	type ToolCall
 } from './speech-compiler.ts';
 import { parseToolCall } from './tool-definitions.ts';
-import { stripReasoningLeaks, looksLikeAltLanguage, stripAngleBlocks, cleanSpeechMarkers } from './chat-text.ts';
+import { stripReasoningLeaks, stripAngleBlocks, cleanSpeechMarkers } from './chat-text.ts';
 import { splitIntoSegments, stripSpeechArtifacts, stripForSpeech, hasStateBlockFragment } from '../../utils/sentences.ts';
 
 export interface StreamingSpeechBufferOptions {
 	defaultLanguage?: string;
-	/** Configured alternative language; plaintext sections with its diacritics are tagged accordingly. */
-	altLanguage?: string;
 	streaming?: boolean;
 	onSegment: (segment: SpeechSegment) => void;
 }
@@ -157,19 +155,28 @@ export class StreamingSpeechBuffer {
 
 		// Only speak remaining plaintext if it does not contain raw or incomplete
 		// markup syntax. Anything that looks like a call or tag has already been
-		// handled; leftover fragments are discarded.
-		if (speakable && !this.hasIncompleteMarkup(speakable)) {
+		// handled; leftover fragments are discarded. A fragment without any
+		// letter or digit (e.g. a bare opening punctuation) is never speakable.
+		// The bare-name drop is case-sensitive on purpose: the taught call
+		// syntax is lowercase, while a capitalized word (German "Pause") is
+		// legitimate prose and must survive.
+		speakable = speakable.replace(/(?:^|[\s(>"'¿¡])(?:speak|pause|gesture)\s*$/, '');
+		// An unclosed "{" means an incomplete JSON block (e.g. a state block
+		// the stream ended inside) — never speakable prose.
+		if (speakable && !this.hasIncompleteMarkup(speakable) && !/\{[^{}]*$/.test(speakable)) {
 			const { cleaned } = stripForSpeech(speakable);
-			for (const seg of this.tagAltLanguage(
-				splitIntoSegments(
+			// A fragment without any letter or digit (e.g. a bare "{" left
+			// over from a stripped fence label) is never speakable.
+			if (cleaned && /[\p{L}\p{N}]/u.test(cleaned)) {
+				for (const seg of splitIntoSegments(
 					stripAngleBlocks(stripReasoningLeaks(cleaned.trim().replace(/<\/speak>/g, ' '))),
 					this.options.defaultLanguage
-				)
-			)) {
-				// State-block fragments (e.g. a JSON block the model wrote
-				// without outer braces) must never be spoken.
-				if (hasStateBlockFragment(seg.text)) continue;
-				this.options.onSegment(seg);
+				)) {
+					// State-block fragments (e.g. a JSON block the model wrote
+					// without outer braces) must never be spoken.
+					if (hasStateBlockFragment(seg.text)) continue;
+					this.options.onSegment(seg);
+				}
 			}
 		}
 
@@ -203,7 +210,10 @@ export class StreamingSpeechBuffer {
 		// Fallback: strip an incomplete call opener that has no text value yet.
 		const noText = /(?:speak|pause|gesture)\s*\(\s*\{[^{}]*$/;
 		if (noText.test(text)) return '';
-		return text;
+		// A bare call name at end-of-stream is an aborted call opener (the
+		// paren never arrived), not legitimate prose — drop it but keep any
+		// prose before it.
+		return text.replace(/(?:^|[\s(>"'¿¡])(?:speak|pause|gesture)\s*$/i, '');
 	}
 
 	reset(): void {
@@ -258,25 +268,20 @@ export class StreamingSpeechBuffer {
 
 	private emit(block: string): void {
 		const { cleaned } = stripForSpeech(block);
-		for (const seg of this.tagAltLanguage(splitIntoSegments(
-			stripAngleBlocks(stripReasoningLeaks(cleaned.replace(/<\/speak>/g, ' '))),
+		for (const seg of splitIntoSegments(
+			// cleanSpeechMarkers also runs on the plaintext path so legacy
+			// inline language markup ("[lang:es]…[/lang]") never reaches TTS —
+			// the envelope paths clean it, this path did not.
+			stripAngleBlocks(stripReasoningLeaks(
+				cleanSpeechMarkers(cleaned.replace(/<\/speak>/g, ' '))
+			)),
 			this.options.defaultLanguage
-		))) {
+		)) {
 			// State-block fragments must never be spoken, even when they reach
 			// the plaintext path with a sentence boundary.
 			if (hasStateBlockFragment(seg.text)) continue;
 			this.options.onSegment(seg);
 		}
-	}
-
-	/** Tag plaintext segments whose diacritics match the alternative language. */
-	private tagAltLanguage(segments: SpeechSegment[]): SpeechSegment[] {
-		const alt = this.options.altLanguage;
-		const primary = this.options.defaultLanguage;
-		if (!alt) return segments;
-		return segments.map((seg) =>
-			looksLikeAltLanguage(seg.text, alt, primary) ? { ...seg, language: alt } : seg
-		);
 	}
 
 	private tryEmitBlock(text: string): void {
@@ -290,10 +295,12 @@ export class StreamingSpeechBuffer {
 		}
 
 		// A trailing run of backticks may be an incomplete code fence whose
-		// language label arrives in the next chunk ("```" then "json").
-		// Stripping it now would orphan the label and speak it as a word, so
-		// it is excluded from the artifact pass and kept in the buffer.
-		const trailingFence = /`{3,}\s*$/.exec(text);
+		// language label arrives in the next chunk ("```" then "json"). A
+		// partial label must also be held ("```j" may complete to "```json"),
+		// otherwise stripping it now orphans the label remainder ("son") and
+		// speaks it as a stray word. It is excluded from the artifact pass and
+		// kept in the buffer.
+		const trailingFence = /`{3,}[a-zA-Z]*\s*$/.exec(text);
 		const fenceTail = trailingFence ? text.slice(trailingFence.index) : '';
 		const body = trailingFence ? text.slice(0, trailingFence.index) : text;
 
@@ -367,9 +374,27 @@ export class StreamingSpeechBuffer {
 
 		let consumed = 0;
 		for (const call of scanned) {
+			if (!call.hasClosingParen) {
+				// Call body complete but the closing paren is still streaming:
+				// hold it so the ")" is consumed together with the call and
+				// does not leak into the plaintext path as a stray segment.
+				break;
+			}
 			const before = unprocessed.slice(consumed, call.startIndex).trim();
+			// A complete XML speak tag sitting before the call opener is
+			// consumed by the XML pass below — defer the call so the tag is
+			// not spoken as raw syntax inside the call's before-plaintext.
+			if (before && /<(?:speak|gesture|pause)[a-z]*/i.test(before)) {
+				break;
+			}
 			if (before) {
-				groups.push(this.segmentsFromPlaintext(before));
+				// A dangling "<" + optional call-name prefix right before the
+				// call opener is the leftover of a mixed "<speak({...})"
+				// syntax or an unfinished tag — never speakable prose.
+				const speakableBefore = before.replace(/<(?:s|sp|spe|spea|p|pa|pau|paus|g|ge|ges|gest|gestu|gestur)?$/i, '').trim();
+				if (speakableBefore) {
+					groups.push(this.segmentsFromPlaintext(speakableBefore));
+				}
 			}
 			if (call.name === 'speak') {
 				groups.push(this.segmentsFromToolCall(call.rawArgsStr));
@@ -403,9 +428,14 @@ export class StreamingSpeechBuffer {
 			}
 			const lastSpanEnd = envelope.spans.length > 0 ? envelope.spans[envelope.spans.length - 1][1] : cursor;
 			const tail = unprocessed.slice(consumed + lastSpanEnd);
-			// Mirror of the XML guard: don't advance past incomplete markup.
+			// Mirror of the XML guard: don't advance past incomplete markup or a
+			// truncated call-name prefix ("spea" from "speak(" still streaming).
 			const incompleteMatch = tail.match(/<(?:speak|pause|gesture)|(?:speak|pause|gesture)\s*\(/);
-			const proseEnd = incompleteMatch ? incompleteMatch.index! : tail.length;
+			const openerPrefix = /(?:^|[\s(>"'¿¡])(?:s|sp|spe|spea|p|pa|pau|paus|g|ge|ges|gest|gestu|gestur)$/i.exec(tail);
+			const proseEnd = Math.min(
+				incompleteMatch ? incompleteMatch.index! : tail.length,
+				openerPrefix && openerPrefix.index != null ? openerPrefix.index : tail.length
+			);
 			const after = cleanSpeechMarkers(tail.slice(0, proseEnd).trim());
 			if (after) {
 				groups.push(this.segmentsFromPlaintext(after));
@@ -439,8 +469,16 @@ export class StreamingSpeechBuffer {
 				cursor = span ? span[1] : cursor;
 			}
 			// Prose after the last complete tag — but never past an incomplete
-			// tag's start (its raw syntax must stay held for the next chunk).
-			const afterEnd = xml.incomplete && xml.incompleteStart != null ? xml.incompleteStart : xmlSlice.length;
+			// tag's start (its raw syntax must stay held for the next chunk), a
+			// truncated call-name prefix ("spea" from "speak(" still streaming)
+			// or an incomplete call opener ("speak(" / "speak({..."), so none of
+			// them is spoken prematurely.
+			let afterEnd = xml.incomplete && xml.incompleteStart != null ? xml.incompleteStart : xmlSlice.length;
+			const afterProse = xmlSlice.slice(cursor, afterEnd);
+			const openerStart = /(?:^|[\s(>"'¿¡])(?:(?:s|sp|spe|spea|p|pa|pau|paus|g|ge|ges|gest|gestu|gestur)|(?:speak|pause|gesture)\s*\((?:\s*\{[^{}]*)?)$/i.exec(afterProse);
+			if (openerStart && openerStart.index != null) {
+				afterEnd = cursor + openerStart.index;
+			}
 			const after = cleanSpeechMarkers(xmlSlice.slice(cursor, afterEnd).trim());
 			if (after) {
 				groups.push(this.segmentsFromPlaintext(after));
@@ -448,11 +486,15 @@ export class StreamingSpeechBuffer {
 			// Advance past all complete tags AND any prose emitted before an
 			// incomplete tag, so neither is re-emitted on the next pass (M-1).
 			if (xml.incomplete && xml.incompleteStart != null) {
-				markupEnd = markupEnd + xml.incompleteStart;
+				markupEnd = markupEnd + Math.min(xml.incompleteStart, afterEnd);
 			} else {
-				markupEnd = markupEnd + xml.endOffset;
+				markupEnd = markupEnd + Math.min(xml.endOffset, afterEnd);
 				const tail = unprocessed.slice(markupEnd);
-				if (!hasIncompleteXmlTag(tail) && !/(?:speak|pause|gesture)\s*\(/.test(tail)) {
+				if (
+					!hasIncompleteXmlTag(tail) &&
+					!/(?:speak|pause|gesture)\s*\(/.test(tail) &&
+					!/(?:^|[\s(>"'¿¡])(?:s|sp|spe|spea|p|pa|pau|paus|g|ge|ges|gest|gestu|gestur)$/i.test(tail)
+				) {
 					markupEnd = unprocessed.length;
 				}
 			}
@@ -481,11 +523,9 @@ export class StreamingSpeechBuffer {
 	/** Split plaintext into sentence segments with the default language. */
 	private segmentsFromPlaintext(block: string): SpeechSegment[] {
 		const { cleaned } = stripForSpeech(block);
-		return this.tagAltLanguage(
-			splitIntoSegments(
-				stripAngleBlocks(stripReasoningLeaks(cleaned.replace(/<\/speak>/g, ' '))),
-				this.options.defaultLanguage
-			)
+		return splitIntoSegments(
+			stripAngleBlocks(stripReasoningLeaks(cleaned.replace(/<\/speak>/g, ' '))),
+			this.options.defaultLanguage
 		).filter((seg) => !hasStateBlockFragment(seg.text));
 	}
 
@@ -502,10 +542,11 @@ export class StreamingSpeechBuffer {
 	 * calls are split at sentence boundaries so the first sentence can be
 	 * synthesised immediately.
 	 *
-	 * Models forget or mistype the lang tag. Diacritics and scripts never lie,
-	 * so a segment tagged with the primary language whose text clearly shows
-	 * the alternative language's characters is retagged. Never the reverse:
-	 * missing diacritics prove nothing ("el coche" stays as tagged).
+	 * Language correction is intentionally not done here: the orchestrator
+	 * re-validates and splits every segment against the session's ELD subset
+	 * (validateAndSplitSegment), which is the single arbiter for the final
+	 * voice. Pre-tagging in the buffer was provisional work that the
+	 * orchestrator always re-decided.
 	 */
 	private segmentsFromParsedToolCall(parsed: ToolCall): SpeechSegment[] {
 		if (parsed.name !== 'speak') return [];
@@ -513,11 +554,7 @@ export class StreamingSpeechBuffer {
 		const text = (rawText ?? '').trim();
 		if (!text) return [];
 		const primary = this.options.defaultLanguage || 'de';
-		const alt = this.options.altLanguage;
-		let language = lang || primary;
-		if (language === primary && alt && looksLikeAltLanguage(text, alt, primary)) {
-			language = alt;
-		}
+		const language = lang || primary;
 
 		const split = splitLongSegments([{ name: 'speak', arguments: { text, lang: language } }]);
 		return split
@@ -555,9 +592,15 @@ export class StreamingSpeechBuffer {
 			/(?:speak|pause|gesture)\s*\(/.test(text) ||
 			hasIncompleteActionsEnvelope(text) ||
 			hasIncompleteXmlTag(text) ||
-			// Trailing naked backticks: the fence label may arrive in the next
-			// chunk, so the text is not yet safe to flush.
-			/`{3,}\s*$/.test(text)
+			// Trailing naked backticks or a partial fence label ("```j"): the
+			// fence label may arrive in the next chunk, so the text is not yet
+			// safe to flush.
+			/`{3,}[a-zA-Z]*\s*$/.test(text) ||
+			// Truncated call opener still streaming ("spea" from "speak("):
+			// hold it so a later chunk can complete the call name. Strict
+			// prefixes only; complete words like "pause" are legitimate prose
+			// and are dropped separately at flush time.
+			/(?:^|[\s(>"'¿¡])(?:s|sp|spe|spea|p|pa|pau|paus|g|ge|ges|gest|gestu|gestur)$/i.test(text)
 		);
 	}
 }

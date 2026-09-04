@@ -12,6 +12,7 @@ import {
 	scanPseudoToolCalls,
 	parseXmlSpeakTags,
 	parseJsonArgs,
+	pseudoCallFromTool,
 	type ToolCall
 } from './speech-compiler.ts';
 
@@ -597,4 +598,62 @@ test('parsePseudoToolCalls extracts a speak call whose text quotes a word', () =
 	assert.equal(parsed.calls[0].arguments.text, 'Das Wort "ir" bedeutet gehen.');
 	assert.equal(parsed.calls[0].arguments.lang, 'de');
 	assert.equal(parsed.cleanedText, 'Das Wort "ir" bedeutet gehen.');
+});
+
+// ── pseudoCallFromTool ─────────────────────────────────────
+
+test('pseudoCallFromTool converts speak_segment with language', () => {
+	const pseudo = pseudoCallFromTool('speak_segment', { text: 'Hola', language: 'es' });
+	assert.equal(pseudo, 'speak({"text":"Hola","lang":"es"})');
+});
+
+test('pseudoCallFromTool omits lang when language is unset', () => {
+	const pseudo = pseudoCallFromTool('speak_segment', { text: 'Hallo' });
+	assert.equal(pseudo, 'speak({"text":"Hallo"})');
+});
+
+test('pseudoCallFromTool defaults missing text to empty string', () => {
+	const pseudo = pseudoCallFromTool('speak_segment', { language: 'es' });
+	assert.equal(pseudo, 'speak({"text":"","lang":"es"})');
+});
+
+test('pseudoCallFromTool converts pause_segment and clamps ms to the taught range', () => {
+	assert.equal(pseudoCallFromTool('pause_segment', { ms: 300 }), 'pause({"ms":300})');
+	assert.equal(pseudoCallFromTool('pause_segment', { ms: 250.6 }), 'pause({"ms":251})');
+	assert.equal(pseudoCallFromTool('pause_segment', { ms: 50 }), 'pause({"ms":100})');
+	assert.equal(pseudoCallFromTool('pause_segment', { ms: 9999 }), 'pause({"ms":5000})');
+});
+
+test('pseudoCallFromTool clamps out-of-range pause values and drops wrong types', () => {
+	assert.equal(pseudoCallFromTool('pause_segment', { ms: 0 }), 'pause({"ms":100})');
+	assert.equal(pseudoCallFromTool('pause_segment', { ms: -5 }), 'pause({"ms":100})');
+	assert.equal(pseudoCallFromTool('pause_segment', { ms: '300' }), null);
+	assert.equal(pseudoCallFromTool('pause_segment', {}), null);
+});
+
+test('pseudoCallFromTool validates gesture types against the taught set', () => {
+	assert.equal(pseudoCallFromTool('gesture_segment', { type: 'nod' }), 'gesture({"type":"nod"})');
+	assert.equal(pseudoCallFromTool('gesture_segment', { type: 'dab' }), null);
+	assert.equal(pseudoCallFromTool('gesture_segment', { type: '  ' }), null);
+	assert.equal(pseudoCallFromTool('gesture_segment', {}), null);
+});
+
+test('pseudoCallFromTool returns null for unknown tool or missing args', () => {
+	assert.equal(pseudoCallFromTool('set_event', { event: 'thinking' }), null);
+	assert.equal(pseudoCallFromTool('speak_segment', null), null);
+	assert.equal(pseudoCallFromTool('speak_segment', undefined), null);
+});
+
+test('pseudoCallFromTool output round-trips through parsePseudoToolCalls', () => {
+	for (const [name, args] of [
+		['speak_segment', { text: 'Hola', language: 'es' }],
+		['pause_segment', { ms: 300 }],
+		['gesture_segment', { type: 'nod' }]
+	] as const) {
+		const pseudo = pseudoCallFromTool(name, args as Record<string, unknown>);
+		assert.ok(pseudo);
+		const parsed = parsePseudoToolCalls(pseudo);
+		assert.equal(parsed.calls.length, 1);
+		assert.equal(parsed.calls[0].name, pseudo.startsWith('speak(') ? 'speak' : pseudo.startsWith('pause(') ? 'pause' : 'gesture');
+	}
 });
