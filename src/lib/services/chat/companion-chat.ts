@@ -12,9 +12,16 @@ import { modulesStore } from '$lib/stores/modules.svelte';
 import { ttsStore } from '$lib/stores/tts.svelte';
 import { personaStore } from '$lib/stores/persona.svelte';
 import { vrmStore } from '$lib/stores/vrm.svelte';
+import { STATE_FENCE_OPEN } from '$lib/ai/response-parser';
 import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
 import { type TTSOptions } from '$lib/services/tts';
-import { cleanSpeechMarkers, hasIncompleteTrailingMarkup } from '$lib/services/tts/chat-text';
+import {
+	cleanSpeechMarkers,
+	cutAtStateFence,
+	hasIncompleteTrailingMarkup,
+	stripThinkingBlocks,
+	StreamingDisplayCleaner
+} from '$lib/services/tts/chat-text';
 import { streamChatDirect } from '$lib/services/chat/client-chat';
 
 import { processCompanionTurn } from '$lib/services/chat/companion-turn';
@@ -25,6 +32,7 @@ import { extractReminderTags, tryExtractReminderFromUserMessage } from '$lib/uti
 import { reminderStore } from '$lib/stores/reminders.svelte';
 import { getWorkingMemory, ensureSession } from '$lib/engine/memory';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
+import { pseudoCallFromTool } from '$lib/services/tts/speech-compiler';
 import { isTauri } from '$lib/services/platform';
 import type { LLMProvider, TTSProvider } from '$lib/types';
 import type { EventDefinition } from '$lib/types/events';
@@ -75,7 +83,14 @@ async function buildCompanionPrompt(
 		ttsProvider: speechEnabled ? (speechSettings.activeProvider as string | undefined) : undefined,
 		ttsLanguage: (speechSettings.activeLanguage as string) || undefined,
 		ttsAltLanguage: (speechSettings.altLanguage as string) || undefined,
-		ttsAltEnabled: (speechSettings.enableAltLanguage as boolean) ?? false
+		ttsAltEnabled: (speechSettings.enableAltLanguage as boolean) ?? false,
+		// Same gate as the ttsTools injection in sendCompanionMessage: the
+		// speech layer must mandate tool calls exactly when the tools are sent.
+		ttsToolCalling:
+			speechEnabled &&
+			speechSettings.activeProvider === 'omnivoice' &&
+			(speechSettings.enableAltLanguage as boolean) === true &&
+			(speechSettings.enableToolCalling as boolean) !== false
 	};
 	return buildSystemPrompt(context);
 }
@@ -270,21 +285,23 @@ export async function sendCompanionMessage(
 						numStep: (displaySpeechSettings.numStep as number) ?? undefined,
 						altNumStep: (displaySpeechSettings.altNumStep as number) ?? undefined,
 						positionTemperature: (displaySpeechSettings.positionTemperature as number) ?? undefined,
-						classTemperature: (displaySpeechSettings.classTemperature as number) ?? undefined,
-						altPositionTemperature:
-							(displaySpeechSettings.altPositionTemperature as number) ?? undefined,
-						altClassTemperature:
-							(displaySpeechSettings.altClassTemperature as number) ?? undefined
-				  }
-				: baseTtsOptions;
+classTemperature: (displaySpeechSettings.classTemperature as number) ?? undefined,
+					altPositionTemperature:
+						(displaySpeechSettings.altPositionTemperature as number) ?? undefined,
+					altClassTemperature:
+						(displaySpeechSettings.altClassTemperature as number) ?? undefined
+			  }
+			: baseTtsOptions;
 
 		streamingTTS =
 			speechState?.enabled && displayTtsProvider === 'omnivoice'
-				? ttsStore.beginStreaming(ttsOptions)
+				? await ttsStore.beginStreaming(ttsOptions)
 				: false;
 		let streamedLength = 0;
-		let displayedSoFar = '';
+		let ttsFedUntil = 0;
+		const displayCleaner = new StreamingDisplayCleaner();
 		let pendingRaw = '';
+		let displayCapped = false;
 
 		const onDelta = (full: string) => {
 			if (displayTtsProvider !== 'omnivoice') {
@@ -294,20 +311,49 @@ export async function sendCompanionMessage(
 			}
 
 			const delta = full.slice(streamedLength);
-			pendingRaw += delta;
 
-			// Only flush when no incomplete speak/pause/gesture call or language
-			// tag is dangling at the end. This keeps the incremental cleanup O(1)
-			// per chunk instead of re-parsing the full accumulated text every time.
-			if (!hasIncompleteTrailingMarkup(pendingRaw)) {
-				displayedSoFar += cleanSpeechMarkers(pendingRaw);
-				pendingRaw = '';
+			// Feed the live display only until the ```json state fence appears:
+			// what follows the fence is the model's post-state repeat, and the
+			// final parser cut replaces the message anyway. Without the cap the
+			// repeat visibly built the message up twice.
+			if (!displayCapped) {
+				pendingRaw += delta;
+
+				const cut = cutAtStateFence(pendingRaw);
+				if (cut.capped) {
+					// Show what precedes the fence, unless it ends mid-markup —
+					// that incomplete tail would flash raw fragments.
+					if (cut.visible && !hasIncompleteTrailingMarkup(cut.visible)) {
+						displayCleaner.push(cut.visible);
+					}
+					pendingRaw = '';
+					displayCapped = true;
+				} else if (!hasIncompleteTrailingMarkup(pendingRaw)) {
+					// No fence yet: flush only when no incomplete
+					// speak/pause/gesture call, language tag or code fence is
+					// dangling at the end. This keeps the incremental cleanup
+					// O(1) per chunk, and the cleaner reconstructs boundary
+					// whitespace the per-fragment trim would otherwise eat.
+					displayCleaner.push(pendingRaw);
+					pendingRaw = '';
+				}
 			}
 
-			chatStore.updateLastMessage(displayedSoFar);
+			chatStore.updateLastMessage(displayCleaner.text);
 
 			if (streamingTTS && full.length > streamedLength) {
-				ttsStore.feedStreaming(full.slice(streamedLength));
+				// Reasoning blocks (<thinking>…) and the trailing JSON state
+				// block are instructions, not speech — never feed them to TTS.
+				// These cuts mirror parseResponse so chat, display and speech
+				// agree; they also stop repeated text after the state block
+				// from being spoken twice.
+				const speechSource = stripThinkingBlocks(full);
+				const fenceIndex = speechSource.match(STATE_FENCE_OPEN)?.index ?? -1;
+				const speechEnd = fenceIndex === -1 ? speechSource.length : fenceIndex;
+				if (ttsFedUntil < speechEnd) {
+					ttsStore.feedStreaming(speechSource.slice(ttsFedUntil, speechEnd));
+				}
+				ttsFedUntil = speechEnd;
 			}
 			streamedLength = full.length;
 		};
@@ -345,22 +391,56 @@ export async function sendCompanionMessage(
 			&& displayTtsProvider === 'omnivoice'
 			&& (displaySpeechSettings.enableAltLanguage as boolean) === true
 			&& (displaySpeechSettings.enableToolCalling as boolean) !== false
-			? [{
-					type: 'function' as const,
-					function: {
-						name: 'speak_segment',
-						description: 'Speak exactly ONE short phrase. Call separately for each phrase. language is REQUIRED.',
-						parameters: {
-							type: 'object',
-							properties: {
-								text: { type: 'string', description: 'One short phrase to speak. Max 1 sentence.' },
-								language: { type: 'string', enum: toolLanguages,
-									description: 'Language of the text. REQUIRED.' }
-							},
-							required: ['text', 'language']
+			? [
+					{
+						type: 'function' as const,
+						function: {
+							name: 'speak_segment',
+							description: 'Speak exactly ONE short phrase. Call separately for each phrase. language is REQUIRED.',
+							parameters: {
+								type: 'object',
+								properties: {
+									text: { type: 'string', description: 'One short phrase to speak. Max 1 sentence.' },
+									language: { type: 'string', enum: toolLanguages,
+										description: 'Language of the text. REQUIRED.' }
+								},
+								required: ['text', 'language']
+							}
+						}
+					},
+					{
+						type: 'function' as const,
+						function: {
+							name: 'pause_segment',
+							description: 'Insert a short silent pause between spoken phrases.',
+							parameters: {
+								type: 'object',
+								properties: {
+									ms: { type: 'integer', description: 'Pause length in milliseconds (100-5000).' }
+								},
+								required: ['ms']
+							}
+						}
+					},
+					{
+						type: 'function' as const,
+						function: {
+							name: 'gesture_segment',
+							description: 'Show a small non-verbal gesture before or with the next phrase.',
+							parameters: {
+								type: 'object',
+								properties: {
+									type: {
+										type: 'string',
+										enum: ['smile', 'laugh', 'surprise', 'nod', 'shake_head', 'wave'],
+										description: 'The gesture to show.'
+									}
+								},
+								required: ['type']
+							}
 						}
 					}
-				}]
+				]
 			: undefined;
 
 		if (isTauri() || providerMeta?.isLocal) {
@@ -386,12 +466,8 @@ export async function sendCompanionMessage(
 					// Convert native tool calls to pseudo-call text so the existing
 					// streaming speech buffer can process them.
 					ttsTools ? (name, args) => {
-						if (name === 'speak_segment') {
-							const text = args.text as string ?? '';
-							const lang = args.language as string ?? '';
-							const pseudo = lang
-								? `speak({"text":${JSON.stringify(text)},"lang":"${lang}"})`
-								: `speak({"text":${JSON.stringify(text)}})`;
+						const pseudo = pseudoCallFromTool(name, args as Record<string, unknown>);
+						if (pseudo) {
 							fullContent += pseudo;
 							onDelta(fullContent);
 						}
@@ -428,8 +504,15 @@ export async function sendCompanionMessage(
 		// pseudo-tool-calls (or a JSON state block when native tools are used).
 		// Strip them before memory/fact extraction so the data layer only sees
 		// clean dialogue.
+		// Strip speak()/gesture syntax and non-verbal markers, but keep the
+		// ```json state fence: parseResponse() extracts the state updates from
+		// it and cuts the dialogue there — models sometimes repeat their
+		// whole reply after the block, and without the fence that repeat
+		// would survive in the dialogue and duplicate the chat message.
 		const cleanedCompanionResponse =
-			displayTtsProvider === 'omnivoice' ? cleanSpeechMarkers(fullContent) : fullContent;
+			displayTtsProvider === 'omnivoice'
+				? cleanSpeechMarkers(fullContent, { keepStateFences: true })
+				: fullContent;
 
 		const turn = await processCompanionTurn({
 			userMessage: content,

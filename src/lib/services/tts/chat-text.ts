@@ -5,6 +5,8 @@ import {
 	parseXmlAttributes,
 	findClosingBrace
 } from './speech-compiler.ts';
+import { stripThinkingBlocks } from '../../ai/thinking-blocks.ts';
+import { STATE_FENCE_OPEN } from '../../ai/response-parser.ts';
 
 /**
  * Official OmniVoice non-verbal markers (k2-fsa/OmniVoice docs). They are part
@@ -31,13 +33,17 @@ const NON_VERBAL_RE = new RegExp(`\\[(?:${NON_VERBAL_MARKERS.join('|')})\\]`, 'g
 
 // Legacy inline language/gesture markup. We only strip it from the visible
 // text; it is never converted into speech segments (speak({...}) is the only
-// supported syntax).
-const SPEAK_BRACKET_RE = /\[lang:([a-zA-Z\-]{2,8})\]([\s\S]*?)\[\/lang\]/g;
-const SPEAK_ANGLE_COLON_RE = /<speak:([a-zA-Z\-]{2,8})>([\s\S]*?)<\/speak>/g;
-const SPEAK_ANGLE_EQUALS_RE = /<lang=([a-zA-Z\-]{2,8})>([\s\S]*?)<\/lang>/g;
-const SPEAK_ANGLE_CODE_RE = /<lang\s+code=["']([a-zA-Z\-]{2,8})["']>([\s\S]*?)<\/lang>/g;
+// supported syntax). Closing tags are tolerant: some models repeat the code
+// in the closer (`[/lang:es]`, `</speak:es>`).
+const SPEAK_BRACKET_RE = /\[lang:([a-zA-Z\-]{2,8})\]([\s\S]*?)\[\/lang(?::[a-zA-Z\-]{2,8})?\]/g;
+const SPEAK_ANGLE_COLON_RE = /<speak:([a-zA-Z\-]{2,8})>([\s\S]*?)<\/speak(?::[a-zA-Z\-]{2,8})?>/g;
+const SPEAK_ANGLE_EQUALS_RE = /<lang=([a-zA-Z\-]{2,8})>([\s\S]*?)<\/lang(?::[a-zA-Z\-]{2,8})?>/g;
+const SPEAK_ANGLE_CODE_RE = /<lang\s+code=["']([a-zA-Z\-]{2,8})["']>([\s\S]*?)<\/lang(?::[a-zA-Z\-]{2,8})?>/g;
 const GESTURE_ANGLE_COLON_RE = /<gesture:([a-zA-Z\-]+)>/g;
 const GESTURE_BRACKET_RE = /\[gesture:([a-zA-Z\-]+)\]/g;
+// Openers/closers left over after pair stripping — the model forgot the
+// matching partner. Must not leak into speech or display.
+const ORPHAN_LANG_TAG_RE = /\[\/?lang(?::[a-zA-Z\-]{2,8})?\]|<\/?lang(?::[a-zA-Z\-]{2,8})?>|<\/?speak(?::[a-zA-Z\-]{2,8})?>/g;
 
 /** Strip non-verbal markers (e.g. [laughter]) from visible text. */
 function stripNonVerbalMarkers(text: string): string {
@@ -67,96 +73,6 @@ export function stripReasoningLeaks(text: string): string {
 }
 
 /**
- * Diacritics that are characteristic for the supported alternative languages.
- * Used as a lightweight heuristic to tag text sections the model emitted with
- * only closing `</speak>` separators (no opening tag carrying lang).
- *
- * Precision over recall: only characters that distinguish the language from
- * common partner languages are listed. Germanic letters (ä ö ü ë ï) were
- * removed from the Romance lists — they are rare there ("bilingüe") but
- * extremely common in German, so a German sentence with "für" must never be
- * tagged as Spanish or French.
- */
-const ALT_LANG_DIACRITICS: Record<string, RegExp> = {
-	es: /[¿¡ñáéíóú]/i,
-	fr: /[çàâéèêëîïôûùœ]/i,
-	it: /[àèéìíîòóù]/i,
-	pt: /[ãõçáàâéêíóôú]/i,
-	de: /[äöüß]/i,
-	nl: /[ëï]/i,
-	pl: /[ąćęłńóśźż]/i,
-	tr: /[çğış]/i,
-	sv: /[å]/i
-};
-
-/**
- * Common function words per language — spoken in almost every sentence and
- * rarely ambiguous with other European languages. Used as a secondary
- * heuristic when diacritics alone don't match (e.g. "el amigo" has no
- * accented characters but is clearly Spanish).
- */
-const ALT_LANG_FUNCTION_WORDS: Record<string, string[]> = {
-	es: ['el', 'la', 'los', 'las', 'un', 'una', 'del', 'por', 'para', 'con', 'sin',
-		'y', 'o', 'pero', 'porque', 'también', 'es', 'son', 'está', 'hay', 'que',
-		'de', 'en', 'al', 'se', 'no', 'su', 'lo', 'mi', 'tu', 'más', 'muy', 'todo',
-		'este', 'esta', 'entre', 'hasta', 'durante', 'sin', 'según', 'mediante'],
-	fr: ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'au', 'aux', 'dans', 'avec',
-		'pour', 'sur', 'par', 'sans', 'et', 'ou', 'mais', 'donc', 'que', 'est',
-		'sont', 'ce', 'se', 'ne', 'pas', 'de', 'en', 'il', 'elle', 'ces', 'mes',
-		'tes', 'ses', 'nos', 'vos', 'leur', 'cette', 'plus', 'très', 'tout'],
-	de: ['der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'und', 'oder',
-		'aber', 'mit', 'nach', 'bei', 'von', 'aus', 'durch', 'für', 'gegen',
-		'ist', 'sind', 'hat', 'haben', 'wird', 'gibt', 'sich', 'nicht', 'auch',
-		'noch', 'schon', 'mal', 'sehr', 'viel', 'wenig', 'einfach', 'bitte',
-		'danke', 'nein', 'ja', 'so', 'nur', 'hier', 'dort', 'immer', 'wieder',
-		'doch', 'wohl', 'eigentlich', 'natürlich', 'vielleicht', 'genau']
-};
-
-/**
- * Unicode script ranges for languages without characteristic Latin
- * diacritics — the plaintext heuristic works for them too. Japanese matches
- * kana only (Han is shared with Chinese); Chinese matches Han ideographs.
- */
-const ALT_LANG_SCRIPTS: Record<string, RegExp> = {
-	ja: /[぀-ヿ]/,
-	ko: /[ᄀ-ᅟ가-힯]/,
-	zh: /[一-鿿]/,
-	ru: /[Ѐ-ӿ]/,
-	uk: /[Ѐ-ӿ]/,
-	bg: /[Ѐ-ӿ]/,
-	ar: /[؀-ۿ]/,
-	fa: /[؀-ۿ]/,
-	he: /[֐-ֿ]/,
-	th: /[฀-๿]/,
-	hi: /[ऀ-ॿ]/,
-	el: /[Ͱ-Ͽ]/
-};
-
-/** True when the text shows clear diacritics or function words of the configured alternative language. */
-export function looksLikeAltLanguage(text: string, altLanguage?: string, primaryLanguage?: string): boolean {
-	if (!altLanguage) return false;
-	const key = altLanguage.toLowerCase();
-	// 1. Diacritics (highest precision)
-	const re = ALT_LANG_DIACRITICS[key] ?? ALT_LANG_SCRIPTS[key];
-	if (re && re.test(text)) return true;
-	// 2. Function words (lower precision, catches "el amigo" without accents)
-	const altWords = ALT_LANG_FUNCTION_WORDS[key];
-	if (!altWords) return false;
-	const tokens = text.toLowerCase().split(/\s+/);
-	const altCount = tokens.filter((t) => altWords.includes(t.replace(/[^a-zäöüßéàèêëîïôùûçñ]/g, ''))).length;
-	// If a primary language is given, compare counts to avoid false positives
-	// (e.g. "Der Freund heißt el amigo" has "der" in German and "el" in Spanish).
-	if (primaryLanguage) {
-		const primaryWords = ALT_LANG_FUNCTION_WORDS[primaryLanguage.toLowerCase()];
-		if (primaryWords) {
-			const primaryCount = tokens.filter((t) => primaryWords.includes(t.replace(/[^a-zäöüßéàèêëîïôùûçñ]/g, ''))).length;
-			return altCount > primaryCount;
-		}
-	}
-	return altCount >= 1;
-}
-
-/**
  * Some models emit section markers as angle brackets around the text
  * (`< Hier ist der Text >`) with empty `< >` separators instead of real XML
  * tags. Strip the brackets; real `<speak ...>` tags (no space after `<`) are
@@ -176,6 +92,9 @@ export function stripLegacyTags(text: string): string {
 		.replace(SPEAK_ANGLE_EQUALS_RE, '$2')
 		.replace(SPEAK_ANGLE_CODE_RE, '$2');
 	cleaned = cleaned.replace(GESTURE_ANGLE_COLON_RE, '').replace(GESTURE_BRACKET_RE, '');
+	// Whatever lang/speak tags remain has lost its matching partner — drop it
+	// so it is not spoken or displayed. Ordinary bracketed words stay intact.
+	cleaned = cleaned.replace(ORPHAN_LANG_TAG_RE, '');
 	return cleaned.replace(/  +/g, ' ').trim();
 }
 
@@ -230,6 +149,17 @@ function inlineXmlSpeakTexts(text: string): string {
 }
 
 /**
+ * Removes reasoning blocks (<thinking>, <thinking>…) so they never reach
+ * speech or the chat. Stream-safe: a block that is still open (no closing
+ * tag yet) is cut from its opener on, so partial reasoning never gets
+ * spoken; a stray closing tag keeps only the text after it.
+ *
+ * Re-exported from ai/thinking-blocks.ts — reasoning tags are a property
+ * of the model response format, not of speech synthesis.
+ */
+export { stripThinkingBlocks } from '../../ai/thinking-blocks.ts';
+
+/**
  * Remove OmniVoice speech/gesture control markers from visible chat text.
  *
  * - `speak({...})` pseudo-calls: the spoken text is inlined, the syntax removed.
@@ -241,12 +171,92 @@ function inlineXmlSpeakTexts(text: string): string {
  * - Non-verbal markers (`[laughter]`, `[sigh]`, ...) are removed from the
  *   display; they stay in the TTS text because the synthesis needs them.
  */
-export function cleanSpeechMarkers(text: string): string {
-	const pseudo = parsePseudoToolCalls(text);
+export interface CleanSpeechMarkersOptions {
+	/**
+	 * Keep ```json state fences intact (default: strip them).
+	 * parseResponse() needs the fence to extract state updates and to cut
+	 * the dialogue at the block — models sometimes repeat their whole reply
+	 * after it. When the fence is stripped before parsing (as it must be
+	 * for display and TTS), that cut has no anchor and the repeated reply
+	 * survives in the dialogue.
+	 */
+	keepStateFences?: boolean;
+}
+
+export function cleanSpeechMarkers(
+	text: string,
+	options?: CleanSpeechMarkersOptions
+): string {
+	const noThinking = stripThinkingBlocks(text);
+	const pseudo = parsePseudoToolCalls(noThinking);
 	const withEnvelope = inlineActionsSpeakTexts(pseudo.cleanedText);
 	const withXml = inlineXmlSpeakTexts(withEnvelope);
 	const withLegacy = stripLegacyTags(stripNonVerbalMarkers(withXml));
-	return stripReasoningLeaks(stripAngleBlocks(withLegacy));
+	const withStateFences = options?.keepStateFences
+		? withLegacy
+		: withLegacy.replace(/```json[\s\S]*?```/gi, '');
+	return stripReasoningLeaks(stripAngleBlocks(withStateFences));
+}
+
+/**
+ * Splits a raw streaming buffer at the first ```json state fence.
+ *
+ * The model writes its state block at the end of the reply; what follows
+ * the fence is a post-state repeat, not dialogue. The live display must
+ * freeze at the fence so the repeat never builds the message up twice —
+ * the final parser cut replaces the message with the correct dialogue
+ * anyway.
+ */
+export function cutAtStateFence(raw: string): { visible: string; capped: boolean } {
+	const fenceIndex = raw.search(STATE_FENCE_OPEN);
+	if (fenceIndex < 0) return { visible: raw, capped: false };
+	return { visible: raw.slice(0, fenceIndex), capped: true };
+}
+
+/**
+ * Aggregates streaming fragments into the visible chat text.
+ *
+ * `cleanSpeechMarkers()` trims every fragment it cleans, so naive
+ * concatenation eats the whitespace that separated two fragments in the
+ * raw stream ("¡Muy bien," + " mi vida!" → "¡Muy bien,mi vida!"). The
+ * cleaner reconstructs exactly one separator space when the raw stream
+ * had whitespace at the boundary; fragments split mid-word (tokenizer
+ * artifacts) are rejoined without a separator because the raw boundary
+ * had none. Fragments that clean to nothing (pure markup) contribute no
+ * text but carry their boundary whitespace over to the next visible
+ * fragment, mirroring the single space the full-text cleanup inserts
+ * around removed markup.
+ */
+export class StreamingDisplayCleaner {
+	private displayed = '';
+	private boundarySpace = false;
+
+	/**
+	 * Feed one raw fragment that has passed the `hasIncompleteTrailingMarkup`
+	 * gate; returns the current display text.
+	 */
+	push(rawFragment: string): string {
+		const cleaned = cleanSpeechMarkers(rawFragment);
+		if (cleaned !== '') {
+			if (
+				this.displayed !== '' &&
+				!/\s$/.test(this.displayed) &&
+				(this.boundarySpace || /^\s/.test(rawFragment))
+			) {
+				this.displayed += ' ';
+			}
+			this.displayed += cleaned;
+			this.boundarySpace = /\s$/.test(rawFragment);
+		} else {
+			this.boundarySpace =
+				this.boundarySpace || /^\s/.test(rawFragment) || /\s$/.test(rawFragment);
+		}
+		return this.displayed;
+	}
+
+	get text(): string {
+		return this.displayed;
+	}
 }
 
 /**
@@ -289,6 +299,12 @@ export function hasIncompleteTrailingMarkup(text: string): boolean {
 	}
 	// Incomplete <lang ...> opening
 	if (/<lang(\s+code=["']?)?$/i.test(trimmed)) return true;
+	// Legacy bracket tag opened but not closed yet — wait for the closer so
+	// the raw tag never appears in the flushed chunk.
+	const bracketOpen = trimmed.lastIndexOf('[lang:');
+	if (bracketOpen !== -1 && !/\[\/lang(?::[a-zA-Z\-]{2,8})?\]/.test(trimmed.slice(bracketOpen))) {
+		return true;
+	}
 	// Incomplete {"actions":[...] JSON envelope
 	if (/\{\s*"actions"\s*:/i.test(trimmed)) {
 		let depth = 0;
@@ -300,5 +316,10 @@ export function hasIncompleteTrailingMarkup(text: string): boolean {
 	}
 	// Incomplete XML speech tag (<speak text="..." without closing >)
 	if (/<(speak|gesture|pause)[a-z]*[^>]*$/.test(trimmed)) return true;
+	// Unclosed code fence — while a ```json state block is still
+	// streaming, its backticks and raw JSON would leak into the display
+	// because cleanSpeechMarkers() only strips complete fences.
+	const fences = (trimmed.match(/```/g) ?? []).length;
+	if (fences % 2 === 1) return true;
 	return false;
 }

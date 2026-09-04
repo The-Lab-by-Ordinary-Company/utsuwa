@@ -1,4 +1,5 @@
 import type { StateUpdates, Emotion } from '$lib/types/character';
+import { stripThinkingBlocks } from './thinking-blocks.ts';
 
 // Parsed response structure
 export interface ParsedResponse {
@@ -115,13 +116,10 @@ const STATE_KEY_RE =
 // the trace never reaches the chat bubble or the JSON parser. Handles the
 // well-formed <think>...</think> pair and the lone </think> some endpoints
 // return when the opening tag was consumed as a special token.
+// The shared stream-safe strip also cuts dangling openers, so reasoning
+// never leaks into speech, display or dialogue regardless of stream state.
 function stripReasoning(text: string): string {
-	let out = text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '');
-	const close = out.match(/<\/think(?:ing)?>/i);
-	if (close && close.index !== undefined) {
-		out = out.slice(close.index + close[0].length);
-	}
-	return out.trim();
+	return stripThinkingBlocks(text).trim();
 }
 
 // Scan from `start` (a '{') to its matching '}', ignoring braces inside strings.
@@ -179,6 +177,9 @@ function tryParseJson(text: string): LLMStateOutput | null {
 	}
 }
 
+/** Opening fence of the JSON state block (```json …). */
+export const STATE_FENCE_OPEN = /```json/i;
+
 // Parse LLM response to extract dialogue and state updates
 export function parseResponse(rawResponse: string, companionName?: string): ParsedResponse {
 	const raw = stripReasoning(rawResponse);
@@ -197,7 +198,13 @@ export function parseResponse(rawResponse: string, companionName?: string): Pars
 			parseError = 'Failed to parse JSON state block';
 			console.debug('Failed to parse LLM state updates:', fenced[1]);
 		}
-		dialogue = raw.replace(fenced[0], '').trim();
+		// The prompt ends each reply with the JSON state block and allows no
+		// spoken text after it. Content after the block (repeated sentences,
+		// leaked instructions) is model drift — only the part before the block
+		// is the reply. If the block sits at the start, fall back to the part
+		// after it.
+		const before = raw.slice(0, fenced.index ?? 0).trim();
+		dialogue = before || raw.slice((fenced.index ?? 0) + fenced[0].length).trim();
 	} else {
 		const obj = findStateObject(raw);
 		if (obj) {
