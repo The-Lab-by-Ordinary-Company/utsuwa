@@ -5,10 +5,11 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Lead story, then two stacked next to it, then everything else in the grid.
+	// The lead story pins beside a longer rail, then releases before the rest of
+	// the archive. This mirrors the editorial handoff on OpenAI's homepage.
 	const featured = $derived(data.posts[0]);
-	const sidePosts = $derived(data.posts.slice(1, 3));
-	const gridPosts = $derived(data.posts.slice(3));
+	const sidePosts = $derived(data.posts.slice(1, 4));
+	const gridPosts = $derived(data.posts.slice(4));
 </script>
 
 <svelte:head>
@@ -62,45 +63,54 @@
 	{/if}
 
 	{#if gridPosts.length > 0}
-		<section class="post-grid">
-			{#each gridPosts as post}
-				<a href="/blog/{post.slug}" class="post">
-					<div class="media media-grid">
-						<img src={post.image} alt={post.title} loading="lazy" />
-					</div>
-					<h3 class="post-title">{post.title}</h3>
-					<div class="meta">
-						<time datetime={post.date}>{formatDate(post.date)}</time>
-					</div>
-				</a>
-			{/each}
+		<section class="more-stories" aria-labelledby="more-stories-title">
+			<div class="more-stories-head">
+				<h2 id="more-stories-title">More stories</h2>
+			</div>
+			<div class="post-grid">
+				{#each gridPosts as post}
+					<a href="/blog/{post.slug}" class="post">
+						<div class="media media-grid">
+							<img src={post.image} alt={post.title} loading="lazy" />
+						</div>
+						<h3 class="post-title">{post.title}</h3>
+						<div class="meta">
+							<time datetime={post.date}>{formatDate(post.date)}</time>
+						</div>
+					</a>
+				{/each}
+			</div>
 		</section>
 	{/if}
 </div>
 
 <style>
 	.blog-index {
-		max-width: 64rem;
+		max-width: 80rem;
 		margin: 0 auto;
 	}
 
 	/* Header */
 	.blog-header {
-		margin-bottom: 3.5rem;
+		max-width: 42rem;
+		margin-bottom: clamp(3.5rem, 7vw, 5.5rem);
 	}
 
 	.blog-header h1 {
-		font-size: clamp(2.25rem, 5vw, 3rem);
-		font-weight: 600;
-		letter-spacing: -0.03em;
+		font-size: clamp(3rem, 5vw, 4rem);
+		font-weight: 500;
+		line-height: 0.98;
+		letter-spacing: -0.05em;
 		color: var(--text-primary);
 		margin: 0;
 	}
 
 	.blog-header p {
-		font-size: 1.0625rem;
+		max-width: 34rem;
+		font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+		line-height: 1.55;
 		color: var(--text-secondary);
-		margin: 0.75rem 0 0;
+		margin: 1.25rem 0 0;
 	}
 
 	/* Staggered load-in: header first, then posts in reading order */
@@ -124,8 +134,12 @@
 		animation-delay: 240ms;
 	}
 
-	.post-grid .post {
+	.side-column .post:nth-child(3) {
 		animation-delay: 320ms;
+	}
+
+	.post-grid .post {
+		animation-delay: 400ms;
 	}
 
 	@keyframes postRise {
@@ -153,6 +167,7 @@
 		display: block;
 		text-decoration: none;
 		color: inherit;
+		outline-offset: 0.35rem;
 	}
 
 	.media {
@@ -181,7 +196,7 @@
 	}
 
 	.media-side {
-		aspect-ratio: 3 / 2;
+		aspect-ratio: 1;
 	}
 
 	.media-grid {
@@ -209,75 +224,113 @@
 	}
 
 	.lead-title {
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		line-height: 1.15;
-		margin-top: 1.25rem;
+		max-width: 48rem;
+		font-size: clamp(1.75rem, 3vw, 2.5rem);
+		line-height: 1.1;
+		margin-top: 1.5rem;
 	}
 
 	.post-title {
-		font-size: 1.1875rem;
-		line-height: 1.3;
-		margin-top: 1rem;
+		font-size: clamp(1.0625rem, 1.4vw, 1.25rem);
+		line-height: 1.28;
+		margin-top: 0.9rem;
 	}
 
 	/* Meta (date only; no category field on posts) */
 	.meta {
-		margin-top: 0.625rem;
+		margin-top: 0.75rem;
 		font-size: 0.875rem;
 		color: var(--text-secondary);
 	}
 
-	/* Featured row: lead ~2/3, two stacked ~1/3 */
+	/* Three editorial columns for the pinned lead and one for the story rail. */
 	.featured-row {
 		display: grid;
-		grid-template-columns: 2fr 1fr;
-		gap: 2.5rem;
-		margin-bottom: 4rem;
+		grid-template-columns: minmax(0, 3fr) minmax(15rem, 1fr);
+		align-items: start;
+		gap: clamp(1.5rem, 2.5vw, 2rem);
+		margin-bottom: clamp(5rem, 10vw, 8rem);
+	}
+
+	.lead {
+		position: sticky;
+		top: 4.5rem;
 	}
 
 	.side-column {
 		display: flex;
 		flex-direction: column;
-		gap: 2rem;
+		gap: clamp(2.5rem, 5vw, 4rem);
 	}
 
 	/* Remaining posts */
-	.post-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		column-gap: 2rem;
-		row-gap: 3rem;
+	.more-stories {
+		padding-top: clamp(2rem, 4vw, 3rem);
+		border-top: 1px solid var(--border-subtle);
 	}
 
-	@media (max-width: 900px) {
+	.more-stories-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		margin-bottom: clamp(2rem, 4vw, 3rem);
+	}
+
+	.more-stories-head h2 {
+		margin: 0;
+		font-size: clamp(1.75rem, 3vw, 2.5rem);
+		font-weight: 500;
+		line-height: 1.1;
+		letter-spacing: -0.035em;
+		color: var(--text-primary);
+	}
+
+	.post-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+		column-gap: clamp(1.5rem, 2.5vw, 2rem);
+		row-gap: clamp(3rem, 6vw, 4.5rem);
+	}
+
+	@media (max-width: 960px) {
 		.featured-row {
 			grid-template-columns: 1fr;
-			gap: 3rem;
+			gap: 3.5rem;
+		}
+
+		.lead {
+			position: static;
 		}
 
 		.side-column {
 			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 2rem;
-		}
-
-		.post-grid {
-			grid-template-columns: repeat(2, 1fr);
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 1.5rem;
 		}
 	}
 
-	@media (max-width: 600px) {
+	@media (max-width: 700px) {
 		.blog-header {
-			margin-bottom: 2.5rem;
+			margin-bottom: 3rem;
+		}
+
+		.blog-header h1 {
+			font-size: clamp(2.75rem, 14vw, 4rem);
+		}
+
+		.featured-row {
+			gap: 3rem;
+			margin-bottom: 4.5rem;
 		}
 
 		.side-column {
 			grid-template-columns: 1fr;
+			gap: 3rem;
 		}
 
 		.post-grid {
 			grid-template-columns: 1fr;
-			row-gap: 2.5rem;
+			row-gap: 3rem;
 		}
 	}
 </style>

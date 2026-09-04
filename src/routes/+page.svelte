@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import { formatDate } from '$lib/utils/format-date';
 	import { SITE_URL } from '$lib/config/site';
@@ -10,6 +11,60 @@
 	import { reveal } from '$lib/utils/reveal';
 
 	let { data }: { data: PageData } = $props();
+
+	const heroCharacters = [
+		{
+			src: '/landing-page/hero-character-1.webp',
+			width: 1151,
+			height: 1488
+		},
+		{
+			src: '/landing-page/hero-character-2.webp',
+			width: 1055,
+			height: 1536
+		},
+		{
+			src: '/landing-page/hero-character-3.webp',
+			width: 1037,
+			height: 1536
+		}
+	];
+	let activeHeroCharacter = $state(0);
+
+	onMount(() => {
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+		let intervalId: number | undefined;
+		let startId: number | undefined;
+
+		const stopRotation = () => {
+			window.clearTimeout(startId);
+			window.clearInterval(intervalId);
+			startId = undefined;
+			intervalId = undefined;
+		};
+
+		const startRotation = () => {
+			stopRotation();
+			activeHeroCharacter = 0;
+			if (reducedMotion.matches) return;
+
+			// Let the hero's initial entrance settle, then move at a quick one-second cadence.
+			startId = window.setTimeout(() => {
+				activeHeroCharacter = 1;
+				intervalId = window.setInterval(() => {
+					activeHeroCharacter = (activeHeroCharacter + 1) % heroCharacters.length;
+				}, 1000);
+			}, 1500);
+		};
+
+		startRotation();
+		reducedMotion.addEventListener('change', startRotation);
+
+		return () => {
+			stopRotation();
+			reducedMotion.removeEventListener('change', startRotation);
+		};
+	});
 
 	function heroParallax(node: HTMLElement) {
 		const layers = node.querySelectorAll<HTMLElement>('[data-parallax]');
@@ -60,24 +115,32 @@
 			title: 'A real 3D body, not a chat box.',
 			body: "Drop in any VRM model and watch it come to life. Replies appear as 3D speech bubbles that follow your companion's head as it moves, breathes, and looks around.",
 			shot: 'companion',
+			width: 2880,
+			height: 1800,
 			alt: 'Utsuwa desktop app with a 3D VRM avatar companion and chat interface'
 		},
 		{
 			title: 'She steps into your room.',
 			body: 'Place her on your real floor through the camera and she stands there in your space, holding her ground as you move around her. Drag her anywhere, pinch to resize, and keep the chat open the whole time, in Android Chrome or any WebXR-capable headset browser.',
 			shot: 'ar',
+			width: 1156,
+			height: 867,
 			alt: 'Utsuwa VRM companion in WebXR AR camera passthrough shown on an Android phone held in a hand'
 		},
 		{
 			title: 'She actually remembers.',
 			body: 'Local AI embeddings weave your conversations into a web of memories she can recall by meaning, not keywords. Affection, trust, and mood shift over time across eight relationship stages — from Stranger to Soulmate.',
 			shot: 'memory',
+			width: 2880,
+			height: 1800,
 			alt: 'Semantic memory graph showing AI companion relationship and conversation history'
 		},
 		{
 			title: 'You own every part of it.',
 			body: 'Run a frontier model or keep it fully offline with Ollama and LM Studio. Mix and match your chat, voice input, and text-to-speech providers — all on your own API keys, with nothing routed through us.',
 			shot: 'settings',
+			width: 2880,
+			height: 1800,
 			alt: 'Settings panel showing LLM provider options including OpenAI, Anthropic, and Ollama'
 		}
 	];
@@ -113,7 +176,7 @@
 	/>
 	<link rel="canonical" href={SITE_URL} />
 
-	<link rel="preload" as="image" href="/landing-page/hero-character.png" />
+	<link rel="preload" as="image" href="/landing-page/hero-character-1.webp" type="image/webp" />
 
 	<!-- Open Graph -->
 	<meta property="og:type" content="website" />
@@ -169,16 +232,26 @@
 				</span>
 			</h1>
 
-			<div class="hero-character-wrap hero-enter" style="--enter-delay: 80ms">
-				<img
-					class="hero-character"
-					data-parallax="0.14"
-					src="/landing-page/hero-character.png"
-					alt="A smiling 3D VRM companion from Utsuwa waving"
-					width="1151"
-					height="1488"
-					fetchpriority="high"
-				/>
+			<div
+				class="hero-character-wrap hero-enter"
+				style="--enter-delay: 80ms"
+				role="img"
+				aria-label="A rotating collection of 3D VRM companion characters made for Utsuwa"
+			>
+				{#each heroCharacters as character, index}
+					<img
+						class="hero-character"
+						class:hero-character--active={index === activeHeroCharacter}
+						data-parallax="0.14"
+						src={character.src}
+						alt=""
+						aria-hidden="true"
+						width={character.width}
+						height={character.height}
+						fetchpriority={index === 0 ? 'high' : 'auto'}
+						decoding="async"
+					/>
+				{/each}
 			</div>
 
 			<p class="hero-sub hero-enter text-pretty" style="--enter-delay: 200ms">
@@ -197,10 +270,8 @@
 	</section>
 
 	<!-- Provider strip -->
-	<section
-		class="py-20 md:py-28 overflow-hidden"
-	>
-		<div class="max-w-5xl mx-auto px-6 text-center mb-12 md:mb-14">
+	<section class="provider-section overflow-hidden">
+		<div class="provider-heading max-w-5xl mx-auto text-center">
 			<p use:reveal class="reveal eyebrow justify-center mb-5">Bring your own brain</p>
 			<h2
 				use:reveal={60}
@@ -244,17 +315,17 @@
 	</section>
 
 	<!-- Features: alternating media rows -->
-	<section id="features" class="py-24 md:py-32">
-		<div class="max-w-6xl mx-auto px-6">
+	<section id="features" class="features-section">
+		<div class="section-shell">
 			<h2
 				use:reveal
-				class="reveal max-w-2xl text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--text-primary)] tracking-tight text-balance mb-16 md:mb-24"
+				class="reveal features-title font-semibold text-[var(--text-primary)] tracking-tight text-balance"
 				style="font-family: var(--font-sans);"
 			>
 				The best way to bring an AI to life.
 			</h2>
 
-			<div class="flex flex-col gap-24 md:gap-36">
+			<div class="feature-list">
 				{#each features as f, i}
 					<div use:reveal class="reveal feature-row" class:feature-row--rev={i % 2 === 1}>
 						<div class="feature-media">
@@ -262,12 +333,16 @@
 								class="feature-img feature-img--light"
 								src={`/marketing/${f.shot}-light.webp`}
 								alt={f.alt}
+								width={f.width}
+								height={f.height}
 								loading="lazy"
 							/>
 							<img
 								class="feature-img feature-img--dark"
 								src={`/marketing/${f.shot}-dark.webp`}
 								alt={f.alt}
+								width={f.width}
+								height={f.height}
 								loading="lazy"
 							/>
 						</div>
@@ -297,20 +372,20 @@
 
 	<!-- Latest from the blog (channel-card layout) -->
 	{#if data.posts.length > 0}
-		<section class="py-24 md:py-32">
-			<div class="max-w-6xl mx-auto px-6">
-				<div class="blog-head mb-12 md:mb-14">
+		<section class="home-blog">
+			<div class="section-shell">
+				<div class="blog-head">
 					<div>
 						<h2
 							use:reveal
-							class="reveal text-3xl md:text-4xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+							class="reveal home-blog-title font-semibold text-[var(--text-primary)] tracking-tight text-balance"
 							style="font-family: var(--font-sans);"
 						>
 							Fresh from the blog
 						</h2>
 						<p
 							use:reveal={60}
-							class="reveal text-lg text-[var(--text-secondary)] leading-relaxed text-pretty mt-3"
+							class="reveal home-blog-copy text-[var(--text-secondary)] leading-relaxed text-pretty"
 						>
 							Guides, deep dives, and release notes from the project.
 						</p>
@@ -333,7 +408,7 @@
 					</a>
 				</div>
 
-				<div class="grid md:grid-cols-3 gap-5 lg:gap-6">
+				<div class="home-blog-grid">
 					{#each data.posts as post, i}
 						<a use:reveal={(i % 3) * 90} href="/blog/{post.slug}" class="reveal channel-card">
 							<div class="channel-media">
@@ -352,18 +427,18 @@
 	{/if}
 
 	<!-- Closing CTA -->
-	<section class="py-28 md:py-44">
-		<div class="max-w-3xl mx-auto px-6 text-center">
+	<section class="closing-cta">
+		<div class="closing-cta-inner max-w-3xl mx-auto text-center">
 			<h2
 				use:reveal
-				class="reveal text-4xl md:text-5xl lg:text-6xl font-semibold text-[var(--text-primary)] tracking-tight text-balance"
+				class="reveal closing-cta-title font-semibold text-[var(--text-primary)] tracking-tight text-balance"
 				style="font-family: var(--font-sans);"
 			>
 				Ready to meet your companion?
 			</h2>
 			<p
 				use:reveal={80}
-				class="reveal text-lg text-[var(--text-secondary)] leading-relaxed text-pretty max-w-xl mx-auto mt-5 mb-9"
+				class="reveal closing-cta-copy text-[var(--text-secondary)] leading-relaxed text-pretty max-w-xl mx-auto"
 			>
 				Try it right in your browser, or download the desktop app. Free and open source.
 			</p>
@@ -381,8 +456,16 @@
 
 <style>
 	.page-root {
+		--marketing-gutter: clamp(1.25rem, 3vw, 2rem);
 		background: var(--bg-page);
 		color: var(--text-primary);
+	}
+
+	.section-shell {
+		width: 100%;
+		max-width: 80rem;
+		margin-inline: auto;
+		padding-inline: var(--marketing-gutter);
 	}
 
 	/* Anchored sections land clear of the sticky nav */
@@ -395,7 +478,7 @@
 	.hero {
 		max-width: 80rem;
 		margin: 0 auto;
-		padding: 1rem 1.5rem clamp(2rem, 5vw, 4rem);
+		padding: 0 1.5rem clamp(2rem, 5vw, 4rem);
 	}
 
 	.hero-stage {
@@ -415,18 +498,6 @@
 		--hero-muted: rgba(255, 255, 255, 0.58);
 	}
 
-	.hero-stage::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		z-index: -2;
-		background-image:
-			linear-gradient(to right, color-mix(in srgb, var(--hero-ink) 5%, transparent) 1px, transparent 1px),
-			linear-gradient(to bottom, color-mix(in srgb, var(--hero-ink) 5%, transparent) 1px, transparent 1px);
-		background-size: 8rem 8rem;
-		mask-image: radial-gradient(ellipse 62% 74% at 50% 48%, #000, transparent 82%);
-	}
-
 	.hero-title {
 		margin: 0;
 		color: var(--hero-ink);
@@ -444,7 +515,7 @@
 	}
 
 	.hero-title-left {
-		top: clamp(3.5rem, 7vw, 5rem);
+		top: clamp(2.75rem, 5vw, 4rem);
 		left: clamp(1.5rem, 4vw, 3.5rem);
 	}
 
@@ -480,6 +551,7 @@
 		bottom: -2.25rem;
 		z-index: 1;
 		height: 84%;
+		aspect-ratio: 1151 / 1488;
 		transform: translateX(-50%);
 		pointer-events: none;
 		-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 76%, transparent 100%);
@@ -488,8 +560,46 @@
 
 	.hero-character {
 		display: block;
+		position: absolute;
+		inset: 0;
 		height: 100%;
-		width: auto;
+		width: 100%;
+		object-fit: contain;
+		object-position: center bottom;
+		opacity: 0;
+		filter: blur(10px);
+		scale: 0.985;
+		transition-property: opacity, filter, scale;
+		transition-duration: 380ms;
+		transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	.hero-character--active {
+		opacity: 1;
+		filter: blur(0);
+		scale: 1;
+	}
+
+	@media (min-width: 900px) {
+		.hero-character-wrap {
+			height: 88%;
+			-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 68%, transparent 98%);
+			mask-image: linear-gradient(to bottom, #000 0%, #000 68%, transparent 98%);
+		}
+
+		.hero-character-wrap::after {
+			content: '';
+			position: absolute;
+			inset: auto -4% 0;
+			z-index: 2;
+			height: 28%;
+			background: linear-gradient(
+				to bottom,
+				transparent,
+				color-mix(in srgb, var(--hero-surface) 72%, transparent) 58%,
+				var(--hero-surface) 100%
+			);
+		}
 	}
 
 	.hero-sub {
@@ -592,7 +702,7 @@
 		}
 
 		.hero-character {
-			height: auto;
+			height: 100%;
 			width: 100%;
 		}
 
@@ -608,6 +718,34 @@
 			width: 100%;
 			margin-top: 1.5rem;
 		}
+	}
+
+	/* A consistent optical rhythm keeps adjacent sections from stacking two
+	   oversized padding blocks on top of one another. */
+	.provider-section {
+		padding: clamp(5rem, 7vw, 6.5rem) 0 clamp(4rem, 5vw, 4.75rem);
+	}
+
+	.provider-heading {
+		padding-inline: var(--marketing-gutter);
+		margin-bottom: clamp(2.75rem, 4vw, 3.5rem);
+	}
+
+	.features-section {
+		padding: clamp(5rem, 7vw, 6.5rem) 0 clamp(6rem, 9vw, 8rem);
+	}
+
+	.features-title {
+		max-width: 44rem;
+		margin: 0 0 clamp(4.5rem, 7vw, 6rem);
+		font-size: clamp(2.5rem, 4.5vw, 3.5rem);
+		line-height: 1.05;
+	}
+
+	.feature-list {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(6rem, 10vw, 8rem);
 	}
 
 	/* Provider logo marquee */
@@ -679,7 +817,7 @@
 		display: block;
 	}
 
-	/* Pinned feature showcase: visual sticks, copy scrolls, active step lights up */
+	/* Alternating feature showcase */
 	.feature-row {
 		display: flex;
 		flex-direction: column;
@@ -709,12 +847,12 @@
 	}
 
 	.feature-copy {
-		max-width: 26rem;
+		max-width: 27rem;
 	}
 
 	.feature-h2 {
 		margin: 0 0 1rem;
-		font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+		font-size: clamp(1.75rem, 2.6vw, 2.35rem);
 		font-weight: 600;
 		line-height: 1.15;
 		letter-spacing: -0.02em;
@@ -723,8 +861,9 @@
 	}
 
 	.feature-body {
-		font-size: 1rem;
-		line-height: 1.65;
+		margin: 0;
+		font-size: 1.0625rem;
+		line-height: 1.6;
 		color: var(--text-secondary);
 	}
 
@@ -750,7 +889,7 @@
 		.feature-row {
 			flex-direction: row-reverse;
 			align-items: center;
-			gap: 4.5rem;
+			gap: clamp(4rem, 6vw, 5.5rem);
 		}
 
 		.feature-row--rev {
@@ -779,7 +918,7 @@
 
 	/* Statement */
 	.statement {
-		padding: clamp(5rem, 13vw, 10rem) 0;
+		padding: clamp(6rem, 10vw, 9rem) 0;
 	}
 
 	.statement-text {
@@ -843,6 +982,28 @@
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: 1.5rem;
+		margin-bottom: clamp(3rem, 5vw, 4rem);
+	}
+
+	.home-blog {
+		padding: clamp(6rem, 9vw, 8rem) 0;
+	}
+
+	.home-blog-title {
+		margin: 0;
+		font-size: clamp(2.25rem, 4vw, 3rem);
+		line-height: 1.08;
+	}
+
+	.home-blog-copy {
+		margin: 0.875rem 0 0;
+		font-size: 1.0625rem;
+	}
+
+	.home-blog-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(1.25rem, 2.5vw, 2rem);
 	}
 
 	/* Blog cards (flat) */
@@ -887,7 +1048,7 @@
 		flex-direction: column;
 		flex: 1;
 		gap: 0.5rem;
-		padding: 1.25rem;
+		padding: 1.5rem;
 	}
 
 	.channel-date {
@@ -898,7 +1059,7 @@
 
 	.channel-title {
 		margin: 0;
-		font-size: 1.05rem;
+		font-size: 1.125rem;
 		font-weight: 600;
 		line-height: 1.3;
 		color: var(--text-primary);
@@ -907,6 +1068,41 @@
 
 	.channel-cta {
 		margin-top: auto;
+	}
+
+	.closing-cta {
+		padding: clamp(8rem, 12vw, 10.5rem) 0;
+	}
+
+	.closing-cta-inner {
+		padding-inline: var(--marketing-gutter);
+	}
+
+	.closing-cta-title {
+		margin: 0;
+		font-size: clamp(3rem, 5vw, 4rem);
+		line-height: 1.04;
+	}
+
+	.closing-cta-copy {
+		margin-top: 1.25rem;
+		margin-bottom: 2.25rem;
+		font-size: 1.125rem;
+	}
+
+	@media (max-width: 767px) {
+		.features-title {
+			font-size: clamp(2.25rem, 11vw, 3rem);
+		}
+
+		.home-blog-grid {
+			grid-template-columns: 1fr;
+			gap: 1.5rem;
+		}
+
+		.channel-body {
+			padding: 1.25rem;
+		}
 	}
 
 	/* Respect reduced motion across the whole page */
@@ -923,6 +1119,10 @@
 			filter: none;
 			translate: none;
 			animation: none;
+		}
+
+		.hero-character {
+			transition: none;
 		}
 
 		.st-word {

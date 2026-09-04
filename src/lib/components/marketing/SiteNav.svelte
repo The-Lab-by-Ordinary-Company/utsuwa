@@ -43,7 +43,7 @@
 	});
 </script>
 
-<nav class="site-nav" class:scrolled={scrolled || menuOpen}>
+<nav class="site-nav" class:scrolled={scrolled || menuOpen} class:menu-open={menuOpen}>
 	<div class="site-nav-inner">
 		<a href="/" class="site-nav-brand" aria-label="Utsuwa home">
 			<img src="/brand-assets/logo.svg" alt="Utsuwa" class="site-nav-logo" />
@@ -80,10 +80,7 @@
 
 		<div class="site-nav-right">
 			<a href="/download" class="btn btn-secondary btn-sm site-nav-cta">Download</a>
-			<a href={sectionUrl('app')} class="btn btn-primary btn-sm site-nav-cta">
-				<span class="live-dot" aria-hidden="true"></span>
-				Try Live
-			</a>
+			<a href={sectionUrl('app')} class="btn btn-primary btn-sm site-nav-cta">Try Live</a>
 			<button
 				type="button"
 				class="site-nav-burger"
@@ -97,11 +94,24 @@
 		</div>
 	</div>
 
-	{#if menuOpen}
-		<!-- Blurs the page behind the open menu; tapping it closes -->
-		<button class="site-nav-backdrop" aria-label="Close menu" onclick={() => (menuOpen = false)}
-		></button>
-		<div id="site-nav-mobile" class="site-nav-mobile">
+	<!-- These stay mounted so opening and closing can both use interruptible transitions. -->
+	<button
+		class="site-nav-backdrop"
+		class:open={menuOpen}
+		aria-label="Close menu"
+		aria-hidden={!menuOpen}
+		disabled={!menuOpen}
+		tabindex="-1"
+		onclick={() => (menuOpen = false)}
+	></button>
+	<div
+		id="site-nav-mobile"
+		class="site-nav-mobile"
+		class:open={menuOpen}
+		aria-hidden={!menuOpen}
+		inert={!menuOpen}
+	>
+		<div class="site-nav-mobile-links">
 			<a href="/#features" class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Features</a>
 			<a href={sectionUrl('docs')} class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Docs</a>
 			<a href="/blog" class="site-nav-mobile-link" onclick={() => (menuOpen = false)}>Blog</a>
@@ -112,6 +122,8 @@
 				class="site-nav-mobile-link"
 				onclick={() => (menuOpen = false)}>GitHub</a
 			>
+		</div>
+		<div class="site-nav-mobile-actions">
 			<a
 				href="/download"
 				class="btn btn-secondary btn-block"
@@ -121,12 +133,10 @@
 				href={sectionUrl('app')}
 				class="btn btn-primary btn-block"
 				onclick={() => (menuOpen = false)}
+				>Try Live</a
 			>
-				<span class="live-dot" aria-hidden="true"></span>
-				Try Live
-			</a>
 		</div>
-	{/if}
+	</div>
 </nav>
 
 <style>
@@ -146,17 +156,25 @@
 		border-bottom-color: var(--border-subtle);
 	}
 
+	.site-nav.menu-open {
+		background: var(--bg-page);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+
 	.site-nav-inner {
 		max-width: 80rem;
 		margin: 0 auto;
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 		align-items: center;
-		justify-content: space-between;
 		padding: 0.9rem 1.5rem;
 	}
 
 	.site-nav-brand {
 		display: inline-flex;
+		grid-column: 1;
+		justify-self: start;
 		align-items: center;
 		text-decoration: none;
 	}
@@ -175,6 +193,8 @@
 
 	.site-nav-links {
 		display: flex;
+		grid-column: 2;
+		justify-self: center;
 		align-items: center;
 		gap: 1.75rem;
 	}
@@ -282,29 +302,10 @@
 
 	.site-nav-right {
 		display: flex;
+		grid-column: 3;
+		justify-self: end;
 		align-items: center;
 		gap: 0.625rem;
-	}
-
-	/* Live indicator dot inside the Try Live button */
-	.live-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: var(--radius-full);
-		background: currentColor;
-		animation: livePulse 2.4s ease-out infinite;
-	}
-
-	@keyframes livePulse {
-		0% {
-			box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
-		}
-		70% {
-			box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
-		}
-		100% {
-			box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
-		}
 	}
 
 	/* Hamburger (mobile only) */
@@ -312,19 +313,25 @@
 		display: none;
 		align-items: center;
 		justify-content: center;
-		width: 2rem;
-		height: 2rem;
+		width: 2.5rem;
+		height: 2.5rem;
 		border-radius: var(--radius-full);
 		color: var(--text-secondary);
 		background: var(--bg-tertiary);
 		border: none;
 		cursor: pointer;
-		transition: color 0.2s ease, background 0.2s ease;
+		transition-property: color, background-color, scale;
+		transition-duration: 180ms;
+		transition-timing-function: ease-out;
 	}
 
 	.site-nav-burger:hover {
 		color: var(--text-primary);
 		background: color-mix(in srgb, var(--bg-tertiary), var(--text-primary) 8%);
+	}
+
+	.site-nav-burger:active {
+		scale: 0.96;
 	}
 
 	/* Mobile menu panel: overlays the page below the bar instead of pushing
@@ -336,26 +343,32 @@
 		right: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
-		padding: 0.75rem 1.5rem 1.25rem;
-		border-top: 1px solid var(--border-subtle);
-		border-bottom: 1px solid var(--border-subtle);
-		background: color-mix(in srgb, var(--bg-page) 92%, transparent);
-		-webkit-backdrop-filter: blur(14px) saturate(1.4);
-		backdrop-filter: blur(14px) saturate(1.4);
-		box-shadow: var(--shadow-lg);
-		animation: mobileMenuIn 0.2s var(--ease-brand);
+		gap: 1rem;
+		padding: 0.625rem 1rem 1.25rem;
+		border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+		background: var(--bg-page);
+		box-shadow:
+			0 1px 0 color-mix(in srgb, var(--text-primary) 7%, transparent),
+			0 12px 28px -12px rgba(0, 0, 0, 0.2),
+			0 28px 54px -28px rgba(0, 0, 0, 0.22);
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-8px);
+		filter: blur(4px);
+		pointer-events: none;
+		transition-property: opacity, transform, filter, visibility;
+		transition-duration: 200ms, 200ms, 200ms, 0s;
+		transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+		transition-delay: 0s, 0s, 0s, 200ms;
 	}
 
-	@keyframes mobileMenuIn {
-		from {
-			opacity: 0;
-			transform: translateY(-6px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+	.site-nav-mobile.open {
+		opacity: 1;
+		visibility: visible;
+		transform: none;
+		filter: blur(0);
+		pointer-events: auto;
+		transition-delay: 0s;
 	}
 
 	/* Full-viewport scrim behind the open menu. Sits under the nav's own
@@ -367,35 +380,55 @@
 		border: none;
 		padding: 0;
 		cursor: default;
-		background: color-mix(in srgb, var(--bg-page) 35%, transparent);
-		-webkit-backdrop-filter: blur(10px);
-		backdrop-filter: blur(10px);
-		animation: backdropIn 0.25s ease;
+		background: rgba(0, 0, 0, 0.24);
+		-webkit-backdrop-filter: blur(4px);
+		backdrop-filter: blur(4px);
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition-property: opacity, visibility;
+		transition-duration: 220ms, 0s;
+		transition-timing-function: ease-out;
+		transition-delay: 0s, 220ms;
 	}
 
-	@keyframes backdropIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
+	.site-nav-backdrop.open {
+		opacity: 1;
+		visibility: visible;
+		pointer-events: auto;
+		transition-delay: 0s;
+	}
+
+	.site-nav-mobile-links {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
 	}
 
 	.site-nav-mobile-link {
-		padding: 0.65rem 0.25rem;
-		font-size: 0.95rem;
-		color: var(--text-secondary);
+		display: flex;
+		min-height: 3rem;
+		align-items: center;
+		padding: 0 0.875rem;
+		border-radius: var(--radius-md);
+		font-size: 1rem;
+		font-weight: 500;
+		color: var(--text-primary);
 		text-decoration: none;
-		transition: color 0.15s ease;
+		transition-property: color, background-color;
+		transition-duration: 150ms;
+		transition-timing-function: ease-out;
 	}
 
 	.site-nav-mobile-link:hover {
-		color: var(--text-primary);
+		background: var(--bg-secondary);
 	}
 
-	.site-nav-mobile .btn {
-		margin-top: 0.5rem;
+	.site-nav-mobile-actions {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.75rem;
+		padding-top: 0.25rem;
 	}
 
 	@media (max-width: 768px) {
@@ -424,8 +457,12 @@
 			transition: opacity 0.18s ease, visibility 0.18s ease;
 		}
 
-		.live-dot {
-			animation: none;
+		.site-nav-mobile,
+		.site-nav-backdrop,
+		.site-nav-burger {
+			transform: none;
+			filter: none;
+			transition: none;
 		}
 	}
 </style>
