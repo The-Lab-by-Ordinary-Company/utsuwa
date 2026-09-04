@@ -784,18 +784,19 @@
 			Speak foreign words with a second voice
 		</label>
 		<span style="flex:1;"></span>
-		<button
-			class="btn btn-sm btn-primary"
-			onclick={handleAltPreview}
-			disabled={previewLoading || !altEnabled}
-			title={altEnabled ? '' : 'Enable the alternative voice first'}
-		>
-			{#if previewLoading}
-				<span class="omnivoice-spinner"></span> Testing...
-			{:else}
-				▶ Test Alt Voice
-			{/if}
-		</button>
+		{#if altEnabled}
+			<button
+				class="btn btn-sm btn-primary"
+				onclick={handleAltPreview}
+				disabled={previewLoading}
+			>
+				{#if previewLoading}
+					<span class="omnivoice-spinner"></span> Testing...
+				{:else}
+					▶ Test Alt Voice
+				{/if}
+			</button>
+		{/if}
 	</div>
 
 	{#if altEnabled}

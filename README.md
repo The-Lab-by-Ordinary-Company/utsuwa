@@ -68,7 +68,7 @@
 - **Show Her Photos**: Show your companion an image via the attach (paperclip) button in the chat bar or drag-and-drop. Vision-capable models (GPT-4o, Claude, Gemini, or local ones like LLaVA) actually see it and can remember the moment, and kept photos live on a scrapbook-style board. Images stay on your device and only ever reach vision-capable models
 - **LLM Integration**: Support for 8 LLM providers: OpenAI, Anthropic, Google, xAI, DeepSeek, Ollama, LM Studio, and any OpenAI-compatible endpoint (OpenRouter, Together, vLLM, ...)
 - **Local Model Discovery**: Ollama and LM Studio discover installed local models directly from your device
-- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech), and local OmniVoice. OmniVoice streams: speech starts while the model is still writing, and foreign words can be spoken per word in their own language and voice
+- **Text-to-Speech**: Support for ElevenLabs and OpenAI TTS, local voices via any OpenAI-compatible server (Kokoro-FastAPI, openedai-speech), and local OmniVoice. OmniVoice streams: speech starts while the model is still writing, and foreign words can be spoken per word in their own language and voice. With OmniVoice + Alternative Voice, the model controls its spoken reply via native `speak_segment` / `pause_segment` / `gesture_segment` tool calls (when tool calling is enabled); otherwise the documented inline `speak()` / `pause()` / `gesture()` syntax is used
 - **Fully Local Option**: Run the whole stack offline — local LLM (Ollama/LM Studio), local TTS, and local Whisper STT — so nothing leaves your device
 - **Lip-sync**: Audio-driven mouth animation synced to TTS playback
 - **Animations**: VRMA-based idle and talking animations with automatic blinking
@@ -154,6 +154,12 @@ If the setting is left off, Utsuwa keeps the historical defaults (10 retrieved t
 
 OmniVoice is a fully local text-to-speech option that runs on your own GPU or CPU. It supports both built-in synthetic voices and custom voice clones, covers many languages, and can switch between two voices **per word**: when you are learning a language, foreign words and phrases are spoken in their own language and dialect (with an optional second voice), while the surrounding explanation stays in the primary voice. Speech starts while the model is still writing — complete sentences are synthesised as soon as they arrive. See [OmniVoice Setup](https://docs.utsuwa.ai/docs/guides/omnivoice) for installation instructions.
 
+With OmniVoice and **Alternative Voice** enabled, the speech layer mandates native tool calling: the model delivers its spoken reply as `speak_segment` tool calls (plus `pause_segment` for silent pauses and `gesture_segment` for small gestures). These calls arrive whole, so they cannot be broken up by streaming chunk boundaries. Tool calling is **on by default** and can be disabled in the speech settings; when it is disabled (or the provider does not support it), the model uses the inline `speak()` / `pause()` / `gesture()` syntax instead — that inline path remains the documented fallback and its output is sanitised defensively.
+
+Language switching has two layers. The model declares the language per segment via `speak_segment`; the speech orchestrator then validates and splits every segment against the session's language pair using the embedded language detector ([eld](https://www.npmjs.com/package/eld)), which is restricted to exactly the primary and the alternative language. Mixed sentences are additionally carved into language runs (anchored on articles, function words, diacritics and infinitive endings) so both halves keep their own voice. The signal tables are fleshed out for German, English and Spanish in every pair direction; other languages fall back to whole-segment detection only.
+
+The optional **Target Duration (s)** setting (OmniVoice voice settings, `0` = automatic) lets OmniVoice aim for a specific clip length in seconds instead of computing the length from the text. It is only sent to the OmniVoice proxy when set.
+
 ### STT Providers (4)
 
 | Category | Providers |
@@ -238,7 +244,7 @@ pnpm tauri dev
    - Select a TTS provider
    - Enter your API key
    - Configure voice settings
-   - For **OmniVoice**, design a synthetic voice (gender, age, pitch, accent), preview it, regenerate the persistent profile, or clone a new voice from a short audio sample. Optionally enable the **Alternative Voice** so foreign words are spoken in their own language with a second voice
+    - For **OmniVoice**, design a synthetic voice (gender, age, pitch, accent), preview it, regenerate the persistent profile, or clone a new voice from a short audio sample. Optionally enable the **Alternative Voice** so foreign words are spoken in their own language with a second voice. Language switches are model-declared per segment and then validated per sentence and even mid-sentence by the embedded detector (quoted Spanish/English phrases, accents, characteristic word patterns), so each part keeps its own voice
 4. Configure voice input in **Settings > STT** (optional):
    - Enter your Groq or OpenAI API key, or set a local Whisper server URL
 

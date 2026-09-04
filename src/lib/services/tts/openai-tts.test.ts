@@ -483,10 +483,22 @@ test('sanitizeOmniVoiceInput leaves primary-language fragments alone', () => {
 });
 
 test('sanitizeOmniVoiceInput capitalises short foreign inputs in any language', () => {
-	// Languages without a carrier phrase (e.g. Polish) get the same treatment:
+	// Languages without carrier phrase (e.g. Polish) get same treatment:
 	// capitalise + closing period.
 	assert.equal(sanitizeOmniVoiceInput('cześć', 'pl', 'de'), 'Cześć.');
 	assert.equal(sanitizeOmniVoiceInput('dzień dobry', 'pl', 'de'), 'Dzień dobry.');
+});
+
+test('sanitizeOmniVoiceInput keeps inverted punctuation pairs intact', () => {
+	// ¿…? / ¡…! pairs must not end up with a trailing period: breaking
+	// the pair confuses the synthesiser ("¿qué tal?" → "¿qué tal.").
+	assert.equal(sanitizeOmniVoiceInput('¿qué tal?', 'es', 'de'), '¿Qué tal?');
+	assert.equal(sanitizeOmniVoiceInput('¡hola!', 'es', 'de'), '¡Hola!');
+	// Unclosed pairs get their matching closing mark restored.
+	assert.equal(sanitizeOmniVoiceInput('¿qué tal', 'es', 'de'), '¿Qué tal?');
+	assert.equal(sanitizeOmniVoiceInput('¡hola', 'es', 'de'), '¡Hola!');
+	// German primary-language fragments keep the period enrichment.
+	assert.equal(sanitizeOmniVoiceInput('hallo', 'de', 'es'), 'Hallo.');
 });
 
 test('sanitizeOmniVoiceInput never enriches non-verbal markers', () => {

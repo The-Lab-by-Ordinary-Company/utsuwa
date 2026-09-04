@@ -5,6 +5,7 @@ import type { LLMProvider } from '$lib/types';
 import { ensureOpenAIPath, getChatBaseUrl } from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
 import { sanitizeProviderError } from '$lib/services/providers/provider-errors';
+import { pseudoCallFromTool } from '$lib/services/tts/speech-compiler';
 import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-defaults';
 
 // Providers that don't require API keys
@@ -163,17 +164,25 @@ export const POST: RequestHandler = async ({ request }) => {
 							// the full reply, so nothing may be dropped here.
 							const data = `0:${JSON.stringify(value.text)}\n`;
 							controller.enqueue(encoder.encode(data));
-						} else if (value.type === 'tool-call' && value.toolName === 'speak_segment') {
+						} else if (value.type === 'tool-call') {
 							// Convert native tool calls to pseudo-call text so the
 							// client-side streaming speech buffer can process them.
-							const args = typeof value.args === 'string' ? JSON.parse(value.args) : value.args;
-							const text = (args as Record<string, unknown>)?.text as string ?? '';
-							const lang = (args as Record<string, unknown>)?.language as string ?? '';
-							const pseudo = lang
-								? `speak({"text":${JSON.stringify(text)},"lang":"${lang}"})`
-								: `speak({"text":${JSON.stringify(text)}})`;
-							const data = `0:${JSON.stringify(pseudo)}\n`;
-							controller.enqueue(encoder.encode(data));
+							// Unknown tools, invalid args or unparsable JSON yield
+							// null and are dropped — identical to the direct client
+							// path. A malformed call must not kill the stream.
+							try {
+								const args =
+									typeof value.args === 'string' ? JSON.parse(value.args) : value.args;
+								const pseudo = pseudoCallFromTool(
+									value.toolName,
+									args as Record<string, unknown>
+								);
+								if (pseudo) {
+									controller.enqueue(encoder.encode(`0:${JSON.stringify(pseudo)}\n`));
+								}
+							} catch {
+								// Malformed tool-call args: drop the call, keep streaming.
+							}
 						}
 					}
 					controller.close();

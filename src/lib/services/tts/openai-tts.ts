@@ -76,14 +76,14 @@ export function sanitizeOmniVoiceInput(
 	// Short foreign input: capitalise first letter, add a trailing period
 	// so the model sees a natural utterance boundary instead of a bare word.
 	const core = clean.replace(/[.!?…。！？]+\s*$/, '');
-	if (words.length === 1) {
-		const capped = core.charAt(0).toUpperCase() + core.slice(1);
-		return capped + '.';
+	// Inverted punctuation pairs (¿…?, ¡…!) must stay intact: swapping
+	// the closing mark for a period breaks the pair.
+	if (core.startsWith('¿') || core.startsWith('¡')) {
+		const capped = core.charAt(0) + core.charAt(1).toUpperCase() + core.slice(2);
+		return capped + (core.startsWith('¿') ? '?' : '!');
 	}
-	// Two-word foreign phrase: capitalise the first word, keep the rest,
-	// add a trailing period.
-	const first = core.charAt(0).toUpperCase() + core.slice(1);
-	return first + '.';
+	const capped = core.charAt(0).toUpperCase() + core.slice(1);
+	return capped + '.';
 }
 
 function getCurrentSiteOrigin(): string | undefined {
