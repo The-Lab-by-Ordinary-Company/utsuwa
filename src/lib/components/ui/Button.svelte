@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { Button as ButtonPrimitive } from 'bits-ui';
 	import type { Snippet } from 'svelte';
-	import type { HTMLButtonAttributes } from 'svelte/elements';
 
-	interface Props extends HTMLButtonAttributes {
+	type Props = ButtonPrimitive.RootProps & {
 		variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
 		size?: 'sm' | 'md' | 'lg';
 		children: Snippet;
-	}
+	};
 
 	let {
 		variant = 'primary',
