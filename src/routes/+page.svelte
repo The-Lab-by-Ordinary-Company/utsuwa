@@ -5,41 +5,48 @@
 	import ProviderIcons from '$lib/components/icons/ProviderIcons.svelte';
 	import SiteNav from '$lib/components/marketing/SiteNav.svelte';
 	import SiteFooter from '$lib/components/marketing/SiteFooter.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { sectionUrl } from '$lib/config/links';
 	import { reveal } from '$lib/utils/reveal';
 
 	let { data }: { data: PageData } = $props();
 
-	// Hero video. Starts off so SSR/first paint shows the lightweight poster
-	// (keeps LCP fast), then swaps to the looping clip on the client once we
-	// know motion is allowed. Reduced-motion users keep the still poster.
-	let allowVideo = $state(false);
-	let videoReady = $state(false);
+	function heroParallax(node: HTMLElement) {
+		const layers = node.querySelectorAll<HTMLElement>('[data-parallax]');
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const mobile = window.matchMedia('(max-width: 899px)');
+		let frame = 0;
 
-	$effect(() => {
-		const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-		allowVideo = !mq.matches;
-		const sync = () => (allowVideo = !mq.matches);
-		mq.addEventListener('change', sync);
-		return () => mq.removeEventListener('change', sync);
-	});
+		const render = () => {
+			frame = 0;
+			const travel = reducedMotion.matches || mobile.matches
+				? 0
+				: Math.min(Math.max(-node.getBoundingClientRect().top, 0), node.offsetHeight);
 
-	// Pause the hero loop while it's scrolled out of view; resume on return.
-	function pauseOffscreen(node: HTMLVideoElement) {
-		if (typeof IntersectionObserver === 'undefined') return;
-		const obs = new IntersectionObserver(
-			([entry]) => {
-				if (entry.isIntersecting) node.play().catch(() => {});
-				else node.pause();
-			},
-			{ threshold: 0.1 }
-		);
-		obs.observe(node);
-		return { destroy: () => obs.disconnect() };
+			for (const layer of layers) {
+				const offset = travel * Number(layer.dataset.parallax ?? 0);
+				layer.style.setProperty('--parallax-y', `${offset.toFixed(2)}px`);
+			}
+		};
+
+		const queueRender = () => {
+			if (!frame) frame = requestAnimationFrame(render);
+		};
+
+		window.addEventListener('scroll', queueRender, { passive: true });
+		window.addEventListener('resize', queueRender);
+		reducedMotion.addEventListener('change', queueRender);
+		render();
+
+		return {
+			destroy() {
+				window.removeEventListener('scroll', queueRender);
+				window.removeEventListener('resize', queueRender);
+				reducedMotion.removeEventListener('change', queueRender);
+				cancelAnimationFrame(frame);
+			}
+		};
 	}
-
-	// Hero headline, split so each word can blur-fade in on its own beat.
-	const heroWords = 'An open-source AI companion you can see and talk to'.split(' ');
 
 	// Statement line, same treatment but triggered on scroll. The second
 	// sentence renders muted.
@@ -106,8 +113,7 @@
 	/>
 	<link rel="canonical" href={SITE_URL} />
 
-	<!-- Hero poster doubles as the LCP element; fetch it ahead of the video -->
-	<link rel="preload" as="image" href="/landing-page/hero-poster.jpg" />
+	<link rel="preload" as="image" href="/landing-page/hero-character.png" />
 
 	<!-- Open Graph -->
 	<meta property="og:type" content="website" />
@@ -151,61 +157,42 @@
 <div class="page-root overflow-x-clip grain">
 <SiteNav />
 <main>
-	<!-- Hero: centered text with a contained video below -->
-	<section class="hero">
-		<div class="hero-copy">
-			<!-- Fade lives on the wrapper: the animation's fill would otherwise
-			     override the logo's own theme filter -->
-			<span class="hero-fade hero-logo-wrap" style="--wd: 0ms">
-				<img src="/brand-assets/logo.svg" alt="Utsuwa" class="hero-logo" />
-			</span>
-
-			<h1 class="hero-title text-balance">
-				{#each heroWords as word, i}<span class="hero-word" style="--wd: {120 + i * 50}ms"
-						>{word}</span
-					>{#if i < heroWords.length - 1}{' '}{/if}{/each}
+	<!-- Hero: asymmetric editorial layout built around a default Utsuwa companion. -->
+	<section class="hero" aria-labelledby="hero-title">
+		<div class="hero-stage" use:heroParallax>
+			<h1 id="hero-title" class="hero-title">
+				<span class="hero-title-piece hero-title-left hero-enter" data-parallax="0.05" style="--enter-delay: 0ms">
+					An open-source<br />AI companion
+				</span>
+				<span class="hero-title-piece hero-title-right hero-enter" data-parallax="0.09" style="--enter-delay: 120ms">
+					you can see<br />and talk to.
+				</span>
 			</h1>
 
-			<p class="hero-fade hero-sub text-pretty" style="--wd: 650ms">
+			<div class="hero-character-wrap hero-enter" style="--enter-delay: 80ms">
+				<img
+					class="hero-character"
+					data-parallax="0.14"
+					src="/landing-page/hero-character.png"
+					alt="A smiling 3D VRM companion from Utsuwa waving"
+					width="1151"
+					height="1488"
+					fetchpriority="high"
+				/>
+			</div>
+
+			<p class="hero-sub hero-enter text-pretty" style="--enter-delay: 200ms">
 				Load a VRM avatar, connect any LLM, and talk by voice with a character that speaks,
 				listens, and remembers, all on your own machine.
 			</p>
 
-			<div class="hero-fade hero-actions" style="--wd: 800ms">
-				<a href={sectionUrl('app')} class="btn btn-primary btn-lg">Try it live</a>
-				<a href="/download" class="btn btn-secondary btn-lg">Download</a>
+			<div class="hero-actions hero-enter" style="--enter-delay: 280ms">
+				<Button href={sectionUrl('app')} size="lg">Try it live</Button>
+				<Button href="/download" variant="secondary" size="lg">Download</Button>
 				<a href={sectionUrl('docs')} class="hero-textlink"
 					>Read the docs <span class="link-arrow">&rarr;</span></a
 				>
 			</div>
-		</div>
-
-		<!-- Poster renders immediately with a slow Ken Burns drift; the video
-		     fades in over it once it's actually playing. -->
-		<div class="hero-media hero-media-enter" aria-hidden="true">
-			<img
-				class="hero-poster"
-				src="/landing-page/hero-poster.jpg"
-				alt=""
-				width="1920"
-				height="996"
-			/>
-			{#if allowVideo}
-				<video
-					use:pauseOffscreen
-					class="hero-video"
-					class:is-ready={videoReady}
-					autoplay
-					muted
-					loop
-					playsinline
-					preload="auto"
-					onplaying={() => (videoReady = true)}
-				>
-					<source src="/landing-page/hero-loop.webm" type="video/webm" />
-					<source src="/landing-page/hero-loop.mp4" type="video/mp4" />
-				</video>
-			{/if}
 		</div>
 	</section>
 
@@ -403,168 +390,224 @@
 		scroll-margin-top: 4.5rem;
 	}
 
-	/* Hero: centered text over a contained video. 72rem matches the max-w-6xl
-	   sections below so the media panel lines up with the feature shots. */
+	/* The editorial stage echoes the reference while the page's existing type,
+	   color, and button system keeps it unmistakably Utsuwa. */
 	.hero {
-		max-width: 72rem;
+		max-width: 80rem;
 		margin: 0 auto;
-		padding: clamp(3rem, 8vw, 6rem) 1.5rem clamp(2rem, 5vw, 3.5rem);
+		padding: 1rem 1.5rem clamp(2rem, 5vw, 4rem);
 	}
 
-	.hero-copy {
-		max-width: 46rem;
-		margin: 0 auto;
-		text-align: center;
+	.hero-stage {
+		--hero-surface: #ffffff;
+		--hero-ink: #000000;
+		--hero-muted: rgba(0, 0, 0, 0.58);
+		position: relative;
+		isolation: isolate;
+		min-height: clamp(41rem, calc(100svh - 6.5rem), 48rem);
+		overflow: hidden;
+		background: var(--hero-surface);
 	}
 
-	.hero-logo-wrap {
-		display: block;
-		margin: 0 auto 1.5rem;
+	:global(.dark) .hero-stage {
+		--hero-surface: #000000;
+		--hero-ink: #ffffff;
+		--hero-muted: rgba(255, 255, 255, 0.58);
 	}
 
-	.hero-logo {
-		display: block;
-		height: 1.75rem;
-		width: auto;
-		margin: 0 auto;
-		filter: brightness(0);
-		opacity: 0.9;
-	}
-
-	:global(.dark) .hero-logo {
-		filter: none;
+	.hero-stage::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -2;
+		background-image:
+			linear-gradient(to right, color-mix(in srgb, var(--hero-ink) 5%, transparent) 1px, transparent 1px),
+			linear-gradient(to bottom, color-mix(in srgb, var(--hero-ink) 5%, transparent) 1px, transparent 1px);
+		background-size: 8rem 8rem;
+		mask-image: radial-gradient(ellipse 62% 74% at 50% 48%, #000, transparent 82%);
 	}
 
 	.hero-title {
-		margin: 0 auto 1.35rem;
-		max-width: 20ch;
-		color: var(--text-primary);
-		font-weight: 600;
-		font-size: clamp(2.5rem, 6vw, 4.5rem);
-		line-height: 1.05;
-		letter-spacing: -0.03em;
+		margin: 0;
+		color: var(--hero-ink);
 	}
 
-	/* Each word blur-fades in on load, staggered left to right. The rest of
-	   the hero (logo, sub, actions) uses the same curve via .hero-fade. */
-	.hero-word,
-	.hero-fade {
+	.hero-title-piece {
+		position: absolute;
+		z-index: 2;
+		display: block;
+		font-size: clamp(2.8rem, 5vw, 4.65rem);
+		font-weight: 500;
+		line-height: 0.98;
+		letter-spacing: -0.055em;
+		text-wrap: balance;
+	}
+
+	.hero-title-left {
+		top: clamp(3.5rem, 7vw, 5rem);
+		left: clamp(1.5rem, 4vw, 3.5rem);
+	}
+
+	.hero-title-right {
+		top: 52%;
+		right: clamp(1.5rem, 4vw, 3.5rem);
+		font-size: clamp(2.6rem, 4.25vw, 4rem);
+		text-align: right;
+	}
+
+	.hero-enter {
 		opacity: 0;
-		filter: blur(10px);
-		transform: translateY(6px);
-		animation: wordBlurIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) var(--wd, 0ms) forwards;
+		filter: blur(8px);
+		translate: 0 22px;
+		animation: heroEnter 0.7s var(--ease-brand) var(--enter-delay, 0ms) both;
 	}
 
-	.hero-word {
-		display: inline-block;
-	}
-
-	@keyframes wordBlurIn {
+	@keyframes heroEnter {
 		to {
 			opacity: 1;
 			filter: blur(0);
-			transform: none;
+			translate: 0 0;
 		}
 	}
 
+	[data-parallax] {
+		transform: translate3d(0, var(--parallax-y, 0px), 0);
+	}
+
+	.hero-character-wrap {
+		position: absolute;
+		left: 50%;
+		bottom: -2.25rem;
+		z-index: 1;
+		height: 84%;
+		transform: translateX(-50%);
+		pointer-events: none;
+		-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 76%, transparent 100%);
+		mask-image: linear-gradient(to bottom, #000 0%, #000 76%, transparent 100%);
+	}
+
+	.hero-character {
+		display: block;
+		height: 100%;
+		width: auto;
+	}
+
 	.hero-sub {
-		margin: 0 auto;
-		max-width: 40rem;
-		color: var(--text-secondary);
-		font-size: clamp(1.05rem, 1.6vw, 1.2rem);
-		line-height: 1.6;
+		position: absolute;
+		left: clamp(1.5rem, 4vw, 3.5rem);
+		bottom: clamp(1.5rem, 4vw, 3.25rem);
+		z-index: 2;
+		max-width: 18rem;
+		margin: 0;
+		color: var(--hero-muted);
+		font-size: 0.92rem;
+		line-height: 1.55;
 	}
 
 	.hero-actions {
+		position: absolute;
+		right: clamp(1.5rem, 4vw, 3.5rem);
+		bottom: clamp(1.5rem, 4vw, 3.25rem);
+		z-index: 3;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-end;
 		gap: 0.75rem;
-		margin-top: 2rem;
 	}
 
 	.hero-textlink {
-		margin-left: 0.5rem;
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		margin-left: 0.25rem;
 		font-size: 0.95rem;
 		font-weight: 500;
-		color: var(--text-secondary);
+		color: var(--hero-muted);
 		text-decoration: none;
-		transition: color 0.15s ease;
+		transition-property: color;
+		transition-duration: 150ms;
+		transition-timing-function: ease-out;
 	}
 
 	.hero-textlink:hover {
-		color: var(--accent);
+		color: var(--hero-ink);
 	}
 
 	.link-arrow {
 		display: inline-block;
-		transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		margin-left: 0.3rem;
+		transition-property: transform;
+		transition-duration: 200ms;
+		transition-timing-function: var(--ease-brand);
 	}
 
 	.hero-textlink:hover .link-arrow {
 		transform: translateX(3px);
 	}
 
-	/* Contained hero video panel */
-	.hero-media {
-		position: relative;
-		margin: clamp(2.5rem, 6vw, 4.5rem) auto 0;
-		border-radius: var(--radius-xl);
-		overflow: hidden;
-		box-shadow: var(--shadow-xl);
-		background: var(--bg-secondary);
-		aspect-ratio: 16 / 9;
-	}
-
-	/* Slow push-in on the poster while the video loads */
-	.hero-poster {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transform-origin: 50% 40%;
-		animation: kenBurns 18s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-	}
-
-	@keyframes kenBurns {
-		from {
-			transform: scale(1);
+	@media (max-width: 899px) {
+		.hero {
+			padding: 0.5rem 1rem 2.5rem;
 		}
-		to {
-			transform: scale(1.08);
-		}
-	}
 
-	/* Cinematic entrance after the headline settles */
-	.hero-media-enter {
-		animation: heroMediaIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
-	}
-
-	@keyframes heroMediaIn {
-		from {
-			opacity: 0;
-			transform: translateY(44px) scale(0.965);
+		.hero-stage {
+			display: flex;
+			min-height: 0;
+			flex-direction: column;
+			padding: 1.5rem 1.25rem 1.75rem;
 		}
-		to {
-			opacity: 1;
+
+		.hero-title-piece,
+		.hero-character-wrap,
+		.hero-sub,
+		.hero-actions {
+			position: static;
+		}
+
+		.hero-title {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			width: 100%;
+			margin-top: 2rem;
+			text-align: center;
+		}
+
+		.hero-title-piece {
+			font-size: clamp(2.65rem, 11vw, 4.5rem);
+		}
+
+		.hero-title-right {
+			align-self: auto;
+			margin-top: 0.3rem;
+		}
+
+		.hero-character-wrap {
+			align-self: center;
+			height: auto;
+			width: min(100%, 29rem);
+			margin: 1.75rem auto -0.5rem;
 			transform: none;
 		}
-	}
 
-	.hero-video {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		display: block;
-		opacity: 0;
-		transition: opacity 1s ease;
-	}
+		.hero-character {
+			height: auto;
+			width: 100%;
+		}
 
-	.hero-video.is-ready {
-		opacity: 1;
+		.hero-sub {
+			max-width: 30rem;
+			margin-inline: auto;
+			font-size: 1rem;
+			text-align: center;
+		}
+
+		.hero-actions {
+			justify-content: center;
+			width: 100%;
+			margin-top: 1.5rem;
+		}
 	}
 
 	/* Provider logo marquee */
@@ -765,6 +808,14 @@
 		animation: wordBlurIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--wd, 0ms) forwards;
 	}
 
+	@keyframes wordBlurIn {
+		to {
+			opacity: 1;
+			filter: blur(0);
+			transform: none;
+		}
+	}
+
 	/* Scroll-reveal: blur-fade-up, same language as the hero */
 	.reveal {
 		opacity: 0;
@@ -867,24 +918,17 @@
 			transition: none;
 		}
 
-		.hero-video {
-			transition: none;
-		}
-
-		.hero-poster {
+		.hero-enter {
+			opacity: 1;
+			filter: none;
+			translate: none;
 			animation: none;
 		}
 
-		.hero-word,
-		.hero-fade,
 		.st-word {
 			opacity: 1;
 			filter: none;
 			transform: none;
-			animation: none;
-		}
-
-		.hero-media-enter {
 			animation: none;
 		}
 
