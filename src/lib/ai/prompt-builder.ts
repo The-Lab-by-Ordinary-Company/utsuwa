@@ -26,6 +26,21 @@ export interface PromptContext {
 	// Optional system event text (e.g. a fired reminder) delivered as an event
 	// block instead of a user turn.
 	systemEvent?: string;
+	// Active TTS provider ID. When 'omnivoice', tool-calling instructions for
+	// multilingual speech output are injected.
+	ttsProvider?: string;
+	// Primary spoken language (ISO 639-1) for the OmniVoice speech layer.
+	ttsLanguage?: string;
+	// Alternative spoken language (ISO 639-1) for the OmniVoice speech layer.
+	ttsAltLanguage?: string;
+	// Whether the alternative voice is enabled; the alternative-language
+	// switching rules are only injected then.
+	ttsAltEnabled?: boolean;
+	// True when native speak_segment tool calling is active for OmniVoice
+	// speech (speech on + omnivoice + alt voice enabled + tool calling not
+	// disabled). The speech layer then mandates tool calls instead of
+	// teaching the inline speak()/pause()/gesture() syntax.
+	ttsToolCalling?: boolean;
 }
 
 function getContextMemoryBudget(contextSize?: number): MemoryBudget | undefined {
@@ -83,10 +98,73 @@ export function buildSystemPrompt(context: PromptContext): string {
 		buildMemoryLayer(context),
 		...(context.hasImages ? [buildBeingShownLayer()] : []),
 		buildEventLayer(context),
+		buildOmniVoiceLayer(context),
 		buildInstructionLayer(context)
 	].filter((layer): layer is string => layer !== null);
 
 	return layers.join('\n\n');
+}
+
+/**
+ * OmniVoice speech-output control layer.
+ *
+ * Prescribes a single syntax (`speak({...})` / `pause({...})` / `gesture({...})`)
+ * and instructs word-level language switching: the actual foreign word/phrase
+ * gets its own speak() call with the correct lang, everything else stays in
+ * the primary language. Non-verbal markers are rendered by the model.
+ */
+function buildOmniVoiceLayer(ctx: PromptContext): string | null {
+	if (ctx.ttsProvider !== 'omnivoice') return null;
+	const primaryLang = (ctx.ttsLanguage || 'en').toLowerCase();
+	const altLang = ctx.ttsAltLanguage?.toLowerCase();
+	const altEnabled = ctx.ttsAltEnabled === true && !!altLang;
+
+	// Native tool calling is active: mandate tool calls instead of teaching
+	// the inline syntax. The inline pseudo-calls stay as the documented
+	// fallback for providers/models without tool calling — teaching both
+	// syntaxes at once made models mix them and broke streaming speech.
+	if (ctx.ttsToolCalling === true) {
+		const altToolRules = altEnabled
+			? `
+- ${altLang} words/phrases get their own speak_segment call with language "${altLang}" — even single words. Prefer a short phrase, or include the article/function word where the language needs one; never a bare word alone. Explain around them in ${primaryLang} calls.`
+			: '';
+		return `<speech_output_control>
+You control your spoken reply with native tool calls. Primary language: "${primaryLang}".
+
+Rules:
+- Your entire spoken reply is a sequence of speak_segment calls: one short natural phrase per call, in the order it should be spoken.
+- NEVER write speak(), pause() or gesture() commands into plain text, and never quote them — plain text outside tool calls is not spoken.
+- language is REQUIRED on every speak_segment call: use "${primaryLang}" unless the phrase is${altEnabled ? ` in ${altLang}` : ' in the alternative language'}.
+- For a short silent pause use the pause_segment tool; for a small gesture use the gesture_segment tool.
+- Group same-language words into one natural phrase per call.
+- No quote marks inside text.
+${altToolRules}
+- End with the JSON state block. No spoken text after it.
+</speech_output_control>`;
+	}
+
+	const altRules = altEnabled
+		? `
+${altLang} words/phrases get their own speak({ lang: "${altLang}" }) call — even single words. Pattern: speak({ text: "<explain in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<${altLang} word or phrase>" }) speak({ text: "<continue in ${primaryLang}>" }).
+- The ${altLang} call includes the article/function word where the language needs one, or a short phrase — never a bare word alone.
+- Conjugation/variant lists: one ${altLang} call per section with ALL rows — pattern: speak({ text: "<heading in ${primaryLang}>" }) speak({ lang: "${altLang}", text: "<all ${altLang} rows>" }).`
+		: '';
+
+	return `<speech_output_control>
+You control your spoken reply with inline speak() commands. Primary language: "${primaryLang}".
+
+Commands:
+  speak({ text: "...", lang?: "${primaryLang}"${altEnabled ? `|"${altLang}"` : ""}|... })  — omit lang for ${primaryLang}
+  pause({ ms: number })
+  gesture({ type: "smile"|"laugh"|"surprise"|"nod"|"shake_head"|"wave" })
+
+Rules:
+- EVERYTHING in speak() calls — no plain text outside them.
+- Group same-language words into one natural phrase per call.
+- No quote marks inside text.
+${altRules}
+- End with the JSON state block. No spoken text after it.
+</speech_output_control>`;
 }
 
 // Simplified prompt for Companion Mode
@@ -175,6 +253,9 @@ Examples of good new_memory values:
 
 In Companion Mode, only mood and energy change. Do NOT suggest affection, trust, intimacy, comfort, or respect changes - these relationship stats are disabled.
 </instructions>`);
+
+	const ovLayer = buildOmniVoiceLayer(ctx);
+	if (ovLayer) parts.push(ovLayer);
 
 	return parts.join('\n\n');
 }

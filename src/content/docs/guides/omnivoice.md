@@ -59,11 +59,66 @@ After selecting OmniVoice in **Settings > Speech (TTS)**:
 
 ### Advanced settings
 
+The primary voice card carries its own synthesis parameters:
+
 - **Speed**: Playback speed of the generated audio.
 - **Num Step**: Diffusion steps. Higher values can improve quality at the cost of slower generation.
 - **Position Temperature** / **Class Temperature**: Sampling temperatures for the audio tokenizer. Leave them at the defaults unless you want to experiment with pronunciation variation.
 
+The **Alternative Voice** card has the same four parameters with an **Alt** prefix; unset values fall back to the primary voice's settings.
+
 Because OmniVoice is a diffusion model, the exact speaker color can vary slightly between sentences even for the same preset. Persistent preset profiles keep the variation small; cloned voices tend to sound more stable than synthetic presets.
+
+### Alternative language & voice
+
+Enable **Alternative Voice** to give foreign-language words their own voice. This is built for language training: when the companion explains a foreign word, the word itself is spoken in its own language and dialect, while the surrounding explanation stays in the primary voice.
+
+- **Enable toggle**: Turns the switch on. Without it, everything is spoken with the primary voice (foreign words still get the correct dialect, but no voice change).
+- **Language**: The foreign language (for example `es`). The primary language is excluded here; the two must differ.
+- **Preset Voice / Mode**: Same choices as the primary voice — synthetic presets or one of your cloned voices.
+- **Alt Speed / Alt Num Step / Alt Position & Class Temperature**: Optional synthesis parameters for the alternative voice. Each falls back to the primary voice's value when unset.
+- **Test Alt Voice**: Plays a short test phrase in the alternative language so you can verify the voice before chatting.
+- **Profile pre-warming**: When you enable the alternative voice, Utsuwa pre-generates the persistent profile for that language in the background, so the first foreign word in a chat is not delayed by on-demand profile generation.
+
+The switch is per word: with tool-capable models Utsuwa hands the LLM native speech tools (otherwise it uses `speak({...})` syntax), and every language change becomes its own segment — a reply like "Das spanische Wort für Auto ist **el coche**." plays the German part with the primary voice and "el coche" with the alternative voice. Regional language tags from the model (`es-ES`) still match the configured language, and languages written in non-Latin scripts (Japanese, Korean, Chinese, Russian, Arabic, Thai, ...) are detected from their script when the model omits explicit markup.
+
+### Function Calling (tool support)
+
+When the alternative voice is enabled, Utsuwa can optionally use **LLM function calling** to force a language code on every speech segment. This is more reliable than asking the LLM to write `speak({...})` syntax, because the language field is schema-required and cannot be forgotten. The toggle **Force language per segment** in the settings controls this:
+
+- **On** (default): The LLM receives a `speak_segment` tool with `language` as a required enum field. Every speech segment must specify its language. Supported by OpenAI, OpenRouter, DeepSeek, and most modern providers.
+- **Off**: Falls back to the text-based `speak({...})` syntax. Use this if your LLM provider does not support function calling or rejects unknown parameters.
+
+The icon ⓘ shows the tooltip: *More reliable; needs LLM tool support*.
+
+**Known limitation (mixed output order):** When function calling is enabled, Utsuwa streams text deltas immediately but delivers tool calls in a separate pass at the end of the response. This works correctly when a model replies *either* with tool calls *or* with text — which is the normal behaviour for OpenAI-compatible APIs (`finish_reason: "tool_calls"` vs. `"stop"`). If a model ever emits a **mixed** response that interleaves text and tool calls, the speech order may not match the intended sequence. This is an accepted edge case; if you observe out-of-order speech, disable the **Force language per segment** toggle to fall back to inline `speak({...})` syntax.
+
+### Language detection & validation
+
+Utsuwa validates every segment's declared language against the actual text using **ELD** (Efficient Language Detector, [nitotm/eld](https://github.com/nitotm/efficient-language-detector)). If the detected language differs from the declared one (e.g. the LLM tagged Spanish text as German), the segment falls back to the primary voice. This catches inconsistent LLM behaviour without relying on the model alone.
+
+The validation only considers the two active languages (primary and alternative), which makes it highly accurate even for single words. Common function words (`el la un una por para` for Spanish, `der die das ein` for German) are used as a secondary heuristic when the text lacks characteristic diacritics.
+
+### Streaming & expressive speech
+
+OmniVoice replies start speaking while the model is still writing: complete sentences are synthesised as soon as they arrive, and long text is split at sentence boundaries. Lip-sync follows the real audio.
+
+For expressive speech the model can insert non-verbal markers into the spoken text — e.g. `[laughter]`, `[sigh]`, `[question-oh]`, `[surprise-wa]`. These are rendered as audio (in both voices) and automatically removed from the visible chat bubble.
+
+Known limitations: very short foreign words are spoken as individual segments, so there can be tiny pauses between them; `pause()`/`gesture()` markers inside a streaming reply are not executed (they are only honoured in non-streaming playback). Because the diffusion model can return empty audio for very short foreign-language inputs, Utsuwa capitalises the word and adds a closing period (`"ir"` → `"Ir."`) and disables the model's built-in silence removal. A higher guidance scale (`guidance_scale=6`) is set on foreign segments to improve pronunciation stability. Primary-language fragments are stable and stay untouched; quote marks around words never reach the synthesiser, as OmniVoice renders them as silence.
+
+If syllables or whole words still get swallowed occasionally, the cause is the diffusion model itself, not the language switching: OmniVoice samples the audio over several steps instead of rendering it deterministically from the text, and on short or unusual inputs that sampling can degenerate — phones get dropped or the segment comes back near-silent. Utsuwa already applies the automatic mitigations above (phrase expansion like `"ir"` → `"Ir."`, raised guidance scale, silence removal off, and prompt rules that forbid the LLM from sending bare single words). The remaining levers are in the voice settings: raise **Num Step** (more diffusion steps → more stable output), lower **Position/Class Temperature** (less sampling variance), prefer a synthetic preset voice over a fresh voice clone for foreign segments (clones transfer badly to other languages), and avoid very short foreign segments — a two-word phrase survives diffusion noticeably better than a lone word.
+
+> **Beta note:** Every language the proxy offers can be selected as the alternative language, but the multilingual feature is only fully mature for **DE, ES, EN**. Other languages work — whole-segment detection, diacritics and script checks still apply — but language-dependent heuristics (function-word detection, voice-clone interaction) are less mature. The toggle **Force language per segment** requires an LLM with function-calling support; disable it for models that reject unknown parameters.
+
+### When the model forgets to tag
+
+The language switch depends on the LLM marking foreign words with a language. With function calling enabled this is schema-enforced; otherwise Utsuwa relies on `speak({ lang: ... })` syntax. Some models still tag inconsistently — for example packing "el gato" into a German sentence instead of giving it its own call. Utsuwa corrects what can be proven deterministically via ELD validation (diacritics, scripts, and function words), but an unmarked foreign word without any distinguishing feature cannot be detected safely and stays in the primary voice.
+
+If you hit this often, the lever is the model, not the voice settings:
+
+- **Lower the LLM temperature** (towards 0.2–0.4). Format discipline improves noticeably at lower temperatures; creative phrasing suffers only slightly for a teaching use case.
+- **Switch to a model with stronger instruction following.** Criteria that matter here: reliable adherence to structured output formats (the model should not drop or mangle the `speak({...})` syntax), explicit tool-calling or JSON-mode support, and solid multilingual training. Small distilled models tend to skip tagging exactly when a sentence gets complex (side-by-side variants, conjugation tables); if you see missing tags mostly in long teaching answers, the model is usually the bottleneck.
 
 ### Cloned voices
 

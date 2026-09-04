@@ -344,6 +344,46 @@ export function createTtsSettingsState() {
 		modulesStore.setModuleSetting('speech', 'activeLanguage', language);
 	}
 
+	function handleTTSEnableAltLanguageChange(enabled: boolean) {
+		modulesStore.setModuleSetting('speech', 'enableAltLanguage', enabled);
+	}
+
+	function handleTTSEnableToolCallingChange(enabled: boolean) {
+		modulesStore.setModuleSetting('speech', 'enableToolCalling', enabled);
+	}
+
+	function handleTTSAltLanguageChange(language: string) {
+		modulesStore.setModuleSetting('speech', 'altLanguage', language);
+	}
+
+	function handleTTSAltVoiceChange(voiceId: string) {
+		modulesStore.setModuleSetting('speech', 'altVoiceId', voiceId);
+	}
+
+	function handleTTSAltInstructionsChange(instructions: string | undefined) {
+		modulesStore.setModuleSetting('speech', 'altInstructions', instructions ?? '');
+	}
+
+	function handleTTSAltSpeedChange(speed: number | undefined) {
+		if (speed !== undefined && Number.isNaN(speed)) return;
+		modulesStore.setModuleSetting('speech', 'altSpeed', speed ?? 1);
+	}
+
+	function handleTTSAltNumStepChange(numStep: number | undefined) {
+		if (numStep !== undefined && Number.isNaN(numStep)) return;
+		modulesStore.setModuleSetting('speech', 'altNumStep', numStep ?? 32);
+	}
+
+	function handleTTSAltPositionTemperatureChange(positionTemperature: number | undefined) {
+		if (positionTemperature !== undefined && Number.isNaN(positionTemperature)) return;
+		modulesStore.setModuleSetting('speech', 'altPositionTemperature', positionTemperature ?? 1);
+	}
+
+	function handleTTSAltClassTemperatureChange(classTemperature: number | undefined) {
+		if (classTemperature !== undefined && Number.isNaN(classTemperature)) return;
+		modulesStore.setModuleSetting('speech', 'altClassTemperature', classTemperature ?? 0.2);
+	}
+
 	function handleTTSSpeedChange(speed: number | undefined) {
 		if (speed !== undefined && Number.isNaN(speed)) return;
 		modulesStore.setModuleSetting('speech', 'speed', speed ?? 1);
@@ -409,11 +449,20 @@ export function createTtsSettingsState() {
 		},
 		fetchTTSModels,
 		debouncedFetchTTSModels,
-		handleTTSProviderChange,
-		handleTTSModelChange,
-		handleTTSVoiceChange,
-		handleTTSLanguageChange,
-		handleTTSSpeedChange,
+	handleTTSProviderChange,
+	handleTTSModelChange,
+	handleTTSVoiceChange,
+	handleTTSLanguageChange,
+	handleTTSEnableAltLanguageChange,
+	handleTTSEnableToolCallingChange,
+	handleTTSAltLanguageChange,
+	handleTTSAltVoiceChange,
+	handleTTSAltInstructionsChange,
+	handleTTSAltSpeedChange,
+	handleTTSAltNumStepChange,
+	handleTTSAltPositionTemperatureChange,
+	handleTTSAltClassTemperatureChange,
+	handleTTSSpeedChange,
 		handleTTSInstructionsChange,
 		handleTTSNumStepChange,
 		handleTTSPositionTemperatureChange,

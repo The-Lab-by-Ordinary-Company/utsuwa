@@ -54,7 +54,7 @@ class MockAudioContext {
 // @ts-expect-error globalThis.AudioContext is not available in Node test environment
 globalThis.AudioContext = MockAudioContext;
 
-import { OpenAITTS } from './openai-tts.ts';
+import { OpenAITTS, sanitizeOmniVoiceInput } from './openai-tts.ts';
 
 function parseBody(init?: RequestInit): Record<string, unknown> {
 	if (!init?.body) return {};
@@ -226,6 +226,57 @@ test('fetchAudioBuffer overrides language and speed from stream options', async 
 	assert.equal(requests[0].body.speed, 0.9);
 });
 
+test('fetchAudioBuffer adds guidance_scale and disables postprocessing for foreign segments', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const tts = new OpenAITTS({
+		provider: 'omnivoice',
+		voiceId: 'alloy',
+		language: 'de',
+		speed: 1.0
+	});
+
+	// Foreign segment: guidance_scale=6, postprocess_output=false
+	await tts.fetchAudioBuffer('ir', { language: 'es' });
+	assert.equal(requests[0].body.guidance_scale, 6.0);
+	assert.equal(requests[0].body.postprocess_output, false);
+
+	// Primary segment: neither field present
+	await tts.fetchAudioBuffer('Hallo.');
+	assert.equal('guidance_scale' in requests[1].body, false);
+	assert.equal('postprocess_output' in requests[1].body, false);
+});
+
+test('fetchAudioBuffer honours per-segment guidanceScale and postprocessOutput overrides', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const tts = new OpenAITTS({
+		provider: 'omnivoice',
+		voiceId: 'alloy',
+		language: 'de',
+		speed: 1.0
+	});
+
+	await tts.fetchAudioBuffer('ir', {
+		language: 'es',
+		guidanceScale: 4.0,
+		postprocessOutput: true
+	});
+
+	assert.equal(requests[0].body.guidance_scale, 4.0);
+	assert.equal(requests[0].body.postprocess_output, true);
+});
+
 test('speak returns a source and analyser', async () => {
 	globalThis.fetch = () => mockFetchResponse();
 
@@ -331,4 +382,164 @@ test('fetchAudioBuffer omits instructions for cloned OmniVoice voices', async ()
 	await tts.fetchAudioBuffer('Hello.');
 
 	assert.equal('instructions' in requests[0].body, false);
+});
+
+test('fetchAudioBuffer treats near-empty WAV responses as silence instead of throwing', async () => {
+	// OmniVoice returns header-plus-a-few-samples WAVs for very short inputs;
+	// decodeAudioData can reject those. The client must not surface a decode
+	// error for them.
+	let decodeCalled = 0;
+	const tts = new OpenAITTS({ provider: 'omnivoice' });
+	const ctx = tts.getAudioContext() as unknown as MockAudioContext;
+	ctx.decodeAudioData = async () => {
+		decodeCalled++;
+		return ctx.createBuffer(1, 48000, 48000);
+	};
+
+	globalThis.fetch = () =>
+		Promise.resolve({
+			ok: true,
+			status: 200,
+			arrayBuffer: () => Promise.resolve(new ArrayBuffer(80))
+		} as Response);
+
+	const buffer = await tts.fetchAudioBuffer('es');
+	assert.ok(buffer);
+	assert.equal(decodeCalled, 0);
+
+	// A normal-size response still goes through decodeAudioData.
+	globalThis.fetch = () =>
+		Promise.resolve({
+			ok: true,
+			status: 200,
+			arrayBuffer: () => Promise.resolve(new ArrayBuffer(95120))
+		} as Response);
+	await tts.fetchAudioBuffer('Hallo Welt.');
+	assert.equal(decodeCalled, 1);
+});
+
+// ── OmniVoice input sanitizing (quote marks, short words) ─────────────
+
+test('sanitizeOmniVoiceInput strips double quotes OmniVoice would render as silence', () => {
+	// Measured against the live proxy: inputs like "es" (with quotes) always
+	// return an empty WAV, while the bare word synthesises fine.
+	assert.equal(sanitizeOmniVoiceInput('"es"'), 'es');
+	assert.equal(sanitizeOmniVoiceInput('„es"'), 'es');
+	assert.equal(sanitizeOmniVoiceInput('Das Wort "ir" bedeutet gehen.'), 'Das Wort ir bedeutet gehen.');
+});
+
+test('sanitizeOmniVoiceInput keeps apostrophes inside words', () => {
+	// Elisions (l'osso, rock 'n' roll) must keep their apostrophes; only
+	// quoting marks around a word are dropped.
+	assert.equal(sanitizeOmniVoiceInput("l'osso significa Knochen."), "l'osso significa Knochen.");
+	assert.equal(sanitizeOmniVoiceInput("'ir'"), 'ir');
+});
+
+test('sanitizeOmniVoiceInput leaves single-word inputs in the primary language alone', () => {
+	// Primary-language words are measured stable; no enrichment needed.
+	assert.equal(sanitizeOmniVoiceInput('ir'), 'ir');
+	assert.equal(sanitizeOmniVoiceInput('decir'), 'decir');
+	assert.equal(sanitizeOmniVoiceInput('go'), 'go');
+	assert.equal(sanitizeOmniVoiceInput('行く'), '行く');
+});
+
+test('sanitizeOmniVoiceInput leaves multi-word inputs untouched', () => {
+	assert.equal(sanitizeOmniVoiceInput('por favor'), 'por favor');
+	assert.equal(sanitizeOmniVoiceInput('Das war gehen.'), 'Das war gehen.');
+});
+
+test('sanitizeOmniVoiceInput handles punctuation edge cases', () => {
+	// Primary-language inputs keep their original punctuation.
+	assert.equal(sanitizeOmniVoiceInput('go!'), 'go!');
+	assert.equal(sanitizeOmniVoiceInput('café?'), 'café?');
+	assert.equal(sanitizeOmniVoiceInput('ir,'), 'ir,');
+	assert.equal(sanitizeOmniVoiceInput('ir:'), 'ir:');
+	// No speakable character: returned as-is (the caller skips the request).
+	assert.equal(sanitizeOmniVoiceInput('.'), '.');
+	assert.equal(sanitizeOmniVoiceInput('!!!'), '!!!');
+	assert.equal(sanitizeOmniVoiceInput(''), '');
+});
+
+test('sanitizeOmniVoiceInput capitalises short foreign inputs and adds a period', () => {
+	// Measured against the live proxy: short foreign inputs like "ir" or
+	// "por favor" returned empty audio without a speech boundary. Capitalising
+	// and adding a closing period ("Ir.", "Por favor.") synthesised reliably
+	// and sounds natural instead of repeating the word.
+	assert.equal(sanitizeOmniVoiceInput('ir', 'es', 'de'), 'Ir.');
+	assert.equal(sanitizeOmniVoiceInput('por favor', 'es', 'de'), 'Por favor.');
+	assert.equal(sanitizeOmniVoiceInput('yes', 'en', 'de'), 'Yes.');
+	assert.equal(sanitizeOmniVoiceInput('ja', 'de', 'es'), 'Ja.');
+	// Regional tags resolve to the primary subtag.
+	assert.equal(sanitizeOmniVoiceInput('oui', 'fr-FR', 'de'), 'Oui.');
+	// Non-Latin scripts: no capitalisation concept, but the period is added.
+	assert.equal(sanitizeOmniVoiceInput('行く', 'ja', 'de'), '行く.');
+});
+
+test('sanitizeOmniVoiceInput leaves primary-language fragments alone', () => {
+	// Primary-language fragments are measured stable; no enrichment needed.
+	assert.equal(sanitizeOmniVoiceInput('danke schön', 'de', 'de'), 'danke schön');
+	assert.equal(sanitizeOmniVoiceInput('Das war', 'de', 'de'), 'Das war');
+	assert.equal(sanitizeOmniVoiceInput('es', 'de', 'de'), 'es');
+});
+
+test('sanitizeOmniVoiceInput capitalises short foreign inputs in any language', () => {
+	// Languages without carrier phrase (e.g. Polish) get same treatment:
+	// capitalise + closing period.
+	assert.equal(sanitizeOmniVoiceInput('cześć', 'pl', 'de'), 'Cześć.');
+	assert.equal(sanitizeOmniVoiceInput('dzień dobry', 'pl', 'de'), 'Dzień dobry.');
+});
+
+test('sanitizeOmniVoiceInput keeps inverted punctuation pairs intact', () => {
+	// ¿…? / ¡…! pairs must not end up with a trailing period: breaking
+	// the pair confuses the synthesiser ("¿qué tal?" → "¿qué tal.").
+	assert.equal(sanitizeOmniVoiceInput('¿qué tal?', 'es', 'de'), '¿Qué tal?');
+	assert.equal(sanitizeOmniVoiceInput('¡hola!', 'es', 'de'), '¡Hola!');
+	// Unclosed pairs get their matching closing mark restored.
+	assert.equal(sanitizeOmniVoiceInput('¿qué tal', 'es', 'de'), '¿Qué tal?');
+	assert.equal(sanitizeOmniVoiceInput('¡hola', 'es', 'de'), '¡Hola!');
+	// German primary-language fragments keep the period enrichment.
+	assert.equal(sanitizeOmniVoiceInput('hallo', 'de', 'es'), 'Hallo.');
+});
+
+test('sanitizeOmniVoiceInput never enriches non-verbal markers', () => {
+	// [laughter] is rendered by OmniVoice as audio; enriching it to
+	// "laughter, laughter." would read the marker word aloud instead.
+	assert.equal(sanitizeOmniVoiceInput('[laughter]'), '[laughter]');
+	assert.equal(sanitizeOmniVoiceInput('[laughter]', 'es', 'de'), '[laughter]');
+	assert.equal(sanitizeOmniVoiceInput('[sigh] [laughter]', 'es', 'de'), '[sigh] [laughter]');
+});
+
+test('OmniVoice request body contains the sanitised input, OpenAI stays untouched', async () => {
+	const requests: { body: Record<string, unknown> }[] = [];
+	// @ts-expect-error global fetch mock
+	globalThis.fetch = (_url: string, init: RequestInit) => {
+		requests.push({ body: parseBody(init) });
+		return mockFetchResponse();
+	};
+
+	const omni = new OpenAITTS({ provider: 'omnivoice', voiceId: 'alloy', language: 'es' });
+	await omni.fetchAudioBuffer('"ir"');
+	assert.equal(requests[0].body.input, 'ir');
+
+	const openai = new OpenAITTS({ provider: 'openai-tts', apiKey: 'k', voiceId: 'nova' });
+	await openai.fetchAudioBuffer('"Hello."');
+	assert.equal(requests[1].body.input, '"Hello."');
+});
+
+test('fetchAudioBuffer skips the HTTP request when nothing speakable remains', async () => {
+	// A bare "." (or an empty segment) has no speakable content; sending it
+	// only produces noise. No request must leave the client.
+	let fetchCalls = 0;
+	globalThis.fetch = () => {
+		fetchCalls++;
+		return mockFetchResponse();
+	};
+
+	const tts = new OpenAITTS({ provider: 'omnivoice' });
+	const buffer = await tts.fetchAudioBuffer('.');
+	assert.ok(buffer);
+	assert.equal(fetchCalls, 0);
+
+	await tts.fetchAudioBuffer('Hallo.');
+	assert.equal(fetchCalls, 1);
 });

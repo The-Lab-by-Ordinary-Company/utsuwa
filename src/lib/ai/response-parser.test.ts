@@ -227,3 +227,38 @@ test('prose with a stray brace but no state keys is left intact', () => {
 	assert.ok(dialogue.includes('coffee'));
 	assert.ok(dialogue.includes('{'));
 });
+
+test('repeated text after the state block is cut (regression, double-speech report)', () => {
+	// The model repeated the whole reply after the JSON state block and
+	// leaked a system reminder. Only the text before the block is the reply;
+	// parseResponse and the streaming speech path both cut there.
+	const raw = [
+		'¡Ah, qué romántico! ¡Me encanta! Here comes the vocabulary.',
+		'```json',
+		'{ "mood_change": { "emotion": "happy", "intensity_delta": 3 } }',
+		'```',
+		'¡Ah, qué romántico! ¡Me encanta! Here comes the vocabulary.',
+		'<system-reminder>Your operational mode has changed.</system-reminder>'
+	].join('\n');
+	const { dialogue, stateUpdates } = parseResponse(raw);
+	assert.equal(dialogue, '¡Ah, qué romántico! ¡Me encanta! Here comes the vocabulary.');
+	assert.equal(stateUpdates?.moodChange?.emotion, 'happy');
+});
+
+test('a state block at the very start falls back to the text after it', () => {
+	const raw = [
+		'```json',
+		'{ "mood_change": { "emotion": "neutral", "intensity_delta": 1 } }',
+		'```',
+		'Gracias, that is all.'
+	].join('\n');
+	const { dialogue } = parseResponse(raw);
+	assert.equal(dialogue, 'Gracias, that is all.');
+});
+
+test('a dangling reasoning block is cut like the streaming path does', () => {
+	// Parody the stream end: the closing tag never arrived. Parser and TTS
+	// must agree so the chat never shows reasoning the voice already skipped.
+	const { dialogue } = parseResponse(['Hola!', '<thinking>Er wirkt müde, ich sollte', '```json', '{ "energy_delta": 1 }', '```'].join('\n'));
+	assert.equal(dialogue, 'Hola!');
+});

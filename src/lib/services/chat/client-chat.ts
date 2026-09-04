@@ -30,6 +30,8 @@ interface ChatOptions {
 	topP?: number;
 	presencePenalty?: number;
 	frequencyPenalty?: number;
+	/** Native tool definitions for providers that support function calling. */
+	tools?: Record<string, unknown>[];
 }
 
 function getCurrentSiteOrigin(): string | undefined {
@@ -44,7 +46,8 @@ export async function streamChatDirect(
 	options: ChatOptions,
 	onChunk: (text: string) => void,
 	onError: (error: string) => void,
-	onDone: () => void
+	onDone: () => void,
+	onToolCall?: (name: string, args: Record<string, unknown>) => void
 ): Promise<void> {
 	const { messages, provider, model, apiKey, baseURL, systemPrompt } = options;
 
@@ -108,7 +111,8 @@ export async function streamChatDirect(
 					...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
 					...(options.topP !== undefined && { top_p: options.topP }),
 					...(options.presencePenalty !== undefined && { presence_penalty: options.presencePenalty }),
-					...(options.frequencyPenalty !== undefined && { frequency_penalty: options.frequencyPenalty })
+					...(options.frequencyPenalty !== undefined && { frequency_penalty: options.frequencyPenalty }),
+					...(options.tools !== undefined && options.tools.length > 0 && { tools: options.tools })
 				});
 
 	const url = provider === 'anthropic'
@@ -151,6 +155,11 @@ export async function streamChatDirect(
 		const decoder = new TextDecoder();
 		let buffer = '';
 
+		// Collect tool-call deltas across chunks (OpenAI-compatible only).
+		// Each delta contains one index/fragment; we aggregate by index and
+		// fire the callback when the function name + arguments are complete.
+		const toolCallBuffers: Map<number, { name: string; args: string }> = new Map();
+
 		while (true) {
 			const { done, value } = await reader.read();
 			if (done) break;
@@ -160,13 +169,26 @@ export async function streamChatDirect(
 			buffer = lines.pop() || '';
 
 			for (const line of lines) {
-				processStreamLine(line, onChunk);
+				processStreamLine(line, onChunk, onToolCall, toolCallBuffers);
 			}
 		}
 
 		// Flush the decoder and any final line that arrived without a trailing newline
 		buffer += decoder.decode();
-		processStreamLine(buffer, onChunk);
+		processStreamLine(buffer, onChunk, onToolCall, toolCallBuffers);
+
+		// Fire onToolCall for each collected tool call after the stream ends
+		if (onToolCall && toolCallBuffers.size > 0) {
+			for (const [, buf] of toolCallBuffers) {
+				if (buf.name && buf.args) {
+					try {
+						onToolCall(buf.name, JSON.parse(buf.args));
+					} catch {
+						// Skip malformed tool call arguments
+					}
+				}
+			}
+		}
 
 		onDone();
 	} catch (err) {
@@ -178,7 +200,12 @@ export async function streamChatDirect(
 	}
 }
 
-function processStreamLine(line: string, onChunk: (text: string) => void): void {
+function processStreamLine(
+	line: string,
+	onChunk: (text: string) => void,
+	onToolCall?: (name: string, args: Record<string, unknown>) => void,
+	toolCallBuffers?: Map<number, { name: string; args: string }>
+): void {
 	const trimmed = line.trim();
 	if (!trimmed || trimmed === 'data: [DONE]') return;
 	if (!trimmed.startsWith('data: ')) return;
@@ -189,6 +216,19 @@ function processStreamLine(line: string, onChunk: (text: string) => void): void 
 		// OpenAI-compatible format
 		if (json.choices?.[0]?.delta?.content) {
 			onChunk(json.choices[0].delta.content);
+		}
+		// OpenAI-compatible tool calls
+		if (json.choices?.[0]?.delta?.tool_calls && onToolCall && toolCallBuffers) {
+			for (const tc of json.choices[0].delta.tool_calls) {
+				const index = tc.index ?? 0;
+				if (!toolCallBuffers.has(index)) {
+					toolCallBuffers.set(index, { name: '', args: '' });
+				}
+				const buf = toolCallBuffers.get(index)!;
+				if (tc.function?.name) buf.name += tc.function.name;
+				if (tc.function?.arguments) buf.args += tc.function.arguments;
+				// Fire when the stop reason signals completion (stream end)
+			}
 		}
 		// Anthropic format
 		else if (json.type === 'content_block_delta' && json.delta?.text) {

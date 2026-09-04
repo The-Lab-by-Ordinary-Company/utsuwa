@@ -12,8 +12,18 @@ import { modulesStore } from '$lib/stores/modules.svelte';
 import { ttsStore } from '$lib/stores/tts.svelte';
 import { personaStore } from '$lib/stores/persona.svelte';
 import { vrmStore } from '$lib/stores/vrm.svelte';
+import { STATE_FENCE_OPEN } from '$lib/ai/response-parser';
 import { getLLMProvider, getTTSProvider } from '$lib/services/providers/registry';
+import { type TTSOptions } from '$lib/services/tts';
+import {
+	cleanSpeechMarkers,
+	cutAtStateFence,
+	hasIncompleteTrailingMarkup,
+	stripThinkingBlocks,
+	StreamingDisplayCleaner
+} from '$lib/services/tts/chat-text';
 import { streamChatDirect } from '$lib/services/chat/client-chat';
+
 import { processCompanionTurn } from '$lib/services/chat/companion-turn';
 import { retrieveRelevantContext } from '$lib/engine/memory';
 import { buildSystemPrompt, truncateChatHistory, type PromptContext } from '$lib/ai/prompt-builder';
@@ -22,6 +32,7 @@ import { extractReminderTags, tryExtractReminderFromUserMessage } from '$lib/uti
 import { reminderStore } from '$lib/stores/reminders.svelte';
 import { getWorkingMemory, ensureSession } from '$lib/engine/memory';
 import { toOpenAIContent, type ContentPart } from '$lib/services/chat/content';
+import { pseudoCallFromTool } from '$lib/services/tts/speech-compiler';
 import { isTauri } from '$lib/services/platform';
 import type { LLMProvider, TTSProvider } from '$lib/types';
 import type { EventDefinition } from '$lib/types/events';
@@ -43,6 +54,11 @@ export interface CompanionChatHooks {
 	setPhase?: (phase: ThinkingPhase) => void;
 }
 
+/**
+ * Returns true when `text` ends with an incomplete speak/pause/gesture call or
+ * an incomplete legacy language tag. Used by the streaming delta cleaner to
+ * decide whether it can flush the current chunk or needs to wait for more data.
+ */
 async function buildCompanionPrompt(
 	userMessage: string,
 	hasImages: boolean,
@@ -50,6 +66,9 @@ async function buildCompanionPrompt(
 	systemEvent?: string
 ): Promise<string> {
 	const workingMemory = getWorkingMemory();
+	const speechSettings = modulesStore.getModuleSettings('speech');
+	// Speech switched off means no speak() instructions, whatever provider is picked
+	const speechEnabled = modulesStore.getModuleState('speech')?.enabled === true;
 	const context: PromptContext = {
 		persona: personaStore.activeCard,
 		state: characterStore.state,
@@ -60,7 +79,18 @@ async function buildCompanionPrompt(
 		contextSize,
 		pendingReminders: reminderStore.upcoming.map((r) => ({ triggerAt: r.triggerAt, content: r.content })),
 		sessionStartedAt: workingMemory.sessionStartedAt,
-		systemEvent
+		systemEvent,
+		ttsProvider: speechEnabled ? (speechSettings.activeProvider as string | undefined) : undefined,
+		ttsLanguage: (speechSettings.activeLanguage as string) || undefined,
+		ttsAltLanguage: (speechSettings.altLanguage as string) || undefined,
+		ttsAltEnabled: (speechSettings.enableAltLanguage as boolean) ?? false,
+		// Same gate as the ttsTools injection in sendCompanionMessage: the
+		// speech layer must mandate tool calls exactly when the tools are sent.
+		ttsToolCalling:
+			speechEnabled &&
+			speechSettings.activeProvider === 'omnivoice' &&
+			(speechSettings.enableAltLanguage as boolean) === true &&
+			(speechSettings.enableToolCalling as boolean) !== false
 	};
 	return buildSystemPrompt(context);
 }
@@ -177,6 +207,10 @@ export async function sendCompanionMessage(
 	hooks.setPhase?.('remembering');
 	hooks.beforeStream?.();
 
+	// Tracks whether an OmniVoice streaming TTS session was started for this
+	// turn. Declared here so the error path can cancel it.
+	let streamingTTS = false;
+
 	// Only touch relationship-time state once the character has loaded, or an
 	// early message would mutate the default state that load then discards.
 	// System events (e.g. fired reminders) must not count as interaction.
@@ -194,13 +228,19 @@ export async function sendCompanionMessage(
 		}
 
 		const contextSize = (consciousnessSettings.contextSize as number | undefined) || undefined;
-		const systemPrompt = await buildCompanionPrompt(content, images.length > 0, contextSize, systemEvent ? content : undefined);
 		const providerConfig = settingsStore.getProviderConfig(provider);
 		const apiKey = providerConfig.apiKey;
 		const providerMeta = getLLMProvider(provider);
 		if (providerMeta?.requiresApiKey && !apiKey) {
 			throw new Error(`Please configure API key for ${providerMeta.name} in Settings > Providers`);
 		}
+
+		const systemPrompt = await buildCompanionPrompt(
+			content,
+			images.length > 0,
+			contextSize,
+			systemEvent ? content : undefined
+		);
 
 		// Prompt building (memory retrieval) is done; the model call starts now
 		hooks.setPhase?.(images.length > 0 ? 'seeing' : 'thinking');
@@ -209,7 +249,114 @@ export async function sendCompanionMessage(
 		const selectedModel = model || providerMeta?.models?.[0]?.id || '';
 		const baseURL = providerConfig.baseUrl || providerMeta?.defaultBaseUrl;
 		let messages = buildMessages(images);
-		const onDelta = (full: string) => chatStore.updateLastMessage(full);
+
+		// Snapshot speech settings at turn start so mid-stream changes cannot
+		// corrupt an ongoing TTS session, then start OmniVoice streaming before
+		// the LLM call so the first sentence can be synthesised while the model
+		// is still generating the rest of the reply.
+		const displaySpeechSettings = modulesStore.getModuleSettings('speech');
+		const displayTtsProvider = displaySpeechSettings.activeProvider as TTSProvider;
+		const speechState = modulesStore.getModuleState('speech');
+
+		const ttsConfig = settingsStore.getProviderConfig(displayTtsProvider);
+		const ttsMeta = getTTSProvider(displayTtsProvider);
+		const baseTtsOptions: TTSOptions = {
+			provider: displayTtsProvider,
+			apiKey: ttsConfig.apiKey,
+			voiceId: (displaySpeechSettings.activeVoiceId as string) || undefined,
+			model: (displaySpeechSettings.activeModel as string) || ttsConfig.modelId,
+			baseUrl: ttsConfig.baseUrl || ttsMeta?.defaultBaseUrl,
+			speed: (displaySpeechSettings.speed as number) ?? 1,
+			// Leave unset when the user hasn't picked one; the orchestrator
+			// infers the primary language from the first segment instead.
+			language: (displaySpeechSettings.activeLanguage as string) || undefined,
+			altLanguage: (displaySpeechSettings.altLanguage as string) || undefined,
+			altVoiceId: (displaySpeechSettings.altVoiceId as string) || undefined,
+			enableAltLanguage: (displaySpeechSettings.enableAltLanguage as boolean) ?? false,
+			altSpeed: (displaySpeechSettings.altSpeed as number) ?? undefined
+		};
+
+		const ttsOptions: TTSOptions =
+			displayTtsProvider === 'omnivoice'
+				? {
+						...baseTtsOptions,
+						instructions: (displaySpeechSettings.instructions as string) || undefined,
+						altInstructions: (displaySpeechSettings.altInstructions as string) || undefined,
+						numStep: (displaySpeechSettings.numStep as number) ?? undefined,
+						altNumStep: (displaySpeechSettings.altNumStep as number) ?? undefined,
+						positionTemperature: (displaySpeechSettings.positionTemperature as number) ?? undefined,
+classTemperature: (displaySpeechSettings.classTemperature as number) ?? undefined,
+					altPositionTemperature:
+						(displaySpeechSettings.altPositionTemperature as number) ?? undefined,
+					altClassTemperature:
+						(displaySpeechSettings.altClassTemperature as number) ?? undefined
+			  }
+			: baseTtsOptions;
+
+		streamingTTS =
+			speechState?.enabled && displayTtsProvider === 'omnivoice'
+				? await ttsStore.beginStreaming(ttsOptions)
+				: false;
+		let streamedLength = 0;
+		let ttsFedUntil = 0;
+		const displayCleaner = new StreamingDisplayCleaner();
+		let pendingRaw = '';
+		let displayCapped = false;
+
+		const onDelta = (full: string) => {
+			if (displayTtsProvider !== 'omnivoice') {
+				chatStore.updateLastMessage(full);
+				streamedLength = full.length;
+				return;
+			}
+
+			const delta = full.slice(streamedLength);
+
+			// Feed the live display only until the ```json state fence appears:
+			// what follows the fence is the model's post-state repeat, and the
+			// final parser cut replaces the message anyway. Without the cap the
+			// repeat visibly built the message up twice.
+			if (!displayCapped) {
+				pendingRaw += delta;
+
+				const cut = cutAtStateFence(pendingRaw);
+				if (cut.capped) {
+					// Show what precedes the fence, unless it ends mid-markup —
+					// that incomplete tail would flash raw fragments.
+					if (cut.visible && !hasIncompleteTrailingMarkup(cut.visible)) {
+						displayCleaner.push(cut.visible);
+					}
+					pendingRaw = '';
+					displayCapped = true;
+				} else if (!hasIncompleteTrailingMarkup(pendingRaw)) {
+					// No fence yet: flush only when no incomplete
+					// speak/pause/gesture call, language tag or code fence is
+					// dangling at the end. This keeps the incremental cleanup
+					// O(1) per chunk, and the cleaner reconstructs boundary
+					// whitespace the per-fragment trim would otherwise eat.
+					displayCleaner.push(pendingRaw);
+					pendingRaw = '';
+				}
+			}
+
+			chatStore.updateLastMessage(displayCleaner.text);
+
+			if (streamingTTS && full.length > streamedLength) {
+				// Reasoning blocks (<thinking>…) and the trailing JSON state
+				// block are instructions, not speech — never feed them to TTS.
+				// These cuts mirror parseResponse so chat, display and speech
+				// agree; they also stop repeated text after the state block
+				// from being spoken twice.
+				const speechSource = stripThinkingBlocks(full);
+				const fenceIndex = speechSource.match(STATE_FENCE_OPEN)?.index ?? -1;
+				const speechEnd = fenceIndex === -1 ? speechSource.length : fenceIndex;
+				if (ttsFedUntil < speechEnd) {
+					ttsStore.feedStreaming(speechSource.slice(ttsFedUntil, speechEnd));
+				}
+				ttsFedUntil = speechEnd;
+			}
+			streamedLength = full.length;
+		};
 
 		// Truncate message history to the configured context window. This applies
 		// to every provider so users can size prompts to their model's limit.
@@ -231,6 +378,71 @@ export async function sendCompanionMessage(
 			: {};
 
 		let fullContent = '';
+		// Tool definitions for OmniVoice speech segments.
+		// When the LLM supports function calling, speak_segment provides
+		// structured language tags instead of pseudo-calls in the text.
+		// Build the language enum from the configured primary + alternative
+		// languages so the tool only ever suggests what the user has set up.
+		const primaryLang = (displaySpeechSettings.activeLanguage as string)?.toLowerCase() || 'en';
+		const altLang = (displaySpeechSettings.altLanguage as string)?.toLowerCase();
+		const toolLanguages = Array.from(new Set([primaryLang, altLang].filter(Boolean))) as string[];
+
+		const ttsTools = speechState?.enabled === true
+			&& displayTtsProvider === 'omnivoice'
+			&& (displaySpeechSettings.enableAltLanguage as boolean) === true
+			&& (displaySpeechSettings.enableToolCalling as boolean) !== false
+			? [
+					{
+						type: 'function' as const,
+						function: {
+							name: 'speak_segment',
+							description: 'Speak exactly ONE short phrase. Call separately for each phrase. language is REQUIRED.',
+							parameters: {
+								type: 'object',
+								properties: {
+									text: { type: 'string', description: 'One short phrase to speak. Max 1 sentence.' },
+									language: { type: 'string', enum: toolLanguages,
+										description: 'Language of the text. REQUIRED.' }
+								},
+								required: ['text', 'language']
+							}
+						}
+					},
+					{
+						type: 'function' as const,
+						function: {
+							name: 'pause_segment',
+							description: 'Insert a short silent pause between spoken phrases.',
+							parameters: {
+								type: 'object',
+								properties: {
+									ms: { type: 'integer', description: 'Pause length in milliseconds (100-5000).' }
+								},
+								required: ['ms']
+							}
+						}
+					},
+					{
+						type: 'function' as const,
+						function: {
+							name: 'gesture_segment',
+							description: 'Show a small non-verbal gesture before or with the next phrase.',
+							parameters: {
+								type: 'object',
+								properties: {
+									type: {
+										type: 'string',
+										enum: ['smile', 'laugh', 'surprise', 'nod', 'shake_head', 'wave'],
+										description: 'The gesture to show.'
+									}
+								},
+								required: ['type']
+							}
+						}
+					}
+				]
+			: undefined;
+
 		if (isTauri() || providerMeta?.isLocal) {
 			// Desktop and local providers call the provider API directly.
 			await new Promise<void>((resolve, reject) => {
@@ -242,6 +454,7 @@ export async function sendCompanionMessage(
 						apiKey: apiKey || undefined,
 						baseURL,
 						systemPrompt,
+						tools: ttsTools,
 						...advancedParams
 					},
 					(text) => {
@@ -249,7 +462,16 @@ export async function sendCompanionMessage(
 						onDelta(fullContent);
 					},
 					(error) => reject(new Error(error)),
-					() => resolve()
+					() => resolve(),
+					// Convert native tool calls to pseudo-call text so the existing
+					// streaming speech buffer can process them.
+					ttsTools ? (name, args) => {
+						const pseudo = pseudoCallFromTool(name, args as Record<string, unknown>);
+						if (pseudo) {
+							fullContent += pseudo;
+							onDelta(fullContent);
+						}
+					} : undefined
 				);
 			});
 		} else {
@@ -262,6 +484,7 @@ export async function sendCompanionMessage(
 					apiKey: apiKey || (providerMeta?.custom ? undefined : 'not-needed'),
 					baseURL,
 					systemPrompt,
+					tools: ttsTools,
 					...advancedParams
 				},
 				onDelta
@@ -270,9 +493,30 @@ export async function sendCompanionMessage(
 
 		hooks.setTyping(false);
 
+		if (streamingTTS) {
+			// Intentionally fire-and-forget: endStreaming flushes the buffer and
+			// waits for the orchestrator to finish, but memory/event/image
+			// processing (processCompanionTurn) must not be blocked.
+			void ttsStore.endStreaming();
+		}
+
+		// For OmniVoice the raw response contains speak({...}) / gesture({...})
+		// pseudo-tool-calls (or a JSON state block when native tools are used).
+		// Strip them before memory/fact extraction so the data layer only sees
+		// clean dialogue.
+		// Strip speak()/gesture syntax and non-verbal markers, but keep the
+		// ```json state fence: parseResponse() extracts the state updates from
+		// it and cuts the dialogue there — models sometimes repeat their
+		// whole reply after the block, and without the fence that repeat
+		// would survive in the dialogue and duplicate the chat message.
+		const cleanedCompanionResponse =
+			displayTtsProvider === 'omnivoice'
+				? cleanSpeechMarkers(fullContent, { keepStateFences: true })
+				: fullContent;
+
 		const turn = await processCompanionTurn({
 			userMessage: content,
-			companionResponse: fullContent,
+			companionResponse: cleanedCompanionResponse,
 			llm: {
 				provider,
 				model: selectedModel,
@@ -319,36 +563,27 @@ export async function sendCompanionMessage(
 			);
 		}
 
-		chatStore.updateLastMessage(turn.dialogue);
-		hooks.setLatestResponse(turn.dialogue);
+		// turn.dialogue is already clean for OmniVoice because companionResponse
+		// was stripped of speak()/gesture() syntax before processCompanionTurn.
+		const displayDialogue = turn.dialogue;
+
+		chatStore.updateLastMessage(displayDialogue);
+		hooks.setLatestResponse(displayDialogue);
 
 		if (turn.dialogue) {
-			vrmStore.startTalking(turn.dialogue);
+			// During OmniVoice streaming the avatar is driven by ttsStore.isSpeaking
+			// and the real audio analyser, so a text-length estimate would desync.
+			// Only fall back to the estimated talking timer for non-streaming paths.
+			if (!streamingTTS) {
+				vrmStore.startTalking(displayDialogue);
+			}
 
-			const speechState = modulesStore.getModuleState('speech');
-			const speechSettings = modulesStore.getModuleSettings('speech');
-			if (speechState?.enabled) {
-				const ttsProvider = speechSettings.activeProvider as TTSProvider;
-				const ttsConfig = settingsStore.getProviderConfig(ttsProvider);
-				const ttsMeta = getTTSProvider(ttsProvider);
-				ttsStore.speak(turn.dialogue, {
-					provider: ttsProvider,
-					apiKey: ttsConfig.apiKey,
-					voiceId: (speechSettings.activeVoiceId as string) || undefined,
-					model: (speechSettings.activeModel as string) || ttsConfig.modelId,
-					baseUrl: ttsConfig.baseUrl || ttsMeta?.defaultBaseUrl,
-					speed: (speechSettings.speed as number) ?? 1,
-					// Leave unset when the user hasn't picked one; the orchestrator
-					// infers the primary language from the first segment instead.
-					language: (speechSettings.activeLanguage as string) || undefined,
-					instructions: (speechSettings.instructions as string) || undefined,
-					numStep: (speechSettings.numStep as number) ?? undefined,
-					positionTemperature: (speechSettings.positionTemperature as number) ?? undefined,
-					classTemperature: (speechSettings.classTemperature as number) ?? undefined
-				});
+if (speechState?.enabled && !streamingTTS) {
+				ttsStore.speak(turn.dialogue, ttsOptions);
 			}
 		}
 	} catch (err) {
+		if (streamingTTS) ttsStore.cancelStreaming();
 		chatStore.setError(err instanceof Error ? err.message : 'Unknown error');
 		hooks.setTyping(false);
 	} finally {

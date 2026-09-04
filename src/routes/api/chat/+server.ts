@@ -5,13 +5,14 @@ import type { LLMProvider } from '$lib/types';
 import { ensureOpenAIPath, getChatBaseUrl } from '$lib/services/providers/local-endpoints';
 import { assertSafeProviderUrl } from '$lib/services/providers/url-guard';
 import { sanitizeProviderError } from '$lib/services/providers/provider-errors';
+import { pseudoCallFromTool } from '$lib/services/tts/speech-compiler';
 import { DEFAULT_CHAT_BASE_URLS } from '$lib/services/providers/provider-defaults';
 
 // Providers that don't require API keys
 const LOCAL_PROVIDERS: LLMProvider[] = ['ollama', 'lmstudio'];
 
 export const POST: RequestHandler = async ({ request }) => {
-	const { messages, provider, model, apiKey, baseURL, systemPrompt, temperature, maxTokens, topP, presencePenalty, frequencyPenalty } = await request.json();
+	const { messages, provider, model, apiKey, baseURL, systemPrompt, temperature, maxTokens, topP, presencePenalty, frequencyPenalty, tools } = await request.json();
 
 	if (!Array.isArray(messages)) {
 		return new Response(JSON.stringify({ error: 'messages must be an array' }), {
@@ -83,6 +84,20 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		let result;
 		try {
+			// @xsai/stream-text requires an `execute` function on every tool
+			// (called via `tool.execute`, NOT `tool.function.execute`). We do NOT
+			// want the tool executed here — the speak_segment tool call is just
+			// streamed to the client as speech instructions. Provide a no-op that
+			// returns the parsed args so xsai doesn't crash with "tool.execute is
+			// not a function".
+			const toolsWithExecute = Array.isArray(tools) && tools.length > 0
+				? tools.map((t) => ({
+						...t,
+						function: t.function as Record<string, unknown>,
+						execute: async (args: unknown) => ({ result: args })
+					}))
+				: undefined;
+
 			result = streamText({
 				// Keyless custom endpoints must not receive a fabricated bearer;
 				// strict gateways reject 'Bearer not-needed'. xsai omits the
@@ -98,7 +113,9 @@ export const POST: RequestHandler = async ({ request }) => {
 					...(topP !== undefined && { top_p: topP }),
 					...(presencePenalty !== undefined && { presence_penalty: presencePenalty }),
 					...(frequencyPenalty !== undefined && { frequency_penalty: frequencyPenalty })
-				})
+				}),
+				// Tool definitions are OpenAI-shaped; Anthropic keeps the speak() text fallback
+				...(typedProvider !== 'anthropic' && toolsWithExecute !== undefined && { tools: toolsWithExecute })
 			});
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to connect to provider';
@@ -116,10 +133,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		result.totalUsage?.catch?.(silentCatch);
 		result.usage?.catch?.(silentCatch);
 		// Consume errored ReadableStreams so they don't become unhandled
-		result.fullStream?.getReader().read().catch(silentCatch);
+		// fullStream is consumed by the SSE reader below – do NOT consume it here.
 		result.reasoningTextStream?.getReader().read().catch(silentCatch);
 
-		const { textStream } = result;
+		const { fullStream } = result;
 
 		// Create a readable stream for SSE
 		const encoder = new TextEncoder();
@@ -127,7 +144,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			async start(controller) {
 				let reader;
 				try {
-					reader = textStream.getReader();
+					reader = fullStream.getReader();
 				} catch (err) {
 					const msg = err instanceof Error ? err.message : 'Failed to start stream';
 					controller.enqueue(
@@ -141,8 +158,32 @@ export const POST: RequestHandler = async ({ request }) => {
 					while (true) {
 						const { done, value } = await reader.read();
 						if (done) break;
-						const data = `0:${JSON.stringify(value)}\n`;
-						controller.enqueue(encoder.encode(data));
+
+						if (value.type === 'text-delta') {
+							// Forward text as-is. The client parses the JSON state block out of
+							// the full reply, so nothing may be dropped here.
+							const data = `0:${JSON.stringify(value.text)}\n`;
+							controller.enqueue(encoder.encode(data));
+						} else if (value.type === 'tool-call') {
+							// Convert native tool calls to pseudo-call text so the
+							// client-side streaming speech buffer can process them.
+							// Unknown tools, invalid args or unparsable JSON yield
+							// null and are dropped — identical to the direct client
+							// path. A malformed call must not kill the stream.
+							try {
+								const args =
+									typeof value.args === 'string' ? JSON.parse(value.args) : value.args;
+								const pseudo = pseudoCallFromTool(
+									value.toolName,
+									args as Record<string, unknown>
+								);
+								if (pseudo) {
+									controller.enqueue(encoder.encode(`0:${JSON.stringify(pseudo)}\n`));
+								}
+							} catch {
+								// Malformed tool-call args: drop the call, keep streaming.
+							}
+						}
 					}
 					controller.close();
 				} catch (error) {
